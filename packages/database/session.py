@@ -1,68 +1,59 @@
-"""
-Database session and connection management for RevOps SaaS.
-Supports:
-- Local SQLite for zero-setup execution.
-- Production PostgreSQL Primary for write transactions.
-- PostgreSQL Read Replicas (DATABASE_READ_REPLICA_URL) for heavy analytical queries.
-"""
-
 import os
 from pathlib import Path
-from typing import Generator, Dict, Any
+from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.pool import QueuePool
 from .models import Base
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DEFAULT_DB_PATH = BASE_DIR / "revops_saas.db"
 
-# Primary / Writer Database
+# Primary database for writes
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
 
-# Read Replica Database (optional, defaults to DATABASE_URL if omitted)
-DATABASE_READ_REPLICA_URL = os.getenv("DATABASE_READ_REPLICA_URL", None)
+# Read replica for analytical queries (optional, falls back to primary)
+DATABASE_READ_REPLICA_URL = os.getenv("DATABASE_READ_REPLICA_URL", DATABASE_URL)
 
-is_sqlite = "sqlite" in DATABASE_URL
-connect_args = {"check_same_thread": False} if is_sqlite else {}
+# Connection arguments
+connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 
-# Engine Options for PostgreSQL
-engine_kwargs = {}
-if not is_sqlite:
-    engine_kwargs = {
-        "pool_size": int(os.getenv("DB_POOL_SIZE", "20")),
-        "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "10")),
-        "pool_pre_ping": True,
-        "pool_recycle": 1800,
-    }
+# Pool configuration for production
+pool_config = {
+    "pool_size": int(os.getenv("DB_POOL_SIZE", "20")),
+    "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "30")),
+    "pool_pre_ping": True,
+    "pool_recycle": 3600,
+} if "sqlite" not in DATABASE_URL else {}
 
-# 1. Primary Engine (Writes)
-engine = create_engine(DATABASE_URL, connect_args=connect_args, echo=False, **engine_kwargs)
+# Primary engine (reads + writes)
+engine = create_engine(
+    DATABASE_URL,
+    connect_args=connect_args,
+    echo=False,
+    **pool_config
+)
+
+# Read replica engine (read-only queries)
+engine_read = create_engine(
+    DATABASE_READ_REPLICA_URL,
+    connect_args=connect_args,
+    echo=False,
+    **pool_config
+)
+
+# Session factories
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# 2. Read Replica Engine (Reads & Analytics)
-if DATABASE_READ_REPLICA_URL:
-    read_connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_READ_REPLICA_URL else {}
-    engine_read = create_engine(
-        DATABASE_READ_REPLICA_URL,
-        connect_args=read_connect_args,
-        echo=False,
-        **engine_kwargs
-    )
-    ReadSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine_read)
-    HAS_READ_REPLICA = True
-else:
-    engine_read = engine
-    ReadSessionLocal = SessionLocal
-    HAS_READ_REPLICA = False
+SessionRead = sessionmaker(autocommit=False, autoflush=False, bind=engine_read)
 
 
 def init_db():
-    """Initializes all database tables safely on the primary database."""
+    """Initializes all database tables safely."""
     Base.metadata.create_all(bind=engine)
 
 
 def get_db() -> Generator[Session, None, None]:
-    """FastAPI Dependency for transactional write sessions."""
+    """FastAPI Dependency for transactional DB sessions (writes + reads)."""
     db = SessionLocal()
     try:
         yield db
@@ -71,23 +62,42 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def get_read_db() -> Generator[Session, None, None]:
-    """
-    FastAPI Dependency for read-only analytical queries.
-    Routes queries to the Read Replica pool if configured, or Primary as fallback.
-    """
-    db = ReadSessionLocal()
+    """FastAPI Dependency for read-only analytical queries."""
+    db = SessionRead()
     try:
         yield db
     finally:
         db.close()
 
 
-def get_db_routing_info() -> Dict[str, Any]:
-    """Returns database connection and replica routing telemetry."""
+def get_db_routing_info() -> dict:
+    """Returns database routing configuration for monitoring."""
     return {
         "primary_configured": True,
-        "primary_dialect": engine.dialect.name,
-        "has_read_replica": HAS_READ_REPLICA,
-        "read_replica_configured": DATABASE_READ_REPLICA_URL is not None,
+        "primary_url": str(engine.url).split("@")[0] + "@***" if "postgresql" in DATABASE_URL else "sqlite",
+        "has_read_replica": DATABASE_READ_REPLICA_URL != DATABASE_URL,
         "read_dialect": engine_read.dialect.name,
+        "read_url": str(engine_read.url).split("@")[0] + "@***" if "postgresql" in DATABASE_READ_REPLICA_URL else "sqlite",
     }
+
+
+def get_pool_metrics() -> dict:
+    """Returns connection pool metrics for both engines."""
+    metrics = {
+        "primary": {
+            "size": engine.pool.size() if hasattr(engine, 'pool') else 0,
+            "checked_in": engine.pool.checkedin() if hasattr(engine, 'pool') else 0,
+            "checked_out": engine.pool.checkedout() if hasattr(engine, 'pool') else 0,
+            "overflow": engine.pool.overflow() if hasattr(engine, 'pool') else 0,
+        }
+    }
+    
+    if DATABASE_READ_REPLICA_URL != DATABASE_URL:
+        metrics["read_replica"] = {
+            "size": engine_read.pool.size() if hasattr(engine_read, 'pool') else 0,
+            "checked_in": engine_read.pool.checkedin() if hasattr(engine_read, 'pool') else 0,
+            "checked_out": engine_read.pool.checkedout() if hasattr(engine_read, 'pool') else 0,
+            "overflow": engine_read.pool.overflow() if hasattr(engine_read, 'pool') else 0,
+        }
+    
+    return metrics
