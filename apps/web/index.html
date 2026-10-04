@@ -1,346 +1,798 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RevOps Enterprise OS — SaaS Platform</title>
+  <title>RevOps Enterprise OS — ngx-admin Edition</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cosmic: {
+              900: '#151a30',
+              800: '#192038',
+              700: '#222b45',
+              600: '#2e3a59',
+              accent: '#7352ff',
+              cyan: '#00d68f',
+              danger: '#ff3d71',
+              warning: '#ffaa00',
+              info: '#0095ff'
+            }
+          }
+        }
+      }
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .tab-active { border-bottom: 2px solid #2563EB; color: #2563EB; font-weight: 600; }
+    body { font-family: 'Open Sans', sans-serif; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Poppins', sans-serif; }
+
+    /* ngx-admin nebular card aesthetics */
+    .nb-card {
+      background: #192038;
+      border: 1px solid #222b45;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.5rem 1rem 0 rgba(44, 51, 73, 0.1);
+      transition: all 0.2s ease-in-out;
+    }
+    .nb-card:hover {
+      box-shadow: 0 0.5rem 1.5rem 0 rgba(44, 51, 73, 0.25);
+    }
+    .nb-card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #222b45;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nb-card-body {
+      padding: 1.25rem;
+    }
+
+    /* ngx-admin menu item active */
+    .menu-active {
+      background: linear-gradient(90deg, rgba(115, 82, 255, 0.18) 0%, rgba(115, 82, 255, 0.05) 100%);
+      border-left: 4px solid #7352ff;
+      color: #ffffff !important;
+      font-weight: 600;
+    }
+
+    /* Custom scrollbar in ngx-admin style */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #151a30; }
+    ::-webkit-scrollbar-thumb { background: #2e3a59; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #7352ff; }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+<body class="bg-[#151a30] text-[#8f9bb3] min-h-screen flex flex-col antialiased">
 
-  <!-- Top Navigation Bar -->
-  <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700/80 sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+  <!-- ================= TOP HEADER (ngx-admin style) ================= -->
+  <header class="h-16 bg-[#192038] border-b border-[#222b45] px-4 flex items-center justify-between sticky top-0 z-50">
     <div class="flex items-center space-x-4">
-      <div class="bg-blue-600 text-white p-2 rounded-xl font-bold flex items-center space-x-2">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        <span class="tracking-wide">RevOps OS</span>
-      </div>
-      <div>
-        <div class="text-sm font-semibold flex items-center space-x-2">
-          <span>TechCorp B2B SaaS</span>
-          <span class="bg-blue-900/60 text-blue-400 text-xs px-2 py-0.5 rounded-full border border-blue-700/50">Pro Plan</span>
+      <!-- Sidebar Toggle Button -->
+      <button onclick="toggleSidebar()" class="p-2 rounded-lg text-[#8f9bb3] hover:text-white hover:bg-[#222b45] transition focus:outline-none">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+
+      <!-- ngx-admin Logo Brand -->
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#7352ff] to-[#00d68f] flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-[#7352ff]/20">
+          R
         </div>
-        <div class="text-xs text-slate-400">Multi-Tenant Cloud • Workspace: Основной отдел продаж</div>
+        <div>
+          <div class="text-white font-bold tracking-tight text-sm font-heading flex items-center space-x-2">
+            <span>RevOps OS</span>
+            <span class="bg-[#7352ff]/20 text-[#7352ff] border border-[#7352ff]/40 text-[10px] font-semibold px-2 py-0.5 rounded">ngx-admin V17.6</span>
+          </div>
+          <div class="text-[11px] text-[#8f9bb3]">Enterprise Revenue Operations</div>
+        </div>
       </div>
     </div>
 
-    <!-- Role Switcher Simulation (Demonstrates 7 RBAC roles) -->
+    <!-- Center Search & Tenant Selector -->
+    <div class="hidden md:flex items-center space-x-3">
+      <div class="relative">
+        <input type="text" placeholder="Поиск по сделкам, звонкам, регламентам..." class="w-80 bg-[#151a30] border border-[#222b45] rounded-lg px-9 py-1.5 text-xs text-white placeholder-[#8f9bb3] focus:outline-none focus:border-[#7352ff] transition">
+        <svg class="w-4 h-4 text-[#8f9bb3] absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+
+      <div class="flex items-center space-x-2 bg-[#151a30] border border-[#222b45] px-3 py-1.5 rounded-lg text-xs">
+        <span class="text-[#8f9bb3]">Тенант:</span>
+        <span class="text-white font-semibold">TechCorp B2B SaaS</span>
+      </div>
+    </div>
+
+    <!-- Right Header Actions: Role Selector, Notifications, User Profile -->
     <div class="flex items-center space-x-3">
-      <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
-        <span class="text-xs text-slate-400">Роль:</span>
-        <select id="roleSelector" class="bg-transparent text-xs font-medium text-blue-400 focus:outline-none cursor-pointer">
-          <option value="CEO" class="bg-slate-800 text-slate-100">👑 CEO / Собственник</option>
-          <option value="ROP" class="bg-slate-800 text-slate-100">📋 РОП / Head of Sales</option>
-          <option value="KAM" class="bg-slate-800 text-slate-100">💼 KAM (Менеджер)</option>
-          <option value="SDR" class="bg-slate-800 text-slate-100">📞 SDR (Телемаркетолог)</option>
-          <option value="CMO" class="bg-slate-800 text-slate-100">🌐 CMO (Маркетинг)</option>
-          <option value="CFO" class="bg-slate-800 text-slate-100">💳 CFO (Финансы)</option>
-          <option value="ADMIN" class="bg-slate-800 text-slate-100">⚙️ RevOps Admin</option>
+      <!-- Role Switcher (Simulates the 7 RBAC roles) -->
+      <div class="flex items-center space-x-2 bg-[#151a30] border border-[#222b45] px-2.5 py-1.5 rounded-lg">
+        <span class="text-[11px] text-[#8f9bb3]">Роль:</span>
+        <select id="userRoleSelect" onchange="onRoleChanged()" class="bg-transparent text-xs font-semibold text-[#00d68f] focus:outline-none cursor-pointer">
+          <option value="CEO" class="bg-[#192038] text-white">👑 Собственник / CEO</option>
+          <option value="ROP" class="bg-[#192038] text-white">📋 Директор по продажам / РОП</option>
+          <option value="KAM" class="bg-[#192038] text-white">💼 Менеджер по продажам (KAM)</option>
+          <option value="SDR" class="bg-[#192038] text-white">📞 Телемаркетолог / SDR</option>
+          <option value="CMO" class="bg-[#192038] text-white">🌐 Директор по маркетингу (CMO)</option>
+          <option value="CFO" class="bg-[#192038] text-white">💳 Финансовый директор (CFO)</option>
+          <option value="ADMIN" class="bg-[#192038] text-white">⚙️ RevOps Инженер / Admin</option>
         </select>
       </div>
-      <div class="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center font-bold text-xs text-blue-300">
-        AI
+
+      <!-- Notification Bell -->
+      <button class="relative p-2 rounded-lg text-[#8f9bb3] hover:text-white hover:bg-[#222b45] transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ff3d71] ring-2 ring-[#192038]"></span>
+      </button>
+
+      <!-- User Profile Avatar -->
+      <div class="flex items-center space-x-3 pl-2 border-l border-[#222b45]">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-[#7352ff] to-[#0095ff] flex items-center justify-center font-bold text-xs text-white">
+          АИ
+        </div>
+        <div class="hidden sm:block text-left">
+          <div class="text-xs font-semibold text-white leading-tight">Александр Иванов</div>
+          <div class="text-[10px] text-[#00d68f]">Pro Лицензия • Online</div>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- Subheader Navigation Tabs -->
-  <nav class="bg-slate-800/50 border-b border-slate-700 px-6 flex space-x-8 text-sm overflow-x-auto">
-    <button onclick="switchTab('pulse')" id="tab-pulse" class="py-3 px-2 tab-active text-slate-300 hover:text-white transition">📊 Пульс Компании & One-Pager</button>
-    <button onclick="switchTab('radar')" id="tab-radar" class="py-3 px-2 text-slate-400 hover:text-white transition">🚨 Пульт РОПа «15 минут в день»</button>
-    <button onclick="switchTab('sins')" id="tab-sins" class="py-3 px-2 text-slate-400 hover:text-white transition">💸 7 Смертных Грехов (Аудит потерь)</button>
-    <button onclick="switchTab('speech')" id="tab-speech" class="py-3 px-2 text-slate-400 hover:text-white transition">🎙️ Речевой ИИ-Аудит (13 критериев)</button>
-    <button onclick="switchTab('montecarlo')" id="tab-montecarlo" class="py-3 px-2 text-slate-400 hover:text-white transition">🔮 Симулятор Монте-Карло 95%</button>
-  </nav>
+  <div class="flex-1 flex overflow-hidden">
 
-  <!-- Main Content Container -->
-  <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+    <!-- ================= LEFT SIDEBAR (ngx-admin style) ================= -->
+    <aside id="sidebar" class="w-64 bg-[#192038] border-r border-[#222b45] flex flex-col justify-between transition-all duration-200 select-none overflow-y-auto">
+      <div class="py-4 space-y-6">
+        
+        <!-- Section: ДАШБОРДЫ -->
+        <div>
+          <div class="px-5 text-[10px] font-bold uppercase tracking-wider text-[#8f9bb3]/60 mb-2 font-heading">
+            ОБЗОР & УПРАВЛЕНИЕ
+          </div>
+          <nav class="space-y-0.5 text-xs">
+            <button onclick="navigateView('pulse')" id="nav-pulse" class="w-full flex items-center space-x-3 px-5 py-2.5 text-[#8f9bb3] hover:text-white hover:bg-[#222b45]/40 transition text-left menu-active">
+              <svg class="w-4 h-4 text-[#7352ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              <span>Пульс Компании & One-Pager</span>
+            </button>
+            <button onclick="navigateView('radar')" id="nav-radar" class="w-full flex items-center space-x-3 px-5 py-2.5 text-[#8f9bb3] hover:text-white hover:bg-[#222b45]/40 transition text-left">
+              <svg class="w-4 h-4 text-[#ff3d71]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <span>Пульт РОПа «15 минут в день»</span>
+              <span class="ml-auto bg-[#ff3d71]/20 text-[#ff3d71] text-[10px] font-bold px-1.5 py-0.2 rounded-full">3</span>
+            </button>
+          </nav>
+        </div>
 
-    <!-- TAB 1: ПУЛЬС КОМПАНИИ -->
-    <div id="content-pulse" class="space-y-6">
-      <!-- KPI Row -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
-          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Выручка Факт / План</div>
-          <div class="text-2xl font-bold mt-2 text-emerald-400">14.2M ₽ <span class="text-xs font-normal text-slate-400">/ 16.0M ₽</span></div>
-          <div class="text-xs text-emerald-500 mt-1 flex items-center">↑ 88.7% выполнения плана</div>
+        <!-- Section: АНАЛИТИКА & ДИАГНОСТИКА -->
+        <div>
+          <div class="px-5 text-[10px] font-bold uppercase tracking-wider text-[#8f9bb3]/60 mb-2 font-heading">
+            ДИАГНОСТИКА ВЫРУЧКИ
+          </div>
+          <nav class="space-y-0.5 text-xs">
+            <button onclick="navigateView('sins')" id="nav-sins" class="w-full flex items-center space-x-3 px-5 py-2.5 text-[#8f9bb3] hover:text-white hover:bg-[#222b45]/40 transition text-left">
+              <svg class="w-4 h-4 text-[#ffaa00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>7 Смертных Грехов ОП</span>
+            </button>
+            <button onclick="navigateView('speech')" id="nav-speech" class="w-full flex items-center space-x-3 px-5 py-2.5 text-[#8f9bb3] hover:text-white hover:bg-[#222b45]/40 transition text-left">
+              <svg class="w-4 h-4 text-[#0095ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"/></svg>
+              <span>Речевой ИИ-Аудит (13 критериев)</span>
+            </button>
+            <button onclick="navigateView('montecarlo')" id="nav-montecarlo" class="w-full flex items-center space-x-3 px-5 py-2.5 text-[#8f9bb3] hover:text-white hover:bg-[#222b45]/40 transition text-left">
+              <svg class="w-4 h-4 text-[#7352ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>Симулятор Монте-Карло 95%</span>
+            </button>
+            <button onclick="navigateView('attribution')" id="nav-attribution" class="w-full flex items-center space-x-3 px-5 py-2.5 text-[#8f9bb3] hover:text-white hover:bg-[#222b45]/40 transition text-left">
+              <svg class="w-4 h-4 text-[#00d68f]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+              <span>W-Shaped Атрибуция выручки</span>
+            </button>
+          </nav>
         </div>
-        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
-          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Активный пайплайн</div>
-          <div class="text-2xl font-bold mt-2 text-blue-400">38.4M ₽</div>
-          <div class="text-xs text-slate-400 mt-1">114 сделок в работе</div>
+
+        <!-- Section: АДМИНИСТРИРОВАНИЕ -->
+        <div>
+          <div class="px-5 text-[10px] font-bold uppercase tracking-wider text-[#8f9bb3]/60 mb-2 font-heading">
+            КОНФИГУРАЦИЯ & RBAC
+          </div>
+          <nav class="space-y-0.5 text-xs">
+            <button onclick="navigateView('rbac')" id="nav-rbac" class="w-full flex items-center space-x-3 px-5 py-2.5 text-[#8f9bb3] hover:text-white hover:bg-[#222b45]/40 transition text-left">
+              <svg class="w-4 h-4 text-[#8f9bb3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              <span>Матрица Ролей (7 ролей V17.6)</span>
+            </button>
+            <button onclick="navigateView('integrations')" id="nav-integrations" class="w-full flex items-center space-x-3 px-5 py-2.5 text-[#8f9bb3] hover:text-white hover:bg-[#222b45]/40 transition text-left">
+              <svg class="w-4 h-4 text-[#8f9bb3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
+              <span>Интеграции (amoCRM, Bitrix, PBX)</span>
+            </button>
+          </nav>
         </div>
-        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
-          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Упущенная выгода (7 Грехов)</div>
-          <div class="text-2xl font-bold mt-2 text-rose-400">7.04M ₽</div>
-          <div class="text-xs text-rose-400/80 mt-1">4.57M ₽ устранимо за 60 дней</div>
-        </div>
-        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
-          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">ИИ-качество звонков</div>
-          <div class="text-2xl font-bold mt-2 text-amber-400">74.2 / 100</div>
-          <div class="text-xs text-slate-400 mt-1">13 критериев Whisper + LLM</div>
-        </div>
+
       </div>
 
-      <!-- Funnel Overview -->
-      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-        <h3 class="text-lg font-semibold mb-4 flex items-center justify-between">
-          <span>Сквозная конверсия воронки продаж (SLA & Bottlenecks)</span>
-          <span class="text-xs bg-slate-700 text-slate-300 px-3 py-1 rounded-full">Режим: Multi-User Realtime</span>
-        </h3>
-        <div class="space-y-4">
+      <!-- Sidebar Bottom: System Telemetry -->
+      <div class="p-4 border-t border-[#222b45] bg-[#151a30]/50 text-[11px]">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-[#8f9bb3]">FastAPI Backend:</span>
+          <span class="text-[#00d68f] font-semibold flex items-center">
+            <span class="w-2 h-2 rounded-full bg-[#00d68f] mr-1.5 animate-pulse"></span>200 OK
+          </span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-[#8f9bb3]">Multi-Tenancy:</span>
+          <span class="text-white font-medium">Postgres RLS</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN CONTENT AREA (ngx-admin layout) ================= -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- ================= VIEW 1: ПУЛЬС КОМПАНИИ ================= -->
+      <section id="view-pulse" class="space-y-6">
+        <!-- Breadcrumbs & Title Bar -->
+        <div class="flex justify-between items-center">
           <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span>1. Входящие лиды (SDR отклик ≤ 15 мин)</span>
-              <span class="font-semibold text-blue-400">240 лидов (100%)</span>
+            <div class="text-[11px] text-[#8f9bb3] uppercase tracking-wider mb-1 font-heading">ОБЗОР &bull; РУКОВОДСТВО</div>
+            <h1 class="text-xl font-bold text-white font-heading">Executive One-Pager — Пульс Компании</h1>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="window.print()" class="px-3 py-1.5 bg-[#222b45] hover:bg-[#2e3a59] text-white text-xs rounded font-semibold transition flex items-center space-x-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              <span>Экспорт PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI 4 Cards Grid (ngx-admin style) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Card 1 -->
+          <div class="nb-card p-4 relative overflow-hidden">
+            <div class="text-[11px] font-semibold uppercase text-[#8f9bb3]">Выручка Факт / План</div>
+            <div class="text-2xl font-bold text-white mt-1">14.2M ₽ <span class="text-xs font-normal text-[#8f9bb3]">/ 16.0M ₽</span></div>
+            <div class="mt-2 flex items-center text-xs text-[#00d68f]">
+              <span>↑ 88.7% выполнения плана</span>
             </div>
-            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
-              <div class="bg-blue-500 h-2.5 rounded-full" style="width: 100%"></div>
+            <div class="w-full bg-[#151a30] h-1.5 rounded-full mt-3 overflow-hidden">
+              <div class="bg-gradient-to-r from-[#7352ff] to-[#00d68f] h-1.5 rounded-full" style="width: 88.7%"></div>
             </div>
           </div>
-          <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span>2. Квалифицированные лиды (КЭВ)</span>
-              <span class="font-semibold text-blue-400">115 лидов (47.9%)</span>
+
+          <!-- Card 2 -->
+          <div class="nb-card p-4 relative overflow-hidden">
+            <div class="text-[11px] font-semibold uppercase text-[#8f9bb3]">Активный Пайплайн</div>
+            <div class="text-2xl font-bold text-[#0095ff] mt-1">38.4M ₽</div>
+            <div class="mt-2 flex items-center text-xs text-[#8f9bb3]">
+              <span>114 активных сделок в воронке</span>
             </div>
-            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
-              <div class="bg-indigo-500 h-2.5 rounded-full" style="width: 47.9%"></div>
-            </div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span>3. Проведенные встречи / КП отправлено</span>
-              <span class="font-semibold text-blue-400">72 сделки (30.0%)</span>
-            </div>
-            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
-              <div class="bg-purple-500 h-2.5 rounded-full" style="width: 30%"></div>
+            <div class="w-full bg-[#151a30] h-1.5 rounded-full mt-3 overflow-hidden">
+              <div class="bg-[#0095ff] h-1.5 rounded-full" style="width: 72%"></div>
             </div>
           </div>
-          <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span>4. Успешно закрыто (Оплата получена)</span>
-              <span class="font-semibold text-emerald-400">18 сделок (7.5%)</span>
+
+          <!-- Card 3 -->
+          <div class="nb-card p-4 relative overflow-hidden">
+            <div class="text-[11px] font-semibold uppercase text-[#8f9bb3]">Упущенная Выгода (7 Грехов)</div>
+            <div class="text-2xl font-bold text-[#ff3d71] mt-1">7.04M ₽</div>
+            <div class="mt-2 flex items-center text-xs text-[#ffaa00]">
+              <span>4.57M ₽ устранимо за 60 дней</span>
             </div>
-            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
-              <div class="bg-emerald-500 h-2.5 rounded-full" style="width: 7.5%"></div>
+            <div class="w-full bg-[#151a30] h-1.5 rounded-full mt-3 overflow-hidden">
+              <div class="bg-[#ff3d71] h-1.5 rounded-full" style="width: 65%"></div>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="nb-card p-4 relative overflow-hidden">
+            <div class="text-[11px] font-semibold uppercase text-[#8f9bb3]">ИИ-Качество Звонков</div>
+            <div class="text-2xl font-bold text-[#7352ff] mt-1">74.2 / 100</div>
+            <div class="mt-2 flex items-center text-xs text-[#00d68f]">
+              <span>13 параметров Whisper + LLM</span>
+            </div>
+            <div class="w-full bg-[#151a30] h-1.5 rounded-full mt-3 overflow-hidden">
+              <div class="bg-[#7352ff] h-1.5 rounded-full" style="width: 74.2%"></div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- TAB 2: ПУЛЬТ РОПА 15 МИНУТ В ДЕНЬ -->
-    <div id="content-radar" class="hidden space-y-6">
-      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-        <div class="flex justify-between items-center mb-6">
-          <div>
-            <h3 class="text-xl font-bold flex items-center space-x-2">
-              <span class="text-rose-500">🚨</span>
-              <span>Пульт РОПа «15 минут в день» — Перехват сделок в риске</span>
-            </h3>
-            <p class="text-xs text-slate-400 mt-1">Автоматическая фильтрация сделок без следующего шага и нарушений регламентов SLA.</p>
+        <!-- Funnel Flow nb-card -->
+        <div class="nb-card">
+          <div class="nb-card-header">
+            <span>Динамика Воронки Продаж &amp; Конверсии Этапов (V17.6 SLA Engine)</span>
+            <span class="text-xs font-normal text-[#8f9bb3]">Средний цикл сделки: 14 дней</span>
           </div>
-          <button onclick="refreshRadar()" class="bg-blue-600 hover:bg-blue-500 text-xs px-4 py-2 rounded-xl font-semibold transition">
-            🔄 Обновить радар
+          <div class="nb-card-body space-y-4">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-white font-medium">1. Входящие Лиды (SLA реакции ≤ 15 мин)</span>
+                <span class="font-bold text-[#0095ff]">240 лидов (100%)</span>
+              </div>
+              <div class="w-full bg-[#151a30] h-3 rounded-full overflow-hidden">
+                <div class="bg-[#0095ff] h-3 rounded-full" style="width: 100%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-white font-medium">2. Квалификация SDR &bull; КЭВ назначен</span>
+                <span class="font-bold text-[#7352ff]">115 лидов (47.9%)</span>
+              </div>
+              <div class="w-full bg-[#151a30] h-3 rounded-full overflow-hidden">
+                <div class="bg-[#7352ff] h-3 rounded-full" style="width: 47.9%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-white font-medium">3. Встреча проведена &bull; КП отправлено</span>
+                <span class="font-bold text-[#ffaa00]">72 сделки (30.0%)</span>
+              </div>
+              <div class="w-full bg-[#151a30] h-3 rounded-full overflow-hidden">
+                <div class="bg-[#ffaa00] h-3 rounded-full" style="width: 30%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-white font-medium">4. Успешно закрыто &bull; Оплата получена</span>
+                <span class="font-bold text-[#00d68f]">18 сделок (7.5%) &bull; 14 200 000 ₽</span>
+              </div>
+              <div class="w-full bg-[#151a30] h-3 rounded-full overflow-hidden">
+                <div class="bg-[#00d68f] h-3 rounded-full" style="width: 7.5%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 2: ПУЛЬТ РОПА 15 МИНУТ ================= -->
+      <section id="view-radar" class="hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="text-[11px] text-[#8f9bb3] uppercase tracking-wider mb-1 font-heading">ОПЕРАЦИИ &bull; ПЕРЕХВАТ СДЕЛОК</div>
+            <h1 class="text-xl font-bold text-white font-heading">Пульт РОПа «15 минут в день»</h1>
+          </div>
+          <button onclick="refreshRadar()" class="px-3 py-1.5 bg-[#7352ff] hover:bg-[#593bdf] text-white text-xs rounded font-semibold transition">
+            🔄 Синхронизировать CRM
           </button>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-900/60 text-slate-400 uppercase tracking-wider border-b border-slate-700">
-              <tr>
-                <th class="py-3 px-4">Сделка / Клиент</th>
-                <th class="py-3 px-4">Бюджет</th>
-                <th class="py-3 px-4">Этап воронки</th>
-                <th class="py-3 px-4">Дней на этапе</th>
-                <th class="py-3 px-4">Фактор риска</th>
-                <th class="py-3 px-4">Действие</th>
-              </tr>
-            </thead>
-            <tbody id="radarTableBody" class="divide-y divide-slate-700/60">
-              <tr class="hover:bg-slate-700/30">
-                <td class="py-3 px-4 font-semibold text-slate-200">ООО «ПромСнаб» — Комплект V17</td>
-                <td class="py-3 px-4 font-bold text-blue-400">1 450 000 ₽</td>
-                <td class="py-3 px-4"><span class="bg-amber-900/40 text-amber-300 px-2 py-0.5 rounded border border-amber-700/50">КП отправлено</span></td>
-                <td class="py-3 px-4 text-rose-400 font-semibold">8 дней (SLA 3 дня)</td>
-                <td class="py-3 px-4"><span class="bg-rose-900/50 text-rose-300 px-2 py-0.5 rounded text-[11px]">⚠️ Нет следующего шага</span></td>
-                <td class="py-3 px-4">
-                  <button onclick="fixDeal('1')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-semibold">Назначить КЭВ</button>
-                </td>
-              </tr>
-              <tr class="hover:bg-slate-700/30">
-                <td class="py-3 px-4 font-semibold text-slate-200">ЗАО «ИнвестХолдинг» — Лицензии</td>
-                <td class="py-3 px-4 font-bold text-blue-400">890 000 ₽</td>
-                <td class="py-3 px-4"><span class="bg-indigo-900/40 text-indigo-300 px-2 py-0.5 rounded border border-indigo-700/50">Принятие решения</span></td>
-                <td class="py-3 px-4 text-rose-400 font-semibold">12 дней (SLA 5 дней)</td>
-                <td class="py-3 px-4"><span class="bg-rose-900/50 text-rose-300 px-2 py-0.5 rounded text-[11px]">⚠️ ИИ-скор звонка 42/100</span></td>
-                <td class="py-3 px-4">
-                  <button onclick="fixDeal('2')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-semibold">Эскалировать РОПу</button>
-                </td>
-              </tr>
-              <tr class="hover:bg-slate-700/30">
-                <td class="py-3 px-4 font-semibold text-slate-200">ГК «Логистик-Групп» — Внедрение</td>
-                <td class="py-3 px-4 font-bold text-blue-400">2 100 000 ₽</td>
-                <td class="py-3 px-4"><span class="bg-purple-900/40 text-purple-300 px-2 py-0.5 rounded border border-purple-700/50">Договор / Счёт</span></td>
-                <td class="py-3 px-4 text-amber-400 font-semibold">4 дня (SLA 3 дня)</td>
-                <td class="py-3 px-4"><span class="bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded text-[11px]">⏰ Задержка согласования</span></td>
-                <td class="py-3 px-4">
-                  <button onclick="fixDeal('3')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-semibold">Звонок CEO</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="nb-card">
+          <div class="nb-card-header">
+            <span class="flex items-center space-x-2">
+              <span class="text-[#ff3d71]">🚨</span>
+              <span>Радар Сделок с Риском Слива (Нарушение SLA и отсутствие следующего шага)</span>
+            </span>
+            <span class="text-xs bg-[#ff3d71]/20 text-[#ff3d71] px-2 py-0.5 rounded font-bold">Сумма в риске: 4 440 000 ₽</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-[#151a30] text-[#8f9bb3] uppercase tracking-wider border-b border-[#222b45]">
+                <tr>
+                  <th class="py-3 px-4">Сделка / Клиент</th>
+                  <th class="py-3 px-4">Бюджет</th>
+                  <th class="py-3 px-4">Этап</th>
+                  <th class="py-3 px-4">Дней на этапе</th>
+                  <th class="py-3 px-4">Фактор риска</th>
+                  <th class="py-3 px-4 text-right">Действие</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#222b45]">
+                <tr class="hover:bg-[#222b45]/30 transition">
+                  <td class="py-3.5 px-4 font-semibold text-white">ООО «ПромСнаб» — Комплект V17</td>
+                  <td class="py-3.5 px-4 font-bold text-[#0095ff]">1 450 000 ₽</td>
+                  <td class="py-3.5 px-4"><span class="bg-[#ffaa00]/10 text-[#ffaa00] px-2 py-0.5 rounded border border-[#ffaa00]/30 font-medium">КП отправлено</span></td>
+                  <td class="py-3.5 px-4 text-[#ff3d71] font-bold">8 дней (SLA 3 дня)</td>
+                  <td class="py-3.5 px-4"><span class="bg-[#ff3d71]/20 text-[#ff3d71] px-2 py-0.5 rounded font-medium">⚠️ Нет следующего шага</span></td>
+                  <td class="py-3.5 px-4 text-right">
+                    <button onclick="fixDeal('ООО «ПромСнаб»')" class="bg-[#00d68f] hover:bg-[#00b377] text-white px-3 py-1 rounded text-xs font-semibold transition">Назначить КЭВ</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-[#222b45]/30 transition">
+                  <td class="py-3.5 px-4 font-semibold text-white">ЗАО «ИнвестХолдинг» — Лицензии</td>
+                  <td class="py-3.5 px-4 font-bold text-[#0095ff]">890 000 ₽</td>
+                  <td class="py-3.5 px-4"><span class="bg-[#7352ff]/10 text-[#7352ff] px-2 py-0.5 rounded border border-[#7352ff]/30 font-medium">Принятие решения</span></td>
+                  <td class="py-3.5 px-4 text-[#ff3d71] font-bold">12 дней (SLA 5 дней)</td>
+                  <td class="py-3.5 px-4"><span class="bg-[#ff3d71]/20 text-[#ff3d71] px-2 py-0.5 rounded font-medium">⚠️ ИИ-скор звонка 42/100</span></td>
+                  <td class="py-3.5 px-4 text-right">
+                    <button onclick="fixDeal('ЗАО «ИнвестХолдинг»')" class="bg-[#00d68f] hover:bg-[#00b377] text-white px-3 py-1 rounded text-xs font-semibold transition">Эскалировать РОПу</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-[#222b45]/30 transition">
+                  <td class="py-3.5 px-4 font-semibold text-white">ГК «Логистик-Групп» — Внедрение</td>
+                  <td class="py-3.5 px-4 font-bold text-[#0095ff]">2 100 000 ₽</td>
+                  <td class="py-3.5 px-4"><span class="bg-[#00d68f]/10 text-[#00d68f] px-2 py-0.5 rounded border border-[#00d68f]/30 font-medium">Договор / Счёт</span></td>
+                  <td class="py-3.5 px-4 text-[#ffaa00] font-bold">4 дня (SLA 3 дня)</td>
+                  <td class="py-3.5 px-4"><span class="bg-[#ffaa00]/20 text-[#ffaa00] px-2 py-0.5 rounded font-medium">⏰ Задержка согласования</span></td>
+                  <td class="py-3.5 px-4 text-right">
+                    <button onclick="fixDeal('ГК «Логистик-Групп»')" class="bg-[#00d68f] hover:bg-[#00b377] text-white px-3 py-1 rounded text-xs font-semibold transition">Звонок CEO</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- TAB 3: 7 СМЕРТНЫХ ГРЕХОВ -->
-    <div id="content-sins" class="hidden space-y-6">
-      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-        <h3 class="text-xl font-bold mb-2">💸 Диагностический аудит 7 Смертных Грехов ОП</h3>
-        <p class="text-xs text-slate-400 mb-6">Калькулятор утечки выручки на основе математической модели RevOps V17.6.</p>
+      <!-- ================= VIEW 3: 7 СМЕРТНЫХ ГРЕХОВ ================= -->
+      <section id="view-sins" class="hidden space-y-6">
+        <div>
+          <div class="text-[11px] text-[#8f9bb3] uppercase tracking-wider mb-1 font-heading">ДИАГНОСТИКА &bull; МАТЕМАТИЧЕСКАЯ МОДЕЛЬ</div>
+          <h1 class="text-xl font-bold text-white font-heading">Диагностический аудит 7 Смертных Грехов ОП</h1>
+        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 block mb-1">Входящий поток лидов в мес.</label>
-            <input type="number" id="sinsLeads" value="240" oninput="runSinsAudit()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
-          </div>
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 block mb-1">Средний чек (₽)</label>
-            <input type="number" id="sinsTicket" value="180000" oninput="runSinsAudit()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
-          </div>
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 block mb-1">Текущая конверсия в оплату (%)</label>
-            <input type="number" id="sinsConv" value="7.5" step="0.1" oninput="runSinsAudit()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+        <div class="nb-card p-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="text-xs text-[#8f9bb3] block mb-1">Входящий поток лидов в мес.</label>
+              <input type="number" id="sinsLeads" value="240" oninput="runSinsAudit()" class="w-full bg-[#151a30] border border-[#222b45] rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#7352ff]">
+            </div>
+            <div>
+              <label class="text-xs text-[#8f9bb3] block mb-1">Средний чек (₽)</label>
+              <input type="number" id="sinsTicket" value="180000" oninput="runSinsAudit()" class="w-full bg-[#151a30] border border-[#222b45] rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#7352ff]">
+            </div>
+            <div>
+              <label class="text-xs text-[#8f9bb3] block mb-1">Текущая конверсия в оплату (%)</label>
+              <input type="number" id="sinsConv" value="7.5" step="0.1" oninput="runSinsAudit()" class="w-full bg-[#151a30] border border-[#222b45] rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#7352ff]">
+            </div>
           </div>
         </div>
 
         <div id="sinsResultsContainer" class="space-y-3">
           <!-- Populated by JavaScript -->
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- TAB 4: РЕЧЕВОЙ ИИ-АУДИТ ЗВОНКОВ -->
-    <div id="content-speech" class="hidden space-y-6">
-      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-        <div class="flex justify-between items-center mb-6">
+      <!-- ================= VIEW 4: РЕЧЕВОЙ ИИ-АУДИТ ================= -->
+      <section id="view-speech" class="hidden space-y-6">
+        <div class="flex justify-between items-center">
           <div>
-            <h3 class="text-xl font-bold flex items-center space-x-2">
-              <span class="text-blue-400">🎙️</span>
-              <span>Речевая ИИ-Аналитика Звонков (13 критериев Whisper + LLM)</span>
-            </h3>
-            <p class="text-xs text-slate-400 mt-1">Оценка записи разговора, проверка фиксации следующего шага и автогенерация заметки для Reverse ETL в CRM.</p>
+            <div class="text-[11px] text-[#8f9bb3] uppercase tracking-wider mb-1 font-heading">РЕЧЕВАЯ АНАЛИТИКА &bull; WHISPER + LLM</div>
+            <h1 class="text-xl font-bold text-white font-heading">ИИ-Аудит Звонков (13 критериев качества)</h1>
           </div>
-          <button onclick="runSpeechEval()" class="bg-blue-600 hover:bg-blue-500 text-xs px-4 py-2 rounded-xl font-semibold transition">
-            🚀 Проанализировать звонок
+          <button onclick="runSpeechEval()" class="px-3 py-1.5 bg-[#0095ff] hover:bg-[#0080db] text-white text-xs rounded font-semibold transition">
+            🎙️ Анализ звонка с amoCRM
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- 13 Criteria Scorecard -->
-          <div class="bg-slate-900/70 p-5 rounded-xl border border-slate-700/80">
-            <h4 class="text-sm font-semibold mb-4 text-slate-300">Оценка по 13 критериям</h4>
-            <div id="speechCriteriaList" class="space-y-3 text-xs">
-              <!-- Populated by JS -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="nb-card">
+            <div class="nb-card-header">
+              <span>Оценка по 13 критериям</span>
+              <span id="speechOverallBadge" class="text-xs bg-[#7352ff]/20 text-[#7352ff] px-2 py-0.5 rounded font-bold">Скоринг: -- / 100</span>
+            </div>
+            <div class="nb-card-body">
+              <div id="speechCriteriaList" class="space-y-2.5 text-xs">
+                <!-- Populated by JS -->
+              </div>
             </div>
           </div>
 
-          <!-- CRM Note and AI Insights -->
-          <div class="space-y-4">
-            <div class="bg-slate-900/70 p-5 rounded-xl border border-slate-700/80">
-              <h4 class="text-sm font-semibold mb-2 text-slate-300">Сгенерированное примечание CRM (Reverse ETL)</h4>
-              <textarea id="crmNoteOutput" readonly class="w-full h-44 bg-slate-800 border border-slate-700 rounded-lg p-3 text-xs font-mono text-slate-300 focus:outline-none resize-none"></textarea>
+          <div class="space-y-6">
+            <div class="nb-card">
+              <div class="nb-card-header">
+                <span>Примечание в карточку CRM (Reverse ETL)</span>
+                <span class="text-xs text-[#00d68f]">Автосинхронизация активна</span>
+              </div>
+              <div class="nb-card-body">
+                <textarea id="crmNoteOutput" readonly class="w-full h-44 bg-[#151a30] border border-[#222b45] rounded p-3 text-xs font-mono text-white focus:outline-none resize-none"></textarea>
+              </div>
             </div>
-            <div class="bg-blue-900/20 border border-blue-700/40 p-4 rounded-xl text-xs text-blue-200">
-              💡 <strong>Reverse ETL активен:</strong> Данные и теги рисков автоматически записываются в карточку сделки amoCRM / Bitrix24 через вебхук API.
+
+            <div class="nb-card p-4 border-l-4 border-l-[#7352ff]">
+              <div class="text-xs text-white font-semibold mb-1">💡 Как работает контур Reverse ETL:</div>
+              <p class="text-[11px] text-[#8f9bb3]">После завершения звонка в телефонии (Mango / UIS / Zadarma) аудиофайл обрабатывается Whisper v3, оценивается по 13 критериям LLM-пайплайном, и синтезированная заметка с тегами рисков мгновенно возвращается в сделку amoCRM или Bitrix24.</p>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- TAB 5: МОНТЕ-КАРЛО СИМУЛЯТОР -->
-    <div id="content-montecarlo" class="hidden space-y-6">
-      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-        <h3 class="text-xl font-bold mb-2">🔮 Сценарный симулятор выручки Монте-Карло 95%</h3>
-        <p class="text-xs text-slate-400 mb-6">10 000 стохастических итераций на базе NumPy для расчета коридора выручки P10 / P50 / P90.</p>
+      <!-- ================= VIEW 5: МОНТЕ-КАРЛО СИМУЛЯТОР ================= -->
+      <section id="view-montecarlo" class="hidden space-y-6">
+        <div>
+          <div class="text-[11px] text-[#8f9bb3] uppercase tracking-wider mb-1 font-heading">СЦЕНАРНЫЙ САНДБОКС &bull; 95% ДОВЕРИТЕЛЬНЫЙ ИНТЕРВАЛ</div>
+          <h1 class="text-xl font-bold text-white font-heading">Сценарный симулятор выручки Монте-Карло 95%</h1>
+        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 block mb-1">Лиды (Mean / Месяц)</label>
-            <input type="number" id="mcLeads" value="300" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
-          </div>
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 block mb-1">Конверсия в КЭВ (%)</label>
-            <input type="number" id="mcQual" value="50" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
-          </div>
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 block mb-1">Конверсия в оплату (%)</label>
-            <input type="number" id="mcClose" value="25" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
-          </div>
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 flex flex-col justify-end">
-            <button onclick="runMonteCarlo()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2.5 rounded-lg text-xs font-bold transition">
-              🎲 Запустить 10,000 итераций
-            </button>
+        <div class="nb-card p-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label class="text-xs text-[#8f9bb3] block mb-1">Лиды (Mean/мес)</label>
+              <input type="number" id="mcLeads" value="300" class="w-full bg-[#151a30] border border-[#222b45] rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#7352ff]">
+            </div>
+            <div>
+              <label class="text-xs text-[#8f9bb3] block mb-1">Конверсия в КЭВ (%)</label>
+              <input type="number" id="mcQual" value="50" class="w-full bg-[#151a30] border border-[#222b45] rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#7352ff]">
+            </div>
+            <div>
+              <label class="text-xs text-[#8f9bb3] block mb-1">Конверсия в оплату (%)</label>
+              <input type="number" id="mcClose" value="25" class="w-full bg-[#151a30] border border-[#222b45] rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#7352ff]">
+            </div>
+            <div class="flex flex-col justify-end">
+              <button onclick="runMonteCarlo()" class="w-full bg-[#7352ff] hover:bg-[#593bdf] text-white py-2 rounded text-xs font-semibold transition">
+                🎲 10,000 Итераций
+              </button>
+            </div>
           </div>
         </div>
 
-        <div id="mcResults" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 text-center">
-            <div class="text-xs text-slate-400">P10 (Консервативный сценарий)</div>
-            <div id="mcP10" class="text-xl font-bold text-amber-400 mt-1">6 800 000 ₽</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="nb-card p-4 text-center">
+            <div class="text-[11px] uppercase text-[#8f9bb3] font-semibold">P10 &bull; Консервативный</div>
+            <div id="mcP10" class="text-xl font-bold text-[#ffaa00] mt-1">-- ₽</div>
           </div>
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-blue-500/50 text-center">
-            <div class="text-xs text-blue-400">P50 (Медианный реалистичный план)</div>
-            <div id="mcP50" class="text-2xl font-bold text-blue-400 mt-1">8 250 000 ₽</div>
+          <div class="nb-card p-4 text-center border-t-2 border-t-[#0095ff]">
+            <div class="text-[11px] uppercase text-[#0095ff] font-semibold">P50 &bull; Реалистичный план</div>
+            <div id="mcP50" class="text-2xl font-bold text-white mt-1">-- ₽</div>
           </div>
-          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 text-center">
-            <div class="text-xs text-slate-400">P90 (Оптимистичный сценарий)</div>
-            <div id="mcP90" class="text-xl font-bold text-emerald-400 mt-1">9 900 000 ₽</div>
+          <div class="nb-card p-4 text-center">
+            <div class="text-[11px] uppercase text-[#8f9bb3] font-semibold">P90 &bull; Оптимистичный</div>
+            <div id="mcP90" class="text-xl font-bold text-[#00d68f] mt-1">-- ₽</div>
           </div>
         </div>
 
-        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
-          <canvas id="mcChart" height="90"></canvas>
+        <div class="nb-card">
+          <div class="nb-card-header">
+            <span>Плотность вероятности распределения выручки (NumPy Stochastic Array)</span>
+          </div>
+          <div class="nb-card-body">
+            <canvas id="mcChart" height="90"></canvas>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-  </main>
+      <!-- ================= VIEW 6: W-SHAPED АТРИБУЦИЯ ================= -->
+      <section id="view-attribution" class="hidden space-y-6">
+        <div>
+          <div class="text-[11px] text-[#8f9bb3] uppercase tracking-wider mb-1 font-heading">СКВОЗНОЙ МАРКЕТИНГ &bull; V17.6 BLOCK</div>
+          <h1 class="text-xl font-bold text-white font-heading">Мультиканальная W-Shaped Атрибуция Выручки</h1>
+        </div>
 
-  <footer class="bg-slate-800 border-t border-slate-700/80 px-6 py-4 text-xs text-slate-400 flex justify-between items-center">
-    <div>RevOps Enterprise OS V17.6 SaaS Edition • Clean Architecture & Multi-Tenancy</div>
-    <div>API Status: <span class="text-emerald-400 font-semibold">● Online (FastAPI)</span></div>
-  </footer>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="nb-card p-4">
+            <div class="text-xs text-[#8f9bb3]">Первый контакт (First Touch)</div>
+            <div class="text-xl font-bold text-[#0095ff] mt-1">40% Вес</div>
+            <div class="text-[11px] text-[#8f9bb3] mt-1">Открытие компании &bull; Первый клик / UTM</div>
+          </div>
+          <div class="nb-card p-4">
+            <div class="text-xs text-[#8f9bb3]">Квалификация (Mid Touch)</div>
+            <div class="text-xl font-bold text-[#7352ff] mt-1">20% Вес</div>
+            <div class="text-[11px] text-[#8f9bb3] mt-1">Создание лида &bull; Назначение КЭВ</div>
+          </div>
+          <div class="nb-card p-4">
+            <div class="text-xs text-[#8f9bb3]">Закрытие сделки (Close Touch)</div>
+            <div class="text-xl font-bold text-[#00d68f] mt-1">40% Вес</div>
+            <div class="text-[11px] text-[#8f9bb3] mt-1">Дожим &bull; Оплата договора</div>
+          </div>
+        </div>
+
+        <div class="nb-card">
+          <div class="nb-card-header">
+            <span>Эффективность каналов привлечения (ROMI & CAC)</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-[#151a30] text-[#8f9bb3] uppercase tracking-wider border-b border-[#222b45]">
+                <tr>
+                  <th class="py-3 px-4">Канал привлечения</th>
+                  <th class="py-3 px-4">Бюджет рекламы</th>
+                  <th class="py-3 px-4">Атрибутированная выручка</th>
+                  <th class="py-3 px-4">ROMI (%)</th>
+                  <th class="py-3 px-4">Сделок</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#222b45]">
+                <tr>
+                  <td class="py-3 px-4 font-semibold text-white">Yandex Direct (Поиск + РСЯ)</td>
+                  <td class="py-3 px-4">450 000 ₽</td>
+                  <td class="py-3 px-4 text-[#00d68f] font-bold">2 850 000 ₽</td>
+                  <td class="py-3 px-4 text-[#00d68f] font-bold">+533%</td>
+                  <td class="py-3 px-4">42</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4 font-semibold text-white">Telegram Ads (Профильные каналы)</td>
+                  <td class="py-3 px-4">280 000 ₽</td>
+                  <td class="py-3 px-4 text-[#00d68f] font-bold">1 920 000 ₽</td>
+                  <td class="py-3 px-4 text-[#00d68f] font-bold">+585%</td>
+                  <td class="py-3 px-4">28</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4 font-semibold text-white">SEO &amp; Органика</td>
+                  <td class="py-3 px-4">120 000 ₽</td>
+                  <td class="py-3 px-4 text-[#00d68f] font-bold">3 100 000 ₽</td>
+                  <td class="py-3 px-4 text-[#00d68f] font-bold">+2483%</td>
+                  <td class="py-3 px-4">35</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 7: RBAC 7 РОЛЕЙ ================= -->
+      <section id="view-rbac" class="hidden space-y-6">
+        <div>
+          <div class="text-[11px] text-[#8f9bb3] uppercase tracking-wider mb-1 font-heading">БЕЗОПАСНОСТЬ &bull; 118 QA SUITE PASS</div>
+          <h1 class="text-xl font-bold text-white font-heading">Матрица Ролей RBAC (Продакшн V17.6)</h1>
+        </div>
+
+        <div class="nb-card">
+          <div class="nb-card-header">
+            <span>Разграничение прав доступа между 7 ролями</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-[#151a30] text-[#8f9bb3] uppercase tracking-wider border-b border-[#222b45]">
+                <tr>
+                  <th class="py-3 px-4">Роль</th>
+                  <th class="py-3 px-4">One-Pager / CEO</th>
+                  <th class="py-3 px-4">Пульт РОПа</th>
+                  <th class="py-3 px-4">Сделки (Row-level)</th>
+                  <th class="py-3 px-4">ИИ-Звонки</th>
+                  <th class="py-3 px-4">Монте-Карло</th>
+                  <th class="py-3 px-4">W-Атрибуция</th>
+                  <th class="py-3 px-4">Настройки</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#222b45]">
+                <tr>
+                  <td class="py-3 px-4 font-bold text-white">👑 CEO / Собственник</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Полный</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Полный</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Все сделки</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Все звонки</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Да</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Да</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Да</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4 font-bold text-white">📋 РОП / Head of Sales</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Полный</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Все сделки</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Все звонки</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Да</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4 font-bold text-white">💼 KAM (Менеджер)</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#ffaa00]">⚠️ Только свои</td>
+                  <td class="py-3 px-4 text-[#ffaa00]">⚠️ Только свои</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4 font-bold text-white">📞 SDR (Телемаркетинг)</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#ffaa00]">⚠️ Только свои</td>
+                  <td class="py-3 px-4 text-[#ffaa00]">⚠️ Только свои</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4 font-bold text-white">🌐 CMO (Маркетинг)</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Все сделки</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Полный</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4 font-bold text-white">💳 CFO (Финансы)</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Полный</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Все сделки</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Да</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                  <td class="py-3 px-4 text-[#8f9bb3]">❌ Скрыто</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4 font-bold text-white">⚙️ RevOps Admin</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Полный</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Полный</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Все сделки</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Все звонки</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Да</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Да</td>
+                  <td class="py-3 px-4 text-[#00d68f]">✅ Полный</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 8: ИНТЕГРАЦИИ ================= -->
+      <section id="view-integrations" class="hidden space-y-6">
+        <div>
+          <div class="text-[11px] text-[#8f9bb3] uppercase tracking-wider mb-1 font-heading">ПОДКЛЮЧЕНИЯ &bull; БЕЗ N8N</div>
+          <h1 class="text-xl font-bold text-white font-heading">Центр Интеграций (Native Connectors)</h1>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="nb-card p-4">
+            <div class="flex items-center space-x-3 mb-3">
+              <div class="w-9 h-9 rounded bg-[#0095ff]/20 text-[#0095ff] flex items-center justify-center font-bold">amo</div>
+              <div>
+                <div class="text-sm font-semibold text-white">amoCRM</div>
+                <div class="text-[10px] text-[#00d68f]">Подключено &bull; Webhooks OK</div>
+              </div>
+            </div>
+            <p class="text-xs text-[#8f9bb3]">Синхронизация воронки, сделок и обратная запись ИИ-заметок (Reverse ETL).</p>
+          </div>
+
+          <div class="nb-card p-4">
+            <div class="flex items-center space-x-3 mb-3">
+              <div class="w-9 h-9 rounded bg-[#7352ff]/20 text-[#7352ff] flex items-center justify-center font-bold">BX</div>
+              <div>
+                <div class="text-sm font-semibold text-white">Битрикс24</div>
+                <div class="text-[10px] text-[#8f9bb3]">Готово к подключению</div>
+              </div>
+            </div>
+            <p class="text-xs text-[#8f9bb3]">REST API коннектор для сущностей CRM и роботов автоматизации.</p>
+          </div>
+
+          <div class="nb-card p-4">
+            <div class="flex items-center space-x-3 mb-3">
+              <div class="w-9 h-9 rounded bg-[#ffaa00]/20 text-[#ffaa00] flex items-center justify-center font-bold">PBX</div>
+              <div>
+                <div class="text-sm font-semibold text-white">Телефония (Mango / UIS)</div>
+                <div class="text-[10px] text-[#00d68f]">Активно &bull; Поток записей</div>
+              </div>
+            </div>
+            <p class="text-xs text-[#8f9bb3]">Прямой приём MP3/WAV звонков и отправка на транскрибацию Whisper v3.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
 
   <script>
-    // Tab switching logic
-    function switchTab(tabId) {
-      const tabs = ['pulse', 'radar', 'sins', 'speech', 'montecarlo'];
-      tabs.forEach(t => {
-        document.getElementById('content-' + t).classList.add('hidden');
-        document.getElementById('tab-' + t).classList.remove('tab-active', 'text-blue-500');
-        document.getElementById('tab-' + t).classList.add('text-slate-400');
-      });
-      document.getElementById('content-' + tabId).classList.remove('hidden');
-      document.getElementById('tab-' + tabId).classList.add('tab-active');
-      document.getElementById('tab-' + tabId).classList.remove('text-slate-400');
+    // Navigation routing
+    const views = ['pulse', 'radar', 'sins', 'speech', 'montecarlo', 'attribution', 'rbac', 'integrations'];
 
-      if (tabId === 'sins') runSinsAudit();
-      if (tabId === 'speech') runSpeechEval();
-      if (tabId === 'montecarlo') runMonteCarlo();
+    function navigateView(viewId) {
+      views.forEach(v => {
+        const el = document.getElementById('view-' + v);
+        const nav = document.getElementById('nav-' + v);
+        if (el) el.classList.add('hidden');
+        if (nav) nav.classList.remove('menu-active');
+      });
+
+      const targetEl = document.getElementById('view-' + viewId);
+      const targetNav = document.getElementById('nav-' + viewId);
+      if (targetEl) targetEl.classList.remove('hidden');
+      if (targetNav) targetNav.classList.add('menu-active');
+
+      if (viewId === 'sins') runSinsAudit();
+      if (viewId === 'speech') runSpeechEval();
+      if (viewId === 'montecarlo') runMonteCarlo();
     }
 
-    // 7 Sins Diagnostic
+    function toggleSidebar() {
+      const s = document.getElementById('sidebar');
+      s.classList.toggle('hidden');
+    }
+
+    function onRoleChanged() {
+      const role = document.getElementById('userRoleSelect').value;
+      alert('Роль переключена на: ' + role + '. Права интерфейса обновлены согласно RBAC матрице V17.6.');
+    }
+
+    // 7 Sins Calculation
     async function runSinsAudit() {
       const leads = parseInt(document.getElementById('sinsLeads').value) || 240;
       const ticket = parseFloat(document.getElementById('sinsTicket').value) || 180000;
@@ -366,32 +818,32 @@
     function renderSins(data) {
       const c = document.getElementById('sinsResultsContainer');
       c.innerHTML = `
-        <div class="bg-rose-950/30 border border-rose-800/50 p-4 rounded-xl flex justify-between items-center mb-4">
+        <div class="nb-card p-4 flex justify-between items-center bg-[#ff3d71]/10 border border-[#ff3d71]/40 mb-3">
           <div>
-            <div class="text-xs text-rose-300 font-medium">Совокупная упущенная выручка в месяц:</div>
-            <div class="text-2xl font-bold text-rose-400">${data.total_lost_revenue_rub.toLocaleString('ru-RU')} ₽</div>
+            <div class="text-xs text-[#ff3d71] font-semibold uppercase">Совокупная упущенная выручка в месяц:</div>
+            <div class="text-2xl font-bold text-white mt-1">${data.total_lost_revenue_rub.toLocaleString('ru-RU')} ₽</div>
           </div>
           <div class="text-right">
-            <div class="text-xs text-emerald-300 font-medium">Устранимо за 60 дней:</div>
-            <div class="text-lg font-bold text-emerald-400">+${data.recoverable_revenue_rub.toLocaleString('ru-RU')} ₽</div>
+            <div class="text-xs text-[#00d68f] font-semibold uppercase">Устранимо за 60 дней:</div>
+            <div class="text-xl font-bold text-[#00d68f] mt-1">+${data.recoverable_revenue_rub.toLocaleString('ru-RU')} ₽</div>
           </div>
         </div>
       `;
 
       data.metrics.forEach(m => {
-        const badgeColor = m.severity === 'CRITICAL' ? 'bg-rose-900/60 text-rose-300' : 'bg-amber-900/60 text-amber-300';
+        const badgeColor = m.severity === 'CRITICAL' ? 'bg-[#ff3d71]/20 text-[#ff3d71]' : 'bg-[#ffaa00]/20 text-[#ffaa00]';
         c.innerHTML += `
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 flex items-center justify-between">
+          <div class="nb-card p-3.5 flex items-center justify-between">
             <div>
-              <div class="font-semibold text-sm flex items-center space-x-2">
+              <div class="font-semibold text-xs text-white flex items-center space-x-2">
                 <span>${m.name}</span>
-                <span class="${badgeColor} text-[10px] px-2 py-0.5 rounded uppercase font-bold">${m.severity}</span>
+                <span class="${badgeColor} text-[10px] px-1.5 py-0.2 rounded font-bold uppercase">${m.severity}</span>
               </div>
-              <div class="text-xs text-slate-400 mt-0.5">${m.description} | План действий: <span class="text-slate-300">${m.action_plan}</span></div>
+              <div class="text-[11px] text-[#8f9bb3] mt-0.5">${m.description} &bull; <span class="text-white">${m.action_plan}</span></div>
             </div>
             <div class="text-right">
-              <div class="text-sm font-bold text-rose-400">-${m.lost_revenue_rub.toLocaleString('ru-RU')} ₽</div>
-              <div class="text-[11px] text-slate-500">Факт: ${m.current_value}${m.unit} (Норма: ${m.benchmark})</div>
+              <div class="text-xs font-bold text-[#ff3d71]">-${m.lost_revenue_rub.toLocaleString('ru-RU')} ₽</div>
+              <div class="text-[10px] text-[#8f9bb3]">Факт: ${m.current_value}${m.unit} (Норма: ${m.benchmark})</div>
             </div>
           </div>
         `;
@@ -430,19 +882,16 @@
         const data = await res.json();
         
         document.getElementById('crmNoteOutput').value = data.crm_note_text;
+        document.getElementById('speechOverallBadge').innerText = 'Скоринг: ' + data.overall_score + ' / 100';
+
         const list = document.getElementById('speechCriteriaList');
-        list.innerHTML = `
-          <div class="flex justify-between items-center bg-blue-900/30 p-3 rounded-lg border border-blue-700/50 mb-3">
-            <span class="font-bold text-sm">Общий ИИ-скоринг:</span>
-            <span class="text-lg font-bold text-blue-400">${data.overall_score} / 100</span>
-          </div>
-        `;
+        list.innerHTML = '';
         for (const [k, v] of Object.entries(data.detailed_scores)) {
-          const passBadge = v.passed ? '<span class="text-emerald-400">✅ 100%</span>' : '<span class="text-rose-400">⚠️ Риск</span>';
+          const passBadge = v.passed ? '<span class="text-[#00d68f] font-semibold">✅ 100%</span>' : '<span class="text-[#ff3d71] font-semibold">⚠️ Риск</span>';
           list.innerHTML += `
-            <div class="flex justify-between items-center py-1 border-b border-slate-800">
-              <span class="text-slate-300">${v.name}</span>
-              <span class="font-semibold">${v.score}/100 ${passBadge}</span>
+            <div class="flex justify-between items-center py-1 border-b border-[#222b45]">
+              <span class="text-white">${v.name}</span>
+              <span class="font-semibold text-xs">${v.score}/100 ${passBadge}</span>
             </div>
           `;
         }
@@ -484,18 +933,18 @@
           data: {
             labels: labels,
             datasets: [{
-              label: 'Плотность распределения выручки (итерации)',
+              label: 'Итерации симулятора',
               data: data.histogram_counts,
-              backgroundColor: '#3B82F6',
-              borderRadius: 4
+              backgroundColor: '#7352ff',
+              borderRadius: 3
             }]
           },
           options: {
             responsive: true,
             plugins: { legend: { display: false } },
             scales: {
-              x: { ticks: { color: '#94A3B8' }, grid: { color: '#334155' } },
-              y: { ticks: { color: '#94A3B8' }, grid: { color: '#334155' } }
+              x: { ticks: { color: '#8f9bb3' }, grid: { color: '#222b45' } },
+              y: { ticks: { color: '#8f9bb3' }, grid: { color: '#222b45' } }
             }
           }
         });
@@ -504,12 +953,12 @@
       }
     }
 
-    function fixDeal(id) {
-      alert('Сделка #' + id + ': Следующий шаг успешно назначен, риск снят в CRM.');
+    function fixDeal(name) {
+      alert('Сделка [' + name + ']: Следующий шаг назначен. Риск SLA снят в CRM.');
     }
 
     function refreshRadar() {
-      alert('Синхронизация с вебхуками amoCRM выполнена.');
+      alert('Синхронизация вебхуков amoCRM / Битрикс24 выполнена.');
     }
   </script>
 </body>
