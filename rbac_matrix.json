@@ -1,0 +1,587 @@
+{
+  "⚙️ Настройки": {
+    "category": "Системные",
+    "always_visible": true,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "👁",
+      "💼 KAM": "👁",
+      "📞 SDR": "👁",
+      "🌐 CMO": "👁",
+      "💳 CFO": "👁",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "📄 Executive_OnePager": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "👁",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "👁",
+      "🔧 Admin": "👁"
+    }
+  },
+  "⚡ Пульс_Компании": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "👁",
+      "💼 KAM": "👁",
+      "📞 SDR": "👁",
+      "🌐 CMO": "👁",
+      "💳 CFO": "👁",
+      "🔧 Admin": "👁"
+    }
+  },
+  "📋 Пульт_РОПа_15_Минут": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "✏️",
+      "💼 KAM": "👁",
+      "📞 SDR": "👁",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "👁"
+    }
+  },
+  "💸 Диагностика_Утечек_ОП": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "👁",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "👁",
+      "🔧 Admin": "👁"
+    }
+  },
+  "🎯 Action_Center": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "✏️",
+      "💼 KAM": "👁",
+      "📞 SDR": "👁",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "👁"
+    }
+  },
+  "🎙️ ИИ_Аудит": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "✏️",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "👁"
+    }
+  },
+  "⚡ Экспресс_Калькулятор_3_Цифры": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "👁",
+      "💼 KAM": "👁",
+      "📞 SDR": "👁",
+      "🌐 CMO": "👁",
+      "💳 CFO": "👁",
+      "🔧 Admin": "👁"
+    }
+  },
+  "🧪 QA_Suite": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "🌐 Мультиканальная_Атрибуция": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "✏️",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "👁"
+    }
+  },
+  "💳 Финансы_и_AI_Дожим": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "✏️",
+      "🔧 Admin": "👁"
+    }
+  },
+  "👥 Мотивация_ОП": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "✏️",
+      "💼 KAM": "👁",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "👁",
+      "🔧 Admin": "👁"
+    }
+  },
+  "🔮 Симулятор_Роста": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "✏️",
+      "📋 РОП": "👁",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "✏️",
+      "💳 CFO": "👁",
+      "🔧 Admin": "👁"
+    }
+  },
+  "🗄️ DWH_и_Безопасность": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "🌐 Сквозная_RevOps_Аналитика": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "👁",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "👁",
+      "💳 CFO": "👁",
+      "🔧 Admin": "👁"
+    }
+  },
+  "🌐 Маркетинг_и_Трафик": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "✏️",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "👁"
+    }
+  },
+  "📈 Когорты_LTV": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "👁",
+      "💳 CFO": "✏️",
+      "🔧 Admin": "👁"
+    }
+  },
+  "👥 Ресурсный_План": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "✏️",
+      "💼 KAM": "👁",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "👁"
+    }
+  },
+  "🎯 Воронка_и_SLA": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "✏️",
+      "💼 KAM": "👁",
+      "📞 SDR": "👁",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "👁"
+    }
+  },
+  "📊 Юнит_Экономика": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "👁",
+      "💳 CFO": "✏️",
+      "🔧 Admin": "👁"
+    }
+  },
+  "🚨 Радар_Алертов": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "✏️",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "👁"
+    }
+  },
+  "📋 Задачи_и_Спринты": {
+    "category": "Витрины",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "✏️",
+      "💼 KAM": "👁",
+      "📞 SDR": "👁",
+      "🌐 CMO": "👁",
+      "💳 CFO": "👁",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "📅 Deal_Event_Log": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "👁",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "📊 Stage_History": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "👁",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "⏱️ SLA_Matrix": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "✏️",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "👁"
+    }
+  },
+  "📊 Data_Quality": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "changelog": {
+    "category": "Системные",
+    "always_visible": true,
+    "permissions": {
+      "👑 CEO": "👁",
+      "📋 РОП": "👁",
+      "💼 KAM": "👁",
+      "📞 SDR": "👁",
+      "🌐 CMO": "👁",
+      "💳 CFO": "👁",
+      "🔧 Admin": "👁"
+    }
+  },
+  "🔐 RBAC_Matrix": {
+    "category": "Системные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "✏️",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "calc_engine": {
+    "category": "Calc",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "calc_sales": {
+    "category": "Calc",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "calc_marketing": {
+    "category": "Calc",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "calc_finance": {
+    "category": "Calc",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "calc_simulator": {
+    "category": "Calc",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "raw_deals": {
+    "category": "Raw",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "raw_calls": {
+    "category": "Raw",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "raw_invoices": {
+    "category": "Raw",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "raw_marketing": {
+    "category": "Raw",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "raw_touchpoints": {
+    "category": "Raw",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "raw_payments": {
+    "category": "Raw",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "raw_alerts": {
+    "category": "Raw",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "raw_audit_log": {
+    "category": "Raw",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "🛠️ Apps_Script_Console": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "🔐 Code_Archive": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "📋 Data_Contract": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  },
+  "🆔 ID_Registry": {
+    "category": "Служебные",
+    "always_visible": false,
+    "permissions": {
+      "👑 CEO": "⛔",
+      "📋 РОП": "⛔",
+      "💼 KAM": "⛔",
+      "📞 SDR": "⛔",
+      "🌐 CMO": "⛔",
+      "💳 CFO": "⛔",
+      "🔧 Admin": "✏️"
+    }
+  }
+}

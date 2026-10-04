@@ -1,0 +1,550 @@
+{
+  "B1": {
+    "label": "SYSTEM_TODAY",
+    "value": "2026-09-29T00:00:00"
+  },
+  "B2": {
+    "label": "1.0",
+    "value": 1
+  },
+  "B3": {
+    "label": "2.0",
+    "value": 1
+  },
+  "B4": {
+    "label": "3.0",
+    "value": 1
+  },
+  "B5": {
+    "label": "4.0",
+    "value": 2
+  },
+  "B6": {
+    "label": "5.0",
+    "value": 2
+  },
+  "B7": {
+    "label": "6.0",
+    "value": 2
+  },
+  "B8": {
+    "label": "7.0",
+    "value": 2
+  },
+  "B16": {
+    "label": "[МЕТРИКА] Сделок в работе (Active Pipeline Deals)",
+    "value": 7
+  },
+  "B17": {
+    "label": "[МЕТРИКА] Сумма активного пайплайна (Pipeline Amount, ₽)",
+    "value": 5530000
+  },
+  "B18": {
+    "label": "[МЕТРИКА] Взвешенный пайплайн (Weighted Pipeline, ₽)",
+    "value": 2754000
+  },
+  "B19": {
+    "label": "[МЕТРИКА] Факт закрытой выручки (Closed Won Revenue, ₽)",
+    "value": 1650000
+  },
+  "B20": {
+    "label": "[МЕТРИКА] Выполнение плана продаж (% Target)",
+    "value": 0.33
+  },
+  "B21": {
+    "label": "[МЕТРИКА] Средний чек закрытой сделки (Average Deal Size, ₽)",
+    "value": 825000
+  },
+  "B22": {
+    "label": "[МЕТРИКА] Количество выигранных сделок (Won Deals Count)",
+    "value": 2
+  },
+  "B23": {
+    "label": "[МЕТРИКА] Количество проигранных сделок (Lost Deals Count)",
+    "value": 2
+  },
+  "B24": {
+    "label": "[МЕТРИКА] Конверсия закрытия воронки (Win Rate %)",
+    "value": 0.5
+  },
+  "B25": {
+    "label": "[МЕТРИКА] Средний цикл сделки, дни (Sales Cycle Days)",
+    "value": 11
+  },
+  "B26": {
+    "label": "[МЕТРИКА] Активные сделки без зомби (Non-Zombie Pipeline)",
+    "value": 6
+  },
+  "B27": {
+    "label": "[МЕТРИКА] Скорость пайплайна в день (Pipeline Velocity / day, ₽)",
+    "value": 225000
+  },
+  "B28": {
+    "label": "[МЕТРИКА] Прогноз выручки на 30 дней (Pipeline Velocity / 30d, ₽)",
+    "value": 6750000
+  },
+  "B29": {
+    "label": "[МЕТРИКА] Месячный Run-Rate прогноз (Run-Rate Forecast, ₽)",
+    "value": 1706896.552
+  },
+  "B30": {
+    "label": "[МЕТРИКА] Факт + Взвешенный остаток (Fact + Weighted Pipeline, ₽)",
+    "value": 4404000
+  },
+  "B31": {
+    "label": "[МЕТРИКА] Соблюдение SLA этапов CRM (% SLA Compliance)",
+    "value": 0.8205128205
+  },
+  "B32": {
+    "label": "[МЕТРИКА] Средний балл качества речи (Avg Speech Score)",
+    "value": 9.5
+  },
+  "B33": {
+    "label": "[МЕТРИКА] Доля звонков без брака (% Speech Quality Rate)",
+    "value": 0.6666666667
+  },
+  "B34": {
+    "label": "[МЕТРИКА] Интегральный RevOps Health Score (0..1)",
+    "value": 0.6018717949
+  },
+  "B35": {
+    "label": "[МЕТРИКА] Утилизация емкости менеджера 101 (% Capacity)",
+    "value": 0.4
+  },
+  "B36": {
+    "label": "[МЕТРИКА] Стоимость привлечения лида CPL, ₽ (Cost Per Lead)",
+    "value": 2330.097087
+  },
+  "B37": {
+    "label": "[МЕТРИКА] Стоимость привлечения клиента CAC, ₽ (Customer Acquisition Cost)",
+    "value": 120000
+  },
+  "B38": {
+    "label": "[МЕТРИКА] Жизненный цикл клиента LTV, ₽ (Customer Lifetime Value)",
+    "value": 1060000
+  },
+  "B39": {
+    "label": "[МЕТРИКА] Отношение LTV / CAC (Unit Economics Ratio)",
+    "value": 8.833333333
+  },
+  "B40": {
+    "label": "[МЕТРИКА] Доля CAC от среднего чека (CAC / AOV)",
+    "value": 0.1454545455
+  },
+  "B41": {
+    "label": "[МЕТРИКА] Общее количество проанализированных звонков (Total Calls)",
+    "value": 6
+  },
+  "B50": {
+    "label": "📊 АНАЛИЗ ПРИЧИН ОТКАЗОВ (LOSS CODES)",
+    "value": null
+  },
+  "B51": {
+    "label": "Код",
+    "value": "Причина отказа"
+  },
+  "B52": {
+    "label": "L1",
+    "value": "Дорого / нет бюджета"
+  },
+  "B53": {
+    "label": "L2",
+    "value": "Выбрали конкурента"
+  },
+  "B54": {
+    "label": "L3",
+    "value": "Не формат / нет потребности"
+  },
+  "B55": {
+    "label": "L4",
+    "value": "Потеря контакта / недозвон"
+  },
+  "B56": {
+    "label": "None",
+    "value": "ИТОГО потенциал реактивации:"
+  },
+  "B60": {
+    "label": "📊 МАРКЕТИНГ И ТРАФИК (CONSOLIDATED CORE)",
+    "value": null
+  },
+  "B61": {
+    "label": "Метрика",
+    "value": "Значение"
+  },
+  "B62": {
+    "label": "Маркетинговый бюджет (Total Spend)",
+    "value": 240000
+  },
+  "B63": {
+    "label": "Входящих кликов (Total Clicks)",
+    "value": 3570
+  },
+  "B64": {
+    "label": "Всего показов (Total Impressions)",
+    "value": 71200
+  },
+  "B65": {
+    "label": "Всего лидов с рекламы (Ad Leads)",
+    "value": 103
+  },
+  "B66": {
+    "label": "None",
+    "value": 0
+  },
+  "B67": {
+    "label": "None",
+    "value": 3
+  },
+  "B68": {
+    "label": "None",
+    "value": 0
+  },
+  "B69": {
+    "label": "None",
+    "value": 1
+  },
+  "B85": {
+    "label": "Яндекс Директ",
+    "value": 120000
+  },
+  "B86": {
+    "label": "Контур.Фокус",
+    "value": 35000
+  },
+  "B87": {
+    "label": "Google Ads",
+    "value": 85000
+  },
+  "B91": {
+    "label": "📊 КОГОРТНЫЙ NRR И УДЕРЖАНИЕ ВЫРУЧКИ (M0–M3)",
+    "value": null
+  },
+  "B92": {
+    "label": "Когорта",
+    "value": "Клиентов"
+  },
+  "B93": {
+    "label": "Сентябрь 2026",
+    "value": 2
+  },
+  "B130": {
+    "label": "СВОДНАЯ МУЛЬТИКАНАЛЬНАЯ АТРИБУЦИЯ (FIRST-TOUCH vs LAST-TOUCH vs W-SHAPED)",
+    "value": null
+  },
+  "B131": {
+    "label": "channel",
+    "value": "spend"
+  },
+  "B132": {
+    "label": "Яндекс Директ",
+    "value": 120000
+  },
+  "B133": {
+    "label": "Контур.Фокус",
+    "value": 35000
+  },
+  "B134": {
+    "label": "Google Ads",
+    "value": 85000
+  },
+  "B135": {
+    "label": "Органика SEO",
+    "value": 0
+  },
+  "B136": {
+    "label": "Партнеры",
+    "value": 0
+  },
+  "B137": {
+    "label": "ИТОГО:",
+    "value": 240000
+  },
+  "B142": {
+    "label": "💳 ФИНАНСОВЫЙ ДВИЖОК: CASH FLOW, ДЕБИТОРСКАЯ ЗАДОЛЖЕННОСТЬ И DSO",
+    "value": null
+  },
+  "B143": {
+    "label": "invoices_total_issued",
+    "value": 6055000
+  },
+  "B144": {
+    "label": "invoices_paid_fact",
+    "value": 1650000
+  },
+  "B145": {
+    "label": "invoices_pending_ar",
+    "value": 0
+  },
+  "B146": {
+    "label": "invoices_overdue_debt",
+    "value": 330000
+  },
+  "B147": {
+    "label": "invoices_pipeline_cashin",
+    "value": 4075000
+  },
+  "B148": {
+    "label": "dso_days_outstanding",
+    "value": 6
+  },
+  "B149": {
+    "label": "cash_flow_net_balance",
+    "value": 1410000
+  },
+  "B152": {
+    "label": "🤖 АГЕНТНЫЙ RECOVERY ENGINE: МОНЕТИЗАЦИЯ ОТКАЗНИКОВ L1–L4",
+    "value": null
+  },
+  "B153": {
+    "label": "loss_total_written_off",
+    "value": 1000000
+  },
+  "B154": {
+    "label": "recovery_pipeline_potential",
+    "value": 1000000
+  },
+  "B155": {
+    "label": "ready_for_ai_push_count",
+    "value": 2
+  },
+  "B160": {
+    "label": "🛡️ ИТЕРАЦИЯ 5: МОНИТОРИНГ ЗДОРОВЬЯ КЛИЕНТОВ (ACCOUNT HEALTH SCORE & CHURN RISK)",
+    "value": null
+  },
+  "B161": {
+    "label": "client_id",
+    "value": "client_name"
+  },
+  "B162": {
+    "label": "ga_11",
+    "value": "ООО \"Альфа Трейд\""
+  },
+  "B163": {
+    "label": "ga_12",
+    "value": "АО \"Северсталь Ресурс\""
+  },
+  "B164": {
+    "label": "ga_13",
+    "value": "ИП Смирнов О.В."
+  },
+  "B165": {
+    "label": "ga_08",
+    "value": "ООО \"ПромСбыт\""
+  },
+  "B170": {
+    "label": "👥 ИТЕРАЦИЯ 6: ДВИЖОК ДИНАМИЧЕСКИХ КОМИССИЙ И ЗАРПЛАТНОГО ФОНДА (PAYROLL ENGINE)",
+    "value": null
+  },
+  "B171": {
+    "label": "manager_id",
+    "value": "manager_name"
+  },
+  "B172": {
+    "label": "101.0",
+    "value": "Иванов Дмитрий (РОП)"
+  },
+  "B173": {
+    "label": "102.0",
+    "value": "Петров Александр (КАМ)"
+  },
+  "B174": {
+    "label": "103.0",
+    "value": "Сидоров Роман (SDR)"
+  },
+  "B180": {
+    "label": "🔮 ИТЕРАЦИЯ 7: ФОРМУЛЬНОЕ ЯДРО СЦЕНАРНОГО МОДЕЛИРОВАНИЯ (WHAT-IF ENGINE)",
+    "value": null
+  },
+  "B181": {
+    "label": "sim_new_leads",
+    "value": 14
+  },
+  "B182": {
+    "label": "sim_win_rate",
+    "value": 0.53
+  },
+  "B183": {
+    "label": "sim_won_deals",
+    "value": 7
+  },
+  "B184": {
+    "label": "sim_projected_revenue",
+    "value": 5775000
+  },
+  "B185": {
+    "label": "sim_revenue_delta",
+    "value": 4125000
+  },
+  "B190": {
+    "label": "👑 МАТРИЦА АДАПТИВНЫХ ДАШБОРДОВ (ROLE & VIEW CUSTOMIZER ENGINE)",
+    "value": null
+  },
+  "B191": {
+    "label": "Preset_ID",
+    "value": "K1_Name"
+  },
+  "B192": {
+    "label": "CEO_R1",
+    "value": "Выручка (факт)"
+  },
+  "B193": {
+    "label": "CEO_R2",
+    "value": "Сквозной ROMI"
+  },
+  "B194": {
+    "label": "ROP_R1",
+    "value": "Выручка ОП (факт)"
+  },
+  "B195": {
+    "label": "ROP_R2",
+    "value": "Звонков в аудите"
+  },
+  "B196": {
+    "label": "KAM_R1",
+    "value": "Личная закрытая касса"
+  },
+  "B197": {
+    "label": "KAM_R2",
+    "value": "Сделка в фокусе (D-104)"
+  },
+  "B198": {
+    "label": "CMO_R1",
+    "value": "Маркетинговый бюджет"
+  },
+  "B199": {
+    "label": "CMO_R2",
+    "value": "Конверсия сайта в лид"
+  },
+  "B200": {
+    "label": "CFO_R1",
+    "value": "Поступило в кассу (Cash-In)"
+  },
+  "B201": {
+    "label": "CFO_R2",
+    "value": "Кумулятивный NRR"
+  },
+  "B202": {
+    "label": "FOCUS_REV_R1",
+    "value": "Выручка (факт)"
+  },
+  "B203": {
+    "label": "FOCUS_REV_R2",
+    "value": "Сквозной ROMI"
+  },
+  "B204": {
+    "label": "FOCUS_FUN_R1",
+    "value": "Активный пайплайн"
+  },
+  "B205": {
+    "label": "FOCUS_FUN_R2",
+    "value": "1. Новый лид"
+  },
+  "B206": {
+    "label": "FOCUS_SPK_R1",
+    "value": "Звонков проанализировано"
+  },
+  "B207": {
+    "label": "FOCUS_SPK_R2",
+    "value": "Срыв контакта (C-505)"
+  },
+  "B208": {
+    "label": "FOCUS_DSO_R1",
+    "value": "Поступило в кассу (Cash-In)"
+  },
+  "B209": {
+    "label": "FOCUS_DSO_R2",
+    "value": "Счет INV-201 (Альфа)"
+  },
+  "B210": {
+    "label": "FOCUS_TRF_R1",
+    "value": "Маркетинговый бюджет"
+  },
+  "B211": {
+    "label": "FOCUS_TRF_R2",
+    "value": "Яндекс Директ (Бюджет)"
+  },
+  "B212": {
+    "label": "CALC_SELECTOR",
+    "value": 1
+  },
+  "B213": {
+    "label": "CALC_SELECTOR_R1",
+    "value": "CEO_R1"
+  },
+  "B214": {
+    "label": "CALC_SELECTOR_R2",
+    "value": "CEO_R2"
+  },
+  "B215": {
+    "label": "ACTIVE_R1",
+    "value": "Выручка (факт)"
+  },
+  "B216": {
+    "label": "ACTIVE_R2",
+    "value": "Сквозной ROMI"
+  },
+  "B220": {
+    "label": "🎲 МОНТЕ-КАРЛО 3.0: ВЕРОЯТНОСТНЫЙ ПРОГНОЗ ВЫРУЧКИ (10 000 ИТЕРАЦИЙ)",
+    "value": null
+  },
+  "B221": {
+    "label": "Параметр симуляции",
+    "value": "Значение"
+  },
+  "B222": {
+    "label": "Фактическая выручка текущего периода",
+    "value": 1650000
+  },
+  "B223": {
+    "label": "Взвешенный пайплайн воронки",
+    "value": 2754000
+  },
+  "B224": {
+    "label": "Волатильность закрытия сделок (StdDev)",
+    "value": 0.18
+  },
+  "B225": {
+    "label": "Потенциал ликвидации утечек",
+    "value": 392700
+  },
+  "B226": {
+    "label": "P10 (Пессимистичный сценарий - 90% гарантия)",
+    "value": 3230796
+  },
+  "B227": {
+    "label": "P50 (Базовый наиболее вероятный исход)",
+    "value": 4187250
+  },
+  "B228": {
+    "label": "P90 (Оптимистичный сценарий с ИИ-дожимом)",
+    "value": 5013195
+  },
+  "B229": {
+    "label": "Вероятность выполнения плана (5 000 000 ₽)",
+    "value": 0.72
+  },
+  "B230": {
+    "label": "Ширина коридора риска (P90 - P10)",
+    "value": 1782399
+  },
+  "B231": {
+    "label": "Сценарий Монте-Карло",
+    "value": "Выручка к концу месяца, ₽"
+  },
+  "B232": {
+    "label": "P10 (Пессимистичный)",
+    "value": 3230796
+  },
+  "B233": {
+    "label": "P50 (Базовый медианный)",
+    "value": 4187250
+  },
+  "B234": {
+    "label": "P90 (Оптимистичный с ИИ)",
+    "value": 5013195
+  },
+  "B235": {
+    "label": "План компании",
+    "value": 5000000
+  }
+}
