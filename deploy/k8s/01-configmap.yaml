@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: revops-config
+  namespace: revops-saas
+data:
+  APP_ENV: "production"
+  PORT: "8000"
+  DB_POOL_SIZE: "25"
+  DB_MAX_OVERFLOW: "15"
+  REDIS_URL: "redis://redis-service.revops-saas.svc.cluster.local:6379/0"
+  CELERY_BROKER_URL: "redis://redis-service.revops-saas.svc.cluster.local:6379/0"
+  CELERY_RESULT_BACKEND: "redis://redis-service.revops-saas.svc.cluster.local:6379/0"
+  DATABASE_URL: "postgresql://revops_admin:revops_secure_password@postgres-primary.revops-saas.svc.cluster.local:5432/revops_saas"
+  DATABASE_READ_REPLICA_URL: "postgresql://revops_admin:revops_secure_password@postgres-read-replica.revops-saas.svc.cluster.local:5432/revops_saas"

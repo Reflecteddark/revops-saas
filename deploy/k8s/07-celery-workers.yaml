@@ -1,0 +1,97 @@
+---
+# ==============================================================================
+# CELERY WORKER: MONTE-CARLO SIMULATIONS QUEUE
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-simulation-worker
+  namespace: revops-saas
+  labels:
+    app: celery-worker
+    queue: simulation
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: celery-worker
+      queue: simulation
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+        queue: simulation
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/reflecteddark/revops-saas:latest
+          command:
+            - celery
+            - -A
+            - workers.celery_app
+            - worker
+            - -Q
+            - simulation_queue
+            - --concurrency=4
+            - --loglevel=info
+          envFrom:
+            - configMapRef:
+                name: revops-config
+            - secretRef:
+                name: revops-secrets
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+
+---
+# ==============================================================================
+# CELERY WORKER: CRM SYNCHRONIZATION QUEUE
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-crm-worker
+  namespace: revops-saas
+  labels:
+    app: celery-worker
+    queue: crm-sync
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery-worker
+      queue: crm-sync
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+        queue: crm-sync
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/reflecteddark/revops-saas:latest
+          command:
+            - celery
+            - -A
+            - workers.celery_app
+            - worker
+            - -Q
+            - crm_sync_queue
+            - --concurrency=2
+            - --loglevel=info
+          envFrom:
+            - configMapRef:
+                name: revops-config
+            - secretRef:
+                name: revops-secrets
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

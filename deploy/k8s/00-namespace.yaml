@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: revops-saas
+  labels:
+    app.kubernetes.io/name: revops-intelligence
+    app.kubernetes.io/part-of: revops-enterprise-os

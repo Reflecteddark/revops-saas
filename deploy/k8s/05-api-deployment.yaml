@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: revops-api
+  namespace: revops-saas
+  labels:
+    app: revops-api
+    component: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: revops-api
+  template:
+    metadata:
+      labels:
+        app: revops-api
+        component: backend
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/reflecteddark/revops-saas:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: revops-config
+            - secretRef:
+                name: revops-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 2

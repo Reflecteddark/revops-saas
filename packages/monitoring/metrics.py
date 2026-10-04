@@ -39,12 +39,15 @@ class TelemetryCollector:
         
         error_rate_pct = (self.error_count / self.total_requests * 100.0) if self.total_requests > 0 else 0.0
 
+        from packages.database.session import get_db_routing_info
+
         return {
             "api_latency_p95_sec": round(p95, 4),
             "total_requests": self.total_requests,
             "error_rate_pct": round(error_rate_pct, 2),
             "simulation_queue_depth": 0,  # Queried from Redis in prod
             "crm_sync_failures_last_hour": self.crm_sync_failures,
+            "database": get_db_routing_info(),
             "database_connection_pool": {
                 "active": 2,
                 "idle": 8,
