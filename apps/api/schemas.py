@@ -61,15 +61,20 @@ class ExpressCalcRequest(BaseModel):
 
 # Simulator Schemas
 class MonteCarloRequest(BaseModel):
-    leads_mean: float = Field(default=300.0, ge=1.0)
+    leads_mean: Optional[float] = None
+    leads: Optional[float] = None
     leads_std: float = Field(default=35.0, ge=0.0)
-    conv_qual_pct: float = Field(default=48.0, ge=1.0, le=99.0)
-    conv_meeting_pct: float = Field(default=62.0, ge=1.0, le=99.0)
-    conv_close_pct: float = Field(default=25.0, ge=1.0, le=99.0)
-    avg_ticket_rub: float = Field(default=220000.0, ge=100.0)
+    conv_qual_pct: Optional[float] = None
+    qual_rate: Optional[float] = None
+    conv_meeting_pct: float = Field(default=62.0, ge=1.0, le=100.0)
+    conv_close_pct: Optional[float] = None
+    close_rate: Optional[float] = None
+    avg_ticket_rub: Optional[float] = None
+    avg_ticket: Optional[float] = None
     ticket_std_rub: float = Field(default=25000.0, ge=0.0)
     target_revenue_rub: float = Field(default=4500000.0, ge=1000.0)
-    iterations: int = Field(default=10000, ge=500, le=50000)
+    iterations: int = Field(default=10000, ge=100, le=50000)
+    org_id: Optional[str] = "org_default"
 
 
 # Speech AI Schemas

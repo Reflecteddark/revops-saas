@@ -5,7 +5,7 @@ Implements Multi-Tenant data isolation, RBAC (7 roles), Pipeline, Deals, Speech 
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy import (
     Column, String, Integer, Float, Boolean, DateTime, ForeignKey, 
@@ -56,7 +56,7 @@ class Tenant(Base):
     ai_minutes_quota = Column(Integer, default=2000, nullable=False)
     ai_minutes_used = Column(Integer, default=0, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     settings = Column(JSON, default=dict)
 
     users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
@@ -77,7 +77,7 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.KAM, nullable=False)
     telegram_chat_id = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     tenant = relationship("Tenant", back_populates="users")
     deals = relationship("Deal", back_populates="assigned_user")
@@ -98,7 +98,7 @@ class Workspace(Base):
     crm_type = Column(String(50), default="amocrm")  # amocrm, bitrix24, hubspot
     crm_connected = Column(Boolean, default=False)
     settings = Column(JSON, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     tenant = relationship("Tenant", back_populates="workspaces")
     deals = relationship("Deal", back_populates="workspace")
@@ -135,8 +135,8 @@ class Deal(Base):
     # AI Quality Score
     avg_call_score = Column(Float, default=0.0)
     
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
 
     tenant = relationship("Tenant", back_populates="deals")
     workspace = relationship("Workspace", back_populates="deals")
@@ -172,7 +172,7 @@ class CallRecording(Base):
     # next_step, script_compliance, talk_ratio, toxicity, empathy, urgency, competitor_handling, closing
     scorecard_criteria = Column(JSON, default=dict)
     reverse_etl_synced = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     tenant = relationship("Tenant", back_populates="call_recordings")
     deal = relationship("Deal", back_populates="calls")
