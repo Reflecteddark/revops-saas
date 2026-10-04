@@ -108,6 +108,24 @@ def health_check():
     }
 
 
+# Serve Branded SVG Favicon
+@app.get("/favicon.ico", include_in_schema=False)
+def get_favicon():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+        '<defs>'
+        '<linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">'
+        '<stop offset="0%" stop-color="#7352ff"/>'
+        '<stop offset="100%" stop-color="#00d4ff"/>'
+        '</linearGradient>'
+        '</defs>'
+        '<rect width="32" height="32" rx="8" fill="url(#g)"/>'
+        '<text x="50%" y="54%" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="800" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">R</text>'
+        '</svg>'
+    )
+    return Response(content=svg, media_type="image/svg+xml")
+
+
 # Mount Web Dashboard
 INDEX_HTML = BASE_DIR / "apps" / "web" / "index.html"
 if INDEX_HTML.exists():
