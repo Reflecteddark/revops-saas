@@ -934,6 +934,73 @@
     let currentP10 = 0;
     let currentP50 = 0;
     let currentP90 = 0;
+    const activeAnimations = new Map();
+
+    /**
+     * TOP-LEVEL CHART.JS PLUGIN: Percentile Markers & Pill Badges
+     * Reads dataset values dynamically from chart.options.plugins.percentileMarkers.data
+     */
+    const percentileMarkersPlugin = {
+      id: 'percentileMarkers',
+      afterDatasetsDraw(chart) {
+        const pluginData = chart.options?.plugins?.percentileMarkers?.data;
+        if (!pluginData || !pluginData.histogram_bins?.length) return;
+
+        const { ctx, chartArea: { top, bottom, left, right } } = chart;
+        const binEdges = pluginData.histogram_bins;
+
+        const markers = [
+          { val: pluginData.p10_conservative_revenue, label: 'P10', color: '#f43f5e' },
+          { val: pluginData.median_revenue_p50, label: 'P50 (Median)', color: '#00d4ff' },
+          { val: pluginData.p90_optimistic_revenue, label: 'P90', color: '#10b981' }
+        ];
+
+        markers.forEach(m => {
+          const minX = binEdges[0];
+          const maxX = binEdges[binEdges.length - 1];
+          const norm = (m.val - minX) / (maxX - minX);
+          const xPixel = left + norm * (right - left);
+
+          if (xPixel >= left && xPixel <= right) {
+            ctx.save();
+            ctx.strokeStyle = m.color;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(xPixel, top + 18);
+            ctx.lineTo(xPixel, bottom);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+            ctx.font = '600 10px Inter, sans-serif';
+            const textWidth = ctx.measureText(m.label).width;
+            const pillW = textWidth + 12;
+            const pillH = 18;
+            const pillX = xPixel - pillW / 2;
+            const pillY = top;
+
+            ctx.fillStyle = 'rgba(10, 12, 16, 0.9)';
+            ctx.beginPath();
+            ctx.roundRect(pillX, pillY, pillW, pillH, 9);
+            ctx.fill();
+
+            ctx.strokeStyle = m.color;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(pillX, pillY, pillW, pillH, 9);
+            ctx.stroke();
+
+            ctx.fillStyle = m.color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(m.label, xPixel, pillY + pillH / 2);
+
+            ctx.restore();
+          }
+        });
+      }
+    };
+    Chart.register(percentileMarkersPlugin);
 
     /**
      * SMART CURRENCY FORMATTER (Magnitude Auto-detection)
@@ -962,6 +1029,11 @@
       const el = document.getElementById(elementId);
       if (!el) return;
 
+      if (activeAnimations.has(elementId)) {
+        cancelAnimationFrame(activeAnimations.get(elementId));
+        activeAnimations.delete(elementId);
+      }
+
       const startTime = performance.now();
       
       function updateNumber(now) {
@@ -975,13 +1047,16 @@
         el.textContent = formatCurrency(current);
         
         if (progress < 1) {
-          requestAnimationFrame(updateNumber);
+          const handle = requestAnimationFrame(updateNumber);
+          activeAnimations.set(elementId, handle);
         } else {
           el.textContent = formatCurrency(endVal);
+          activeAnimations.delete(elementId);
         }
       }
 
-      requestAnimationFrame(updateNumber);
+      const initialHandle = requestAnimationFrame(updateNumber);
+      activeAnimations.set(elementId, initialHandle);
     }
 
     /**
@@ -1051,8 +1126,9 @@
       if (btn) btn.classList.add('loading');
 
       try {
+        const nextStepDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
         // Call FastAPI if available, otherwise simulate network delay
-        const response = await fetch(`/api/v1/radar/deals/${dealId}/fix-next-step?next_step_date_iso=2026-10-06`, {
+        const response = await fetch(`/api/v1/radar/deals/${dealId}/fix-next-step?next_step_date_iso=${nextStepDate}`, {
           method: 'POST'
         }).catch(() => null);
 
@@ -1195,7 +1271,7 @@
 
       for (let i = 0; i < iterations; i++) {
         // Box-Muller transform for normal distribution
-        const u1 = Math.random(), u2 = Math.random();
+        const u1 = Math.max(Math.random(), 1e-10), u2 = Math.random();
         const randStd = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
         
         const simLeads = Math.max(10, leads + randStd * (leads * 0.12));
@@ -1264,14 +1340,7 @@
         return formatCurrency(midPoint, false);
       });
 
-      // Bar Vertical Gradient Fill
-      const chartHeight = canvas.parentElement.clientHeight || 280;
-      const gradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-      gradient.addColorStop(0, 'rgba(115, 82, 255, 0.95)');
-      gradient.addColorStop(0.65, 'rgba(115, 82, 255, 0.45)');
-      gradient.addColorStop(1, 'rgba(115, 82, 255, 0.08)');
-
-      // Highlight bar gradient for median bin
+      // Highlight bar index for median bin
       const medianVal = data.median_revenue_p50;
       let medianBinIndex = 0;
       for (let i = 0; i < binEdges.length - 1; i++) {
@@ -1281,80 +1350,27 @@
         }
       }
 
-      const backgroundColors = data.histogram_counts.map((_, idx) => {
-        return idx === medianBinIndex ? 'rgba(0, 212, 255, 0.9)' : gradient;
-      });
-
-      // Custom Plugin: Draws Vertical Dashed Markers for P10, P50, P90 with Pill Badges
-      const percentileMarkersPlugin = {
-        id: 'percentileMarkers',
-        afterDatasetsDraw(chart) {
-          const { ctx, chartArea: { top, bottom, left, right }, scales: { x } } = chart;
-          
-          const markers = [
-            { val: data.p10_conservative_revenue, label: 'P10', color: '#f43f5e' },
-            { val: data.median_revenue_p50, label: 'P50 (Median)', color: '#00d4ff' },
-            { val: data.p90_optimistic_revenue, label: 'P90', color: '#10b981' }
-          ];
-
-          markers.forEach(m => {
-            // Find interpolated pixel coordinate on x-axis
-            const minX = binEdges[0];
-            const maxX = binEdges[binEdges.length - 1];
-            const norm = (m.val - minX) / (maxX - minX);
-            const xPixel = left + norm * (right - left);
-
-            if (xPixel >= left && xPixel <= right) {
-              ctx.save();
-              // Dashed line
-              ctx.strokeStyle = m.color;
-              ctx.lineWidth = 1.5;
-              ctx.setLineDash([4, 4]);
-              ctx.beginPath();
-              ctx.moveTo(xPixel, top + 18);
-              ctx.lineTo(xPixel, bottom);
-              ctx.stroke();
-
-              // Pill Badge at the top
-              ctx.setLineDash([]);
-              ctx.font = '600 10px Inter, sans-serif';
-              const textWidth = ctx.measureText(m.label).width;
-              const pillW = textWidth + 12;
-              const pillH = 18;
-              const pillX = xPixel - pillW / 2;
-              const pillY = top;
-
-              // Rounded pill background
-              ctx.fillStyle = 'rgba(10, 12, 16, 0.9)';
-              ctx.beginPath();
-              ctx.roundRect(pillX, pillY, pillW, pillH, 9);
-              ctx.fill();
-
-              ctx.strokeStyle = m.color;
-              ctx.lineWidth = 1;
-              ctx.beginPath();
-              ctx.roundRect(pillX, pillY, pillW, pillH, 9);
-              ctx.stroke();
-
-              // Text
-              ctx.fillStyle = m.color;
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              ctx.fillText(m.label, xPixel, pillY + pillH / 2);
-
-              ctx.restore();
-            }
-          });
-        }
-      };
-
       mcChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: labels,
           datasets: [{
             data: data.histogram_counts,
-            backgroundColor: backgroundColors,
+            backgroundColor: (context) => {
+              const chart = context.chart;
+              const { ctx, chartArea } = chart;
+              if (!chartArea) return 'rgba(115, 82, 255, 0.6)';
+
+              if (context.dataIndex === medianBinIndex) {
+                return 'rgba(0, 212, 255, 0.9)';
+              }
+
+              const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+              gradient.addColorStop(0, 'rgba(115, 82, 255, 0.95)');
+              gradient.addColorStop(0.65, 'rgba(115, 82, 255, 0.45)');
+              gradient.addColorStop(1, 'rgba(115, 82, 255, 0.08)');
+              return gradient;
+            },
             hoverBackgroundColor: '#ffffff',
             borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
             borderSkipped: false,
@@ -1387,10 +1403,14 @@
                 title: (items) => `Коридор: ${items[0].label}`,
                 label: (item) => {
                   const count = item.raw;
-                  const pct = ((count / data.iterations_run) * 100).toFixed(1);
+                  const totalIterations = data.iterations_run || 5000;
+                  const pct = ((count / totalIterations) * 100).toFixed(1);
                   return `Итераций: ${count} (${pct}% всех исходов)`;
                 }
               }
+            },
+            percentileMarkers: {
+              data: data
             }
           },
           scales: {
@@ -1418,19 +1438,28 @@
               border: { display: false }
             }
           }
-        },
-        plugins: [percentileMarkersPlugin]
+        }
       });
     }
 
     /**
-     * RADIAL CURSOR GLOW INTERACTION
+     * RADIAL CURSOR GLOW INTERACTION (Throttled with requestAnimationFrame)
      */
+    let cursorRafPending = false;
+    let lastCursorEvent = null;
+
     document.addEventListener('mousemove', (e) => {
-      const glow = document.getElementById('cursorGlow');
-      if (glow) {
-        glow.style.left = e.clientX + 'px';
-        glow.style.top = e.clientY + 'px';
+      lastCursorEvent = e;
+      if (!cursorRafPending) {
+        cursorRafPending = true;
+        requestAnimationFrame(() => {
+          const glow = document.getElementById('cursorGlow');
+          if (glow && lastCursorEvent) {
+            glow.style.left = lastCursorEvent.clientX + 'px';
+            glow.style.top = lastCursorEvent.clientY + 'px';
+          }
+          cursorRafPending = false;
+        });
       }
     });
 
