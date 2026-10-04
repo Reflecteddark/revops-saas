@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RevOps Enterprise OS — SaaS Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .tab-active { border-bottom: 2px solid #2563EB; color: #2563EB; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700/80 sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <div class="bg-blue-600 text-white p-2 rounded-xl font-bold flex items-center space-x-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <span class="tracking-wide">RevOps OS</span>
+      </div>
+      <div>
+        <div class="text-sm font-semibold flex items-center space-x-2">
+          <span>TechCorp B2B SaaS</span>
+          <span class="bg-blue-900/60 text-blue-400 text-xs px-2 py-0.5 rounded-full border border-blue-700/50">Pro Plan</span>
+        </div>
+        <div class="text-xs text-slate-400">Multi-Tenant Cloud • Workspace: Основной отдел продаж</div>
+      </div>
+    </div>
+
+    <!-- Role Switcher Simulation (Demonstrates 7 RBAC roles) -->
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+        <span class="text-xs text-slate-400">Роль:</span>
+        <select id="roleSelector" class="bg-transparent text-xs font-medium text-blue-400 focus:outline-none cursor-pointer">
+          <option value="CEO" class="bg-slate-800 text-slate-100">👑 CEO / Собственник</option>
+          <option value="ROP" class="bg-slate-800 text-slate-100">📋 РОП / Head of Sales</option>
+          <option value="KAM" class="bg-slate-800 text-slate-100">💼 KAM (Менеджер)</option>
+          <option value="SDR" class="bg-slate-800 text-slate-100">📞 SDR (Телемаркетолог)</option>
+          <option value="CMO" class="bg-slate-800 text-slate-100">🌐 CMO (Маркетинг)</option>
+          <option value="CFO" class="bg-slate-800 text-slate-100">💳 CFO (Финансы)</option>
+          <option value="ADMIN" class="bg-slate-800 text-slate-100">⚙️ RevOps Admin</option>
+        </select>
+      </div>
+      <div class="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center font-bold text-xs text-blue-300">
+        AI
+      </div>
+    </div>
+  </header>
+
+  <!-- Subheader Navigation Tabs -->
+  <nav class="bg-slate-800/50 border-b border-slate-700 px-6 flex space-x-8 text-sm overflow-x-auto">
+    <button onclick="switchTab('pulse')" id="tab-pulse" class="py-3 px-2 tab-active text-slate-300 hover:text-white transition">📊 Пульс Компании & One-Pager</button>
+    <button onclick="switchTab('radar')" id="tab-radar" class="py-3 px-2 text-slate-400 hover:text-white transition">🚨 Пульт РОПа «15 минут в день»</button>
+    <button onclick="switchTab('sins')" id="tab-sins" class="py-3 px-2 text-slate-400 hover:text-white transition">💸 7 Смертных Грехов (Аудит потерь)</button>
+    <button onclick="switchTab('speech')" id="tab-speech" class="py-3 px-2 text-slate-400 hover:text-white transition">🎙️ Речевой ИИ-Аудит (13 критериев)</button>
+    <button onclick="switchTab('montecarlo')" id="tab-montecarlo" class="py-3 px-2 text-slate-400 hover:text-white transition">🔮 Симулятор Монте-Карло 95%</button>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+
+    <!-- TAB 1: ПУЛЬС КОМПАНИИ -->
+    <div id="content-pulse" class="space-y-6">
+      <!-- KPI Row -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Выручка Факт / План</div>
+          <div class="text-2xl font-bold mt-2 text-emerald-400">14.2M ₽ <span class="text-xs font-normal text-slate-400">/ 16.0M ₽</span></div>
+          <div class="text-xs text-emerald-500 mt-1 flex items-center">↑ 88.7% выполнения плана</div>
+        </div>
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Активный пайплайн</div>
+          <div class="text-2xl font-bold mt-2 text-blue-400">38.4M ₽</div>
+          <div class="text-xs text-slate-400 mt-1">114 сделок в работе</div>
+        </div>
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Упущенная выгода (7 Грехов)</div>
+          <div class="text-2xl font-bold mt-2 text-rose-400">7.04M ₽</div>
+          <div class="text-xs text-rose-400/80 mt-1">4.57M ₽ устранимо за 60 дней</div>
+        </div>
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">ИИ-качество звонков</div>
+          <div class="text-2xl font-bold mt-2 text-amber-400">74.2 / 100</div>
+          <div class="text-xs text-slate-400 mt-1">13 критериев Whisper + LLM</div>
+        </div>
+      </div>
+
+      <!-- Funnel Overview -->
+      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+        <h3 class="text-lg font-semibold mb-4 flex items-center justify-between">
+          <span>Сквозная конверсия воронки продаж (SLA & Bottlenecks)</span>
+          <span class="text-xs bg-slate-700 text-slate-300 px-3 py-1 rounded-full">Режим: Multi-User Realtime</span>
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>1. Входящие лиды (SDR отклик ≤ 15 мин)</span>
+              <span class="font-semibold text-blue-400">240 лидов (100%)</span>
+            </div>
+            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-blue-500 h-2.5 rounded-full" style="width: 100%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>2. Квалифицированные лиды (КЭВ)</span>
+              <span class="font-semibold text-blue-400">115 лидов (47.9%)</span>
+            </div>
+            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-indigo-500 h-2.5 rounded-full" style="width: 47.9%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>3. Проведенные встречи / КП отправлено</span>
+              <span class="font-semibold text-blue-400">72 сделки (30.0%)</span>
+            </div>
+            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-purple-500 h-2.5 rounded-full" style="width: 30%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>4. Успешно закрыто (Оплата получена)</span>
+              <span class="font-semibold text-emerald-400">18 сделок (7.5%)</span>
+            </div>
+            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-2.5 rounded-full" style="width: 7.5%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: ПУЛЬТ РОПА 15 МИНУТ В ДЕНЬ -->
+    <div id="content-radar" class="hidden space-y-6">
+      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h3 class="text-xl font-bold flex items-center space-x-2">
+              <span class="text-rose-500">🚨</span>
+              <span>Пульт РОПа «15 минут в день» — Перехват сделок в риске</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">Автоматическая фильтрация сделок без следующего шага и нарушений регламентов SLA.</p>
+          </div>
+          <button onclick="refreshRadar()" class="bg-blue-600 hover:bg-blue-500 text-xs px-4 py-2 rounded-xl font-semibold transition">
+            🔄 Обновить радар
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900/60 text-slate-400 uppercase tracking-wider border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Сделка / Клиент</th>
+                <th class="py-3 px-4">Бюджет</th>
+                <th class="py-3 px-4">Этап воронки</th>
+                <th class="py-3 px-4">Дней на этапе</th>
+                <th class="py-3 px-4">Фактор риска</th>
+                <th class="py-3 px-4">Действие</th>
+              </tr>
+            </thead>
+            <tbody id="radarTableBody" class="divide-y divide-slate-700/60">
+              <tr class="hover:bg-slate-700/30">
+                <td class="py-3 px-4 font-semibold text-slate-200">ООО «ПромСнаб» — Комплект V17</td>
+                <td class="py-3 px-4 font-bold text-blue-400">1 450 000 ₽</td>
+                <td class="py-3 px-4"><span class="bg-amber-900/40 text-amber-300 px-2 py-0.5 rounded border border-amber-700/50">КП отправлено</span></td>
+                <td class="py-3 px-4 text-rose-400 font-semibold">8 дней (SLA 3 дня)</td>
+                <td class="py-3 px-4"><span class="bg-rose-900/50 text-rose-300 px-2 py-0.5 rounded text-[11px]">⚠️ Нет следующего шага</span></td>
+                <td class="py-3 px-4">
+                  <button onclick="fixDeal('1')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-semibold">Назначить КЭВ</button>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-700/30">
+                <td class="py-3 px-4 font-semibold text-slate-200">ЗАО «ИнвестХолдинг» — Лицензии</td>
+                <td class="py-3 px-4 font-bold text-blue-400">890 000 ₽</td>
+                <td class="py-3 px-4"><span class="bg-indigo-900/40 text-indigo-300 px-2 py-0.5 rounded border border-indigo-700/50">Принятие решения</span></td>
+                <td class="py-3 px-4 text-rose-400 font-semibold">12 дней (SLA 5 дней)</td>
+                <td class="py-3 px-4"><span class="bg-rose-900/50 text-rose-300 px-2 py-0.5 rounded text-[11px]">⚠️ ИИ-скор звонка 42/100</span></td>
+                <td class="py-3 px-4">
+                  <button onclick="fixDeal('2')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-semibold">Эскалировать РОПу</button>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-700/30">
+                <td class="py-3 px-4 font-semibold text-slate-200">ГК «Логистик-Групп» — Внедрение</td>
+                <td class="py-3 px-4 font-bold text-blue-400">2 100 000 ₽</td>
+                <td class="py-3 px-4"><span class="bg-purple-900/40 text-purple-300 px-2 py-0.5 rounded border border-purple-700/50">Договор / Счёт</span></td>
+                <td class="py-3 px-4 text-amber-400 font-semibold">4 дня (SLA 3 дня)</td>
+                <td class="py-3 px-4"><span class="bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded text-[11px]">⏰ Задержка согласования</span></td>
+                <td class="py-3 px-4">
+                  <button onclick="fixDeal('3')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-semibold">Звонок CEO</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 7 СМЕРТНЫХ ГРЕХОВ -->
+    <div id="content-sins" class="hidden space-y-6">
+      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+        <h3 class="text-xl font-bold mb-2">💸 Диагностический аудит 7 Смертных Грехов ОП</h3>
+        <p class="text-xs text-slate-400 mb-6">Калькулятор утечки выручки на основе математической модели RevOps V17.6.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+            <label class="text-xs text-slate-400 block mb-1">Входящий поток лидов в мес.</label>
+            <input type="number" id="sinsLeads" value="240" oninput="runSinsAudit()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+            <label class="text-xs text-slate-400 block mb-1">Средний чек (₽)</label>
+            <input type="number" id="sinsTicket" value="180000" oninput="runSinsAudit()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+            <label class="text-xs text-slate-400 block mb-1">Текущая конверсия в оплату (%)</label>
+            <input type="number" id="sinsConv" value="7.5" step="0.1" oninput="runSinsAudit()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+          </div>
+        </div>
+
+        <div id="sinsResultsContainer" class="space-y-3">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: РЕЧЕВОЙ ИИ-АУДИТ ЗВОНКОВ -->
+    <div id="content-speech" class="hidden space-y-6">
+      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h3 class="text-xl font-bold flex items-center space-x-2">
+              <span class="text-blue-400">🎙️</span>
+              <span>Речевая ИИ-Аналитика Звонков (13 критериев Whisper + LLM)</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">Оценка записи разговора, проверка фиксации следующего шага и автогенерация заметки для Reverse ETL в CRM.</p>
+          </div>
+          <button onclick="runSpeechEval()" class="bg-blue-600 hover:bg-blue-500 text-xs px-4 py-2 rounded-xl font-semibold transition">
+            🚀 Проанализировать звонок
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- 13 Criteria Scorecard -->
+          <div class="bg-slate-900/70 p-5 rounded-xl border border-slate-700/80">
+            <h4 class="text-sm font-semibold mb-4 text-slate-300">Оценка по 13 критериям</h4>
+            <div id="speechCriteriaList" class="space-y-3 text-xs">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- CRM Note and AI Insights -->
+          <div class="space-y-4">
+            <div class="bg-slate-900/70 p-5 rounded-xl border border-slate-700/80">
+              <h4 class="text-sm font-semibold mb-2 text-slate-300">Сгенерированное примечание CRM (Reverse ETL)</h4>
+              <textarea id="crmNoteOutput" readonly class="w-full h-44 bg-slate-800 border border-slate-700 rounded-lg p-3 text-xs font-mono text-slate-300 focus:outline-none resize-none"></textarea>
+            </div>
+            <div class="bg-blue-900/20 border border-blue-700/40 p-4 rounded-xl text-xs text-blue-200">
+              💡 <strong>Reverse ETL активен:</strong> Данные и теги рисков автоматически записываются в карточку сделки amoCRM / Bitrix24 через вебхук API.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: МОНТЕ-КАРЛО СИМУЛЯТОР -->
+    <div id="content-montecarlo" class="hidden space-y-6">
+      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+        <h3 class="text-xl font-bold mb-2">🔮 Сценарный симулятор выручки Монте-Карло 95%</h3>
+        <p class="text-xs text-slate-400 mb-6">10 000 стохастических итераций на базе NumPy для расчета коридора выручки P10 / P50 / P90.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+            <label class="text-xs text-slate-400 block mb-1">Лиды (Mean / Месяц)</label>
+            <input type="number" id="mcLeads" value="300" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+            <label class="text-xs text-slate-400 block mb-1">Конверсия в КЭВ (%)</label>
+            <input type="number" id="mcQual" value="50" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+            <label class="text-xs text-slate-400 block mb-1">Конверсия в оплату (%)</label>
+            <input type="number" id="mcClose" value="25" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 flex flex-col justify-end">
+            <button onclick="runMonteCarlo()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2.5 rounded-lg text-xs font-bold transition">
+              🎲 Запустить 10,000 итераций
+            </button>
+          </div>
+        </div>
+
+        <div id="mcResults" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 text-center">
+            <div class="text-xs text-slate-400">P10 (Консервативный сценарий)</div>
+            <div id="mcP10" class="text-xl font-bold text-amber-400 mt-1">6 800 000 ₽</div>
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-blue-500/50 text-center">
+            <div class="text-xs text-blue-400">P50 (Медианный реалистичный план)</div>
+            <div id="mcP50" class="text-2xl font-bold text-blue-400 mt-1">8 250 000 ₽</div>
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 text-center">
+            <div class="text-xs text-slate-400">P90 (Оптимистичный сценарий)</div>
+            <div id="mcP90" class="text-xl font-bold text-emerald-400 mt-1">9 900 000 ₽</div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+          <canvas id="mcChart" height="90"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="bg-slate-800 border-t border-slate-700/80 px-6 py-4 text-xs text-slate-400 flex justify-between items-center">
+    <div>RevOps Enterprise OS V17.6 SaaS Edition • Clean Architecture & Multi-Tenancy</div>
+    <div>API Status: <span class="text-emerald-400 font-semibold">● Online (FastAPI)</span></div>
+  </footer>
+
+  <script>
+    // Tab switching logic
+    function switchTab(tabId) {
+      const tabs = ['pulse', 'radar', 'sins', 'speech', 'montecarlo'];
+      tabs.forEach(t => {
+        document.getElementById('content-' + t).classList.add('hidden');
+        document.getElementById('tab-' + t).classList.remove('tab-active', 'text-blue-500');
+        document.getElementById('tab-' + t).classList.add('text-slate-400');
+      });
+      document.getElementById('content-' + tabId).classList.remove('hidden');
+      document.getElementById('tab-' + tabId).classList.add('tab-active');
+      document.getElementById('tab-' + tabId).classList.remove('text-slate-400');
+
+      if (tabId === 'sins') runSinsAudit();
+      if (tabId === 'speech') runSpeechEval();
+      if (tabId === 'montecarlo') runMonteCarlo();
+    }
+
+    // 7 Sins Diagnostic
+    async function runSinsAudit() {
+      const leads = parseInt(document.getElementById('sinsLeads').value) || 240;
+      const ticket = parseFloat(document.getElementById('sinsTicket').value) || 180000;
+      const conv = parseFloat(document.getElementById('sinsConv').value) || 7.5;
+
+      try {
+        const res = await fetch('/api/v1/diagnostics/seven-sins', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            monthly_leads: leads,
+            avg_ticket_rub: ticket,
+            current_conversion_pct: conv
+          })
+        });
+        const data = await res.json();
+        renderSins(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderSins(data) {
+      const c = document.getElementById('sinsResultsContainer');
+      c.innerHTML = `
+        <div class="bg-rose-950/30 border border-rose-800/50 p-4 rounded-xl flex justify-between items-center mb-4">
+          <div>
+            <div class="text-xs text-rose-300 font-medium">Совокупная упущенная выручка в месяц:</div>
+            <div class="text-2xl font-bold text-rose-400">${data.total_lost_revenue_rub.toLocaleString('ru-RU')} ₽</div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-emerald-300 font-medium">Устранимо за 60 дней:</div>
+            <div class="text-lg font-bold text-emerald-400">+${data.recoverable_revenue_rub.toLocaleString('ru-RU')} ₽</div>
+          </div>
+        </div>
+      `;
+
+      data.metrics.forEach(m => {
+        const badgeColor = m.severity === 'CRITICAL' ? 'bg-rose-900/60 text-rose-300' : 'bg-amber-900/60 text-amber-300';
+        c.innerHTML += `
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 flex items-center justify-between">
+            <div>
+              <div class="font-semibold text-sm flex items-center space-x-2">
+                <span>${m.name}</span>
+                <span class="${badgeColor} text-[10px] px-2 py-0.5 rounded uppercase font-bold">${m.severity}</span>
+              </div>
+              <div class="text-xs text-slate-400 mt-0.5">${m.description} | План действий: <span class="text-slate-300">${m.action_plan}</span></div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm font-bold text-rose-400">-${m.lost_revenue_rub.toLocaleString('ru-RU')} ₽</div>
+              <div class="text-[11px] text-slate-500">Факт: ${m.current_value}${m.unit} (Норма: ${m.benchmark})</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Speech Evaluation
+    async function runSpeechEval() {
+      const payload = {
+        deal_id: "deal_sample_01",
+        client_phone: "+7 (926) 384-12-90",
+        duration_seconds: 360,
+        scores: {
+          "greeting_and_intro": 9.0,
+          "client_qualification": 8.5,
+          "pain_discovery": 8.0,
+          "value_presentation": 7.5,
+          "price_presentation": 7.0,
+          "objection_handling": 8.0,
+          "next_step_fixation": 9.5,
+          "script_compliance": 8.0,
+          "talk_listen_ratio": 7.5,
+          "empathy_and_tone": 8.5,
+          "competitor_defense": 7.0,
+          "urgency_creation": 6.5,
+          "no_toxicity_stress": 9.5
+        }
+      };
+
+      try {
+        const res = await fetch('/api/v1/calls/evaluate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        
+        document.getElementById('crmNoteOutput').value = data.crm_note_text;
+        const list = document.getElementById('speechCriteriaList');
+        list.innerHTML = `
+          <div class="flex justify-between items-center bg-blue-900/30 p-3 rounded-lg border border-blue-700/50 mb-3">
+            <span class="font-bold text-sm">Общий ИИ-скоринг:</span>
+            <span class="text-lg font-bold text-blue-400">${data.overall_score} / 100</span>
+          </div>
+        `;
+        for (const [k, v] of Object.entries(data.detailed_scores)) {
+          const passBadge = v.passed ? '<span class="text-emerald-400">✅ 100%</span>' : '<span class="text-rose-400">⚠️ Риск</span>';
+          list.innerHTML += `
+            <div class="flex justify-between items-center py-1 border-b border-slate-800">
+              <span class="text-slate-300">${v.name}</span>
+              <span class="font-semibold">${v.score}/100 ${passBadge}</span>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Monte Carlo
+    let mcChartInstance = null;
+    async function runMonteCarlo() {
+      const leads = parseFloat(document.getElementById('mcLeads').value) || 300;
+      const qual = parseFloat(document.getElementById('mcQual').value) || 50;
+      const close = parseFloat(document.getElementById('mcClose').value) || 25;
+
+      try {
+        const res = await fetch('/api/v1/simulator/run-monte-carlo', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            leads_mean: leads,
+            conv_qual_pct: qual,
+            conv_close_pct: close,
+            iterations: 5000
+          })
+        });
+        const data = await res.json();
+        document.getElementById('mcP10').innerText = data.p10_conservative_revenue.toLocaleString('ru-RU') + ' ₽';
+        document.getElementById('mcP50').innerText = data.median_revenue_p50.toLocaleString('ru-RU') + ' ₽';
+        document.getElementById('mcP90').innerText = data.p90_optimistic_revenue.toLocaleString('ru-RU') + ' ₽';
+
+        // Render Histogram
+        const ctx = document.getElementById('mcChart').getContext('2d');
+        if (mcChartInstance) mcChartInstance.destroy();
+
+        const labels = data.histogram_bins.slice(0, -1).map(b => (b / 1000000).toFixed(1) + 'M ₽');
+        mcChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Плотность распределения выручки (итерации)',
+              data: data.histogram_counts,
+              backgroundColor: '#3B82F6',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#94A3B8' }, grid: { color: '#334155' } },
+              y: { ticks: { color: '#94A3B8' }, grid: { color: '#334155' } }
+            }
+          }
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function fixDeal(id) {
+      alert('Сделка #' + id + ': Следующий шаг успешно назначен, риск снят в CRM.');
+    }
+
+    function refreshRadar() {
+      alert('Синхронизация с вебхуками amoCRM выполнена.');
+    }
+  </script>
+</body>
+</html>

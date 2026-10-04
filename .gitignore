@@ -1,0 +1,30 @@
+# Environments & Local Data
+.env
+.env.local
+*.db
+*.sqlite3
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# Node & Frontend
+node_modules/
+.next/
+out/
+build/
+dist/
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp

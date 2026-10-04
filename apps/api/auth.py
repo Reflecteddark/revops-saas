@@ -1,0 +1,80 @@
+"""
+Authentication, Password Hashing, JWT, and Multi-Tenant Context for RevOps SaaS.
+"""
+
+import os
+from datetime import datetime, timedelta
+from typing import Optional, List
+import bcrypt
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+
+from packages.database.models import User, UserRole
+from packages.database.session import get_db
+
+SECRET_KEY = os.getenv("SECRET_KEY", "revops-enterprise-os-v17-6-saas-secret-key-change-in-prod")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+
+security = HTTPBearer(auto_error=False)
+
+
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except Exception:
+        return False
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: Session = Depends(get_db)
+) -> User:
+    """Extracts and verifies current user and tenant from Bearer token."""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Требуется авторизация (Bearer токен отсутствует)",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        tenant_id: str = payload.get("tenant_id")
+        if not user_id or not tenant_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный токен")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен истек или недействителен")
+
+    user = db.query(User).filter(User.id == user_id, User.tenant_id == tenant_id, User.is_active == True).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
+    return user
+
+
+def require_roles(*allowed_roles: UserRole):
+    """Dependency for RBAC role checking."""
+    def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Недостаточно прав. Требуется одна из ролей: {[r.value for r in allowed_roles]}"
+            )
+        return current_user
+    return role_checker
