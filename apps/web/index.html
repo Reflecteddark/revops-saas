@@ -998,6 +998,24 @@
       overflow: visible;
     }
 
+
+    /* Subheader (Metronic & Tabler Style) */
+    .mp-subheader {
+      padding: 10px 28px;
+      background: rgba(12, 16, 24, 0.75);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 64px;
+      z-index: 85;
+    }
+
     /* Audio Waveform Spectrograph (Linear Style) */
     .linear-waveform-box {
       background: rgba(8, 11, 18, 0.85);
@@ -1842,6 +1860,28 @@
         </div>
       </header>
 
+      <!-- Metronic & Untitled UI Subheader Toolbar -->
+      <div class="mp-subheader" id="mpSubheader">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+            <span style="color: #7352ff; font-weight: 700;">RevOps OS</span>
+            <span style="color: var(--text-muted);">&rsaquo;</span>
+            <span id="currentViewBreadcrumb" style="color: #fff; font-weight: 700;">1. Пульс выручки</span>
+          </span>
+          <span class="badge-won" style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; font-size: 0.68rem;">
+            <span class="pulse-dot" style="background: #10b981; width: 6px; height: 6px;"></span>
+            <span>amoCRM + Битрикс24 Live Sync (16.10.2026, 21:50)</span>
+          </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; font-size: 0.72rem; color: var(--text-muted); flex-wrap: wrap;">
+          <span>База аудита: <strong style="color: #fff;">10 звонков</strong></span>
+          <span>&bull;</span>
+          <span>Пайплайн: <strong style="color: #38bdf8; font-family: 'JetBrains Mono', monospace;">5 000 000 ₽</strong></span>
+          <span>&bull;</span>
+          <span>Next Step: <strong style="color: #34d399;">70.0%</strong></span>
+        </div>
+      </div>
+
       <!-- MPSTATS Content Area -->
       <div class="mp-content-area">
 
@@ -2398,7 +2438,7 @@
 
         <div class="podium-grid">
           <!-- 2nd Place: Надежда (Left) -->
-          <div class="podium-card rank-2">
+          <div class="podium-card rank-2" style="cursor: pointer;" onclick="filterRepAudit('Надежда')" title="Нажмите для фильтрации звонков Надежды">
             <div class="podium-avatar-wrap">
               <div class="podium-avatar">Н</div>
             </div>
@@ -2421,7 +2461,7 @@
           </div>
 
           <!-- 1st Place: Заряна (Center - Raised) -->
-          <div class="podium-card rank-1">
+          <div class="podium-card rank-1" style="cursor: pointer;" onclick="filterRepAudit('Заряна')" title="Нажмите для фильтрации звонков Заряны">
             <div class="podium-avatar-wrap">
               <span class="podium-crown">👑</span>
               <div class="podium-avatar">З</div>
@@ -2445,7 +2485,7 @@
           </div>
 
           <!-- 3rd Place: Виктория (Right) -->
-          <div class="podium-card rank-3">
+          <div class="podium-card rank-3" style="cursor: pointer;" onclick="filterRepAudit('Виктория')" title="Нажмите для фильтрации звонков Виктории">
             <div class="podium-avatar-wrap">
               <div class="podium-avatar">В</div>
             </div>
@@ -2469,7 +2509,7 @@
         </div>
 
         <!-- P0 Hazard Rep Alert Card -->
-        <div class="hazard-alert-strip">
+        <div class="hazard-alert-strip" style="cursor: pointer;" onclick="filterRepAudit('Светлана')" title="Нажмите для разбора критических звонков Светланы">
           <div style="display: flex; align-items: center; gap: 14px;">
             <div class="hazard-rep-avatar">С</div>
             <div>
@@ -3820,6 +3860,35 @@
         </div>
       </div>
 
+      <!-- Пошаговая структура аудита (Таймлайн-лента в стиле Metronic / Linear) -->
+      <div class="call-step-timeline" style="margin-bottom: 18px; padding: 12px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+        <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+          Хронология и контрольные точки диалога:
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;" id="modalStepTimeline">
+          <!-- Step 1: Приветствие -->
+          <div style="padding: 8px; background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; border-radius: 4px;">
+            <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:00 &bull; Вступление</div>
+            <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Приветствие и компания</div>
+          </div>
+          <!-- Step 2: Квалификация -->
+          <div style="padding: 8px; background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; border-radius: 4px;">
+            <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:35 &bull; Квалификация</div>
+            <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Выявление болей и ЛПР</div>
+          </div>
+          <!-- Step 3: Презентация -->
+          <div style="padding: 8px; background: rgba(251,191,36,0.08); border-left: 3px solid #fbbf24; border-radius: 4px;">
+            <div style="font-size: 0.68rem; color: #fde68a; font-weight: 700;">1:10 &bull; Презентация</div>
+            <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Оффер и кейсы</div>
+          </div>
+          <!-- Step 4: Next Step -->
+          <div id="stepTimelineNextStep" style="padding: 8px; background: rgba(244,63,94,0.08); border-left: 3px solid #f43f5e; border-radius: 4px;">
+            <div id="stepTimelineNextStepTime" style="font-size: 0.68rem; color: #fca5a5; font-weight: 700;">1:45 &bull; Next Step</div>
+            <div id="stepTimelineNextStepStatus" style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Фиксация слота встречи</div>
+          </div>
+        </div>
+      </div>
+
       <!-- CR1..CR13 Score Bar -->
       <div style="margin-bottom: 18px;">
         <div style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">
@@ -4390,6 +4459,29 @@
     // ==========================================================================
     const ALL_TABS = ['pulse', 'express', 'rop', 'audit', 'leaks', 'impact', 'montecarlo', 'skills', 'settings'];
 
+
+    const TAB_LABELS = {
+      pulse: '1. Пульс выручки',
+      express: '2. Экспресс 3 цифры',
+      rop: '3. Пульт РОПа 15 мин',
+      audit: '4. ИИ-Аудит звонков',
+      leaks: '5. Диагностика утечек',
+      impact: '6. AI Impact & Детектор',
+      montecarlo: '7. Монте-Карло 3.0',
+      skills: '8. Навыки & Payroll',
+      settings: '9. Паспорт & E2E'
+    };
+
+    function filterRepAudit(repName) {
+      switchTab('audit');
+      const sel = document.getElementById('filterManager');
+      if (sel) {
+        sel.value = repName;
+        filterCallsTable();
+      }
+      showToast('Фильтр по менеджеру', `Открыт аудит звонков сотрудника: ${repName}`);
+    }
+
     function switchTab(tabId) {
       ALL_TABS.forEach(t => {
         const btn = document.getElementById('tab-' + t) || document.getElementById('sb-' + t);
@@ -4531,6 +4623,26 @@
       document.getElementById('modalErrorSummary').textContent = call.error_summary;
       document.getElementById('modalRecommendation').textContent = call.recommendation;
       document.getElementById('modalTranscript').textContent = call.transcript;
+
+      // Update Step Timeline Next Step status
+      const tlStep = document.getElementById('stepTimelineNextStep');
+      const tlStatus = document.getElementById('stepTimelineNextStepStatus');
+      const tlTime = document.getElementById('stepTimelineNextStepTime');
+      if (tlStep && tlStatus && tlTime) {
+        if (call.next_step === 1) {
+          tlStep.style.background = 'rgba(16, 185, 129, 0.08)';
+          tlStep.style.borderLeftColor = '#10b981';
+          tlTime.style.color = '#34d399';
+          tlStatus.textContent = '✓ Слот встречи зафиксирован';
+          tlStatus.style.color = '#34d399';
+        } else {
+          tlStep.style.background = 'rgba(244, 63, 94, 0.08)';
+          tlStep.style.borderLeftColor = '#f43f5e';
+          tlTime.style.color = '#fca5a5';
+          tlStatus.textContent = '✕ Слив: нет точного времени';
+          tlStatus.style.color = '#fca5a5';
+        }
+      }
 
       // Pills
       const pillsWrap = document.getElementById('modalCriteriaPills');
