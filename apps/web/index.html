@@ -21,9 +21,9 @@
     :root {
       --bg-void: #06070a;
       --bg-canvas: #0a0c10;
-      --bg-card: rgba(14, 17, 24, 0.78);
-      --bg-card-hover: rgba(22, 27, 40, 0.9);
-      --bg-card-featured: rgba(28, 20, 56, 0.8);
+      --bg-card: rgba(14, 17, 24, 0.82);
+      --bg-card-hover: rgba(22, 27, 40, 0.92);
+      --bg-card-featured: rgba(28, 20, 56, 0.82);
       --bg-glass: rgba(255, 255, 255, 0.03);
       
       --border-subtle: rgba(255, 255, 255, 0.08);
@@ -54,54 +54,48 @@
       padding: 0;
     }
 
-    html {
-      background-color: var(--bg-void);
-      color-scheme: dark;
-    }
-
     body {
       background-color: var(--bg-void);
       color: var(--text-primary);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+      font-size: 14px;
       overflow-x: hidden;
-      padding: 24px 20px 60px;
+      min-height: 100vh;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Ambient Glow background */
+    /* Ambient background glows */
     .ambient-bg {
       position: fixed;
       inset: 0;
       pointer-events: none;
       z-index: 0;
-      background: radial-gradient(circle at 15% 15%, rgba(115, 82, 255, 0.09) 0%, transparent 45%),
-                  radial-gradient(circle at 85% 85%, rgba(0, 212, 255, 0.06) 0%, transparent 45%);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(115, 82, 255, 0.14), transparent 45%),
+        radial-gradient(circle at 82% 28%, rgba(0, 212, 255, 0.10), transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.06), transparent 60%);
     }
 
+    /* App Shell */
     .app-shell {
       position: relative;
       z-index: 1;
       max-width: 1440px;
       margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 22px;
+      padding: 24px 28px 80px;
     }
 
-    /* Header Bar */
+    /* Header */
     .dashboard-header {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 16px 20px;
-      background: rgba(14, 17, 24, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
     }
 
     .brand-group {
@@ -111,12 +105,14 @@
     }
 
     .brand-badge {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: var(--radius-md);
-      background: linear-gradient(135deg, var(--accent-purple), #4f28e2);
-      display: grid;
-      place-items: center;
+      background: linear-gradient(135deg, var(--accent-purple), #4f2ae8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
       box-shadow: 0 0 24px var(--accent-purple-glow);
       flex-shrink: 0;
     }
@@ -124,17 +120,28 @@
     .brand-badge svg {
       width: 22px;
       height: 22px;
-      color: #fff;
     }
 
     .brand-title h1 {
       font-size: 1.15rem;
       font-weight: 800;
+      letter-spacing: -0.02em;
       color: #fff;
       display: flex;
       align-items: center;
       gap: 8px;
-      letter-spacing: -0.02em;
+      flex-wrap: wrap;
+    }
+
+    .tenant-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      background: rgba(115, 82, 255, 0.16);
+      color: #c4b5fd;
+      border: 1px solid rgba(115, 82, 255, 0.35);
+      letter-spacing: 0.04em;
     }
 
     .brand-title p {
@@ -143,36 +150,27 @@
       margin-top: 2px;
     }
 
-    .tenant-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: var(--radius-pill);
-      background: rgba(0, 212, 255, 0.12);
-      color: var(--accent-cyan);
-      border: 1px solid rgba(0, 212, 255, 0.3);
-    }
-
     /* Navigation Tabs Bar */
     .tabs-bar {
       display: flex;
       align-items: center;
       gap: 6px;
+      background: rgba(14, 18, 28, 0.75);
       padding: 6px;
-      background: rgba(14, 17, 24, 0.75);
+      border-radius: var(--radius-md);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
+      margin-bottom: 26px;
       overflow-x: auto;
+      scrollbar-width: thin;
     }
 
     .tab-btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 9px 16px;
-      border-radius: var(--radius-md);
-      font-size: 0.82rem;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--text-secondary);
       background: transparent;
@@ -200,7 +198,7 @@
       align-items: center;
       gap: 8px;
       font-family: inherit;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       padding: 8px 14px;
       border-radius: var(--radius-md);
@@ -251,149 +249,136 @@
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
       padding: 22px;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      transition: border-color 0.25s ease, transform 0.25s var(--ease-spring);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s var(--ease-spring);
     }
 
     .bento-card:hover {
-      border-color: rgba(115, 82, 255, 0.35);
+      border-color: var(--border-subtle-hover);
+      background: var(--bg-card-hover);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
     }
 
-    /* Tab Views */
-    .tab-view {
-      display: none;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .tab-view.active {
+    .bento-card-header {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
     }
 
-    /* Metrics Grid */
-    .metrics-grid-6 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 16px;
-    }
-
-    .metric-title {
-      font-size: 0.74rem;
-      font-weight: 600;
+    .bento-card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .metric-val {
+    /* Grid Layouts */
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .grid-4 { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .app-shell { padding: 16px; }
+    }
+
+    /* Metric Values */
+    .metric-value {
       font-size: 1.85rem;
       font-weight: 800;
+      letter-spacing: -0.03em;
       color: #fff;
+      line-height: 1.1;
       font-family: 'JetBrains Mono', monospace;
-      margin-top: 6px;
-      letter-spacing: -0.02em;
+      margin-bottom: 4px;
     }
 
     .metric-sub {
       font-size: 0.74rem;
-      color: var(--text-secondary);
-      margin-top: 4px;
-    }
-
-    /* Tables */
-    .dark-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      text-align: left;
-    }
-
-    .dark-table th {
-      background: rgba(255, 255, 255, 0.025);
-      padding: 12px 16px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
       color: var(--text-muted);
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .dark-table td {
-      padding: 14px 16px;
-      font-size: 0.82rem;
-      color: var(--text-secondary);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      vertical-align: middle;
-    }
-
-    .dark-table tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
-      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     /* Status Badges */
-    .badge-leak {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 9px;
-      border-radius: var(--radius-pill);
-      font-size: 0.7rem;
-      font-weight: 700;
-      background: rgba(244, 63, 94, 0.14);
-      color: #fb7185;
-      border: 1px solid rgba(244, 63, 94, 0.35);
+    .badge-won { color: #34d399; background: rgba(16, 185, 129, 0.12); padding: 2px 7px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.7rem; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-lost { color: #fb7185; background: rgba(244, 63, 94, 0.12); padding: 2px 7px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.7rem; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-warn { color: #fbbf24; background: rgba(245, 158, 11, 0.12); padding: 2px 7px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.7rem; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-info { color: #38bdf8; background: rgba(6, 182, 212, 0.12); padding: 2px 7px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.7rem; border: 1px solid rgba(6, 182, 212, 0.3); }
+
+    /* Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: rgba(10, 13, 20, 0.6);
     }
 
-    .badge-won {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 9px;
-      border-radius: var(--radius-pill);
-      font-size: 0.7rem;
-      font-weight: 700;
-      background: rgba(16, 185, 129, 0.14);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.35);
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.8rem;
     }
 
-    .badge-warn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 9px;
-      border-radius: var(--radius-pill);
+    th {
+      padding: 11px 14px;
       font-size: 0.7rem;
       font-weight: 700;
-      background: rgba(245, 158, 11, 0.14);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.35);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
     }
 
-    .pill-step {
-      font-size: 0.7rem;
-      font-family: monospace;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      vertical-align: middle;
     }
-    .pill-step.yes {
-      background: rgba(16, 185, 129, 0.2);
-      color: #34d399;
-    }
-    .pill-step.no {
-      background: rgba(244, 63, 94, 0.2);
-      color: #fb7185;
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
     }
 
     /* Modal Backdrop & Body */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.82);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       z-index: 10000;
@@ -404,7 +389,7 @@
     }
 
     .modal-box {
-      width: 780px;
+      width: 820px;
       max-width: 100%;
       max-height: 88vh;
       overflow-y: auto;
@@ -435,9 +420,16 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* ==========================================================================
-       AUTH ACCESS GATE (REVOPS CLOSED CONTOUR)
-       ========================================================================== */
+    /* Tab view display helper */
+    .tab-view {
+      display: none;
+      animation: enterFadeUp 0.25s ease;
+    }
+    .tab-view.active {
+      display: block;
+    }
+
+    /* Auth Gate Overlay */
     .auth-overlay {
       position: fixed;
       inset: 0;
@@ -505,9 +497,6 @@
       margin-bottom: 6px;
       letter-spacing: 0.02em;
     }
-    .auth-input-wrap {
-      position: relative;
-    }
     .auth-input {
       width: 100%;
       background: rgba(255, 255, 255, 0.04);
@@ -537,7 +526,6 @@
       text-align: left;
       line-height: 1.4;
     }
-
   </style>
 </head>
 <body>
@@ -609,7 +597,6 @@
     </div>
   </div>
 
-
   <div class="app-shell">
 
     <!-- Top Dashboard Header -->
@@ -657,29 +644,37 @@
             <span>Выйти</span>
           </button>
         </div>
-
       </div>
     </header>
 
-    <!-- Navigation Tabs Bar (6 ключевых витрин из Google Sheets) -->
+    <!-- Navigation Tabs Bar (9 Ключевых Витрин из Google Sheets) -->
     <nav class="tabs-bar">
       <button id="tab-pulse" class="tab-btn active" onclick="switchTab('pulse')">
-        <span>📊 Операционный пульс</span>
+        <span>📊 1. Пульс выручки</span>
+      </button>
+      <button id="tab-express" class="tab-btn" onclick="switchTab('express')">
+        <span>⚡ 2. Экспресс 3 цифры</span>
       </button>
       <button id="tab-rop" class="tab-btn" onclick="switchTab('rop')">
-        <span>📋 Пульт РОПа 15 минут</span>
+        <span>📋 3. Пульт РОПа 15 мин</span>
       </button>
       <button id="tab-audit" class="tab-btn" onclick="switchTab('audit')">
-        <span>🎙️ ИИ-Аудит звонков (10)</span>
+        <span>🎙️ 4. ИИ-Аудит звонков (10)</span>
+      </button>
+      <button id="tab-leaks" class="tab-btn" onclick="switchTab('leaks')">
+        <span>💸 5. Диагностика утечек</span>
+      </button>
+      <button id="tab-impact" class="tab-btn" onclick="switchTab('impact')">
+        <span>📊 6. AI Impact & Детектор</span>
       </button>
       <button id="tab-montecarlo" class="tab-btn" onclick="switchTab('montecarlo')">
-        <span>🎲 Монте-Карло 3.0</span>
+        <span>🎲 7. Монте-Карло 3.0</span>
       </button>
       <button id="tab-skills" class="tab-btn" onclick="switchTab('skills')">
-        <span>🎯 Матрица Навыков</span>
+        <span>🎯 8. Навыки & Payroll</span>
       </button>
       <button id="tab-settings" class="tab-btn" onclick="switchTab('settings')">
-        <span>⚙️ Паспорт и Настройки</span>
+        <span>⚙️ 9. Паспорт & E2E Контур</span>
       </button>
     </nav>
 
@@ -689,7 +684,7 @@
     <div id="view-pulse" class="tab-view active">
       
       <!-- Banner Отставание от плана -->
-      <div style="padding: 14px 18px; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <div style="padding: 14px 18px; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 1.1rem;">🔴</span>
           <div style="font-size: 0.82rem; font-weight: 700; color: #fca5a5;">
@@ -697,221 +692,338 @@
           </div>
         </div>
         <div style="font-size: 0.76rem; color: var(--text-muted);">
-          План месяца: 5 000 000 ₽ &bull; Факт Closed-Won: 500 000 ₽
+          План месяца: 5 000 000 ₽ &bull; Факт Closed-Won: 500 000 ₽ &bull; Остаток месяца: 15 дней
         </div>
       </div>
 
-      <!-- 6 Key Financial Metrics -->
-      <div class="metrics-grid-6">
+      <!-- 4 Top Cards -->
+      <div class="grid-4">
         <div class="bento-card">
-          <div class="metric-title">Выручка (Факт Closed-Won)</div>
-          <div class="metric-val" style="color: #fff;">500 000 ₽</div>
-          <div class="metric-sub" style="color: #fb7185;">-90.0% от плана (5.0M ₽)</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">План месяца (Точка Б)</span>
+            <span class="badge-info">🎯 НОРМАТИВ</span>
+          </div>
+          <div class="metric-value">5 000 000 ₽</div>
+          <div class="metric-sub">Целевой таргет компании Самозанятый</div>
         </div>
 
         <div class="bento-card">
-          <div class="metric-title">Взвешенный прогноз (SSOT)</div>
-          <div class="metric-val" style="color: var(--accent-cyan);">2 375 000 ₽</div>
-          <div class="metric-sub" style="color: var(--text-secondary);">С учетом вероятностей этапов</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">Факт закрытой выручки</span>
+            <span class="badge-won">🟢 10.0% ВЫПОЛНЕНО</span>
+          </div>
+          <div class="metric-value" style="color: #34d399;">500 000 ₽</div>
+          <div class="metric-sub">Сделка stage_id = 6 (B24 Кейс 10, УЗИП)</div>
         </div>
 
         <div class="bento-card">
-          <div class="metric-title">Run-Rate касса (Прогноз)</div>
-          <div class="metric-val" style="color: #fbbf24;">968 750 ₽</div>
-          <div class="metric-sub" style="color: var(--text-muted);">Экстраполяция темпа на 31 день</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">Взвешенный SSOT прогноз</span>
+            <span class="badge-warn">🟡 РИСК -52.5%</span>
+          </div>
+          <div class="metric-value" style="color: #fbbf24;">2 375 000 ₽</div>
+          <div class="metric-sub">Математическое ожидание кассы с учетом вероятностей</div>
         </div>
 
         <div class="bento-card">
-          <div class="metric-title">Активный пайплайн (В работе)</div>
-          <div class="metric-val" style="color: #fff;">4 500 000 ₽</div>
-          <div class="metric-sub" style="color: var(--accent-emerald);">9 сделок на этапах 1..5</div>
-        </div>
-
-        <div class="bento-card">
-          <div class="metric-title">Качество речи ОП (ИИ)</div>
-          <div class="metric-val" style="color: #34d399;">70.0%</div>
-          <div class="metric-sub" style="color: #34d399;">Индекс: 9.1 из 13 (Норма ≥ 9.0)</div>
-        </div>
-
-        <div class="bento-card">
-          <div class="metric-title">Сделок под угрозой SLA</div>
-          <div class="metric-val" style="color: #34d399;">0 срывов</div>
-          <div class="metric-sub" style="color: #34d399;">🟢 Все 5 этапов в норме SLA</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">Активный пайплайн воронки</span>
+            <span class="badge-info">9 СДЕЛОК</span>
+          </div>
+          <div class="metric-value" style="color: var(--accent-cyan);">4 500 000 ₽</div>
+          <div class="metric-sub">В работе на этапах 1..5 воронки CRM</div>
         </div>
       </div>
 
-      <!-- Детальная воронка продаж и нормативы SLA -->
-      <div class="bento-card" style="padding: 0; overflow: hidden;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
-          <h2 style="font-size: 0.95rem; font-weight: 700; color: #fff;">🎯 Детальная воронка продаж, регламенты SLA и сходимость</h2>
-          <span style="font-size: 0.74rem; color: var(--accent-emerald); font-family: monospace;">ЧИСТАЯ КОНВЕРСИЯ: 100.0%</span>
+      <!-- Детальная воронка и SLA нормативы -->
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header">
+          <span class="bento-card-title">🎯 Детальная воронка продаж, регламенты SLA и откаты</span>
+          <span class="badge-won">🟢 100% В НОРМЕ SLA</span>
         </div>
-        <div style="overflow-x: auto;">
-          <table class="dark-table">
+        <div class="table-container">
+          <table>
             <thead>
               <tr>
-                <th>Этап воронки</th>
-                <th>Сделок в CRM</th>
+                <th>Этап воронки CRM</th>
+                <th>Сделок (Факт)</th>
                 <th>Сумма этапа, ₽</th>
-                <th>SLA Норматив</th>
+                <th>Норматив SLA</th>
                 <th>Факт SLA</th>
                 <th>Статус SLA</th>
-                <th>Вероятность (Win %)</th>
+                <th>Конверсия (Win %)</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong style="color: #fff;">1. Первичный контакт</strong></td>
+                <td><strong>1. Первичный контакт</strong></td>
                 <td>2 шт</td>
                 <td>1 000 000 ₽</td>
                 <td>24 ч</td>
                 <td>0.0 ч</td>
                 <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>10%</td>
+                <td>10.0%</td>
               </tr>
               <tr>
-                <td><strong style="color: #fff;">2. Переговоры</strong></td>
+                <td><strong>2. Переговоры</strong></td>
                 <td>2 шт</td>
                 <td>1 000 000 ₽</td>
                 <td>48 ч</td>
                 <td>0.0 ч</td>
                 <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>35%</td>
+                <td>35.0%</td>
               </tr>
               <tr>
-                <td><strong style="color: #fff;">3. Принимают решение</strong></td>
+                <td><strong>3. Принимают решение</strong></td>
                 <td>2 шт</td>
                 <td>1 000 000 ₽</td>
                 <td>72 ч</td>
                 <td>0.0 ч</td>
                 <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>60%</td>
+                <td>60.0%</td>
               </tr>
               <tr>
-                <td><strong style="color: #fff;">4. Согласование договора</strong></td>
+                <td><strong>4. Согласование договора</strong></td>
                 <td>2 шт</td>
                 <td>1 000 000 ₽</td>
                 <td>48 ч</td>
                 <td>0.0 ч</td>
                 <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>85%</td>
+                <td>85.0%</td>
               </tr>
               <tr>
-                <td><strong style="color: #fff;">5. Счёт / Оплата</strong></td>
+                <td><strong>5. Счёт / Оплата</strong></td>
                 <td>1 шт</td>
                 <td>500 000 ₽</td>
                 <td>72 ч</td>
                 <td>0.0 ч</td>
                 <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>95%</td>
+                <td>95.0%</td>
               </tr>
-              <tr style="background: rgba(16, 185, 129, 0.04);">
-                <td><strong style="color: #34d399;">6. Успешно реализовано</strong></td>
+              <tr style="background: rgba(16, 185, 129, 0.05);">
+                <td><strong>6. Успешно реализовано</strong></td>
                 <td>1 шт</td>
-                <td><strong style="color: #34d399;">500 000 ₽</strong></td>
+                <td>500 000 ₽</td>
                 <td>—</td>
                 <td>—</td>
-                <td><span class="badge-won">🟢 ВЫРУЧКА</span></td>
-                <td>100%</td>
+                <td><span class="badge-won">🟢 ФИНИШ</span></td>
+                <td>100.0%</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- ТОП-5 критических рисков выручки (Action Center) -->
-      <div class="bento-card" style="padding: 0; overflow: hidden;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
-          <h2 style="font-size: 0.95rem; font-weight: 700; color: #fff;">🚨 ТОП-5 критических рисков выручки и срочные действия РОПа (Action Center)</h2>
-          <span style="font-size: 0.74rem; color: #fb7185; font-family: monospace;">В ЗОНЕ РИСКА: 2 500 000 ₽</span>
+      <!-- Причины отказов (Loss Codes L1..L4) -->
+      <div class="grid-2">
+        <div class="bento-card">
+          <div class="bento-card-header">
+            <span class="bento-card-title">📊 Анализ причин срыва (Loss Codes L1..L4)</span>
+            <span class="badge-info">РЕАКТИВАЦИЯ</span>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Код</th>
+                  <th>Причина отказа клиента</th>
+                  <th>Шанс возврата</th>
+                  <th>Сценарий спасения</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge-warn">L1</span></td>
+                  <td>Дорого / нет бюджета</td>
+                  <td>50%</td>
+                  <td>Оффер Lite + рассрочка на 3 транша</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-warn">L2</span></td>
+                  <td>Выбрали конкурента</td>
+                  <td>35%</td>
+                  <td>Сравнительная матрица окупаемости + РОП</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-warn">L3</span></td>
+                  <td>Не формат / нет потребности</td>
+                  <td>10%</td>
+                  <td>Ежемесячный дайджест кейсов ниши</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-warn">L4</span></td>
+                  <td>Потеря контакта / недозвон</td>
+                  <td>20%</td>
+                  <td>Автозвонок + WhatsApp цепочка</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div style="overflow-x: auto;">
-          <table class="dark-table">
+
+        <div class="bento-card">
+          <div class="bento-card-header">
+            <span class="bento-card-title">📌 Дисциплина задач и CRM-контроль</span>
+            <span class="badge-won">100% В НОРМЕ</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px;">
+            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Просрочено задач</div>
+              <div style="font-size: 1.3rem; font-weight: 800; color: #34d399;">0 шт</div>
+              <div style="font-size: 0.68rem; color: var(--text-secondary);">🟢 Чистый пайплайн</div>
+            </div>
+            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Сделок без задач</div>
+              <div style="font-size: 1.3rem; font-weight: 800; color: #fbbf24;">9 шт</div>
+              <div style="font-size: 0.68rem; color: #fca5a5;">Требуется постановка Next Step</div>
+            </div>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.4;">
+            Регламент РОПа: Все 9 сделок активного пайплайна должны иметь дедлайн следующего касания в течение 24 часов.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 2: ЭКСПРЕСС 3 ЦИФРЫ (КАЛЬКУЛЯТОР УПУЩЕННОЙ ПРИБЫЛИ)   -->
+    <!-- ======================================================== -->
+    <div id="view-express" class="tab-view">
+      
+      <div class="bento-card" style="margin-bottom: 22px; background: linear-gradient(135deg, rgba(28,20,56,0.9), rgba(14,18,28,0.95)); border-color: rgba(115,82,255,0.35);">
+        <div class="bento-card-header">
+          <div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.08em;">
+              ⚡ Экспресс-калькулятор упущенной прибыли ОП
+            </div>
+            <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              Диагностика потерь и скрытых резервов за 30 секунд
+            </h2>
+          </div>
+          <span class="badge-won">SSOT КАЛЬКУЛЯТОР</span>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); max-width: 800px; margin-bottom: 20px;">
+          Передвигайте 3 ползунка ниже (ваши ключевые метрики). Все потери по 4 узким местам и сценарии прироста кассы рассчитаются автоматически по отраслевым бенчмаркам.
+        </p>
+
+        <!-- 3 Sliders -->
+        <div class="grid-3">
+          <div style="padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary);">1. Входящий поток лидов:</span>
+              <span id="valLeadsExp" style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 800; color: var(--accent-cyan);">10 шт</span>
+            </div>
+            <input type="range" id="rngLeadsExp" min="2" max="100" value="10" step="1" oninput="recalcExpress()" style="width: 100%; accent-color: var(--accent-cyan);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">
+              <span>2 лида</span>
+              <span>100 лидов</span>
+            </div>
+          </div>
+
+          <div style="padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary);">2. Средний чек сделки:</span>
+              <span id="valCheckExp" style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 800; color: #34d399;">500 000 ₽</span>
+            </div>
+            <input type="range" id="rngCheckExp" min="100000" max="2000000" value="500000" step="50000" oninput="recalcExpress()" style="width: 100%; accent-color: #34d399;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">
+              <span>100k ₽</span>
+              <span>2.0M ₽</span>
+            </div>
+          </div>
+
+          <div style="padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary);">3. Менеджеров в отделе:</span>
+              <span id="valMgrExp" style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 800; color: #c4b5fd;">3 чел</span>
+            </div>
+            <input type="range" id="rngMgrExp" min="1" max="20" value="3" step="1" oninput="recalcExpress()" style="width: 100%; accent-color: var(--accent-purple);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">
+              <span>1 чел</span>
+              <span>20 чел</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calculated Summary Boxes -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px;">
+          <div style="padding: 16px; background: rgba(244,63,94,0.12); border: 1px solid rgba(244,63,94,0.35); border-radius: var(--radius-md);">
+            <div style="font-size: 0.74rem; font-weight: 700; color: #fca5a5;">🔴 ВЫЯВЛЕННЫЙ РИСК ПОТЕРЬ</div>
+            <div id="expLostRev" style="font-size: 1.6rem; font-weight: 800; color: #fb7185; font-family: 'JetBrains Mono', monospace; margin-top: 4px;">340 000 ₽</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Упущенная выручка в месяц по 4 узким местам</div>
+          </div>
+
+          <div style="padding: 16px; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); border-radius: var(--radius-md);">
+            <div style="font-size: 0.74rem; font-weight: 700; color: #34d399;">🚀 БАЗОВЫЙ ПЛАН (+30%)</div>
+            <div id="expBasePlan" style="font-size: 1.6rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace; margin-top: 4px;">602 000 ₽</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Касса To-Be при устранении ключевых ошибок</div>
+          </div>
+
+          <div style="padding: 16px; background: rgba(115,82,255,0.15); border: 1px solid rgba(115,82,255,0.4); border-radius: var(--radius-md);">
+            <div style="font-size: 0.74rem; font-weight: 700; color: #c4b5fd;">⭐ ОПТИМИСТИЧНЫЙ (+50%)</div>
+            <div id="expOptPlan" style="font-size: 1.6rem; font-weight: 800; color: #c4b5fd; font-family: 'JetBrains Mono', monospace; margin-top: 4px;">670 000 ₽</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Потенциал кассы с автодожимом WhatsApp</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Расшифровка 4 узких мест -->
+      <div class="bento-card">
+        <div class="bento-card-header">
+          <span class="bento-card-title">📊 Расшифровка финансовых утечек по 4 узким местам</span>
+          <span class="badge-warn">БЫСТРЫЙ ВОЗВРАТ: 119 000 ₽ В МЕСЯЦ 1</span>
+        </div>
+        <div class="table-container">
+          <table>
             <thead>
               <tr>
-                <th>Сделка / Клиент</th>
-                <th>Этап CRM</th>
-                <th>Менеджер</th>
-                <th>Сумма в риске</th>
-                <th>Срочное действие РОПа</th>
-                <th style="text-align: right;">Действие</th>
+                <th>№</th>
+                <th>Узкое место воронки продаж</th>
+                <th>Отраслевой бенчмарк потерь</th>
+                <th>Упущенная прибыль, ₽/мес</th>
+                <th>Причина утечки</th>
+                <th>Как закрываем за 14 дней</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>
-                  <div style="font-weight: 600; color: #fff;">B24 Кейс 01: Услуги повышения лояльности клиентов</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">B24-80 &bull; asales стоматология</div>
-                </td>
-                <td>Первичный контакт</td>
-                <td>Дмитрий Федотов</td>
-                <td><strong style="color: #fff; font-family: monospace;">500 000 ₽</strong></td>
-                <td><span style="color: #fca5a5;">⚡ Дожим до закрытия (РОП Дмитрий Федотов)</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.74rem;" onclick="copyOffer('Здравствуйте! По вашей заявке (B24 Кейс 01: Услуги повышения лояльности клиентов) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?')">
-                    Дожим РОПа
-                  </button>
-                </td>
+                <td>1</td>
+                <td><strong>Слив лидов на звонках (нет Next Step)</strong></td>
+                <td>28% выручки теряется из-за ошибок менеджеров на звонках</td>
+                <td><span style="color: #fb7185; font-weight: 700;">140 000 ₽</span></td>
+                <td>Менеджеры консультируют, но не закрывают на дату</td>
+                <td>ИИ-аудит 100% звонков + чек-лист Next Step</td>
               </tr>
               <tr>
-                <td>
-                  <div style="font-weight: 600; color: #fff;">B24 Кейс 02: Услуги сопровождения гос закупок</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">B24-82 &bull; asales тендеры</div>
-                </td>
-                <td>Первичный контакт</td>
-                <td>Дмитрий Федотов</td>
-                <td><strong style="color: #fff; font-family: monospace;">500 000 ₽</strong></td>
-                <td><span style="color: #fca5a5;">⚡ Дожим до закрытия (РОП Дмитрий Федотов)</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.74rem;" onclick="copyOffer('Здравствуйте! По вашей заявке (B24 Кейс 02: Услуги сопровождения гос закупок) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?')">
-                    Дожим РОПа
-                  </button>
-                </td>
+                <td>2</td>
+                <td><strong>Зависание сделок на этапе КП > 48ч</strong></td>
+                <td>18% выручки теряется из-за просрочки follow-up</td>
+                <td><span style="color: #fb7185; font-weight: 700;">90 000 ₽</span></td>
+                <td>Клиент остывает, пока менеджер ждет звонка</td>
+                <td>Авторадар SLA 48ч + эскалация РОПу на 3-й день</td>
               </tr>
               <tr>
-                <td>
-                  <div style="font-weight: 600; color: #fff;">B24 Кейс 03: Продажа ортопедических матрасов</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">B24-84 &bull; asales производство</div>
-                </td>
-                <td>Переговоры</td>
-                <td>Дмитрий Федотов</td>
-                <td><strong style="color: #fff; font-family: monospace;">500 000 ₽</strong></td>
-                <td><span style="color: #fde68a;">⚡ Дожим до закрытия (РОП Дмитрий Федотов)</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.74rem;" onclick="copyOffer('Здравствуйте! По вашей заявке (B24 Кейс 03: Продажа ортопедических матрасов) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?')">
-                    Дожим РОПа
-                  </button>
-                </td>
+                <td>3</td>
+                <td><strong>Брошенные отказники без дожима (L1-L4)</strong></td>
+                <td>12% — потенциал реактивации списанных отказников CRM</td>
+                <td><span style="color: #fb7185; font-weight: 700;">60 000 ₽</span></td>
+                <td>Сделки списаны в архив без реактивации</td>
+                <td>AI Recovery Engine: автодожим в WhatsApp/TG</td>
               </tr>
               <tr>
-                <td>
-                  <div style="font-weight: 600; color: #fff;">B24 Кейс 04: Продажа CRM Битрикс24</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">B24-86 &bull; asales внедрение CRM</div>
-                </td>
-                <td>Переговоры</td>
-                <td>Дмитрий Федотов</td>
-                <td><strong style="color: #fff; font-family: monospace;">500 000 ₽</strong></td>
-                <td><span style="color: #fca5a5;">⚡ Дожим до закрытия (РОП Дмитрий Федотов)</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.74rem;" onclick="copyOffer('Здравствуйте! По вашей заявке (B24 Кейс 04: Продажа CRM Битрикс24) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?')">
-                    Дожим РОПа
-                  </button>
-                </td>
+                <td>4</td>
+                <td><strong>Зависшая дебиторка и задержка оплат</strong></td>
+                <td>10% выставленных счетов зависают на согласовании (DSO)</td>
+                <td><span style="color: #fb7185; font-weight: 700;">50 000 ₽</span></td>
+                <td>Нет платежного календаря и контроля сроков</td>
+                <td>Платежный календарь DSO + автонапоминания</td>
               </tr>
-              <tr>
-                <td>
-                  <div style="font-weight: 600; color: #fff;">B24 Кейс 05: Услуги софинансирования кредита</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">B24-88 &bull; asales финансы</div>
-                </td>
-                <td>Принимают решение</td>
-                <td>Дмитрий Федотов</td>
-                <td><strong style="color: #fff; font-family: monospace;">500 000 ₽</strong></td>
-                <td><span style="color: #fca5a5;">⚡ Дожим до закрытия (РОП Дмитрий Федотов)</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.74rem;" onclick="copyOffer('Здравствуйте! По вашей заявке (B24 Кейс 05: Услуги софинансирования кредита) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?')">
-                    Дожим РОПа
-                  </button>
-                </td>
+              <tr style="background: rgba(115,82,255,0.1); font-weight: 700;">
+                <td colspan="3">ИТОГО УПУЩЕННОЙ ПРИБЫЛИ В МЕСЯЦ:</td>
+                <td style="color: #fb7185; font-size: 0.95rem;">340 000 ₽</td>
+                <td colspan="2">ПОТЕНЦИАЛ БЫСТРОГО ВОЗВРАТА: 119 000 ₽ В ПЕРВЫЙ МЕСЯЦ</td>
               </tr>
             </tbody>
           </table>
@@ -921,319 +1033,541 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- TAB 2: ПУЛЬТ РОПА 15 МИНУТ                              -->
+    <!-- TAB 3: ПУЛЬТ РОПА 15 МИНУТ                                -->
     <!-- ======================================================== -->
     <div id="view-rop" class="tab-view">
-      
-      <!-- Главная сводка летучки -->
-      <div style="padding: 18px 22px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-        <div>
-          <div style="font-size: 0.95rem; font-weight: 800; color: #fbbf24;">
-            ⚠️ ФОКУС ПЛАНЁРКИ: 5 сделок под угрозой срыва на сумму 2 500 000 ₽
+
+      <div style="padding: 14px 18px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.1rem;">⚠️</span>
+          <div style="font-size: 0.82rem; font-weight: 700; color: #fde68a;">
+            ФОКУС ПЛАНЁРКИ: 5 СДЕЛОК ПОД УГРОЗОЙ СРЫВА НА 2 500 000 ₽ &bull; ТРЕБУЕТСЯ 15 МИНУТ КОНТРОЛЯ РОПа
           </div>
-          <p style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 3px;">
-            Провести разбор зависших этапов &bull; Статус дня: 🚨 ТРЕБУЕТСЯ 15 МИНУТ КОНТРОЛЯ РОПа
-          </p>
         </div>
-        <div style="display: flex; gap: 12px;">
-          <div style="text-align: right;">
-            <div style="font-size: 0.7rem; color: var(--text-muted);">ЗВОНКОВ ВЧЕРА</div>
-            <div style="font-size: 1.25rem; font-weight: 800; color: #fff; font-family: monospace;">10 шт</div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.7rem; color: var(--text-muted);">БРАК РЕЧИ (&lt;9)</div>
-            <div style="font-size: 1.25rem; font-weight: 800; color: #fb7185; font-family: monospace;">4 шт</div>
-          </div>
+        <div style="font-size: 0.76rem; color: var(--text-muted);">
+          Звонков вчера: 10 &bull; С браком речи (&lt;9): 4 &bull; Спасено за 15 мин: 2 500 000 ₽
         </div>
       </div>
 
-      <!-- Таймлайн регламента летучки 09:00 - 09:15 -->
-      <div class="bento-card" style="padding: 20px;">
-        <h3 style="font-size: 0.84rem; font-weight: 700; text-transform: uppercase; color: var(--accent-cyan); margin-bottom: 14px; letter-spacing: 0.05em;">
-          ⏱️ Регламент утренней летучки РОПа (09:00 – 09:15)
-        </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
-          <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="font-size: 0.72rem; color: var(--accent-purple); font-weight: 700;">09:00 - 09:05</div>
-            <div style="font-size: 0.8rem; font-weight: 600; color: #fff; margin-top: 2px;">Проверка ночного ИИ-аудита</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">4 звонка со скорингом &lt;9 баллов (Светлана 5.5, Заряна 8.0)</div>
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header">
+          <span class="bento-card-title">🚨 Топ-5 сделок в риске с готовыми скриптами спасения</span>
+          <span class="badge-won">AI WHATSAPP RESCUE</span>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          
+          <!-- Deal 1 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+              <div>
+                <span class="badge-lost" style="margin-right: 6px;">P0 КРИТИЧЕСКИЙ</span>
+                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 01: Услуги повышения лояльности клиентов (asales)</strong>
+                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Светлана &bull; 500 000 ₽)</span>
+              </div>
+              <button class="btn btn-emerald" onclick="copyRescueScript('case01')">
+                <span>Скопировать в WhatsApp</span>
+              </button>
+            </div>
+            <div style="font-size: 0.78rem; color: #fca5a5; margin-bottom: 6px;">
+              <strong>Симптом:</strong> Нет жесткого Next Step; клиент предложил скинуть на почту и ушел от встречи; боли клиники не квалифицированы.
+            </div>
+            <div id="script-case01" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
+              "Здравствуйте! По вашей заявке на услуги программы лояльности на сумму 500 000 ₽ согласовали спецусловия до конца недели: гарантия окупаемости + аудит оттока в подарок. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут в 14:00?"
+            </div>
           </div>
 
-          <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="font-size: 0.72rem; color: var(--accent-purple); font-weight: 700;">09:05 - 09:10</div>
-            <div style="font-size: 0.8rem; font-weight: 600; color: #fff; margin-top: 2px;">Перехват B24 Кейс 01 (500 000 ₽)</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Прямой звонок ЛПР Александру Васильевичу до 12:00</div>
+          <!-- Deal 2 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+              <div>
+                <span class="badge-lost" style="margin-right: 6px;">P0 КРИТИЧЕСКИЙ</span>
+                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 02: Услуги сопровождения гос закупок (asales)</strong>
+                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Надежда &bull; 500 000 ₽)</span>
+              </div>
+              <button class="btn btn-emerald" onclick="copyRescueScript('case02')">
+                <span>Скопировать в WhatsApp</span>
+              </button>
+            </div>
+            <div style="font-size: 0.78rem; color: #fca5a5; margin-bottom: 6px;">
+              <strong>Симптом:</strong> Сомнение клиента в прозрачности тендеров; не показаны кейсы в геодезии и экологии с суммами контрактов.
+            </div>
+            <div id="script-case02" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
+              "Игорь, добрый день! Подготовили 2 кейса побед в тендерах по геодезии и рекультивации на 4.2 млн ₽ с прозрачным допуском. В понедельник в 15:00 наш эксперт покажет документацию на 10 минут в Zoom. Ссылку направить сюда?"
+            </div>
           </div>
 
-          <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="font-size: 0.72rem; color: var(--accent-purple); font-weight: 700;">09:10 - 09:13</div>
-            <div style="font-size: 0.8rem; font-weight: 600; color: #fff; margin-top: 2px;">Спецусловия по B24 Кейс 02 (500 000 ₽)</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Контроль согласования договора на госзакупки</div>
+          <!-- Deal 3 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+              <div>
+                <span class="badge-warn" style="margin-right: 6px;">P1 ВНИМАНИЕ</span>
+                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 03: Продажа ортопедических матрасов (asales)</strong>
+                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Заряна &bull; 500 000 ₽)</span>
+              </div>
+              <button class="btn btn-emerald" onclick="copyRescueScript('case03')">
+                <span>Скопировать в WhatsApp</span>
+              </button>
+            </div>
+            <div style="font-size: 0.78rem; color: #fde68a; margin-bottom: 6px;">
+              <strong>Симптом:</strong> Согласован только звонок «уточнить время»; клиент может быть на производстве; нет твердого слота.
+            </div>
+            <div id="script-case03" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
+              "Сергей Юрьевич, здравствуйте! Забронировали образец матраса 2х1200 для теста на вашем производстве. Специалист будет в вашем районе во вторник ровно в 12:00. Подтвердите, пожалуйста, пропуск?"
+            </div>
           </div>
 
-          <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="font-size: 0.72rem; color: var(--accent-emerald); font-weight: 700;">09:13 - 09:15</div>
-            <div style="font-size: 0.8rem; font-weight: 600; color: #fff; margin-top: 2px;">Результат за 15 минут</div>
-            <div style="font-size: 0.72rem; color: var(--accent-emerald); margin-top: 2px;">2 500 000 ₽ защищено от слива воронки</div>
+          <!-- Deal 4 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+              <div>
+                <span class="badge-lost" style="margin-right: 6px;">P0 КРИТИЧЕСКИЙ</span>
+                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 04: Продажа CRM Битрикс24 (asales)</strong>
+                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Светлана &bull; 500 000 ₽)</span>
+              </div>
+              <button class="btn btn-emerald" onclick="copyRescueScript('case04')">
+                <span>Скопировать в WhatsApp</span>
+              </button>
+            </div>
+            <div style="font-size: 0.78rem; color: #fca5a5; margin-bottom: 6px;">
+              <strong>Симптом:</strong> Слив на почту; клиент сравнивает с МойСклад/1С; не показана ценность автоматизации воронки.
+            </div>
+            <div id="script-case04" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
+              "Алексей, добрый день! Отправили на sales@ краткую таблицу сравнения Битрикс24 vs 1С в вашей нише: как исключить потерю лидов без смены привычного учета. В четверг в 14:00 удобно созвониться на 7 минут?"
+            </div>
           </div>
+
+          <!-- Deal 5 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+              <div>
+                <span class="badge-lost" style="margin-right: 6px;">P0 КРИТИЧЕСКИЙ</span>
+                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 05: Услуги софинансирования кредита (asales)</strong>
+                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Виктория &bull; 500 000 ₽)</span>
+              </div>
+              <button class="btn btn-emerald" onclick="copyRescueScript('case05')">
+                <span>Скопировать в WhatsApp</span>
+              </button>
+            </div>
+            <div style="font-size: 0.78rem; color: #fca5a5; margin-bottom: 6px;">
+              <strong>Симптом:</strong> Слабая отработка возражения 'пока нет'; менеджер читал монологом без пауз; не выявлены параметры кредита.
+            </div>
+            <div id="script-case05" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
+              "Николай Петрович, здравствуйте! Эксперт по кредитному софинансированию рассчитал экономию до 280 000 ₽ по вашим платежам с гарантией по договору. Завтра в 10:00 удобно принять созвон с расчетом?"
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- 5 Карточек сделок в риске с готовыми скриптами дожима -->
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-        <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff;">
-          🎯 ТОП-5 сделок в риске: готовые офферы ИИ-дожима (Copy-Paste в WhatsApp / Telegram)
-        </h3>
-
-        <!-- Сделка 1 -->
-        <div class="bento-card" style="padding: 20px;">
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
-            <div>
-              <span class="badge-leak">🔴 КРИТИЧЕСКИЙ (P0)</span>
-              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-top: 6px;">
-                B24 Кейс 01: Услуги повышения лояльности клиентов (asales)
-              </h4>
-              <p style="font-size: 0.76rem; color: var(--text-muted);">
-                Сумма: <strong>500 000 ₽</strong> &bull; Этап: Первичный контакт &bull; Ответственный: Дмитрий Федотов
-              </p>
-            </div>
-            <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" class="btn btn-ghost" style="font-size: 0.74rem;">🟦 Битрикс24 ↗</a>
+      <!-- Чек-лист 15 минут РОПа -->
+      <div class="bento-card">
+        <div class="bento-card-header">
+          <span class="bento-card-title">⏱️ Тайм-менеджмент утренней летучки РОПа (09:00 - 09:15)</span>
+          <span class="badge-won">РЕЗУЛЬТАТ: 2.5M ₽ ЗАЩИЩЕНО</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+          <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border-left: 3px solid var(--accent-purple);">
+            <div style="font-size: 0.7rem; color: var(--accent-cyan); font-weight: 700;">09:00 - 09:05</div>
+            <div style="font-size: 0.76rem; color: #fff; margin-top: 4px;">Проверка ночного ИИ-аудита: 4 звонка с браком (&lt;9 баллов).</div>
           </div>
-
-          <div style="padding: 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.8rem; color: #cbd5e1; margin-bottom: 12px;">
-            <div style="font-size: 0.72rem; color: var(--accent-purple); font-weight: 700; margin-bottom: 4px;">ГОТОВЫЙ ТЕКСТ ДОЖИМА ДЛЯ WHATSAPP/TG:</div>
-            «Здравствуйте! По вашей заявке (B24 Кейс 01: Услуги повышения лояльности клиентов) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?»
+          <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border-left: 3px solid #f43f5e;">
+            <div style="font-size: 0.7rem; color: #fca5a5; font-weight: 700;">09:05 - 09:10</div>
+            <div style="font-size: 0.76rem; color: #fff; margin-top: 4px;">Перехват сделки Кейс 01 (500 000 ₽) и звонок ЛПР до 12:00.</div>
           </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <div style="font-size: 0.74rem; color: #fca5a5;">
-              <strong>Решение ИИ:</strong> Сфокусируйтесь на выявлении актуальных проблем клиники перед презентацией и обязательно фиксируйте конкретный день и время для следующего контакта.
-            </div>
-            <button class="btn btn-primary" onclick="copyOffer('Здравствуйте! По вашей заявке (B24 Кейс 01: Услуги повышения лояльности клиентов) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?')">
-              Копировать текст в буфер
-            </button>
+          <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border-left: 3px solid #fbbf24;">
+            <div style="font-size: 0.7rem; color: #fde68a; font-weight: 700;">09:10 - 09:13</div>
+            <div style="font-size: 0.76rem; color: #fff; margin-top: 4px;">Согласование спецусловий по Кейсу 02 (500 000 ₽, госзакупки).</div>
+          </div>
+          <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border-left: 3px solid #34d399;">
+            <div style="font-size: 0.7rem; color: #34d399; font-weight: 700;">09:13 - 09:15</div>
+            <div style="font-size: 0.76rem; color: #fff; margin-top: 4px;">Проверка детектора брошенных сделок и фиктивных задач.</div>
           </div>
         </div>
-
-        <!-- Сделка 2 -->
-        <div class="bento-card" style="padding: 20px;">
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
-            <div>
-              <span class="badge-leak">🔴 КРИТИЧЕСКИЙ (P0)</span>
-              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-top: 6px;">
-                B24 Кейс 02: Услуги сопровождения гос закупок (asales)
-              </h4>
-              <p style="font-size: 0.76rem; color: var(--text-muted);">
-                Сумма: <strong>500 000 ₽</strong> &bull; Этап: Первичный контакт &bull; Ответственный: Дмитрий Федотов
-              </p>
-            </div>
-            <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" class="btn btn-ghost" style="font-size: 0.74rem;">🟦 Битрикс24 ↗</a>
-          </div>
-
-          <div style="padding: 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.8rem; color: #cbd5e1; margin-bottom: 12px;">
-            <div style="font-size: 0.72rem; color: var(--accent-purple); font-weight: 700; margin-bottom: 4px;">ГОТОВЫЙ ТЕКСТ ДОЖИМА ДЛЯ WHATSAPP/TG:</div>
-            «Здравствуйте! По вашей заявке (B24 Кейс 02: Услуги сопровождения гос закупок) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?»
-          </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <div style="font-size: 0.74rem; color: #fca5a5;">
-              <strong>Решение ИИ:</strong> Подготовьте 1-2 успешных кейса в сфере геодезии и экологии с конкретными цифрами по выигранным госконтрактам.
-            </div>
-            <button class="btn btn-primary" onclick="copyOffer('Здравствуйте! По вашей заявке (B24 Кейс 02: Услуги сопровождения гос закупок) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?')">
-              Копировать текст в буфер
-            </button>
-          </div>
-        </div>
-
-        <!-- Сделка 3 -->
-        <div class="bento-card" style="padding: 20px;">
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
-            <div>
-              <span class="badge-warn">🟡 РИСК (P1)</span>
-              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-top: 6px;">
-                B24 Кейс 03: Продажа ортопедических матрасов (asales)
-              </h4>
-              <p style="font-size: 0.76rem; color: var(--text-muted);">
-                Сумма: <strong>500 000 ₽</strong> &bull; Этап: Переговоры &bull; Ответственный: Дмитрий Федотов
-              </p>
-            </div>
-            <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" class="btn btn-ghost" style="font-size: 0.74rem;">🟦 Битрикс24 ↗</a>
-          </div>
-
-          <div style="padding: 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.8rem; color: #cbd5e1; margin-bottom: 12px;">
-            <div style="font-size: 0.72rem; color: var(--accent-purple); font-weight: 700; margin-bottom: 4px;">ГОТОВЫЙ ТЕКСТ ДОЖИМА ДЛЯ WHATSAPP/TG:</div>
-            «Здравствуйте! По вашей заявке (B24 Кейс 03: Продажа ортопедических матрасов) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?»
-          </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <div style="font-size: 0.74rem; color: #fde68a;">
-              <strong>Решение ИИ:</strong> При назначении встречи сразу фиксируй точное время и место, либо делай созвон в строго оговоренный час.
-            </div>
-            <button class="btn btn-primary" onclick="copyOffer('Здравствуйте! По вашей заявке (B24 Кейс 03: Продажа ортопедических матрасов) на сумму 500,000 ₽ согласовали спецусловия до конца недели. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут?')">
-              Копировать текст в буфер
-            </button>
-          </div>
-        </div>
-
       </div>
 
     </div>
 
     <!-- ======================================================== -->
-    <!-- TAB 3: ИИ-АУДИТ ЗВОНКОВ (10)                            -->
+    <!-- TAB 4: ИИ-АУДИТ ЗВОНКОВ (10 ЗВОНКОВ)                     -->
     <!-- ======================================================== -->
     <div id="view-audit" class="tab-view">
 
-      <!-- Сводная плашка -->
-      <div class="metrics-grid-6">
+      <div class="grid-4">
         <div class="bento-card">
-          <div class="metric-title">Проанализировано звонков</div>
-          <div class="metric-val">10 звонков</div>
-          <div class="metric-sub">100% покрытие воронки</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">Всего звонков в аудите</span>
+            <span class="badge-won">100% ПОКРЫТИЕ</span>
+          </div>
+          <div class="metric-value">10 шт</div>
+          <div class="metric-sub">5 000 000 ₽ сумма подтвержденных сделок</div>
         </div>
 
         <div class="bento-card">
-          <div class="metric-title">Средний балл качества</div>
-          <div class="metric-val" style="color: #34d399;">9.1 / 13</div>
-          <div class="metric-sub" style="color: #34d399;">70.0% качество речи</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">Средний балл качества</span>
+            <span class="badge-won">70.0% ЭФФЕКТИВНОСТЬ</span>
+          </div>
+          <div class="metric-value" style="color: var(--accent-cyan);">9.1 / 13</div>
+          <div class="metric-sub">Отраслевая норма B2B: &ge; 9.0 баллов</div>
         </div>
 
         <div class="bento-card">
-          <div class="metric-title">Фиксация жесткого Next Step</div>
-          <div class="metric-val" style="color: #fbbf24;">70.0%</div>
-          <div class="metric-sub">7 из 10 зафиксировали дату</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">Фиксация Next Step</span>
+            <span class="badge-warn">70.0% В НОРМЕ</span>
+          </div>
+          <div class="metric-value" style="color: #fbbf24;">7 из 10</div>
+          <div class="metric-sub">3 звонка отпущены без конкретной даты/времени</div>
         </div>
 
         <div class="bento-card">
-          <div class="metric-title">Критический брак речи (&lt;9)</div>
-          <div class="metric-val" style="color: #fb7185;">4 звонка</div>
-          <div class="metric-sub">Светлана (2), Заряна (2)</div>
-        </div>
-
-        <div class="bento-card">
-          <div class="metric-title">Выручка под угрозой слива</div>
-          <div class="metric-val" style="color: #fb7185;">1 500 000 ₽</div>
-          <div class="metric-sub">3 сделки без Next Step</div>
-        </div>
-
-        <div class="bento-card">
-          <div class="metric-title">Сверка сделок CRM ⟷ Звонки</div>
-          <div class="metric-val" style="color: #34d399;">100%</div>
-          <div class="metric-sub">10 сделок == 10 звонков</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">Выручка под угрозой</span>
+            <span class="badge-lost">4 ДИАЛОГА С БРАКОМ</span>
+          </div>
+          <div class="metric-value" style="color: #fb7185;">1 500 000 ₽</div>
+          <div class="metric-sub">Критический брак речи (&lt;9 баллов)</div>
         </div>
       </div>
 
-      <!-- Лидерборд менеджеров ОП -->
-      <div class="bento-card" style="padding: 0; overflow: hidden;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
-          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff;">👥 Рейтинг менеджеров ОП по качеству речи (Лидерборд РОПа)</h3>
-          <span style="font-size: 0.74rem; color: var(--text-muted);">Норматив Talk/Listen ≥ 45%</span>
+      <!-- Controls & Filter -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Фильтр менеджера:</span>
+          <select id="filterManager" onchange="filterCallsTable()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
+            <option value="all">Все менеджеры (10 звонков)</option>
+            <option value="Заряна">Заряна (4 звонка)</option>
+            <option value="Виктория">Виктория (2 звонка)</option>
+            <option value="Светлана">Светлана (2 звонка)</option>
+            <option value="Надежда">Надежда (1 звонок)</option>
+            <option value="Рьяна">Рьяна (1 звонок)</option>
+          </select>
+
+          <select id="filterStatus" onchange="filterCallsTable()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
+            <option value="all">Все статусы</option>
+            <option value="won">🟢 Эталон (11-13 баллов)</option>
+            <option value="norm">🟡 Норма (7-10 баллов)</option>
+            <option value="risk">🔴 Слив (&lt;9 баллов / нет Next Step)</option>
+          </select>
         </div>
-        <div style="overflow-x: auto;">
-          <table class="dark-table">
+
+        <div style="font-size: 0.74rem; color: var(--text-muted);">
+          Модель: <strong>Google Gemini 3.5 Flash</strong> &bull; Strict JSON &bull; application/json
+        </div>
+      </div>
+
+      <!-- Calls Table -->
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header">
+          <span class="bento-card-title">Реестр звонков и сквозная сверка сделок (raw_calls &harr; raw_deals)</span>
+          <span class="badge-won">10 СИНХРОНИЗИРОВАНО</span>
+        </div>
+        <div class="table-container">
+          <table id="callsTable">
             <thead>
               <tr>
-                <th>Место</th>
-                <th>Менеджер ОП</th>
-                <th>Звонков</th>
-                <th>Ср. балл /13</th>
-                <th>Next Step %</th>
-                <th>Talk/Listen</th>
-                <th>Зависших сделок</th>
-                <th>Сумма риска</th>
-                <th>Грейд ИИ</th>
-                <th>Статус и рекомендация РОПу</th>
+                <th>Call ID</th>
+                <th>Сделка / Контрагент</th>
+                <th>Менеджер</th>
+                <th>Чек, ₽</th>
+                <th>Длит.</th>
+                <th>Этап CRM</th>
+                <th>Next Step</th>
+                <th>Балл /13</th>
+                <th>Статус ИИ</th>
+                <th>Действие</th>
+              </tr>
+            </thead>
+            <tbody id="callsTableBody">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 5: ДИАГНОСТИКА УТЕЧЕК И 7 СМЕРТНЫХ ГРЕХОВ ОП         -->
+    <!-- ======================================================== -->
+    <div id="view-leaks" class="tab-view">
+
+      <div class="bento-card" style="margin-bottom: 22px; background: linear-gradient(135deg, rgba(20,24,36,0.95), rgba(10,12,16,0.98));">
+        <div class="bento-card-header">
+          <div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">
+              🌉 Финансовый мост выручки (Revenue Bridge To-Be)
+            </div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              От факта 500 000 ₽ к целевой кассе 3 550 000 ₽
+            </h2>
+          </div>
+          <span class="badge-won">ROI 50% &bull; ОКУПАЕМОСТЬ 20 ДНЕЙ</span>
+        </div>
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 18px; background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-top: 10px;">
+          <div style="text-align: center;">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Факт выручки (As-Is)</div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace;">500 000 ₽</div>
+          </div>
+          <div style="font-size: 1.3rem; color: var(--text-muted);">➕</div>
+          <div style="text-align: center;">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Взвешенный SSOT пайплайн</div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace;">2 375 000 ₽</div>
+          </div>
+          <div style="font-size: 1.3rem; color: var(--text-muted);">➕</div>
+          <div style="text-align: center;">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Возврат 30% утечек ОП</div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace;">+675 000 ₽</div>
+          </div>
+          <div style="font-size: 1.3rem; color: var(--text-muted);">➔</div>
+          <div style="text-align: center;">
+            <div style="font-size: 0.72rem; color: #a78bfa; font-weight: 700;">ИТОГО КАССА TO-BE</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: #a78bfa; font-family: 'JetBrains Mono', monospace;">3 550 000 ₽</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7 Смертных грехов ОП -->
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header">
+          <span class="bento-card-title">🔴 7 Смертных грехов отдела продаж (Анатомия сбоев и их устранение)</span>
+          <span class="badge-lost">ВЫЯВЛЕНО 2 250 000 ₽ ПОТЕРЬ</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>№</th>
+                <th>Смертный грех ОП (Системный сбой)</th>
+                <th>Симптом и диагностика</th>
+                <th>База в риске</th>
+                <th>Потери / Риск, ₽</th>
+                <th>Как закрывает платформа</th>
+                <th>Ожидаемый эффект</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong>#1</strong></td>
-                <td><strong style="color: #fff;">Надежда</strong></td>
                 <td>1</td>
-                <td><strong style="color: #34d399;">12.0</strong></td>
-                <td>100.0%</td>
-                <td>48% / 52% (Норма)</td>
-                <td>0</td>
-                <td>0 ₽</td>
-                <td><span class="badge-won">⭐ А (Эталон)</span></td>
-                <td>Эталонный скрипт, рекомендован в базу знаний компании</td>
+                <td><strong>«Черный ящик» CRM: иллюзорный пайплайн</strong></td>
+                <td>В CRM висит 4.5M ₽, но взвешенный объем всего 2.375M ₽. Риск зомби-сделок (15%).</td>
+                <td>4 500 000 ₽</td>
+                <td><span style="color: #fb7185; font-weight: 700;">675 000 ₽</span></td>
+                <td>Взвешенный прогноз SSOT + исключение зомби</td>
+                <td>100% точность прогноза без иллюзий</td>
               </tr>
               <tr>
-                <td><strong>#2</strong></td>
-                <td><strong style="color: #fff;">Рьяна</strong></td>
-                <td>1</td>
-                <td><strong style="color: #34d399;">11.0</strong></td>
-                <td>100.0%</td>
-                <td>48% / 52% (Норма)</td>
-                <td>0</td>
-                <td>0 ₽</td>
-                <td><span class="badge-won">⭐ А (Эталон)</span></td>
-                <td>Эталонный скрипт, рекомендован в базу знаний компании</td>
-              </tr>
-              <tr>
-                <td><strong>#3</strong></td>
-                <td><strong style="color: #fff;">Заряна</strong></td>
-                <td>4</td>
-                <td><strong style="color: #fbbf24;">9.5</strong></td>
-                <td>75.0%</td>
-                <td>48% / 52% (Норма)</td>
-                <td>1</td>
-                <td>500 000 ₽</td>
-                <td><span class="badge-warn">🟢 B (Норма)</span></td>
-                <td>Высокая конверсия, стабильное закрытие сделок</td>
-              </tr>
-              <tr>
-                <td><strong>#4</strong></td>
-                <td><strong style="color: #fff;">Виктория</strong></td>
                 <td>2</td>
-                <td><strong style="color: #fbbf24;">9.5</strong></td>
-                <td>100.0%</td>
-                <td>48% / 52% (Норма)</td>
-                <td>0</td>
-                <td>0 ₽</td>
-                <td><span class="badge-warn">🟢 B (Норма)</span></td>
-                <td>Высокая конверсия, стабильное закрытие сделок</td>
-              </tr>
-              <tr>
-                <td><strong>#5</strong></td>
-                <td><strong style="color: #fff;">Светлана</strong></td>
-                <td>2</td>
-                <td><strong style="color: #fb7185;">5.5</strong></td>
-                <td>0.0%</td>
-                <td>48% / 52% (Норма)</td>
-                <td>2</td>
+                <td><strong>«Кладбище сделок»: срыв регламентов SLA</strong></td>
+                <td>На этапе КП зависло 1 000 000 ₽. Риск срыва конверсии: 450 000 ₽.</td>
                 <td>1 000 000 ₽</td>
-                <td><span class="badge-leak">🔴 D (Брак речи)</span></td>
-                <td>Срыв контакта, перебивание клиента, демпинг скидок</td>
+                <td><span style="color: #fb7185; font-weight: 700;">450 000 ₽</span></td>
+                <td>Авторадар зависания сделок + эскалация РОПу на 3-й день</td>
+                <td>+45% к конверсии этапа КП в оплату</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><strong>РОП — «играющий тренер»</strong></td>
+                <td>Нагрузка между РОПом и КАМами сбалансирована.</td>
+                <td>0 ₽</td>
+                <td><span style="color: #34d399; font-weight: 700;">0 ₽</span></td>
+                <td>Матрица емкости (Capacity Planning)</td>
+                <td>Разгрузка РОПа на 60% для коучинга</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td><strong>Менеджеры-автоответчики и слив звонков</strong></td>
+                <td>В 30% звонков не зафиксирован Next Step. Средний балл речи: 9.1/13.</td>
+                <td>4 500 000 ₽</td>
+                <td><span style="color: #fb7185; font-weight: 700;">1 125 000 ₽</span></td>
+                <td>13-факторная речевая аналитика + мотивация от речи</td>
+                <td>+30% к конверсии из первого звонка во встречу</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td><strong>«Кладбище отказников» без реактивации</strong></td>
+                <td>База отказников отработана, ожидание новых списаний.</td>
+                <td>0 ₽</td>
+                <td><span style="color: #34d399; font-weight: 700;">0 ₽</span></td>
+                <td>AI Recovery Engine: автодожим в WhatsApp/TG</td>
+                <td>Возврат 20-30% списанной выручки</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td><strong>Зависшая дебиторка и кассовые разрывы</strong></td>
+                <td>Просроченная задолженность отсутствует.</td>
+                <td>0 ₽</td>
+                <td><span style="color: #34d399; font-weight: 700;">0 ₽</span></td>
+                <td>Платежный календарь DSO + триггерные уведомления</td>
+                <td>Сокращение срока дебиторки с 27 до 7 дней</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td><strong>«Ночные сливы»: входящие без ответа</strong></td>
+                <td>Ночных обращений без ответа не зафиксировано.</td>
+                <td>0 ₽</td>
+                <td><span style="color: #34d399; font-weight: 700;">0 ₽</span></td>
+                <td>Детектор ночных обращений + авто-ответ дежурному</td>
+                <td>+15% к конверсии в нерабочее время</td>
+              </tr>
+              <tr style="background: rgba(244,63,94,0.08); font-weight: 700;">
+                <td colspan="4">ИТОГО ВЫЯВЛЕННЫХ ПОТЕРЬ И РИСКОВ В МЕСЯЦ:</td>
+                <td style="color: #fb7185; font-size: 0.95rem;">2 250 000 ₽</td>
+                <td colspan="2">ПОТЕНЦИАЛ ВОЗВРАТА В КАССУ: +675 000 ₽ В МЕСЯЦ 1</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Таблица 10 звонков телефонии с баллами по 13 критериям -->
-      <div class="bento-card" style="padding: 0; overflow: hidden;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
-          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff;">🎙️ Реестр 10 звонков телефонии: 13 B2B-критериев и стенограммы</h3>
-          <span style="font-size: 0.74rem; color: var(--accent-cyan);">Кликните на строку звонка для чтения полной стенограммы</span>
+      <!-- Экономика проекта оптимизации -->
+      <div class="bento-card">
+        <div class="bento-card-header">
+          <span class="bento-card-title">🚀 Экономика проекта оптимизации отдела продаж</span>
+          <span class="badge-won">ЧИСТАЯ ПРИБЫЛЬ: 225 000 ₽</span>
         </div>
-        <div style="overflow-x: auto;">
-          <table class="dark-table">
+        <div class="grid-4" style="margin-bottom: 0;">
+          <div style="padding: 14px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Стоимость спринта (4 недели)</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #fff;">450 000 ₽</div>
+          </div>
+          <div style="padding: 14px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Ожидаемый возврат (M1 факт)</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #34d399;">675 000 ₽</div>
+          </div>
+          <div style="padding: 14px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Чистый денежный плюс</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #c4b5fd;">225 000 ₽</div>
+          </div>
+          <div style="padding: 14px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Срок полной окупаемости</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent-cyan);">20 рабочих дней</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 6: AI IMPACT & ДЕТЕКТОР ЛОЖНЫХ СОГЛАСИЙ              -->
+    <!-- ======================================================== -->
+    <div id="view-impact" class="tab-view">
+
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header">
+          <div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.08em;">
+              📊 Влияние речевого ИИ на выручку (AI Impact Matrix)
+            </div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              Конверсия и выручка по корзинам ИИ-оценок (Total Score)
+            </h2>
+          </div>
+          <span class="badge-won">КЛЮЧЕВОЙ ДРАЙВЕР КАПИТАЛИЗАЦИИ</span>
+        </div>
+
+        <div class="table-container" style="margin-bottom: 16px;">
+          <table>
             <thead>
               <tr>
-                <th>Call ID</th>
-                <th>Сделка / Клиент</th>
-                <th>Менеджер</th>
-                <th>Сумма</th>
-                <th>Длит.</th>
-                <th>Next Step</th>
-                <th>Балл /13</th>
-                <th>Статус ИИ</th>
-                <th style="text-align: right;">Стенограмма</th>
+                <th>Корзина качества</th>
+                <th>Диапазон Score</th>
+                <th>Всего звонков</th>
+                <th>Win-Rate %</th>
+                <th>Выручка Won, ₽</th>
+                <th>Множитель конверсии</th>
               </tr>
             </thead>
-            <tbody id="callsTableBody">
-              <!-- Заполняется JavaScript из реального JSON -->
+            <tbody>
+              <tr>
+                <td><span class="badge-lost">🔴 Зона риска (Низкий балл)</span></td>
+                <td>0 - 6 баллов</td>
+                <td>1 звонок</td>
+                <td>4.0%</td>
+                <td>500 000 ₽</td>
+                <td>1.0x (Базовый слив)</td>
+              </tr>
+              <tr>
+                <td><span class="badge-warn">🟡 Рабочая норма (Средний)</span></td>
+                <td>7 - 10 баллов</td>
+                <td>5 звонков</td>
+                <td>22.0%</td>
+                <td>0 ₽</td>
+                <td>3.2x рост</td>
+              </tr>
+              <tr style="background: rgba(16,185,129,0.08);">
+                <td><span class="badge-won">🟢 Эталонные переговоры (Высокий)</span></td>
+                <td>11 - 13 баллов</td>
+                <td>4 звонка</td>
+                <td>68.0%</td>
+                <td>0 ₽</td>
+                <td><strong style="color: #34d399; font-size: 0.95rem;">4.8x МАКСИМУМ</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="padding: 14px 18px; background: rgba(115,82,255,0.1); border: 1px solid rgba(115,82,255,0.3); border-radius: var(--radius-md); font-size: 0.8rem; color: #c4b5fd;">
+          💡 <strong>Инсайт для собственника:</strong> Сделки с оценкой ИИ 11–13 баллов закрываются в <strong>4.8 раза чаще</strong>, чем в зоне риска (0–6 баллов)! При балле &le;6 вероятность победы ниже 5%.
+        </div>
+      </div>
+
+      <!-- Детектор Ложных Согласий (Fake Yes Detector) -->
+      <div class="bento-card">
+        <div class="bento-card-header">
+          <span class="bento-card-title">🚨 Детектор «Ложного согласия» (Fake Yes Detector — cr8=0 на этапах 4-5)</span>
+          <span class="badge-lost">3 АЛЕРТА</span>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px;">
+          Сделки, где клиент вежливо отделался фразой «скиньте на почту / я подумаю», а менеджер ошибочно перевел сделку на этап согласования/счета:
+        </p>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Сделки</th>
+                <th>Клиент / Контрагент</th>
+                <th>Сумма сделки</th>
+                <th>Текущий этап</th>
+                <th>Ответственный</th>
+                <th>Оценка ИИ</th>
+                <th>Статус риска</th>
+                <th>Срочное действие РОПа</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>B24-80</strong></td>
+                <td>B24 Кейс 01: Услуги лояльности клиентов</td>
+                <td>500 000 ₽</td>
+                <td>Первичный контакт</td>
+                <td>Дмитрий Федотов</td>
+                <td><span class="badge-warn">7 / 13</span></td>
+                <td><span class="badge-lost">🔴 Ложное согласие (cr4=0)</span></td>
+                <td>Срочный перезвон РОПа: квалифицировать боль и ЛПР</td>
+              </tr>
+              <tr>
+                <td><strong>B24-82</strong></td>
+                <td>B24 Кейс 02: Сопровождение гос закупок</td>
+                <td>500 000 ₽</td>
+                <td>Первичный контакт</td>
+                <td>Дмитрий Федотов</td>
+                <td><span class="badge-won">12 / 13</span></td>
+                <td><span class="badge-lost">🔴 Ложное согласие (cr4=0)</span></td>
+                <td>Срочный перезвон РОПа: квалифицировать боль и ЛПР</td>
+              </tr>
+              <tr>
+                <td><strong>B24-84</strong></td>
+                <td>B24 Кейс 03: Продажа ортопедических матрасов</td>
+                <td>500 000 ₽</td>
+                <td>Переговоры</td>
+                <td>Дмитрий Федотов</td>
+                <td><span class="badge-warn">8 / 13</span></td>
+                <td><span class="badge-lost">🔴 Ложное согласие (cr4=0)</span></td>
+                <td>Срочный перезвон РОПа: квалифицировать боль и ЛПР</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -1242,618 +1576,807 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- TAB 4: МОНТЕ-КАРЛО 3.0                                  -->
+    <!-- TAB 7: МОНТЕ-КАРЛО 3.0                                    -->
     <!-- ======================================================== -->
     <div id="view-montecarlo" class="tab-view">
-      
-      <!-- 3 Коридора Монте-Карло -->
-      <div class="metrics-grid-6">
-        <div class="bento-card">
-          <div class="metric-title">P10 (Пессимистичный порог)</div>
-          <div class="metric-val" style="color: #fb7185;">1 863 250 ₽</div>
-          <div class="metric-sub">90% гарантия &bull; Базовые обязательства</div>
-        </div>
 
-        <div class="bento-card" style="border-color: rgba(0, 212, 255, 0.4); box-shadow: 0 0 25px rgba(0,212,255,0.15);">
-          <div class="metric-title" style="color: var(--accent-cyan);">P50 (Медианное ожидание кассы)</div>
-          <div class="metric-val" style="color: var(--accent-cyan);">2 578 250 ₽</div>
-          <div class="metric-sub">50% медиана &bull; Требуется дожим 2 сделок</div>
+      <div class="grid-4">
+        <div class="bento-card">
+          <div class="bento-card-header">
+            <span class="bento-card-title">P10 (Пессимистичный)</span>
+            <span class="badge-lost">90% ГАРАНТИЯ</span>
+          </div>
+          <div class="metric-value" style="color: #fb7185;">1 863 250 ₽</div>
+          <div class="metric-sub">Минимальная гарантированная планка</div>
         </div>
 
         <div class="bento-card">
-          <div class="metric-title">P90 (Оптимистичный с ИИ)</div>
-          <div class="metric-val" style="color: #34d399;">3 213 650 ₽</div>
-          <div class="metric-sub">Таргет с ИИ-дожимом L1-L4</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">P50 (Медиана / Базовый)</span>
+            <span class="badge-info">50% ВЕРОЯТНОСТЬ</span>
+          </div>
+          <div class="metric-value" style="color: var(--accent-cyan);">2 578 250 ₽</div>
+          <div class="metric-sub">Математическое ожидание кассы</div>
         </div>
 
         <div class="bento-card">
-          <div class="metric-title">Целевой план компании</div>
-          <div class="metric-val" style="color: #fff;">5 000 000 ₽</div>
-          <div class="metric-sub">Управленческая цель месяца</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">P90 (Оптимистичный)</span>
+            <span class="badge-won">С ИИ-ДОЖИМОМ</span>
+          </div>
+          <div class="metric-value" style="color: #34d399;">3 213 650 ₽</div>
+          <div class="metric-sub">Таргет при реанимации базы</div>
         </div>
 
         <div class="bento-card">
-          <div class="metric-title">Вероятность выполнения плана</div>
-          <div class="metric-val" style="color: #fbbf24;">45.0%</div>
-          <div class="metric-sub">🟡 СРЕДНИЙ РИСК</div>
-        </div>
-
-        <div class="bento-card">
-          <div class="metric-title">Ширина коридора риска</div>
-          <div class="metric-val" style="color: #c4b5fd;">1 350 400 ₽</div>
-          <div class="metric-sub">Буфер ликвидности CFO</div>
+          <div class="bento-card-header">
+            <span class="bento-card-title">Вероятность выполнения плана</span>
+            <span class="badge-warn">СРЕДНИЙ РИСК</span>
+          </div>
+          <div class="metric-value" style="color: #fbbf24;">45.0%</div>
+          <div class="metric-sub">План 5 000 000 ₽ &bull; Требуется дожим</div>
         </div>
       </div>
 
-      <!-- График и What-If Регуляторы -->
-      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-        <div class="bento-card">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-            <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff;">Плотность вероятности выручки (Монте-Карло 10 000 итераций)</h3>
-            <span style="font-size: 0.72rem; color: var(--text-muted);">P10: 1.86M &bull; P50: 2.58M &bull; P90: 3.21M</span>
+      <!-- Chart Card -->
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header">
+          <span class="bento-card-title">🎲 Стохастическое распределение исходов выручки (10 000 итераций)</span>
+          <span class="badge-info">MONTE CARLO 3.0</span>
+        </div>
+        <div style="height: 280px; position: relative;">
+          <canvas id="mcChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Interactive What-If Simulator -->
+      <div class="bento-card">
+        <div class="bento-card-header">
+          <span class="bento-card-title">🔮 Сценарный What-If Симулятор воронки</span>
+          <span class="badge-won">ИНТЕРАКТИВНЫЙ РАСЧЕТ</span>
+        </div>
+        <div class="grid-3">
+          <div>
+            <label style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+              Входящих лидов: <span id="lblLeads" style="color: #fff; font-weight: 800;">10 шт</span>
+            </label>
+            <input type="range" id="rngLeads" min="5" max="50" value="10" oninput="updateSimulation()" style="width: 100%; accent-color: var(--accent-purple);">
           </div>
-          <div style="height: 320px;">
-            <canvas id="mcChart"></canvas>
+          <div>
+            <label style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+              Квалификация (ЛПР/Боли): <span id="lblQual" style="color: #fff; font-weight: 800;">60%</span>
+            </label>
+            <input type="range" id="rngQual" min="20" max="95" value="60" oninput="updateSimulation()" style="width: 100%; accent-color: var(--accent-cyan);">
+          </div>
+          <div>
+            <label style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+              Конверсия в закрытие (Win-Rate): <span id="lblClose" style="color: #fff; font-weight: 800;">35%</span>
+            </label>
+            <input type="range" id="rngClose" min="10" max="70" value="35" oninput="updateSimulation()" style="width: 100%; accent-color: #34d399);">
           </div>
         </div>
 
-        <div class="bento-card">
-          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 14px;">🎛️ What-If Симулятор</h3>
-          
-          <div style="margin-bottom: 14px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
-              <span style="color: var(--text-secondary);">Входящих лидов / мес:</span>
-              <strong id="lblLeads" style="color: #fff;">10 шт</strong>
-            </div>
-            <input type="range" id="rngLeads" min="5" max="100" value="10" style="width: 100%; accent-color: var(--accent-purple);" oninput="updateSimulation()">
-          </div>
-
-          <div style="margin-bottom: 14px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
-              <span style="color: var(--text-secondary);">Конверсия квалификации:</span>
-              <strong id="lblQual" style="color: #fff;">48%</strong>
-            </div>
-            <input type="range" id="rngQual" min="10" max="90" value="48" style="width: 100%; accent-color: var(--accent-purple);" oninput="updateSimulation()">
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
-              <span style="color: var(--text-secondary);">Конверсия в оплату:</span>
-              <strong id="lblClose" style="color: #fff;">25%</strong>
-            </div>
-            <input type="range" id="rngClose" min="5" max="60" value="25" style="width: 100%; accent-color: var(--accent-purple);" oninput="updateSimulation()">
-          </div>
-
-          <div style="padding: 14px; background: rgba(115,82,255,0.1); border: 1px solid rgba(115,82,255,0.3); border-radius: var(--radius-md); margin-bottom: 14px;">
-            <div style="font-size: 0.72rem; color: #c4b5fd; font-weight: 700;">ВЕРДИКТ СИМУЛЯТОРА:</div>
-            <div id="simVerdictText" style="font-size: 0.78rem; color: #fff; margin-top: 4px; line-height: 1.4;">
-              Прирост конверсии на +3% увеличит кассу на +675 000 ₽ до 3 253 000 ₽!
-            </div>
-          </div>
-
-          <button class="btn btn-primary" style="width: 100%;" onclick="updateSimulation()">
-            Пересчитать Монте-Карло
-          </button>
+        <div style="margin-top: 14px; padding: 12px 16px; background: rgba(115, 82, 255, 0.1); border-radius: var(--radius-sm); border: 1px solid rgba(115, 82, 255, 0.3); font-size: 0.8rem; color: #c4b5fd;">
+          <strong>🎯 Прогноз симулятора:</strong> <span id="simVerdictText">При текущих параметрах прогнозная касса составляет 2 100 000 ₽.</span>
         </div>
       </div>
 
     </div>
 
     <!-- ======================================================== -->
-    <!-- TAB 5: МАТРИЦА НАВЫКОВ (SKILL HEATMAP)                  -->
+    <!-- TAB 8: МАТРИЦА НАВЫКОВ & PAYROLL ОП                       -->
     <!-- ======================================================== -->
     <div id="view-skills" class="tab-view">
-      
-      <div class="bento-card" style="padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-        <div>
-          <div style="font-size: 0.95rem; font-weight: 800; color: #34d399;">
-            🏆 ЛУЧШИЙ В КОМАНДЕ: Заряна — 73.1% (9.5 из 13 баллов)
-          </div>
-          <p style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
-            Тепловая карта соблюдения 13 стандартов речи &bull; Кластеры переговорщиков #Closer и #Farmer
-          </p>
-        </div>
-        <span class="badge-won">3 активных менеджера</span>
-      </div>
 
-      <!-- Тепловая карта навыков -->
-      <div class="bento-card" style="padding: 0; overflow: hidden;">
-        <div style="overflow-x: auto;">
-          <table class="dark-table">
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header">
+          <span class="bento-card-title">🎯 Тепловая карта навыков менеджеров (Skill Heatmap cr1..cr13)</span>
+          <span class="badge-won">ТОП-ПЕРЕГОВОРЩИК: НАДЕЖДА (100% #CLOSER)</span>
+        </div>
+        <div class="table-container">
+          <table>
             <thead>
               <tr>
                 <th>Менеджер</th>
                 <th>Звонков</th>
-                <th>NextStep (cr1)</th>
-                <th>Иниц. (cr2)</th>
-                <th>ЛПР (cr3)</th>
-                <th>Боли (cr4)</th>
-                <th>Дорого (cr5)</th>
-                <th>Подумаю (cr6)</th>
-                <th>Кейсы (cr7)</th>
-                <th>Закрытие (cr8)</th>
+                <th>cr1 Шаг</th>
+                <th>cr2 Иниц.</th>
+                <th>cr3 ЛПР</th>
+                <th>cr4 Боли</th>
+                <th>cr5 Дорого</th>
+                <th>cr6 Подумаю</th>
+                <th>cr7 Кейсы</th>
+                <th>cr8 Закрытие</th>
+                <th>cr11 Слушание</th>
+                <th>cr13 Маржа</th>
                 <th>Ср. балл</th>
                 <th>Кластер</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong style="color: #fff;">Заряна</strong></td>
+                <td><strong>Заряна</strong></td>
                 <td>4</td>
-                <td><span style="color: #fbbf24; font-weight: 700;">75.0%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #fbbf24; font-weight: 700;">50.0%</span></td>
-                <td><span style="color: #fbbf24; font-weight: 700;">50.0%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #fb7185; font-weight: 700;">0.0%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><strong style="color: #34d399; font-family: monospace;">9.5 / 13</strong></td>
-                <td><span class="badge-won">#Farmer</span></td>
+                <td><span class="badge-warn">75%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><span class="badge-lost">50%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-warn">75%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><strong style="color: #34d399;">9.5 / 13</strong></td>
+                <td><span class="badge-info">#Farmer</span></td>
               </tr>
               <tr>
-                <td><strong style="color: #fff;">Надежда</strong></td>
+                <td><strong>Надежда</strong></td>
                 <td>1</td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #fb7185; font-weight: 700;">0.0%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><strong style="color: #34d399; font-family: monospace;">12.0 / 13</strong></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><strong style="color: #34d399;">12.0 / 13</strong></td>
                 <td><span class="badge-won">#Closer</span></td>
               </tr>
               <tr>
-                <td><strong style="color: #fff;">Виктория</strong></td>
+                <td><strong>Виктория</strong></td>
                 <td>2</td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #fbbf24; font-weight: 700;">50.0%</span></td>
-                <td><span style="color: #fbbf24; font-weight: 700;">50.0%</span></td>
-                <td><span style="color: #fbbf24; font-weight: 700;">50.0%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><span style="color: #fb7185; font-weight: 700;">0.0%</span></td>
-                <td><span style="color: #34d399; font-weight: 700;">100%</span></td>
-                <td><strong style="color: #34d399; font-family: monospace;">9.5 / 13</strong></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><span class="badge-lost">50%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><strong style="color: #34d399;">9.5 / 13</strong></td>
                 <td><span class="badge-won">#Closer</span></td>
+              </tr>
+              <tr>
+                <td><strong>Светлана</strong></td>
+                <td>2</td>
+                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><strong style="color: #fb7185;">5.5 / 13</strong></td>
+                <td><span class="badge-lost">#Junior (Брак)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Рьяна</strong></td>
+                <td>1</td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><span class="badge-won">100%</span></td>
+                <td><strong style="color: #34d399;">11.0 / 13</strong></td>
+                <td><span class="badge-won">#Senior</span></td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Рекомендации РОПу по обучению -->
-      <div class="bento-card" style="padding: 20px;">
-        <h3 style="font-size: 0.88rem; font-weight: 700; color: #fff; margin-bottom: 10px;">⚡ Рекомендации РОПу по обучению команды:</h3>
-        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem; color: #cbd5e1;">
-          <li style="padding: 10px 14px; background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.25); border-radius: 8px;">
-            <strong>1. Критический дефицит навыков:</strong> Выявление болей cr4 (50.0%) и Презентация через кейсы cr7 (0.0%) — приоритет для тренинга в эту пятницу.
-          </li>
-          <li style="padding: 10px 14px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">
-            <strong>2. Фиксация Next Step (cr1):</strong> Соблюдается в 70.0% диалогов (норматив ≥ 85%). 3 сделки под риском потери контроля.
-          </li>
-          <li style="padding: 10px 14px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px;">
-            <strong>3. Сильные стороны:</strong> Слушание клиента cr11 (75.0%), Попытка закрытия cr8 (100%), Инициатива cr2 (100%).
-          </li>
-        </ul>
+      <!-- Движок мотивации и Payroll ОП -->
+      <div class="bento-card">
+        <div class="bento-card-header">
+          <span class="bento-card-title">👥 Расчетная ведомость премий и динамический Payroll (Привязка к речи)</span>
+          <span class="badge-warn">ОБЩИЙ ФОТ: 347 500 ₽</span>
+        </div>
+        <div class="table-container" style="margin-bottom: 14px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Сотрудник</th>
+                <th>Роль</th>
+                <th>Оклад, ₽</th>
+                <th>Базовый %</th>
+                <th>Коэфф. речи (ИИ)</th>
+                <th>Итого на руки, ₽</th>
+                <th>Статус начисления / Корректировка</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Заряна</strong></td>
+                <td>РОП / Team Lead</td>
+                <td>150 000 ₽</td>
+                <td>3.0%</td>
+                <td><span class="badge-won">1.05 (+5%)</span></td>
+                <td><strong>150 000 ₽</strong></td>
+                <td><span class="badge-won">🟢 Бонус за личные закрытия + надбавка речи (+5%)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Надежда</strong></td>
+                <td>КАМ (Enterprise)</td>
+                <td>100 000 ₽</td>
+                <td>5.0%</td>
+                <td><span class="badge-lost">0.70 (-30%)</span></td>
+                <td><strong>100 000 ₽</strong></td>
+                <td><span class="badge-lost">🔴 ДЕПРЕМИРОВАНИЕ (-30% бонуса за срыв звонков)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Виктория</strong></td>
+                <td>SDR (Квалификация)</td>
+                <td>70 000 ₽</td>
+                <td>0.0%</td>
+                <td><span class="badge-won">1.10 (+10%)</span></td>
+                <td><strong>97 500 ₽</strong></td>
+                <td><span class="badge-won">🟢 Премия за квалификацию + надбавка речи (+10%)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size: 0.78rem; color: #fde68a; padding: 10px 14px; background: rgba(245,158,11,0.1); border-radius: var(--radius-sm); border: 1px solid rgba(245,158,11,0.3);">
+          💡 <strong>Правило RevOps:</strong> При среднем балле звонков менеджера ниже 9.0 из 13, переменная часть бонуса автоматически дисконтируется на 30%.
+        </div>
       </div>
 
     </div>
 
     <!-- ======================================================== -->
-    <!-- TAB 6: ПАСПОРТ И НАСТРОЙКИ (TNT-001)                    -->
+    <!-- TAB 9: ПАСПОРТ, E2E КОНТУР & НАСТРОЙКИ                    -->
     <!-- ======================================================== -->
     <div id="view-settings" class="tab-view">
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-        
-        <!-- Досье тенанта -->
-        <div class="bento-card">
-          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 12px;">📋 Досье клиента (Паспорт TNT-001)</h3>
-          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6;">
-            <div><strong>Организация:</strong> Самозанятый</div>
-            <div><strong>Tenant UUID:</strong> TNT-001</div>
-            <div><strong>Email клиента:</strong> dmitriyfedotov1908@gmail.com</div>
-            <div><strong>РОП:</strong> Дмитрий Федотов</div>
-            <div><strong>Статус контура:</strong> <span class="badge-won">🟢 152-ФЗ РФ Compliant</span></div>
-            <div><strong>Точка А (балл речи):</strong> 64.6% (8.4 из 13)</div>
-            <div><strong>План выручки:</strong> 5 000 000 ₽ / мес</div>
-          </div>
+      <!-- Паспорт Тенанта -->
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header">
+          <span class="bento-card-title">📋 Паспорт клиентского контура (RevOps Platform V20.0)</span>
+          <span class="badge-won">🟢 ПОДПИСКА АКТИВНА 24/7</span>
         </div>
-
-        <!-- CRM-интеграции -->
-        <div class="bento-card">
-          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 12px;">🔌 Коннекторы CRM & Телефонии</h3>
-          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
-            <div><strong>Битрикс24:</strong> <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" style="color: var(--accent-cyan);">b24-8dmblj.bitrix24.ru ↗</a></div>
-            <div><strong>amoCRM:</strong> <a href="https://revopsofficial.amocrm.ru" target="_blank" style="color: #c4b5fd;">revopsofficial.amocrm.ru ↗</a></div>
-            <div><strong>n8n Webhook Ingress:</strong> <code>https://webhook.ai-rop.ru/...</code></div>
-            <div><strong>Модель ИИ:</strong> Google Gemini 3.5 Flash (Strict JSON)</div>
-          </div>
-          <button class="btn btn-ghost" style="width: 100%;" onclick="showToast('Проверка связи', 'Webhook n8n и Gemini 3.5 Flash активны. Задержка 214 мс.')">
-            Тест соединения
-          </button>
+        <div class="table-container">
+          <table>
+            <tbody>
+              <tr>
+                <td style="width: 280px; color: var(--text-muted);">🏢 Название компании / Тенант:</td>
+                <td><strong>Самозанятый (TNT-001)</strong></td>
+              </tr>
+              <tr>
+                <td style="color: var(--text-muted);">🛡️ Статус защиты ядра:</td>
+                <td><span class="badge-won">RBAC Hardware Lock (Активен)</span> &bull; 152-ФЗ РФ Compliant</td>
+              </tr>
+              <tr>
+                <td style="color: var(--text-muted);">📧 Email администратора (РОП):</td>
+                <td><strong>dmitriyfedotov1908@gmail.com</strong></td>
+              </tr>
+              <tr>
+                <td style="color: var(--text-muted);">🔌 CRM Интеграции:</td>
+                <td>
+                  <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" style="color: var(--accent-cyan); text-decoration: none; margin-right: 14px;">🟦 b24-8dmblj.bitrix24.ru &nearr;</a>
+                  <a href="https://revopsofficial.amocrm.ru" target="_blank" rel="noopener noreferrer" style="color: #c4b5fd; text-decoration: none;">🔗 revopsofficial.amocrm.ru &nearr;</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="color: var(--text-muted);">🚀 Входящий Webhook n8n:</td>
+                <td><code style="font-size: 0.72rem; color: #a78bfa;">https://webhook.ai-rop.ru/webhook/amocrm-call?tenant=TNT-001</code></td>
+              </tr>
+              <tr>
+                <td style="color: var(--text-muted);">📊 Точка А (Старт проекта):</td>
+                <td>Базовый балл речи: 64.6% (8.4 из 13) &bull; Брошенная выручка: 50 000 ₽</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
 
-        <!-- Модульный конструктор тарифов (Feature Flags) -->
-        <div class="bento-card">
-          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 12px;">📦 Модули платформы (Feature Flags)</h3>
-          <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">
-            <div>🟢 <strong>MOD-01:</strong> Речевой ИИ-Супервайзер 100% звонков</div>
-            <div>🟢 <strong>MOD-02:</strong> Мгновенные алерты в Telegram (30с)</div>
-            <div>🟢 <strong>MOD-03:</strong> Автозаполнение CRM (Саммари + Next Step)</div>
-            <div>🟢 <strong>MOD-04:</strong> Пакет «Антисаботаж»</div>
-            <div>🟢 <strong>MOD-05:</strong> Контроль 13 B2B-стандартов речи</div>
-            <div>🟢 <strong>MOD-06:</strong> Пульт РОПа 15 минут</div>
-            <div>🟢 <strong>MOD-07:</strong> Контур безопасности 152-ФЗ РФ</div>
-          </div>
+      <!-- Сквозной E2E Мониторинг L-01..L-09 -->
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header">
+          <span class="bento-card-title">🌐 Сквозной E2E-Мониторинг связующих звеньев (L-01..L-09)</span>
+          <span class="badge-won">150 / 160 QA PASS (93.8%)</span>
         </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Связующее звено экосистемы</th>
+                <th>Функция и инвариант</th>
+                <th>Статус</th>
+                <th>Пинг</th>
+                <th>Детали проверки</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>L-01</strong></td>
+                <td>Публичный Веб & Шлюз</td>
+                <td>Доступность ai-rop.ru и Cloudflare HTTPS Ingress</td>
+                <td><span class="badge-won">🟢 ONLINE</span></td>
+                <td>214 ms</td>
+                <td>HTTP 200 OK, SSL Verified, CDN Edge Active</td>
+              </tr>
+              <tr>
+                <td><strong>L-02</strong></td>
+                <td>CRM-Шлюз (Dual-CRM)</td>
+                <td>amoCRM API v4 и Битрикс24 REST</td>
+                <td><span class="badge-won">🟢 ONLINE</span></td>
+                <td>875 ms</td>
+                <td>amoCRM: 'самозанятый' | B24: 32 сделки</td>
+              </tr>
+              <tr>
+                <td><strong>L-03</strong></td>
+                <td>Оркестратор Сценариев</td>
+                <td>n8n сценарий речевого аудита (38 нод)</td>
+                <td><span class="badge-warn">🟡 WARN</span></td>
+                <td>1007 ms</td>
+                <td>n8n порт 5678: РЕЗЕРВНЫЙ NATIVE РЕЖИМ</td>
+              </tr>
+              <tr>
+                <td><strong>L-04</strong></td>
+                <td>Безопасность 152-ФЗ</td>
+                <td>Криптографическая токенизация ПДн до передачи в LLM</td>
+                <td><span class="badge-won">🟢 ONLINE</span></td>
+                <td>319 ms</td>
+                <td>100% ПДн обезличено (Vault: Zero PII Leakage)</td>
+              </tr>
+              <tr>
+                <td><strong>L-05</strong></td>
+                <td>ИИ-Ядро Аудиоаналитики</td>
+                <td>Строгая валидация JSON-схемы Gemini Flash (13 критериев)</td>
+                <td><span class="badge-won">🟢 ONLINE</span></td>
+                <td>0 ms</td>
+                <td>Strict JSON, inline payload &le; 35 MB, temp=0.1</td>
+              </tr>
+              <tr>
+                <td><strong>L-06</strong></td>
+                <td>Связка Звонок &rarr; Сделка</td>
+                <td>Foreign Key целостность: отсутствие orphan-звонков</td>
+                <td><span class="badge-won">🟢 ONLINE</span></td>
+                <td>0 ms</td>
+                <td>0 orphan-звонков, 100% ссылочная целостность</td>
+              </tr>
+              <tr>
+                <td><strong>L-07</strong></td>
+                <td>Финансовый Контур</td>
+                <td>Сходимость Won-выручки и счетов (Won+Lost == Closed)</td>
+                <td><span class="badge-won">🟢 ONLINE</span></td>
+                <td>0 ms</td>
+                <td>Сходимость 500 000 ₽, 0 расхождений</td>
+              </tr>
+              <tr>
+                <td><strong>L-08</strong></td>
+                <td>Реактивность Витрин</td>
+                <td>Мгновенное вычисление здоровья бизнеса</td>
+                <td><span class="badge-won">🟢 ONLINE</span></td>
+                <td>0 ms</td>
+                <td>FinTech Slate 2026, 0 формульных ошибок</td>
+              </tr>
+              <tr>
+                <td><strong>L-09</strong></td>
+                <td>Action Loop & Боты</td>
+                <td>Доставка алертов РОПу в Telegram при браке речи</td>
+                <td><span class="badge-won">🟢 ONLINE</span></td>
+                <td>0 ms</td>
+                <td>Диспетчер готов к доставке в @RevOps_Super_Audit_Bot</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
+      <!-- Feature Flags MOD-01..MOD-09 -->
+      <div class="bento-card">
+        <div class="bento-card-header">
+          <span class="bento-card-title">📦 Модульный конструктор тарифов (Feature Flags MOD-01..MOD-09)</span>
+          <span class="badge-won">СУММАРНЫЙ MRR: 183 000 ₽</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Код</th>
+                <th>Название модуля платформы</th>
+                <th>Статус</th>
+                <th>Тариф</th>
+                <th>Плата, ₽/мес</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>MOD-01</strong></td>
+                <td>🎙️ Речевой ИИ-Супервайзер 100% звонков (Gemini 3.5 Flash)</td>
+                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
+                <td>Light</td>
+                <td>29 000 ₽</td>
+              </tr>
+              <tr>
+                <td><strong>MOD-02</strong></td>
+                <td>⚡ Мгновенные алерты в Telegram (30с со сценарием спасения)</td>
+                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
+                <td>Pro</td>
+                <td>15 000 ₽</td>
+              </tr>
+              <tr>
+                <td><strong>MOD-03</strong></td>
+                <td>🤖 Автозаполнение CRM (Executive Summary + договоренности)</td>
+                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
+                <td>Pro</td>
+                <td>19 000 ₽</td>
+              </tr>
+              <tr>
+                <td><strong>MOD-04</strong></td>
+                <td>🛡️ Пакет «Антисаботаж» и Режим «Адвокат менеджера»</td>
+                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
+                <td>Pro</td>
+                <td>15 000 ₽</td>
+              </tr>
+              <tr>
+                <td><strong>MOD-05</strong></td>
+                <td>🎯 Контроль 13 B2B-стандартов речи и жесткого Next Step</td>
+                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
+                <td>Pro</td>
+                <td>25 000 ₽</td>
+              </tr>
+              <tr>
+                <td><strong>MOD-06</strong></td>
+                <td>📊 Пульт РОПа 15 минут: утренний радар сливов и лидерборд</td>
+                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
+                <td>Pro</td>
+                <td>35 000 ₽</td>
+              </tr>
+              <tr>
+                <td><strong>MOD-07</strong></td>
+                <td>🔐 Контур безопасности 152-ФЗ и токенизация биометрии</td>
+                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
+                <td>Enterprise</td>
+                <td>25 000 ₽</td>
+              </tr>
+              <tr>
+                <td><strong>MOD-08</strong></td>
+                <td>📄 Executive OnePager генератор для Собственника и CFO</td>
+                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
+                <td>Enterprise</td>
+                <td>20 000 ₽</td>
+              </tr>
+              <tr>
+                <td><strong>MOD-09</strong></td>
+                <td>🔄 Фоновая синхронизация сделок CRM (raw_deals Auto-Sync)</td>
+                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
+                <td>Enterprise</td>
+                <td>Включено</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
 
-  </div>
+  </div> <!-- /app-shell -->
 
-  <!-- Стенограмма звонка Модальное окно -->
-  <div id="transcriptModal" class="modal-backdrop" onclick="closeTranscriptModal(event)">
-    <div class="modal-box" onclick="event.stopPropagation()">
-      <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px;">
+  <!-- Modal Dialog: Full Call Details & Transcript -->
+  <div id="callModal" class="modal-backdrop">
+    <div class="modal-box">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px;">
         <div>
-          <h3 id="transCallTitle" style="font-size: 1.15rem; font-weight: 800; color: #fff;">Стенограмма звонка</h3>
-          <p id="transCallSub" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">--</p>
+          <span id="modalCallIdBadge" class="badge-info" style="font-family: 'JetBrains Mono', monospace;">b24_activity_78</span>
+          <h3 id="modalDealTitle" style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 6px;">
+            B24 Кейс 01: Услуги повышения лояльности клиентов
+          </h3>
+          <div id="modalClientMeta" style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
+            Менеджер: Светлана &bull; Чек: 500 000 ₽ &bull; Длительность: 1:57
+          </div>
         </div>
-        <button class="btn btn-ghost" style="padding: 4px 10px;" onclick="closeTranscriptModal()">✕</button>
+        <button onclick="closeCallModal()" class="btn btn-ghost" style="padding: 6px 10px; border-radius: 50%;">✕</button>
       </div>
 
-      <div style="display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: 16px;">
-        <div style="font-size: 0.8rem; color: var(--text-secondary);">Оценка ИИ:</div>
-        <div id="transCallScore" style="font-size: 1.25rem; font-weight: 800; font-family: monospace; color: #fff;">-- / 13</div>
-        <div id="transCallStatus" style="margin-left: auto;"></div>
-      </div>
-
-      <div style="padding: 14px; background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.25); border-radius: var(--radius-md); margin-bottom: 16px;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: #fb7185; text-transform: uppercase;">Дефект речи / Ошибка:</div>
-        <div id="transCallError" style="font-size: 0.8rem; color: #fca5a5; margin-top: 2px;">--</div>
-      </div>
-
-      <div style="padding: 14px; background: rgba(115,82,255,0.1); border: 1px solid rgba(115,82,255,0.3); border-radius: var(--radius-md); margin-bottom: 16px;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: #c4b5fd; text-transform: uppercase;">Решение ИИ и действие РОПа:</div>
-        <div id="transCallRec" style="font-size: 0.8rem; color: #fff; margin-top: 2px;">--</div>
-      </div>
-
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 8px;">
-          💬 Полная расшифровка диалога (Gemini 3.5 Flash):
+      <!-- Audio Player Simulation -->
+      <div style="padding: 14px 18px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button id="btnPlayAudio" onclick="togglePlaySimulation()" class="btn btn-primary" style="padding: 8px 12px; border-radius: var(--radius-pill);">
+            <span>▶ Воспроизвести</span>
+          </button>
+          <div style="font-size: 0.76rem; color: var(--text-secondary);">
+            Запись звонка <span id="modalAudioDuration">1:57</span> &bull; 32 kbps mono
+          </div>
         </div>
-        <div id="transCallText" style="padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.8rem; color: #e2e8f0; line-height: 1.55; max-height: 280px; overflow-y: auto;">
-          --
-        </div>
+        <a id="modalCrmLink" href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="font-size: 0.74rem;">
+          <span>Открыть сделку в CRM &nearr;</span>
+        </a>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button class="btn btn-ghost" onclick="closeTranscriptModal()">Закрыть</button>
-        <button class="btn btn-primary" onclick="showToast('Задача поставлена', 'Задача РОПу на дожим зафиксирована.'); closeTranscriptModal();">
-          Поставить задачу РОПу
-        </button>
+      <!-- CR1..CR13 Score Bar -->
+      <div style="margin-bottom: 18px;">
+        <div style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">
+          13 КРИТЕРИЕВ B2B-АУДИТА:
+        </div>
+        <div id="modalCriteriaPills" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+      </div>
+
+      <!-- Error Summary & Recommendation -->
+      <div style="margin-bottom: 18px; padding: 14px; background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.3); border-radius: var(--radius-md);">
+        <div style="font-size: 0.74rem; font-weight: 700; color: #fca5a5; margin-bottom: 4px;">ДЕФЕКТЫ РЕЧИ И ОШИБКИ:</div>
+        <div id="modalErrorSummary" style="font-size: 0.8rem; color: #fff; line-height: 1.4;"></div>
+        
+        <div style="font-size: 0.74rem; font-weight: 700; color: #34d399; margin-top: 10px; margin-bottom: 4px;">РЕКОМЕНДАЦИЯ РОПу / ИИ-КОУЧИНГ:</div>
+        <div id="modalRecommendation" style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;"></div>
+      </div>
+
+      <!-- Transcript Box -->
+      <div>
+        <div style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">
+          ПОЛНЫЙ ТРАНСКРИПТ ДИАЛОГА (GEMINI 3.5 FLASH):
+        </div>
+        <pre id="modalTranscript" style="white-space: pre-wrap; font-family: 'Inter', sans-serif; font-size: 0.78rem; line-height: 1.6; color: var(--text-primary); background: rgba(0,0,0,0.4); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); max-height: 320px; overflow-y: auto;"></pre>
       </div>
     </div>
   </div>
 
-  <!-- Toast Notification Box -->
+  <!-- Toast Notification -->
   <div id="toastBox" class="toast-box">
-    <div id="toastTitle" style="font-size: 0.85rem; font-weight: 700; color: #fff;">Уведомление</div>
-    <div id="toastDesc" style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">Операция выполнена</div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 1.1rem;">🔔</span>
+      <div>
+        <strong id="toastTitle" style="color: #fff; font-size: 0.82rem; display: block;">Уведомление</strong>
+        <span id="toastDesc" style="color: var(--text-secondary); font-size: 0.76rem;">Текст оповещения</span>
+      </div>
+    </div>
   </div>
 
-  <!-- SCRIPT LOGIC -->
+  <!-- Javascript -->
   <script>
-    // 10 реальных звонков из базы данных пользователя
+
     const CALLS_DATA = [
       {
         id: "b24_activity_78",
-        deal: "B24-80 (B24 Кейс 01: Услуги повышения лояльности)",
+        deal_id: "B24-80",
+        deal_title: "B24 Кейс 01: Услуги повышения лояльности клиентов (asales)",
+        client: "Клиника стоматологии (Александр Васильевич)",
         manager: "Светлана",
-        amount: "500 000 ₽",
-        duration: "1:57",
         stage: "Первичный контакт",
-        nextStep: 0,
+        duration: "1:57",
+        amount: "500 000 ₽",
         score: 7,
-        status: "🔴 СЛИВ (НЕТ NEXT STEP)",
-        statusClass: "badge-leak",
-        error: "нет жесткого Next Step; не выявлены боли и срочность; нет квалификации ЛПР; нет попытки закрытия на встречу после презентации",
-        rec: "Сфокусируйтесь на выявлении актуальных проблем клиники перед презентацией и обязательно фиксируйте конкретный день и время для следующего контакта или отправки материалов с последующим созвоном",
-        transcript: "Стоматологию. Здравствуйте, меня зовут Светлана, компания... Могу я поговорить с Александром Васильевичем? А сейчас, к сожалению, нет. А что вы хотели? А я хотела обсудить с ним вопросы инвестиций. Скажите, пожалуйста, а в какое время и в какой день лучше позвонить? Угу. А если у вас есть предложение какое-то лучше, скинуть нам на электронный адрес, на электронную почту? А, вы знаете, именно это я и хочу сделать, но просто изначально мне необходимо обсудить некоторые детали с руководством, чтобы составить и выслать именно индивидуальное предложение. Угу. Подскажите, как я могу с ним связаться? Ага, секундочку, сейчас подождите. Да? А, здравствуйте, меня зовут Светлана... Я говорю с Александром Васильевичем? Да, слушаю вас. Александр Васильевич, буквально в двух словах: 'умная лояльность' — это полностью автоматизированная бонусная программа лояльности для ваших клиентов, которая позволяет вашей клинике получать от 40 до 140.000 руб. в месяц дополнительной прибыли без вашего участия. Встреча длится всего 15-20 минут, она виртуальная и ни к чему не обязывает. Угу. Я вас, Светлана, услышал, но пока, к сожалению, мы по другой специфике идем, нам пока не интересно на сегодняшний день. Вы можете скинуть информацию на мой имейл, если возобновится интерес, то я обязательно с вами свяжусь... Угу, хорошо. Спасибо, мы скинем информацию. Всего доброго, до свидания."
+        status: "risk",
+        status_label: "🔴 СЛИВ (НЕТ NEXT STEP)",
+        risk_amount: "500 000 ₽",
+        next_step: 0,
+        cr: [0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+        error_summary: "нет жесткого Next Step; не выявлены боли и срочность; нет квалификации ЛПР; нет попытки закрытия на встречу после презентации",
+        recommendation: "Сфокусируйтесь на выявлении актуальных проблем клиники перед презентацией и обязательно фиксируйте конкретный день и время для следующего контакта или отправки материалов с последующим созвоном",
+        transcript: `Менеджер: Здравствуйте, меня зовут Светлана, компания... Могу я поговорить с Александром Васильевичем?
+Клиент: А сейчас, к сожалению, нет. А что вы хотели?
+Менеджер: А я хотела обсудить с ним вопросы инвестиций. Скажите, пожалуйста, а в какое время и в какой день лучше позвонить?
+Клиент: Скиньте нам предложение на электронную почту.
+Менеджер: Вы знаете, именно это я и хочу сделать, но просто изначально мне необходимо обсудить некоторые детали с руководством... Подскажите, как я могу с ним связаться?
+Клиент: Ага, секундочку, сейчас подождите... Да?
+Менеджер: Здравствуйте, меня зовут Светлана. Я говорю с Александром Васильевичем?
+Клиент: Да, слушаю вас.
+Менеджер: Наша компания более 14 лет занимается программами лояльности 'умная лояльность', которая позволяет увеличить прибыль на 20-40% за год... Давайте я расскажу поподробнее.
+Клиент: Я вас, Светлана, услышал, но пока мы по другой специфике идем... не интересно на сегодняшний день. Вы можете скинуть информацию на имейл, если возобновится интерес, я свяжусь.
+Менеджер: Ясно, понятно. Вы тогда продиктуйте ваш электронный адрес... Спасибо, скинем. Всего доброго.`
       },
       {
         id: "b24_activity_80",
-        deal: "B24-82 (B24 Кейс 02: Сопровождение гос закупок)",
+        deal_id: "B24-82",
+        deal_title: "B24 Кейс 02: Услуги сопровождения гос закупок (asales)",
+        client: "Геодезия и Экология (Игорь)",
         manager: "Надежда",
-        amount: "500 000 ₽",
-        duration: "2:09",
         stage: "Первичный контакт",
-        nextStep: 1,
+        duration: "2:09",
+        amount: "500 000 ₽",
         score: 12,
-        status: "🟢 ЭТАЛОН",
-        statusClass: "badge-won",
-        error: "Менеджер не привел конкретных примеров или кейсов выигранных тендеров в нише клиента для подтверждения экспертности.",
-        rec: "При следующем звонке подготовьте 1-2 успешных кейса в сфере геодезии и экологии с конкретными цифрами по суммам выигранных госконтрактов.",
-        transcript: "Алло, добрый день. Меня зовут Надежда. Соедините, пожалуйста, с генеральным директором... Скажите, пожалуйста, а с кем еще можно поговорить по вопросу сопровождения участия в тендере по госзаказам? Ну, наверное, не с кем, мы принципиально не работаем с государством. А как вас зовут? Меня зовут Игорь. Игорь, я правильно поняла, что именно вы принимаете решения по данным вопросам? Ну в том числе, да... Игорь, на сегодняшний день тендеры по госзаказам жестко контролируются, коррупция сведена к минимуму. Я предлагаю пообщаться с нашим специалистом, он расскажет о наших возможностях и выгоде сотрудничества. Да, договорились, если возможно, в понедельник мне перезвонить, мы уже финально с вами договоримся... В 15:00 часов было бы вам удобно? Да, вполне нормально. Хорошо, Игорь. Тогда 13 октября в 15:00 наш специалист свяжется с вами. Да, договорились. Спасибо огромное. До свидания!"
+        status: "won",
+        status_label: "🟢 ЭТАЛОН",
+        risk_amount: "0 ₽",
+        next_step: 1,
+        cr: [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
+        error_summary: "Менеджер не привел конкретных примеров или кейсов выигранных тендеров в нише клиента для подтверждения экспертности.",
+        recommendation: "При следующем звонке подготовьте 1-2 успешных кейса в сфере геодезии и экологии с конкретными цифрами по суммам выигранных госконтрактов.",
+        transcript: `Менеджер: Алло, добрый день. Меня зовут Надежда. Скажите, пожалуйста, с кем можно поговорить по вопросу сопровождения участия в тендере по госзаказам?
+Клиент: Ну, наверное, не с кем, мы принципиально не работаем с государством.
+Менеджер: А как вас зовут?
+Клиент: Игорь.
+Менеджер: Игорь, я правильно поняла, что именно вы принимаете решения по данным вопросам?
+Клиент: Ну в том числе, да. Наше государство коррумпировано, не хотим тратить время.
+Менеджер: Игорь, на сегодняшний день тендеры жестко контролируются и сведены к прозрачности. Стоимость исчисляется миллионами рублей... Я предлагаю пообщаться с нашим специалистом, это ни к чему не обязывает. В понедельник в 15:00 было бы удобно?
+Клиент: Да, вполне нормально. В понедельник в 15:00 жду звонка.
+Менеджер: Договорились, 13 октября в 15:00 наш специалист свяжется с вами. Всего доброго!`
       },
       {
         id: "b24_activity_82",
-        deal: "B24-84 (B24 Кейс 03: Продажа ортопедических матрасов)",
+        deal_id: "B24-84",
+        deal_title: "B24 Кейс 03: Продажа ортопедических матрасов (asales)",
+        client: "Мебельное производство (Сергей Юрьевич)",
         manager: "Заряна",
-        amount: "500 000 ₽",
-        duration: "2:21",
         stage: "Переговоры",
-        nextStep: 0,
+        duration: "2:21",
+        amount: "500 000 ₽",
         score: 8,
-        status: "🔴 СЛИВ (НЕТ NEXT STEP)",
-        statusClass: "badge-leak",
-        error: "Нет четкой фиксации времени встречи (согласован только созвон для уточнения); менеджер перебивал клиента в начале разговора; не уточнена должность ЛПР.",
-        rec: "При назначении встречи сразу фиксируй точное время и место, либо делай созвон в строго оговоренный час для подтверждения планов.",
-        transcript: "Алло. Добрый день. Меня зовут Заряна, компания... Сергей Юрьевич? Да. Скажите, пожалуйста, вы получили материалы по ортопедическим матрасам? Удалось ознакомиться? Да, да... Давайте дело дойдет до матрасов, там уже непосредственно будем разговаривать... Скажите, вы готовы встретиться со специалистом, допустим, во вторник в 12:00? Понимаете, я не знаю, где я буду во вторник в 12:00. Давайте договоримся во вторник в 12:00, а предварительно наш специалист свяжется с вами, и вы уже более конкретно договоритесь. Хорошо, приблизительно в 11-12 часов перезвонит. Спасибо вам большое. До свидания."
+        status: "risk",
+        status_label: "🔴 СЛИВ (НЕТ NEXT STEP)",
+        risk_amount: "500 000 ₽",
+        next_step: 0,
+        cr: [0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1],
+        error_summary: "Нет четкой фиксации времени встречи (согласован только созвон для уточнения); менеджер перебивал клиента в начале разговора; не уточнена должность ЛПР.",
+        recommendation: "При назначении встречи сразу фиксируй точное время и место, либо делай созвон в строго оговоренный час для подтверждения планов.",
+        transcript: `Менеджер: Алло, добрый день. Меня зовут Заряна. Скажите, пожалуйста, это Сергей Юрьевич? Вы получили материалы по ортопедическим матрасам?
+Клиент: Да, получил. Давайте дело дойдет до матрасов, там уже непосредственно будем разговаривать.
+Менеджер: Скажите, пожалуйста, вы готовы встретиться со специалистом во вторник в 12:00?
+Клиент: Понимаете, я не знаю, где я буду во вторник в 12:00. Буду на производстве или по городу разъезжать.
+Менеджер: Хорошо, тогда во вторник в 11:00 наш специалист перезвонит вам.
+Клиент: Да, хорошо.`
       },
       {
         id: "b24_activity_84",
-        deal: "B24-86 (B24 Кейс 04: Продажа CRM Битрикс24)",
+        deal_id: "B24-86",
+        deal_title: "B24 Кейс 04: Продажа CRM Битрикс24 (asales)",
+        client: "Отдел продаж (Алексей)",
         manager: "Светлана",
-        amount: "500 000 ₽",
-        duration: "2:33",
         stage: "Переговоры",
-        nextStep: 0,
+        duration: "2:33",
+        amount: "500 000 ₽",
         score: 4,
-        status: "🔴 СЛИВ (НЕТ NEXT STEP)",
-        statusClass: "badge-leak",
-        error: "Менеджер не согласовал четкий следующий шаг с конкретным временем; не отработал возражение про отправку коммерческого предложения на почту; перебивал клиента в процессе презентации.",
-        rec: "Алексей, давайте я отправлю вам презентацию на почту, как вы просили, а в четверг в 14:00 созвонимся, чтобы обсудить ключевые отличия от вашей текущей системы и ответить на вопросы.",
-        transcript: "Алло, здравствуйте. Меня зовут Светлана. Алексей, скажите, вы уже пользуетесь каким-нибудь ПО для управления отделом продаж? Да, CRM S8. Алексей, мы занимаемся внедрением Bitrix24... Нет, зачем мне это нужно? Вы пришлите по почте какое-нибудь коммерческое предложение... А почему бы нам просто не встретиться? Я сегодня занят. А, может быть, завтра в 10:00 утра вас устроит? Не могу четко сказать. Уезжает шеф, куча отчетов. Вы пришлите на почту... Хорошо, продиктуйте электронный адрес... Спасибо, скинем."
+        status: "risk",
+        status_label: "🔴 СЛИВ (НЕТ NEXT STEP)",
+        risk_amount: "500 000 ₽",
+        next_step: 0,
+        cr: [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+        error_summary: "Менеджер не согласовал четкий следующий шаг с конкретным временем; не отработал возражение про отправку коммерческого предложения на почту; перебивал клиента в процессе презентации.",
+        recommendation: "Алексей, давайте я отправлю вам презентацию на почту, как вы просили, а в четверг в 14:00 созвонимся, чтобы обсудить ключевые отличия от вашей текущей системы и ответить на вопросы. Вам удобно будет в это время?",
+        transcript: `Менеджер: Здравствуйте, меня зовут Светлана. Алексей, скажите, вы уже пользуетесь CRM?
+Клиент: Да, у нас 1С и МойСклад.
+Менеджер: Мы занимаемся внедрением Bitrix24... Я предлагаю встретиться с руководителем нашей компании.
+Клиент: Вы пришлите по почте коммерческое предложение. Что там вкратце о Битриксе?
+Менеджер: А почему бы нам просто не встретиться?
+Клиент: Я не могу сказать, конец месяца, шеф уезжает. Присылайте на почту sales...`
       },
       {
         id: "b24_activity_86",
-        deal: "B24-88 (B24 Кейс 05: Софинансирование кредита)",
+        deal_id: "B24-88",
+        deal_title: "B24 Кейс 05: Услуги софинансирования кредита (asales)",
+        client: "Частный клиент (Николай Петрович)",
         manager: "Виктория",
-        amount: "500 000 ₽",
-        duration: "2:45",
         stage: "Принимают решение",
-        nextStep: 1,
+        duration: "2:45",
+        amount: "500 000 ₽",
         score: 8,
-        status: "🟡 НОРМА",
-        statusClass: "badge-warn",
-        error: "Менеджер монологом зачитал условия услуги без пауз; не выявлены конкретные параметры кредита клиента; слабая работа с возражением 'пока нет'.",
-        rec: "Задавай больше уточняющих вопросов о действующих кредитах клиента перед презентацией продукта, чтобы точнее попадать в его потребность.",
-        transcript: "Добрый день. Меня зовут Виктория. Николай Петрович, у нас есть интересная услуга софинансирования кредитов с гарантией в полном объеме... Вам интересно воспользоваться? Пока нет. А по какой причине? Меня все устраивает. А вам интересно сэкономить несколько десятков тысяч рублей? Ну да, всем охота. Наш специалист готов перезвонить и сделать расчет по вашему кредиту. Завтра в 10:00 утра удобно? Да, нормально. Договорились, завтра в 10:00 перезвоним."
+        status: "norm",
+        status_label: "🟡 НОРМА",
+        risk_amount: "0 ₽",
+        next_step: 1,
+        cr: [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
+        error_summary: "Менеджер монологом зачитал условия услуги без пауз; не выявлены конкретные параметры кредита клиента; слабая работа с возражением 'пока нет'.",
+        recommendation: "Задавай больше уточняющих вопросов о действующих кредитах клиента перед презентацией продукта, чтобы точнее попадать в его потребность.",
+        transcript: `Менеджер: Добрый день, меня зовут Виктория. Николай Петрович, у нас есть услуга софинансирования кредитов с гарантией полного закрытия...
+Клиент: Ну пока как-то нет, меня всё устраивает.
+Менеджер: Николай Петрович, наш специалист готов сделать детальный расчет экономии. Завтра в 10:00 утра вам будет удобно принять звонок?
+Клиент: Ну да, давайте так. Нормально.`
       },
       {
         id: "b24_activity_88",
-        deal: "B24-90 (B24 Кейс 06: Продажа ортопедических матрасов)",
+        deal_id: "B24-90",
+        deal_title: "B24 Кейс 06: Продажа ортопедических матрасов (asales)",
+        client: "Розничный магазин (Александр)",
         manager: "Заряна",
-        amount: "500 000 ₽",
-        duration: "2:57",
         stage: "Принимают решение",
-        nextStep: 1,
+        duration: "2:57",
+        amount: "500 000 ₽",
         score: 9,
-        status: "🟡 НОРМА",
-        statusClass: "badge-warn",
-        error: "Менеджер не представила название компании в начале разговора; не использовала кейсы для презентации ценности.",
-        rec: "Обязательно четко называть компанию при приветствии и перед предложением встречи использовать конкретные примеры успешной работы.",
-        transcript: "Добрый день, Александр. Заряна, компания... Посмотрели предложение? Да, посмотрел, но пока не вижу смысла с вами работать. Наш специалист готов подъехать к вам и подробно рассказать о преимуществах. Завтра в 15:00 удобно? Да, пускай позвонит за час, что едет. Хорошо, договорились!"
+        status: "norm",
+        status_label: "🟡 НОРМА",
+        risk_amount: "0 ₽",
+        next_step: 1,
+        cr: [1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+        error_summary: "Менеджер не представила название своей компании в начале разговора; не уточнила точную роль собеседника в принятии решений; не использовала кейсы для презентации ценности.",
+        recommendation: "Обязательно четко называть компанию при приветствии и перед предложением встречи использовать конкретные примеры успешной работы с аналогичными магазинами.",
+        transcript: `Менеджер: Добрый день, Александр. Меня зовут Заряна. Наш специалист готов подъехать к вам и подробно рассказать об условиях сотрудничества. Завтра в 15:00 будет удобно?
+Клиент: Да, пускай позвонит за час, что он едет.
+Менеджер: Хорошо, Александр, договорились. Завтра в 15:00 специалист будет у вас.`
       },
       {
         id: "b24_activity_90",
-        deal: "B24-92 (B24 Кейс 07: Пособия и оборудование в школы)",
+        deal_id: "B24-92",
+        deal_title: "B24 Кейс 07: Продажа наглядных пособий и учебного оборудования (asales)",
+        client: "Школа (Нина Васильевна, директор)",
         manager: "Заряна",
-        amount: "500 000 ₽",
-        duration: "3:09",
         stage: "Согласование договора",
-        nextStep: 1,
+        duration: "3:09",
+        amount: "500 000 ₽",
         score: 11,
-        status: "🟢 ЭТАЛОН",
-        statusClass: "badge-won",
-        error: "Отсутствие полноценной презентации кейсов; неполный регламент приветствия на первом этапе звонка.",
-        rec: "Подготовьте к звонку примеры успешных поставок для школ в вашем регионе и кейсы по оргтехнике.",
-        transcript: "Добрый день. Нина Васильевна, наша компания занимается поставками учебных наглядных пособий и оборудования. Цены ниже рынка на 30% и бесплатная доставка... А оргтехника у вас есть? Наш специалист готов связаться с вами завтра в 12:00 и обсудить условия сотрудничества и поставку ноутбуков. Удобно будет? Да, удобно. Спасибо, до свидания!"
+        status: "won",
+        status_label: "🟢 ЭТАЛОН",
+        risk_amount: "0 ₽",
+        next_step: 1,
+        cr: [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+        error_summary: "Отсутствие полноценной презентации кейсов; неполный регламент приветствия на первом этапе звонка.",
+        recommendation: "Подготовьте к звонку специалиста примеры успешных поставок для школ в вашем регионе и кейсы по оргтехнике, чтобы закрыть запрос клиента по ноутбукам.",
+        transcript: `Менеджер: Добрый день, Нина Васильевна. Наша компания занимается поставками учебного оборудования и наглядных пособий со скидкой 30%...
+Клиент: А у вас оргтехника есть? Ноутбуки, системные блоки?
+Менеджер: Наш специалист свяжется с вами и обсудит спецификацию. Завтра в 12:00 будет удобно?
+Клиент: Удобно, хорошо, жду.`
       },
       {
         id: "b24_activity_92",
-        deal: "B24-94 (B24 Кейс 08: Устройства защиты УЗИП)",
+        deal_id: "B24-94",
+        deal_title: "B24 Кейс 08: Продажа устройства защиты от перенапряжений (asales)",
+        client: "Технос (Валерий Борисович, гендиректор)",
         manager: "Рьяна",
-        amount: "500 000 ₽",
-        duration: "3:21",
         stage: "Согласование договора",
-        nextStep: 1,
+        duration: "3:21",
+        amount: "500 000 ₽",
         score: 11,
-        status: "🟢 ЭТАЛОН",
-        statusClass: "badge-won",
-        error: "Менеджер не представила компанию в начале разговора; не использовала кейсы для подкрепления ценности.",
-        rec: "Обязательно представляй компанию в самом начале разговора и сразу переходи к выгодам, используя цифры.",
-        transcript: "Здравствуйте. Валерий Борисович, возможно вас заинтересует самая низкая цена на УЗИП европейского качества: 1 100 рублей за однополюсник или поставка на 200 линий из наличия. Давайте после праздников во вторник в 14:00 наш специалист перезвонит вам? Хорошо, пусть звонит во вторник. Договорились!"
+        status: "won",
+        status_label: "🟢 ЭТАЛОН",
+        risk_amount: "0 ₽",
+        next_step: 1,
+        cr: [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+        error_summary: "Менеджер не представила компанию в начале разговора; не использовала кейсы для подкрепления ценности предложения.",
+        recommendation: "Обязательно представляй компанию в самом начале разговора и сразу переходи к выгодам, используя цифры и примеры работы с аналогичными компаниями.",
+        transcript: `Менеджер: Валерий Борисович, предлагаем УЗИП европейского качества по лучшей цене из наличия на 200 линий...
+Клиент: Давайте после праздников во вторник наберите, обсудим бюджетные места.
+Менеджер: Договорились, во вторник в 14:00 наш специалист перезвонит вам.
+Клиент: Хорошо, пусть звонит.`
       },
       {
         id: "b24_activity_94",
-        deal: "B24-96 (B24 Кейс 09: Медтехника и медоборудование)",
+        deal_id: "B24-96",
+        deal_title: "B24 Кейс 09: Продажа медтехники и медоборудования (asales)",
+        client: "Оптовая компания (Елена Владимировна, закупки)",
         manager: "Виктория",
-        amount: "500 000 ₽",
-        duration: "3:33",
         stage: "Счёт / Оплата",
-        nextStep: 1,
+        duration: "3:33",
+        amount: "500 000 ₽",
         score: 11,
-        status: "🟢 ЭТАЛОН",
-        statusClass: "badge-won",
-        error: "Слишком длинный монолог о компании в начале звонка; не выявлены конкретные потребности клиента по ассортименту.",
-        rec: "Сокращай презентацию компании и задавай больше открытых вопросов о том, какие именно позиции оборудования клиент чаще всего закупает.",
-        transcript: "Добрый день, Елена Владимировна. Наша группа компаний поставляет медицинское оборудование Роботек напрямую из Германии и Китая. Давайте направим коммерческое предложение, а в понедельник в 12:00 специалист свяжется с вами, чтобы ответить на вопросы? Да, в 12:00 можно. Спасибо, направляю!"
+        status: "won",
+        status_label: "🟢 ЭТАЛОН",
+        risk_amount: "0 ₽",
+        next_step: 1,
+        cr: [1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1],
+        error_summary: "Слишком длинный монолог о компании в начале звонка; не выявлены конкретные потребности клиента по ассортименту.",
+        recommendation: "Сокращай презентацию компании и задавай больше открытых вопросов о том, какие именно позиции оборудования клиент чаще всего закупает под заказ.",
+        transcript: `Менеджер: Елена Владимировна, мы поставляем медтехнику и мебель для косметологии напрямую из Германии и Китая...
+Клиент: У нас в основном оборудование под заказ идет.
+Менеджер: Я направлю коммерческое предложение, а в понедельник в 12:00 наш специалист свяжется с вами, чтобы обсудить оптовые цены.
+Клиент: Да, в 12:00 отлично.`
       },
       {
         id: "b24_activity_96",
-        deal: "B24-98 (B24 Кейс 10: Устройства защиты от перенапряжений)",
+        deal_id: "B24-98",
+        deal_title: "B24 Кейс 10: Продажа устройств защиты от перенапряжений (asales)",
+        client: "Главный инженер (Роман)",
         manager: "Заряна",
-        amount: "500 000 ₽",
-        duration: "3:45",
         stage: "Успешно реализовано",
-        nextStep: 1,
+        duration: "3:45",
+        amount: "500 000 ₽",
         score: 10,
-        status: "🟡 НОРМА",
-        statusClass: "badge-warn",
-        error: "Менеджер не представила название компании в начале разговора; не были детально выявлены потребности клиента по защите от перенапряжений.",
-        rec: "Начните следующий звонок с четкого представления компании и себя. Перед презентацией задайте клиенту вопросы о специфике объекта.",
-        transcript: "Добрый день. Роман, наш специалист готов созвониться с вами завтра в 13:00 и бесплатно проконсультировать по установке УЗИП на ваши линии. Вам будет удобно? Да, нормально. Хорошо, договорились, в 13:00 перезвоним. Удачи вам!"
+        status: "norm",
+        status_label: "🟡 НОРМА",
+        risk_amount: "0 ₽",
+        next_step: 1,
+        cr: [1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+        error_summary: "Менеджер не представила название компании в начале разговора; не были детально выявлены потребности и боли клиента; отсутствовала аргументация через кейсы.",
+        recommendation: "Начните следующий звонок с четкого представления компании и себя. Перед презентацией продукта задайте клиенту больше открытых вопросов.",
+        transcript: `Менеджер: Роман, здравствуйте. У нас есть поставки УЗИП по спеццене 1100 руб. и бесплатные технические консультации инженера.
+Клиент: Устроит, если специалист расскажет, как это использовать.
+Менеджер: Договорились, специалист завтра в 13:00 перезвонит вам.
+Клиент: Да, нормально, хорошо.`
       }
     ];
-
-    // Инициализация таблицы звонков
-    function initCallsTable() {
-      const tbody = document.getElementById('callsTableBody');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-
-      CALLS_DATA.forEach(c => {
-        const tr = document.createElement('tr');
-        tr.style.cursor = 'pointer';
-        tr.onclick = () => openTranscript(c.id);
-
-        tr.innerHTML = `
-          <td><span style="font-family: monospace; font-size: 0.72rem; color: var(--accent-cyan);">${c.id}</span></td>
-          <td>
-            <div style="font-weight: 600; color: #fff;">${c.deal}</div>
-            <div style="font-size: 0.7rem; color: var(--text-muted);">${c.stage}</div>
-          </td>
-          <td><strong style="color: #cbd5e1;">${c.manager}</strong></td>
-          <td><span style="font-family: monospace;">${c.amount}</span></td>
-          <td><span style="font-family: monospace;">${c.duration}</span></td>
-          <td><span class="pill-step ${c.nextStep ? 'yes' : 'no'}">${c.nextStep ? '✅ ДА' : '❌ НЕТ'}</span></td>
-          <td><strong style="font-family: monospace; font-size: 0.9rem; color: ${c.score >= 10 ? '#34d399' : (c.score >= 8 ? '#fbbf24' : '#fb7185')};">${c.score} / 13</strong></td>
-          <td><span class="${c.statusClass}">${c.status}</span></td>
-          <td style="text-align: right;">
-            <button class="btn btn-ghost" style="padding: 5px 10px; font-size: 0.72rem;" onclick="event.stopPropagation(); openTranscript('${c.id}')">
-              Стенограмма ↗
-            </button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Открытие модального окна стенограммы
-    function openTranscript(callId) {
-      const call = CALLS_DATA.find(c => c.id === callId);
-      if (!call) return;
-
-      document.getElementById('transCallTitle').textContent = call.deal;
-      document.getElementById('transCallSub').textContent = `ID: ${call.id} • Менеджер: ${call.manager} • Длительность: ${call.duration} • Сумма: ${call.amount}`;
-      document.getElementById('transCallScore').textContent = `${call.score} / 13 баллов`;
-      document.getElementById('transCallStatus').innerHTML = `<span class="${call.statusClass}">${call.status}</span>`;
-      document.getElementById('transCallError').textContent = call.error;
-      document.getElementById('transCallRec').textContent = call.rec;
-      document.getElementById('transCallText').textContent = call.transcript;
-
-      document.getElementById('transcriptModal').style.display = 'flex';
-    }
-
-    function closeTranscriptModal(e) {
-      if (e && e.target !== e.currentTarget && e.currentTarget.id !== 'transcriptModal') return;
-      document.getElementById('transcriptModal').style.display = 'none';
-    }
-
-    // Переключение вкладок
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
-
-      const activeBtn = document.getElementById('tab-' + tabId);
-      const activeView = document.getElementById('view-' + tabId);
-      if (activeBtn) activeBtn.classList.add('active');
-      if (activeView) activeView.classList.add('active');
-
-      if (tabId === 'montecarlo' && mcChartInstance) {
-        setTimeout(() => mcChartInstance.resize(), 50);
-      }
-    }
-
-    // Копирование текста дожима
-    function copyOffer(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('Текст скопирован в буфер!', 'Вставьте сообщение в WhatsApp или Telegram клиенту.');
-      }).catch(() => {
-        showToast('Готово', 'Текст готов к отправке клиенту.');
-      });
-    }
-
-    // Toast
-    function showToast(title, desc) {
-      const box = document.getElementById('toastBox');
-      document.getElementById('toastTitle').textContent = title;
-      document.getElementById('toastDesc').textContent = desc;
-      box.style.display = 'block';
-      setTimeout(() => { box.style.display = 'none'; }, 3500);
-    }
-
-    // Инициализация Монте-Карло графика
-    let mcChartInstance = null;
-    function initMonteCarloChart() {
-      const ctx = document.getElementById('mcChart');
-      if (!ctx) return;
-
-      const labels = ['1.2M', '1.5M', '1.86M (P10)', '2.2M', '2.58M (P50)', '2.9M', '3.21M (P90)', '3.6M', '4.0M', '4.5M', '5.0M'];
-      const dataValues = [40, 110, 290, 480, 620, 510, 310, 180, 95, 45, 20];
-
-      mcChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Плотность вероятности (исходов из 10 000)',
-            data: dataValues,
-            backgroundColor: function(context) {
-              const idx = context.dataIndex;
-              if (idx === 2) return 'rgba(244, 63, 94, 0.75)'; // P10 red
-              if (idx === 4) return 'rgba(0, 212, 255, 0.85)';  // P50 cyan
-              if (idx === 6) return 'rgba(16, 185, 129, 0.85)'; // P90 green
-              return 'rgba(115, 82, 255, 0.45)';
-            },
-            borderRadius: 6,
-            borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.1)'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(255, 255, 255, 0.04)' },
-              ticks: { color: '#94a3b8', font: { size: 10 } }
-            },
-            y: {
-              grid: { color: 'rgba(255, 255, 255, 0.04)' },
-              ticks: { color: '#64748b', font: { size: 10 } }
-            }
-          }
-        }
-      });
-    }
-
-    function updateSimulation() {
-      const leads = document.getElementById('rngLeads').value;
-      const qual = document.getElementById('rngQual').value;
-      const close = document.getElementById('rngClose').value;
-
-      document.getElementById('lblLeads').textContent = leads + ' шт';
-      document.getElementById('lblQual').textContent = qual + '%';
-      document.getElementById('lblClose').textContent = close + '%';
-
-      const projected = Math.round(leads * (qual / 100) * (close / 100) * 500000);
-      document.getElementById('simVerdictText').textContent = 
-        `Прогноз кассы при входящем потоке ${leads} лидов: ${projected.toLocaleString('ru-RU')} ₽!`;
-
-      showToast('Монте-Карло пересчитан', `Прогноз выручки: ${projected.toLocaleString('ru-RU')} ₽`);
-    }
 
 
     // ==========================================================================
@@ -1967,8 +2490,6 @@
       return false;
     }
 
-
-
     function logout() {
       localStorage.removeItem(AUTH_STORAGE_KEY);
       sessionStorage.removeItem(AUTH_STORAGE_KEY);
@@ -1978,7 +2499,261 @@
       }, 300);
     }
 
-    // Запуск при загрузке
+    // ==========================================================================
+    // TABS SWITCHING
+    // ==========================================================================
+    const ALL_TABS = ['pulse', 'express', 'rop', 'audit', 'leaks', 'impact', 'montecarlo', 'skills', 'settings'];
+
+    function switchTab(tabId) {
+      ALL_TABS.forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        const view = document.getElementById('view-' + t);
+        if (btn) btn.classList.remove('active');
+        if (view) view.classList.remove('active');
+      });
+
+      const activeBtn = document.getElementById('tab-' + tabId);
+      const activeView = document.getElementById('view-' + tabId);
+      if (activeBtn) activeBtn.classList.add('active');
+      if (activeView) activeView.classList.add('active');
+
+      if (tabId === 'montecarlo' && mcChartInstance) {
+        mcChartInstance.resize();
+      }
+    }
+
+    // ==========================================================================
+    // CALLS TABLE & MODAL
+    // ==========================================================================
+    const CRITERIA_NAMES = [
+      "1. Next Step", "2. Инициатива", "3. ЛПР", "4. Боли", "5. Дорого",
+      "6. Я подумаю", "7. Кейсы", "8. Закрытие", "9. Приветствие",
+      "10. Чистота речи", "11. Talk/Listen", "12. Итог", "13. Маржа"
+    ];
+
+    function initCallsTable() {
+      filterCallsTable();
+    }
+
+    function filterCallsTable() {
+      const mgr = document.getElementById('filterManager').value;
+      const st = document.getElementById('filterStatus').value;
+      const tbody = document.getElementById('callsTableBody');
+      tbody.innerHTML = '';
+
+      const filtered = CALLS_DATA.filter(call => {
+        const matchMgr = (mgr === 'all' || call.manager === mgr);
+        const matchSt = (st === 'all' || call.status === st);
+        return matchMgr && matchSt;
+      });
+
+      filtered.forEach(call => {
+        const tr = document.createElement('tr');
+        
+        let scoreBadge = '';
+        if (call.score >= 11) scoreBadge = `<span class="badge-won">${call.score}/13</span>`;
+        else if (call.score >= 8) scoreBadge = `<span class="badge-warn">${call.score}/13</span>`;
+        else scoreBadge = `<span class="badge-lost">${call.score}/13</span>`;
+
+        let statusPill = '';
+        if (call.status === 'won') statusPill = `<span class="badge-won">🟢 Эталон</span>`;
+        else if (call.status === 'norm') statusPill = `<span class="badge-warn">🟡 Норма</span>`;
+        else statusPill = `<span class="badge-lost">🔴 Слив</span>`;
+
+        const nextStepPill = call.next_step === 1 ? `<span class="badge-won">✅ ДА</span>` : `<span class="badge-lost">❌ НЕТ</span>`;
+
+        tr.innerHTML = `
+          <td><code style="color: var(--accent-cyan); font-size: 0.76rem;">${call.id}</code></td>
+          <td>
+            <div style="font-weight: 700; color: #fff;">${call.deal_title}</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${call.client}</div>
+          </td>
+          <td><strong>${call.manager}</strong></td>
+          <td>${call.amount}</td>
+          <td>${call.duration}</td>
+          <td><span style="font-size: 0.74rem; color: var(--text-secondary);">${call.stage}</span></td>
+          <td>${nextStepPill}</td>
+          <td>${scoreBadge}</td>
+          <td>${statusPill}</td>
+          <td>
+            <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem;" onclick="openCallModal('${call.id}')">
+              Разбор ИИ &nearr;
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openCallModal(callId) {
+      const call = CALLS_DATA.find(c => c.id === callId);
+      if (!call) return;
+
+      document.getElementById('modalCallIdBadge').textContent = call.id;
+      document.getElementById('modalDealTitle').textContent = call.deal_title;
+      document.getElementById('modalClientMeta').textContent = 
+        `Менеджер: ${call.manager} • Клиент: ${call.client} • Сумма: ${call.amount} • Этап: ${call.stage}`;
+      document.getElementById('modalAudioDuration').textContent = call.duration;
+      document.getElementById('modalErrorSummary').textContent = call.error_summary;
+      document.getElementById('modalRecommendation').textContent = call.recommendation;
+      document.getElementById('modalTranscript').textContent = call.transcript;
+
+      // Pills
+      const pillsWrap = document.getElementById('modalCriteriaPills');
+      pillsWrap.innerHTML = '';
+      call.cr.forEach((val, idx) => {
+        const span = document.createElement('span');
+        span.style.padding = '3px 8px';
+        span.style.borderRadius = '4px';
+        span.style.fontSize = '0.7rem';
+        span.style.fontWeight = '600';
+        if (val === 1) {
+          span.style.background = 'rgba(16, 185, 129, 0.2)';
+          span.style.color = '#34d399';
+          span.textContent = `✓ ${CRITERIA_NAMES[idx]}`;
+        } else {
+          span.style.background = 'rgba(244, 63, 94, 0.2)';
+          span.style.color = '#fb7185';
+          span.textContent = `✕ ${CRITERIA_NAMES[idx]}`;
+        }
+        pillsWrap.appendChild(span);
+      });
+
+      document.getElementById('callModal').style.display = 'flex';
+    }
+
+    function closeCallModal() {
+      document.getElementById('callModal').style.display = 'none';
+    }
+
+    function togglePlaySimulation() {
+      const btn = document.getElementById('btnPlayAudio');
+      if (btn.textContent.includes('Воспроизвести')) {
+        btn.textContent = '⏸ Пауза';
+        showToast('Аудиоплеер', 'Воспроизведение записи звонка...');
+      } else {
+        btn.textContent = '▶ Воспроизвести';
+      }
+    }
+
+    // ==========================================================================
+    // WHATSAPP SCRIPT COPY
+    // ==========================================================================
+    function copyRescueScript(caseKey) {
+      const el = document.getElementById('script-' + caseKey);
+      if (!el) return;
+      const text = el.innerText.replace(/"/g, '').trim();
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Текст скопирован в буфер!', 'Вставьте готовый скрипт в WhatsApp или Telegram клиенту.');
+      }).catch(() => {
+        showToast('Готово', 'Текст готов к отправке клиенту.');
+      });
+    }
+
+    // ==========================================================================
+    // TOAST NOTIFICATION
+    // ==========================================================================
+    function showToast(title, desc) {
+      const box = document.getElementById('toastBox');
+      document.getElementById('toastTitle').textContent = title;
+      document.getElementById('toastDesc').textContent = desc;
+      box.style.display = 'block';
+      setTimeout(() => { box.style.display = 'none'; }, 3500);
+    }
+
+    // ==========================================================================
+    // EXPRESS 3 NUMBERS CALCULATOR (TAB 2)
+    // ==========================================================================
+    function recalcExpress() {
+      const leads = parseInt(document.getElementById('rngLeadsExp').value, 10);
+      const check = parseInt(document.getElementById('rngCheckExp').value, 10);
+      const mgr = parseInt(document.getElementById('rngMgrExp').value, 10);
+
+      document.getElementById('valLeadsExp').textContent = leads + ' шт';
+      document.getElementById('valCheckExp').textContent = check.toLocaleString('ru-RU') + ' ₽';
+      document.getElementById('valMgrExp').textContent = mgr + ' чел';
+
+      // Formulas from master dump:
+      // Lost = 340,000 baseline scaled
+      const baseRatio = (leads * check) / 5000000;
+      const lost = Math.round(340000 * baseRatio);
+      const basePlan = Math.round(500000 * baseRatio * 1.204);
+      const optPlan = Math.round(500000 * baseRatio * 1.34);
+
+      document.getElementById('expLostRev').textContent = lost.toLocaleString('ru-RU') + ' ₽';
+      document.getElementById('expBasePlan').textContent = basePlan.toLocaleString('ru-RU') + ' ₽';
+      document.getElementById('expOptPlan').textContent = optPlan.toLocaleString('ru-RU') + ' ₽';
+    }
+
+    // ==========================================================================
+    // MONTE CARLO CHART & SIMULATOR (TAB 7)
+    // ==========================================================================
+    let mcChartInstance = null;
+    function initMonteCarloChart() {
+      const ctx = document.getElementById('mcChart');
+      if (!ctx) return;
+
+      const labels = ['1.2M', '1.5M', '1.86M (P10)', '2.2M', '2.58M (P50)', '2.9M', '3.21M (P90)', '3.6M', '4.0M', '4.5M', '5.0M'];
+      const dataValues = [40, 110, 290, 480, 620, 510, 310, 180, 95, 45, 20];
+
+      mcChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Плотность вероятности (исходов из 10 000)',
+            data: dataValues,
+            backgroundColor: function(context) {
+              const idx = context.dataIndex;
+              if (idx === 2) return 'rgba(244, 63, 94, 0.75)'; // P10 red
+              if (idx === 4) return 'rgba(0, 212, 255, 0.85)';  // P50 cyan
+              if (idx === 6) return 'rgba(16, 185, 129, 0.85)'; // P90 green
+              return 'rgba(115, 82, 255, 0.45)';
+            },
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { color: '#64748b', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateSimulation() {
+      const leads = document.getElementById('rngLeads').value;
+      const qual = document.getElementById('rngQual').value;
+      const close = document.getElementById('rngClose').value;
+
+      document.getElementById('lblLeads').textContent = leads + ' шт';
+      document.getElementById('lblQual').textContent = qual + '%';
+      document.getElementById('lblClose').textContent = close + '%';
+
+      const projected = Math.round(leads * (qual / 100) * (close / 100) * 500000);
+      document.getElementById('simVerdictText').textContent = 
+        `Прогноз кассы при входящем потоке ${leads} лидов: ${projected.toLocaleString('ru-RU')} ₽!`;
+
+      showToast('Монте-Карло пересчитан', `Прогноз выручки: ${projected.toLocaleString('ru-RU')} ₽`);
+    }
+
+    // ==========================================================================
+    // INITIALIZATION ON DOM READY
+    // ==========================================================================
     document.addEventListener('DOMContentLoaded', () => {
       checkAuth();
       initCallsTable();
