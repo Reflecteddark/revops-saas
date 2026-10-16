@@ -2105,6 +2105,57 @@
         </div>
       </div>
 
+      <!-- COMPONENT: Главный интерактивный график выручки и симулятор кассы (Chart.js Linear Dark) -->
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">
+              📈 ИНТЕРАКТИВНЫЙ РЕГУЛЯТОР ТРЕКИНГА ВЫРУЧКИ
+            </div>
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              Динамика выручки, Pacing плана 5.0M ₽ и SSOT прогноз
+            </h2>
+          </div>
+          
+          <!-- Mode Buttons & Series Toggles -->
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; background: rgba(255,255,255,0.04); padding: 3px; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle);">
+              <button id="btnChartModeCum" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem; border-radius: var(--radius-pill); background: rgba(115,82,255,0.3); color: #fff;" onclick="setRevenueChartMode('cum')">Накопительный (Pacing)</button>
+              <button id="btnChartModeDaily" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem; border-radius: var(--radius-pill);" onclick="setRevenueChartMode('daily')">По дням (Daily)</button>
+            </div>
+            <button id="toggleSeriesWon" class="delta-badge delta-pos" style="cursor: pointer;" onclick="toggleChartSeries(0)">
+              <span class="delta-dot"></span>Факт Won: 500k ₽
+            </button>
+            <button id="toggleSeriesPlan" class="delta-badge delta-cyan" style="cursor: pointer;" onclick="toggleChartSeries(1)">
+              <span class="delta-dot"></span>План: 5.0M ₽
+            </button>
+            <button id="toggleSeriesSsot" class="delta-badge delta-warn" style="cursor: pointer;" onclick="toggleChartSeries(2)">
+              <span class="delta-dot"></span>SSOT: 2.375M ₽
+            </button>
+          </div>
+        </div>
+
+        <!-- Real-time Stress-Test Interactive Slider -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-top: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 280px;">
+            <span style="font-size: 0.74rem; font-weight: 700; color: #fbbf24; white-space: nowrap;">⚡ Симулятор конверсии воронки ОП:</span>
+            <input type="range" id="sliderConversion" min="50" max="150" value="100" step="5" style="flex: 1; accent-color: #fbbf24; cursor: pointer;" oninput="updateRevenueSimulation(this.value)">
+            <span id="lblConversionVal" style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 800; color: #fff; min-width: 48px;">100%</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 0.74rem; color: var(--text-muted);">
+              Прогноз кассы: <strong id="lblSimProjectedCash" style="font-family: 'JetBrains Mono', monospace; color: #34d399; font-size: 0.95rem;">2 375 000 ₽</strong>
+            </div>
+            <button class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem;" onclick="resetRevenueSimulation()">Сброс</button>
+          </div>
+        </div>
+
+        <!-- Canvas -->
+        <div style="position: relative; height: 290px; width: 100%;">
+          <canvas id="revenuePacingChart"></canvas>
+        </div>
+      </div>
+
       <!-- Детальная воронка и SLA нормативы -->
       <div class="bento-card" style="margin-bottom: 22px;">
         <div class="bento-card-header">
@@ -2529,6 +2580,32 @@
         </div>
       </div>
 
+      <!-- COMPONENT: Интерактивная матрица сравнения менеджеров (Chart.js) -->
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.08em;">
+              📊 СРАВНИТЕЛЬНЫЙ АНАЛИЗ КОМАНДЫ РОПа
+            </div>
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              Интерактивная аналитика перформанса менеджеров
+            </h2>
+          </div>
+
+          <!-- Metric Selector Pills -->
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="repMetricButtonsWrap">
+            <button id="btnRepMetricPipe" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.72rem;" onclick="setRepChartMetric('pipe')">Пайплайн (₽)</button>
+            <button id="btnRepMetricScore" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem;" onclick="setRepChartMetric('score')">Балл речи (/13)</button>
+            <button id="btnRepMetricStep" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem;" onclick="setRepChartMetric('step')">Next Step (%)</button>
+            <button id="btnRepMetricRisk" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem;" onclick="setRepChartMetric('risk')">Брак в риске (₽)</button>
+          </div>
+        </div>
+
+        <div style="position: relative; height: 260px; width: 100%; margin-top: 10px;">
+          <canvas id="repPerformanceChart"></canvas>
+        </div>
+      </div>
+
       <div class="bento-card" style="margin-bottom: 22px;">
         <div class="bento-card-header">
           <span class="bento-card-title">🚨 Топ-5 сделок в риске с готовыми скриптами спасения</span>
@@ -2775,6 +2852,36 @@
             </div>
             <span style="color: var(--text-muted); font-size: 0.68rem;">Кликните сегмент для фильтра</span>
           </div>
+        </div>
+      </div>
+
+      <!-- COMPONENT: 13-факторный радар стандартов речи Gemini (Chart.js Radar) -->
+      <div class="bento-card" style="margin-bottom: 22px;">
+        <div class="bento-card-header" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.08em;">
+              🕸️ 13-ФАКТОРНЫЙ РЕЧЕВОЙ РАДАР СТАНДАРТОВ B2B (GEMINI AI)
+            </div>
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              Карта речевых компетенций: Эталон vs Факт
+            </h2>
+          </div>
+
+          <!-- Rep Selector for Radar -->
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">Срез сотрудника:</span>
+            <select id="radarRepSelector" onchange="updateRadarChart(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
+              <option value="all">Команда в целом (10 звонков, 9.1/13)</option>
+              <option value="Заряна">Заряна (10.5/13 • 0% брака)</option>
+              <option value="Надежда">Надежда (12.0/13 • Рекорд)</option>
+              <option value="Виктория">Виктория (9.5/13 • Норма)</option>
+              <option value="Светлана">Светлана (6.3/13 • P0 Зона риска)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; height: 320px; width: 100%; margin-top: 6px;">
+          <canvas id="speechRadarChart"></canvas>
         </div>
       </div>
 
@@ -4498,6 +4605,15 @@
       if (tabId === 'montecarlo' && mcChartInstance) {
         mcChartInstance.resize();
       }
+      if (tabId === 'pulse' && revPacingChartInstance) {
+        revPacingChartInstance.resize();
+      }
+      if (tabId === 'rop' && repPerfChartInstance) {
+        repPerfChartInstance.resize();
+      }
+      if (tabId === 'audit' && speechRadarChartInstance) {
+        speechRadarChartInstance.resize();
+      }
     }
 
     // ==========================================================================
@@ -4921,6 +5037,433 @@
     // ==========================================================================
     // INITIALIZATION ON DOM READY
     // ==========================================================================
+
+    // ==========================================================================
+    // INTERACTIVE CHARTS ENGINE (CHART.JS 4.4.2 SUITE)
+    // ==========================================================================
+    let revPacingChartInstance = null;
+    let repPerfChartInstance = null;
+    let speechRadarChartInstance = null;
+
+    let currentRevMode = 'cum'; // 'cum' or 'daily'
+    let currentConversionMultiplier = 1.0;
+
+    const PACING_LABELS = ['1 Окт', '3 Окт', '6 Окт', '9 Окт', '12 Окт', '15 Окт', '18 Окт', '21 Окт', '24 Окт', '27 Окт', '30 Окт'];
+    const PLAN_CUM_DATA = [0, 500000, 1000000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 4500000, 5000000];
+    const FACT_CUM_DATA = [0, 0, 0, 0, 0, 500000, 500000, 500000, 500000, 500000, 500000];
+
+    function calculateSsotData(multiplier) {
+      return [
+        null, null, null, null, null,
+        500000,
+        Math.round(500000 + 400000 * multiplier),
+        Math.round(500000 + 800000 * multiplier),
+        Math.round(500000 + 1200000 * multiplier),
+        Math.round(500000 + 1550000 * multiplier),
+        Math.round(500000 + 1875000 * multiplier)
+      ];
+    }
+
+    function initRevenuePacingChart() {
+      const ctx = document.getElementById('revenuePacingChart');
+      if (!ctx) return;
+
+      const ssotData = calculateSsotData(currentConversionMultiplier);
+
+      revPacingChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: PACING_LABELS,
+          datasets: [
+            {
+              label: 'Факт Won (500 000 ₽)',
+              data: FACT_CUM_DATA,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.35,
+              pointRadius: [0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0],
+              pointBackgroundColor: '#34d399',
+              pointBorderColor: '#fff',
+              pointHoverRadius: 8
+            },
+            {
+              label: 'План таргета (5 000 000 ₽)',
+              data: PLAN_CUM_DATA,
+              borderColor: '#00d4ff',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              fill: false,
+              tension: 0.1,
+              pointRadius: 0
+            },
+            {
+              label: 'SSOT Прогноз кассы',
+              data: ssotData,
+              borderColor: '#fbbf24',
+              backgroundColor: 'rgba(251, 191, 36, 0.08)',
+              borderWidth: 2.5,
+              fill: true,
+              tension: 0.35,
+              pointRadius: [0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 6],
+              pointBackgroundColor: '#fbbf24',
+              pointHoverRadius: 8
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(14, 18, 28, 0.95)',
+              titleColor: '#fff',
+              bodyColor: '#cbd5e1',
+              borderColor: 'rgba(255, 255, 255, 0.12)',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: true,
+              callbacks: {
+                label: function(context) {
+                  const val = context.parsed.y;
+                  if (val === null || val === undefined) return '';
+                  return ` ${context.dataset.label}: ${val.toLocaleString('ru-RU')} ₽`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { color: '#94a3b8', font: { size: 11 } }
+            },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: {
+                color: '#94a3b8',
+                font: { family: 'JetBrains Mono', size: 11 },
+                callback: function(value) {
+                  return (value / 1000000).toFixed(1) + 'M ₽';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function setRevenueChartMode(mode) {
+      if (!revPacingChartInstance) return;
+      currentRevMode = mode;
+      
+      const btnCum = document.getElementById('btnChartModeCum');
+      const btnDaily = document.getElementById('btnChartModeDaily');
+
+      if (mode === 'cum') {
+        btnCum.style.background = 'rgba(115,82,255,0.3)';
+        btnCum.style.color = '#fff';
+        btnDaily.style.background = 'transparent';
+        btnDaily.style.color = 'var(--text-secondary)';
+
+        revPacingChartInstance.data.datasets[0].data = FACT_CUM_DATA;
+        revPacingChartInstance.data.datasets[1].data = PLAN_CUM_DATA;
+        revPacingChartInstance.data.datasets[2].data = calculateSsotData(currentConversionMultiplier);
+        revPacingChartInstance.options.scales.y.ticks.callback = function(val) {
+          return (val / 1000000).toFixed(1) + 'M ₽';
+        };
+      } else {
+        btnDaily.style.background = 'rgba(115,82,255,0.3)';
+        btnDaily.style.color = '#fff';
+        btnCum.style.background = 'transparent';
+        btnCum.style.color = 'var(--text-secondary)';
+
+        // Daily values
+        const dailyPlan = Array(11).fill(166667);
+        const dailyFact = [0, 0, 0, 0, 0, 500000, 0, 0, 0, 0, 0];
+        const dailySsot = [0, 0, 0, 0, 0, 500000, 133333, 133333, 133333, 133333, 133333];
+
+        revPacingChartInstance.data.datasets[0].data = dailyFact;
+        revPacingChartInstance.data.datasets[1].data = dailyPlan;
+        revPacingChartInstance.data.datasets[2].data = dailySsot;
+        revPacingChartInstance.options.scales.y.ticks.callback = function(val) {
+          return (val / 1000).toFixed(0) + 'k ₽';
+        };
+      }
+      revPacingChartInstance.update();
+    }
+
+    function toggleChartSeries(idx) {
+      if (!revPacingChartInstance) return;
+      const isVisible = revPacingChartInstance.isDatasetVisible(idx);
+      if (isVisible) {
+        revPacingChartInstance.hide(idx);
+      } else {
+        revPacingChartInstance.show(idx);
+      }
+    }
+
+    function updateRevenueSimulation(val) {
+      currentConversionMultiplier = val / 100;
+      document.getElementById('lblConversionVal').textContent = val + '%';
+      
+      const totalProjected = Math.round(500000 + 1875000 * currentConversionMultiplier);
+      document.getElementById('lblSimProjectedCash').textContent = totalProjected.toLocaleString('ru-RU') + ' ₽';
+
+      if (revPacingChartInstance && currentRevMode === 'cum') {
+        revPacingChartInstance.data.datasets[2].data = calculateSsotData(currentConversionMultiplier);
+        revPacingChartInstance.update('none');
+      }
+    }
+
+    function resetRevenueSimulation() {
+      const slider = document.getElementById('sliderConversion');
+      if (slider) slider.value = 100;
+      updateRevenueSimulation(100);
+      showToast('Симулятор сброшен', 'Конверсия воронки возвращена к 100% (норматив).');
+    }
+
+    // ==========================================================================
+    // REP PERFORMANCE COMPARISON CHART
+    // ==========================================================================
+    const REP_NAMES = ['Заряна 👑', 'Надежда 🥈', 'Виктория 🥉', 'Светлана 🚨'];
+    const REP_METRICS = {
+      pipe: {
+        label: 'Пайплайн в работе, ₽',
+        data: [2000000, 500000, 1000000, 1500000],
+        colors: ['#f59e0b', '#94a3b8', '#d97706', '#ef4444'],
+        unit: ' ₽',
+        isCurrency: true
+      },
+      score: {
+        label: 'Средний балл речи Gemini (/13)',
+        data: [10.5, 12.0, 9.5, 6.3],
+        colors: ['#34d399', '#10b981', '#38bdf8', '#fb7185'],
+        unit: ' / 13',
+        isCurrency: false
+      },
+      step: {
+        label: 'Дисциплина Next Step, %',
+        data: [100, 100, 100, 33.3],
+        colors: ['#34d399', '#34d399', '#34d399', '#f43f5e'],
+        unit: '%',
+        isCurrency: false
+      },
+      risk: {
+        label: 'Выручка под угрозой брака, ₽',
+        data: [0, 0, 0, 1500000],
+        colors: ['#10b981', '#10b981', '#10b981', '#ef4444'],
+        unit: ' ₽',
+        isCurrency: true
+      }
+    };
+
+    function initRepPerformanceChart() {
+      const ctx = document.getElementById('repPerformanceChart');
+      if (!ctx) return;
+
+      const m = REP_METRICS['pipe'];
+
+      repPerfChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: REP_NAMES,
+          datasets: [{
+            label: m.label,
+            data: m.data,
+            backgroundColor: m.colors,
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(14, 18, 28, 0.95)',
+              titleColor: '#fff',
+              bodyColor: '#cbd5e1',
+              borderColor: 'rgba(255, 255, 255, 0.12)',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: function(context) {
+                  const val = context.parsed.y;
+                  return ` ${context.dataset.label}: ${val.toLocaleString('ru-RU')}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#fff', font: { weight: 600, size: 12 } }
+            },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: {
+                color: '#94a3b8',
+                font: { family: 'JetBrains Mono', size: 11 },
+                callback: function(value) {
+                  return (value >= 1000000 ? (value/1000000).toFixed(1) + 'M' : value >= 1000 ? (value/1000).toFixed(0) + 'k' : value);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function setRepChartMetric(metricKey) {
+      if (!repPerfChartInstance || !REP_METRICS[metricKey]) return;
+      const m = REP_METRICS[metricKey];
+
+      // Update button styles
+      const buttons = ['pipe', 'score', 'step', 'risk'];
+      buttons.forEach(b => {
+        const el = document.getElementById('btnRepMetric' + b.charAt(0).toUpperCase() + b.slice(1));
+        if (el) {
+          if (b === metricKey) {
+            el.className = 'btn btn-primary';
+          } else {
+            el.className = 'btn btn-ghost';
+          }
+        }
+      });
+
+      repPerfChartInstance.data.datasets[0].label = m.label;
+      repPerfChartInstance.data.datasets[0].data = m.data;
+      repPerfChartInstance.data.datasets[0].backgroundColor = m.colors;
+
+      if (m.isCurrency) {
+        repPerfChartInstance.options.scales.y.ticks.callback = function(val) {
+          return (val / 1000000).toFixed(1) + 'M ₽';
+        };
+      } else {
+        repPerfChartInstance.options.scales.y.ticks.callback = function(val) {
+          return val + m.unit;
+        };
+      }
+
+      repPerfChartInstance.update();
+      showToast('Метрика графика изменена', `Отображен разрез: ${m.label}`);
+    }
+
+    // ==========================================================================
+    // 13 B2B CRITERIA RADAR CHART
+    // ==========================================================================
+    const RADAR_CRITERIA_LABELS = [
+      '1. Next Step', '2. Инициатива', '3. ЛПР', '4. Боли', '5. Дорого',
+      '6. Подумаю', '7. Кейсы', '8. Закрытие', '9. Приветствие',
+      '10. Чистота', '11. Talk/Listen', '12. Итог', '13. Маржа'
+    ];
+
+    const RADAR_DATA_MAP = {
+      all: [70, 100, 70, 60, 60, 80, 40, 70, 100, 90, 80, 80, 90],
+      'Заряна': [75, 100, 100, 75, 100, 100, 50, 100, 100, 100, 80, 80, 100],
+      'Надежда': [100, 100, 100, 100, 100, 100, 0, 100, 100, 100, 100, 100, 100],
+      'Виктория': [100, 100, 50, 50, 50, 100, 0, 100, 100, 100, 80, 80, 100],
+      'Светлана': [0, 100, 50, 0, 0, 50, 50, 0, 100, 70, 60, 50, 70]
+    };
+
+    function initSpeechRadarChart() {
+      const ctx = document.getElementById('speechRadarChart');
+      if (!ctx) return;
+
+      speechRadarChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: RADAR_CRITERIA_LABELS,
+          datasets: [
+            {
+              label: 'Эталон B2B (100%)',
+              data: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+              borderColor: 'rgba(0, 212, 255, 0.4)',
+              borderWidth: 1.5,
+              borderDash: [4, 4],
+              pointRadius: 0,
+              fill: false
+            },
+            {
+              label: 'Факт выполнения, %',
+              data: RADAR_DATA_MAP['all'],
+              borderColor: '#8b5cf6',
+              backgroundColor: 'rgba(139, 92, 246, 0.22)',
+              borderWidth: 2.5,
+              pointBackgroundColor: '#8b5cf6',
+              pointBorderColor: '#fff',
+              pointRadius: 4,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: { color: '#cbd5e1', font: { size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(14, 18, 28, 0.95)',
+              titleColor: '#fff',
+              bodyColor: '#cbd5e1',
+              callbacks: {
+                label: function(ctx) {
+                  return ` ${ctx.dataset.label}: ${ctx.parsed.r}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            r: {
+              min: 0,
+              max: 100,
+              angleLines: { color: 'rgba(255, 255, 255, 0.08)' },
+              grid: { color: 'rgba(255, 255, 255, 0.06)' },
+              pointLabels: {
+                color: '#cbd5e1',
+                font: { size: 10, weight: 600 }
+              },
+              ticks: {
+                display: false,
+                stepSize: 25
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateRadarChart(repName) {
+      if (!speechRadarChartInstance) return;
+      const data = RADAR_DATA_MAP[repName] || RADAR_DATA_MAP['all'];
+      speechRadarChartInstance.data.datasets[1].data = data;
+      speechRadarChartInstance.data.datasets[1].label = (repName === 'all' ? 'Команда (Факт %)' : `Факт ${repName} (%)`);
+      
+      if (repName === 'Светлана') {
+        speechRadarChartInstance.data.datasets[1].borderColor = '#fb7185';
+        speechRadarChartInstance.data.datasets[1].backgroundColor = 'rgba(244, 63, 94, 0.25)';
+        speechRadarChartInstance.data.datasets[1].pointBackgroundColor = '#ef4444';
+      } else {
+        speechRadarChartInstance.data.datasets[1].borderColor = '#8b5cf6';
+        speechRadarChartInstance.data.datasets[1].backgroundColor = 'rgba(139, 92, 246, 0.22)';
+        speechRadarChartInstance.data.datasets[1].pointBackgroundColor = '#8b5cf6';
+      }
+
+      speechRadarChartInstance.update();
+      showToast('Радар перестроен', `Отображены 13 речевых критериев для: ${repName}`);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       checkAuth();
       if (localStorage.getItem('revops_sidebar_collapsed') === '1') {
@@ -4929,6 +5472,9 @@
       }
       initCallsTable();
       initMonteCarloChart();
+      initRevenuePacingChart();
+      initRepPerformanceChart();
+      initSpeechRadarChart();
     });
   </script>
 
