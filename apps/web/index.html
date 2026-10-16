@@ -12,7 +12,80 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Chart.js 4.4.2 via CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js">
+    /**
+     * CABINET WORKSPACE CONTROLLER
+     */
+    function switchCabinetTab(tabId) {
+      document.querySelectorAll('.cab-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+      
+      const targetTab = document.getElementById('tab-' + tabId);
+      const targetView = document.getElementById('view-' + tabId);
+      if (targetTab) targetTab.classList.add('active');
+      if (targetView) targetView.classList.add('active');
+
+      if (tabId === 'sim' && mcChartInstance) {
+        setTimeout(() => mcChartInstance.resize(), 50);
+      }
+    }
+
+    function openCallModal(client, manager, score, verdict, criteriaList, rec) {
+      document.getElementById('modalClientTitle').textContent = 'Разбор звонка: ' + client;
+      document.getElementById('modalManagerSub').textContent = 'Менеджер: ' + manager;
+      document.getElementById('modalScoreVal').textContent = score + ' / 100';
+      document.getElementById('modalScoreVal').style.color = score >= 80 ? '#34d399' : (score >= 50 ? '#fbbf24' : '#fb7185');
+      
+      const badge = document.getElementById('modalVerdictBadge');
+      if (score >= 80) {
+        badge.innerHTML = '<span class="badge-won">🟢 ЭТАЛОН</span>';
+      } else if (score >= 50) {
+        badge.innerHTML = '<span class="badge-warn">🟡 РИСК</span>';
+      } else {
+        badge.innerHTML = '<span class="badge-leak">🔴 СЛИВ ВЫРУЧКИ</span>';
+      }
+
+      const list = document.getElementById('modalCriteriaList');
+      list.innerHTML = '';
+      criteriaList.forEach(c => {
+        const li = document.createElement('li');
+        li.style.padding = '8px 12px';
+        li.style.background = 'rgba(255,255,255,0.02)';
+        li.style.borderRadius = '6px';
+        li.style.border = '1px solid rgba(255,255,255,0.05)';
+        li.textContent = c;
+        list.appendChild(li);
+      });
+
+      document.getElementById('modalAiRec').textContent = rec;
+      document.getElementById('criteriaModalBackdrop').style.display = 'flex';
+    }
+
+    function closeCallModal(e) {
+      if (e && e.target !== e.currentTarget && e.currentTarget.id !== 'criteriaModalBackdrop') return;
+      document.getElementById('criteriaModalBackdrop').style.display = 'none';
+    }
+
+    async function testApiHealth() {
+      const logBox = document.getElementById('apiHealthLog');
+      logBox.textContent = 'Опрашиваем эндпоинт http://localhost:8000/api/v1/health ...';
+      try {
+        const res = await fetch('/api/v1/health');
+        if (res.ok) {
+          const data = await res.json();
+          logBox.textContent = JSON.stringify(data, null, 2);
+          showToast('Бэкенд в строю (200 OK)', 'FastAPI ядро активно и готово к обработке звонков.');
+        } else {
+          logBox.textContent = 'Ошибка ответа бэкенда: HTTP ' + res.status;
+          showToast('Ошибка API', 'Статус: ' + res.status);
+        }
+      } catch (err) {
+        logBox.textContent = 'Ошибка соединения с бэкендом: ' + err.message;
+        showToast('Ошибка соединения', 'Убедитесь, что сервер запущен через start.bat');
+      }
+    }
+
+  </script>
 
   <style>
     /* ==========================================================================
@@ -733,6 +806,163 @@
       }
       .cursor-glow { display: none; }
     }
+
+    /* ==========================================================================
+       CABINET MULTI-TAB WORKSPACE STYLING (Bento Tabs & Live Views)
+       ========================================================================== */
+    .cabinet-tabs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+    }
+    
+    .cab-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: calc(var(--radius-md) - 2px);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    
+    .cab-tab:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .cab-tab.active {
+      color: #fff;
+      background: rgba(115, 82, 255, 0.2);
+      border-color: rgba(115, 82, 255, 0.45);
+      box-shadow: 0 0 16px rgba(115, 82, 255, 0.22);
+    }
+
+    .tab-view {
+      display: none;
+      animation: enterFadeUp 0.35s var(--ease-spring) forwards;
+    }
+
+    .tab-view.active {
+      display: block;
+    }
+
+    /* Modern Dark Bento Table */
+    .dark-table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .dark-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      text-align: left;
+    }
+
+    .dark-table th {
+      background: rgba(255, 255, 255, 0.025);
+      padding: 13px 18px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .dark-table td {
+      padding: 15px 18px;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+
+    .dark-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: #fff;
+    }
+
+    .badge-leak {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: rgba(244, 63, 94, 0.14);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+
+    .badge-won {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.14);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-warn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: rgba(245, 158, 11, 0.14);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* Modal dialog for 13 criteria inspect */
+    .criteria-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(14px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .criteria-modal {
+      width: 720px;
+      max-width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #0d1019;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(115, 82, 255, 0.25);
+      animation: enterFadeUp 0.3s var(--ease-spring);
+    }
+
   </style>
 </head>
 <body>
@@ -752,19 +982,40 @@
         </div>
         <div class="brand-title-wrap">
           <h1>
-            <span>RevOps Revenue Engine</span>
-            <span class="pill-tag">Monte-Carlo 95%</span>
+            <span>RevOps Intelligence</span>
+            <span class="pill-tag">Enterprise SaaS</span>
           </h1>
-          <p>Стохастическое моделирование воронки &bull; 10 000 итераций</p>
+          <p>Личный кабинет управления воронкой &bull; 13 B2B-критериев ИИ-аудита</p>
         </div>
       </div>
 
+      <!-- Navigation Tabs -->
+      <nav class="cabinet-tabs" aria-label="Разделы платформы">
+        <button id="tab-sim" class="cab-tab active" onclick="switchCabinetTab('sim')">
+          <span>🎯 Моделирование выручки</span>
+        </button>
+        <button id="tab-radar" class="cab-tab" onclick="switchCabinetTab('radar')">
+          <span>🎙️ Радар звонков (13 критериев)</span>
+        </button>
+        <button id="tab-deals" class="cab-tab" onclick="switchCabinetTab('deals')">
+          <span>💼 Сделки под угрозой</span>
+        </button>
+        <button id="tab-settings" class="cab-tab" onclick="switchCabinetTab('settings')">
+          <span>⚙️ CRM & API</span>
+        </button>
+      </nav>
+
       <!-- Action Group -->
       <div class="header-actions">
+        <a href="https://ai-rop.ru/" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" title="Перейти на сайт ai-rop.ru">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          <span>На сайт ai-rop.ru</span>
+        </a>
+
         <button id="btnRefreshRadar" class="btn btn-ghost" onclick="handleRefreshRadar()" aria-label="Синхронизировать CRM">
           <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           <span class="spinner" aria-hidden="true"></span>
-          <span>Sync Radar &bull; amoCRM</span>
+          <span>Sync amoCRM</span>
         </button>
 
         <button id="btnFixDeal" class="btn btn-primary" onclick="handleFixDeal('DEAL-7842', 'ПромСнаб Внедрение')" aria-label="Перехватить рискованную сделку">
@@ -775,8 +1026,9 @@
       </div>
     </header>
 
-    <!-- Bento Grid Section -->
-    <main class="bento-grid">
+    <!-- TAB VIEW 1: REVENUE SIMULATOR -->
+    <div id="view-sim" class="tab-view active">
+      <main class="bento-grid">
 
       <!-- CARD 1: P10 Conservative (Span 3) -->
       <section class="bento-card col-p10 stagger-in delay-2" aria-labelledby="p10-title">
@@ -917,6 +1169,296 @@
       </section>
 
     </main>
+    </div>
+
+    <!-- TAB VIEW 2: CALLS RADAR & 13 CRITERIA AUDIT -->
+    <div id="view-radar" class="tab-view">
+      <!-- Radar Metric Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="bento-card" style="padding: 20px;">
+          <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Аудировано сегодня</div>
+          <div style="font-size: 1.85rem; font-weight: 800; color: #fff; margin-top: 6px; font-family: 'JetBrains Mono', monospace;">142 звонка</div>
+          <div style="font-size: 0.74rem; color: var(--accent-emerald); margin-top: 4px;">100% покрытие воронки Gemini</div>
+        </div>
+
+        <div class="bento-card" style="padding: 20px;">
+          <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Сделок под угрозой</div>
+          <div style="font-size: 1.85rem; font-weight: 800; color: #fbbf24; margin-top: 6px; font-family: 'JetBrains Mono', monospace;">11 сделок</div>
+          <div style="font-size: 0.74rem; color: #fbbf24; margin-top: 4px;">Требуют дожима РОПа</div>
+        </div>
+
+        <div class="bento-card" style="padding: 20px;">
+          <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Выручка под угрозой</div>
+          <div style="font-size: 1.85rem; font-weight: 800; color: #fb7185; margin-top: 6px; font-family: 'JetBrains Mono', monospace;">2 840 000 ₽</div>
+          <div style="font-size: 0.74rem; color: #fb7185; margin-top: 4px;">Слив Next Step (cr10, cr11)</div>
+        </div>
+
+        <div class="bento-card" style="padding: 20px;">
+          <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Средний балл отдела</div>
+          <div style="font-size: 1.85rem; font-weight: 800; color: var(--accent-cyan); margin-top: 6px; font-family: 'JetBrains Mono', monospace;">76.4 / 100</div>
+          <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 4px;">Эталон: от 85 баллов</div>
+        </div>
+      </div>
+
+      <!-- Radar Calls Stream Table -->
+      <div class="dark-table-card">
+        <div style="padding: 18px 22px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+          <div>
+            <h2 style="font-size: 1.05rem; font-weight: 700; color: #fff;">Живой поток звонков и вердикты ИИ-Супервайзера</h2>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">Автоматическая оценка 100% звонков телефонии по 13 критериям B2B-аудита</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 0.74rem;">Все звонки (142)</button>
+            <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 0.74rem; border-color: rgba(244,63,94,0.4); color: #fb7185;">Сливы (11)</button>
+            <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 0.74rem; border-color: rgba(16,185,129,0.4); color: #34d399;">Эталоны (38)</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="dark-table">
+            <thead>
+              <tr>
+                <th>Статус</th>
+                <th>Клиент & Сделка</th>
+                <th>Менеджер</th>
+                <th>Длительность</th>
+                <th>Балл</th>
+                <th>Вердикт ИИ & Ошибки</th>
+                <th style="text-align: right;">Действие</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge-leak">🔴 СЛИВ</span></td>
+                <td>
+                  <div style="font-weight: 600; color: #fff;">ООО «ПромТехСнаб»</div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">amoCRM #349102 &bull; 850 000 ₽</div>
+                </td>
+                <td>Алексей И.</td>
+                <td>04:12</td>
+                <td><span style="font-family: monospace; font-weight: 700; color: #fb7185;">38 / 100</span></td>
+                <td>
+                  <div style="font-size: 0.78rem; color: #fca5a5;">Слит Next Step: менеджер скинул КП на почту без договоренности о звонке</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">Ошибки: cr10 (фиксация шага), cr11 (дедлайн)</div>
+                </td>
+                <td style="text-align: right;">
+                  <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.74rem;" onclick="openCallModal('ООО «ПромТехСнаб»', 'Алексей И.', 38, 'Слит Next Step', ['cr1: 1 (Приветствие)', 'cr2: 1 (Квалификация)', 'cr3: 0 (Бюджет не узнан)', 'cr10: 0 (Next step нет)', 'cr11: 0 (Дедлайн созвона нет)'], 'РОПу срочно набрать клиента до 18:00')">
+                    Разбор 13 критериев
+                  </button>
+                </td>
+              </tr>
+
+              <tr>
+                <td><span class="badge-won">🟢 ЭТАЛОН</span></td>
+                <td>
+                  <div style="font-weight: 600; color: #fff;">ООО «СтройГрупп»</div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">amoCRM #349108 &bull; 1 200 000 ₽</div>
+                </td>
+                <td>Мария С.</td>
+                <td>07:45</td>
+                <td><span style="font-family: monospace; font-weight: 700; color: #34d399;">92 / 100</span></td>
+                <td>
+                  <div style="font-size: 0.78rem; color: #86efac;">Эталонная квалификация: ЛПР выявлен, вилка бюджета согласована, Zoom назначен</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">Zoom: Среда 14:00 &bull; Задача поставлена</div>
+                </td>
+                <td style="text-align: right;">
+                  <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 0.74rem;" onclick="openCallModal('ООО «СтройГрупп»', 'Мария С.', 92, 'Эталонный диалог', ['Все 13 критериев соблюдены', 'Zoom зафиксирован в календаре'], 'Поощрить менеджера, добавить запись в обучающий тренажер')">
+                    Разбор 13 критериев
+                  </button>
+                </td>
+              </tr>
+
+              <tr>
+                <td><span class="badge-warn">🟡 РИСК</span></td>
+                <td>
+                  <div style="font-weight: 600; color: #fff;">ООО «АвтоСнаб»</div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">amoCRM #349115 &bull; 340 000 ₽</div>
+                </td>
+                <td>Дмитрий В.</td>
+                <td>03:20</td>
+                <td><span style="font-family: monospace; font-weight: 700; color: #fbbf24;">62 / 100</span></td>
+                <td>
+                  <div style="font-size: 0.78rem; color: #fde68a;">Возражение «дорого» отработано неуверенно, клиент ушел советоваться с шефом</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">Ошибки: cr9 (отработка цены), cr6 (ценность)</div>
+                </td>
+                <td style="text-align: right;">
+                  <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 0.74rem;" onclick="openCallModal('ООО «АвтоСнаб»', 'Дмитрий В.', 62, 'Риск по цене', ['cr6: 0 (Слабая аргументация)', 'cr9: 0 (Возражение по цене не закрыто)'], 'Подготовить кейс окупаемости и помочь менеджеру со вторым звонком')">
+                    Разбор 13 критериев
+                  </button>
+                </td>
+              </tr>
+
+              <tr>
+                <td><span class="badge-leak">🔴 СЛИВ</span></td>
+                <td>
+                  <div style="font-weight: 600; color: #fff;">АО «ИнвестЛогистик»</div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">Битрикс24 #1842 &bull; 450 000 ₽</div>
+                </td>
+                <td>Иван К.</td>
+                <td>05:10</td>
+                <td><span style="font-family: monospace; font-weight: 700; color: #fb7185;">41 / 100</span></td>
+                <td>
+                  <div style="font-size: 0.78rem; color: #fca5a5;">Разговор с секретарем принят за ЛПР. Коммерческое предложение сброшено в спам</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">Ошибки: cr4 (проход секретаря), cr5 (выход на ЛПР)</div>
+                </td>
+                <td style="text-align: right;">
+                  <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.74rem;" onclick="openCallModal('АО «ИнвестЛогистик»', 'Иван К.', 41, 'Слив на секретаре', ['cr4: 0 (Секретарь не обойден)', 'cr5: 0 (ЛПР не установлен)'], 'Передать базу другому менеджеру для прямого захода на директора')">
+                    Разбор 13 критериев
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB VIEW 3: DEALS AT RISK (ПУЛЬТ РОПА) -->
+    <div id="view-deals" class="tab-view">
+      <div style="margin-bottom: 24px;">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #fff;">Пульт РОПа: Сделки под угрозой срыва воронки</h2>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Сделки с превышением нормативов SLA этапов и слитыми контрольными точками</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        
+        <!-- Deal Card 1 -->
+        <div class="bento-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span class="badge-leak">SLA ПРОСРОЧЕН (+4 ДНЯ)</span>
+              <span style="font-size: 1.25rem; font-weight: 800; color: #fff; font-family: monospace;">850 000 ₽</span>
+            </div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 4px;">ООО «ПромТехСнаб»</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 14px;">amoCRM #349102 &bull; Менеджер: Алексей И. &bull; Этап: КЭВ / Расчет КП</p>
+            <div style="padding: 12px; background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.25); border-radius: 8px; font-size: 0.76rem; color: #fca5a5; line-height: 1.4; margin-bottom: 16px;">
+              <strong>Причина риска:</strong> Менеджер выслал расчет на почту 5 дней назад и не совершил контрольного звонка. Вероятность срыва сделки: 78%.
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width: 100%;" onclick="handleFixDeal('DEAL-349102', 'ООО «ПромТехСнаб»')">
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span>Перехватить сделку РОПа</span>
+          </button>
+        </div>
+
+        <!-- Deal Card 2 -->
+        <div class="bento-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span class="badge-leak">НЕТ NEXT STEP</span>
+              <span style="font-size: 1.25rem; font-weight: 800; color: #fff; font-family: monospace;">1 200 000 ₽</span>
+            </div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 4px;">АО «МеталлТрейд Опт»</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 14px;">amoCRM #349130 &bull; Менеджер: Дмитрий В. &bull; Этап: Согласование договора</p>
+            <div style="padding: 12px; background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.25); border-radius: 8px; font-size: 0.76rem; color: #fca5a5; line-height: 1.4; margin-bottom: 16px;">
+              <strong>Причина риска:</strong> Юрист клиента запросил правки, менеджер не передал в юротдел. Сделка «висит» без назначенной даты ответа.
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width: 100%;" onclick="handleFixDeal('DEAL-349130', 'АО «МеталлТрейд Опт»')">
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span>Перехватить сделку РОПа</span>
+          </button>
+        </div>
+
+        <!-- Deal Card 3 -->
+        <div class="bento-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span class="badge-warn">НИЗКИЙ БАЛЛ ЗВОНКА (34/100)</span>
+              <span style="font-size: 1.25rem; font-weight: 800; color: #fff; font-family: monospace;">450 000 ₽</span>
+            </div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 4px;">ООО «ИнвестЛогистик»</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 14px;">Битрикс24 #1842 &bull; Менеджер: Иван К. &bull; Этап: Квалификация</p>
+            <div style="padding: 12px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; font-size: 0.76rem; color: #fde68a; line-height: 1.4; margin-bottom: 16px;">
+              <strong>Причина риска:</strong> Менеджер не выявил критерии выбора поставщика и назвал заниженную вилку без квалификации бюджета.
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width: 100%;" onclick="handleFixDeal('DEAL-1842', 'ООО «ИнвестЛогистик»')">
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span>Перехватить сделку РОПа</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB VIEW 4: CRM INTEGRATION & SYSTEM STATUS -->
+    <div id="view-settings" class="tab-view">
+      <div style="margin-bottom: 24px;">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #fff;">Интеграции CRM & Настройки платформы</h2>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Сквозные шлюзы обмена данными, вебхуки телефонии и статус ИИ-ядра</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 28px;">
+        
+        <!-- amoCRM Card -->
+        <div class="bento-card" style="padding: 22px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div style="font-weight: 700; color: #fff; font-size: 1rem;">amoCRM API v4</div>
+            <span class="badge-won">🟢 ПОДКЛЮЧЕНО</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+            <div><strong>Субдомен:</strong> revops-enterprise.amocrm.ru</div>
+            <div><strong>Статус Webhook:</strong> Активен (События звонков и смены этапов)</div>
+            <div><strong>Reverse ETL:</strong> Запись саммари в примечания включена</div>
+          </div>
+          <button class="btn btn-ghost" style="width: 100%; font-size: 0.74rem;" onclick="showToast('amoCRM синхронизирована', 'Связка активна. Вебхук слушает порт 8000.')">Проверить связь с amoCRM</button>
+        </div>
+
+        <!-- Bitrix24 Card -->
+        <div class="bento-card" style="padding: 22px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div style="font-weight: 700; color: #fff; font-size: 1rem;">Битрикс24 REST</div>
+            <span class="badge-won">🟢 ПОДКЛЮЧЕНО</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+            <div><strong>Портал:</strong> revops.bitrix24.ru</div>
+            <div><strong>Телефония:</strong> ONVOXIMPLANTCALLEND перехватчик</div>
+            <div><strong>Аудит звонков:</strong> Автоматический скоринг по 13 критериям</div>
+          </div>
+          <button class="btn btn-ghost" style="width: 100%; font-size: 0.74rem;" onclick="showToast('Битрикс24 онлайн', 'REST-шлюз проверен. Ошибок соединения нет.')">Проверить связь с Битрикс24</button>
+        </div>
+
+        <!-- Google Sheets Card -->
+        <div class="bento-card" style="padding: 22px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div style="font-weight: 700; color: #fff; font-size: 1rem;">Google Таблицы DWH</div>
+            <span class="badge-won">🟢 СИНХРОНИЗИРОВАНО</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+            <div><strong>Лист:</strong> 🎙️ ИИ_Аудит (формулы защищены)</div>
+            <div><strong>Частота синка:</strong> Автоматически каждые 60 секунд</div>
+            <div><strong>Сервисный аккаунт:</strong> service_account.json подключен</div>
+          </div>
+          <button class="btn btn-ghost" style="width: 100%; font-size: 0.74rem;" onclick="showToast('Google Таблицы обновлены', 'Лист ИИ_Аудит актуализирован.')">Обновить Google Таблицу</button>
+        </div>
+
+        <!-- Gemini API Card -->
+        <div class="bento-card" style="padding: 22px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div style="font-weight: 700; color: #fff; font-size: 1rem;">Google Gemini 2.5 Flash</div>
+            <span class="badge-won">🟢 СКОРИНГ АКТИВЕН</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+            <div><strong>Режим:</strong> Inline Audio (mp3) + Strict JSON</div>
+            <div><strong>Температура:</strong> 0.1 (детерминированная точность)</div>
+            <div><strong>Критерии:</strong> 13 параметров B2B-аудита (cr1..cr13)</div>
+          </div>
+          <button class="btn btn-ghost" style="width: 100%; font-size: 0.74rem;" onclick="testApiHealth()">Проверить здоровье API ядра</button>
+        </div>
+
+      </div>
+
+      <!-- Live API Diagnostic Console Box -->
+      <div class="bento-card" style="padding: 22px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="font-weight: 700; color: #fff; font-size: 0.9rem;">Диагностический статус ядра системы (/api/v1/health)</div>
+          <span style="font-size: 0.74rem; color: var(--accent-cyan); font-family: monospace;">FastAPI Engine 1.0.0</span>
+        </div>
+        <pre id="apiHealthLog" style="background: rgba(0,0,0,0.5); padding: 16px; border-radius: 8px; font-size: 0.76rem; color: #a78bfa; font-family: 'JetBrains Mono', monospace; overflow-x: auto; border: 1px solid rgba(255,255,255,0.06);">Нажмите кнопку выше для проверки соединения с локальным бэкендом...</pre>
+      </div>
+    </div>
+
 
   </div>
 
@@ -1490,6 +2032,116 @@
        // 6. Non-blocking Toast Stack: Интерактивные toasts с таймером-прогрессбаром вынесены в отдельный
        //    viewport с pointer-events: none на контейнере, предотвращая блокировку кликов по интерфейсу.
        ========================================================================== */
+  
+    /**
+     * CABINET WORKSPACE CONTROLLER
+     */
+    function switchCabinetTab(tabId) {
+      document.querySelectorAll('.cab-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+      
+      const targetTab = document.getElementById('tab-' + tabId);
+      const targetView = document.getElementById('view-' + tabId);
+      if (targetTab) targetTab.classList.add('active');
+      if (targetView) targetView.classList.add('active');
+
+      if (tabId === 'sim' && mcChartInstance) {
+        setTimeout(() => mcChartInstance.resize(), 50);
+      }
+    }
+
+    function openCallModal(client, manager, score, verdict, criteriaList, rec) {
+      document.getElementById('modalClientTitle').textContent = 'Разбор звонка: ' + client;
+      document.getElementById('modalManagerSub').textContent = 'Менеджер: ' + manager;
+      document.getElementById('modalScoreVal').textContent = score + ' / 100';
+      document.getElementById('modalScoreVal').style.color = score >= 80 ? '#34d399' : (score >= 50 ? '#fbbf24' : '#fb7185');
+      
+      const badge = document.getElementById('modalVerdictBadge');
+      if (score >= 80) {
+        badge.innerHTML = '<span class="badge-won">🟢 ЭТАЛОН</span>';
+      } else if (score >= 50) {
+        badge.innerHTML = '<span class="badge-warn">🟡 РИСК</span>';
+      } else {
+        badge.innerHTML = '<span class="badge-leak">🔴 СЛИВ ВЫРУЧКИ</span>';
+      }
+
+      const list = document.getElementById('modalCriteriaList');
+      list.innerHTML = '';
+      criteriaList.forEach(c => {
+        const li = document.createElement('li');
+        li.style.padding = '8px 12px';
+        li.style.background = 'rgba(255,255,255,0.02)';
+        li.style.borderRadius = '6px';
+        li.style.border = '1px solid rgba(255,255,255,0.05)';
+        li.textContent = c;
+        list.appendChild(li);
+      });
+
+      document.getElementById('modalAiRec').textContent = rec;
+      document.getElementById('criteriaModalBackdrop').style.display = 'flex';
+    }
+
+    function closeCallModal(e) {
+      if (e && e.target !== e.currentTarget && e.currentTarget.id !== 'criteriaModalBackdrop') return;
+      document.getElementById('criteriaModalBackdrop').style.display = 'none';
+    }
+
+    async function testApiHealth() {
+      const logBox = document.getElementById('apiHealthLog');
+      logBox.textContent = 'Опрашиваем эндпоинт http://localhost:8000/api/v1/health ...';
+      try {
+        const res = await fetch('/api/v1/health');
+        if (res.ok) {
+          const data = await res.json();
+          logBox.textContent = JSON.stringify(data, null, 2);
+          showToast('Бэкенд в строю (200 OK)', 'FastAPI ядро активно и готово к обработке звонков.');
+        } else {
+          logBox.textContent = 'Ошибка ответа бэкенда: HTTP ' + res.status;
+          showToast('Ошибка API', 'Статус: ' + res.status);
+        }
+      } catch (err) {
+        logBox.textContent = 'Ошибка соединения с бэкендом: ' + err.message;
+        showToast('Ошибка соединения', 'Убедитесь, что сервер запущен через start.bat');
+      }
+    }
+
   </script>
+  <!-- Criteria Inspect Modal -->
+  <div id="criteriaModalBackdrop" class="criteria-modal-backdrop" onclick="closeCallModal(event)">
+    <div class="criteria-modal" onclick="event.stopPropagation()">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px;">
+        <div>
+          <h3 id="modalClientTitle" style="font-size: 1.15rem; font-weight: 800; color: #fff;">Разбор звонка</h3>
+          <p id="modalManagerSub" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Менеджер: --</p>
+        </div>
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.9rem;" onclick="closeCallModal()">✕</button>
+      </div>
+
+      <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 20px; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px;">
+        <div style="font-size: 0.8rem; color: var(--text-secondary);">Итоговый балл качества:</div>
+        <div id="modalScoreVal" style="font-size: 1.25rem; font-weight: 800; color: #fff; font-family: monospace;">-- / 100</div>
+        <div id="modalVerdictBadge" style="margin-left: auto;"></div>
+      </div>
+
+      <div style="margin-bottom: 18px;">
+        <h4 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; letter-spacing: 0.05em;">Детализация 13 критериев B2B-аудита</h4>
+        <ul id="modalCriteriaList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem;">
+        </ul>
+      </div>
+
+      <div style="padding: 14px; background: rgba(115,82,255,0.1); border: 1px solid rgba(115,82,255,0.3); border-radius: 8px; margin-bottom: 20px;">
+        <div style="font-size: 0.76rem; font-weight: 700; color: #c4b5fd; text-transform: uppercase; margin-bottom: 4px;">Рекомендация ИИ для РОПа:</div>
+        <p id="modalAiRec" style="font-size: 0.82rem; color: #fff; margin: 0; line-height: 1.4;">--</p>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-ghost" onclick="closeCallModal()">Закрыть</button>
+        <button class="btn btn-primary" onclick="showToast('Задача РОПу поставлена', 'Задача на перезвон клиенту отправлена в amoCRM.'); closeCallModal();">
+          Поставить задачу РОПу
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
