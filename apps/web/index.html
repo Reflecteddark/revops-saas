@@ -922,6 +922,179 @@
       }
     }
 
+
+    /* ==========================================================================
+       CYBER-FINTECH LINEAR DARK ENHANCEMENTS (OPTION 1)
+       ========================================================================== */
+    :root {
+      --linear-bg-card: linear-gradient(180deg, rgba(18, 23, 34, 0.78) 0%, rgba(9, 12, 19, 0.92) 100%);
+      --linear-border-top: rgba(255, 255, 255, 0.18);
+      --linear-border-subtle: rgba(255, 255, 255, 0.08);
+      --linear-glow-violet: 0 0 35px -5px rgba(115, 82, 255, 0.35);
+      --linear-glow-cyan: 0 0 35px -5px rgba(0, 212, 255, 0.3);
+    }
+
+    /* Ambient background grid */
+    .ambient-bg {
+      background-image: 
+        radial-gradient(circle at 18% 12%, rgba(115, 82, 255, 0.16), transparent 45%),
+        radial-gradient(circle at 82% 28%, rgba(0, 212, 255, 0.12), transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.08), transparent 60%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px) !important;
+      background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px !important;
+    }
+
+    /* Upgraded Bento Cards (Linear Obsidian Glass) */
+    .bento-card {
+      background: var(--linear-bg-card) !important;
+      border: 1px solid var(--linear-border-subtle) !important;
+      border-top: 1px solid var(--linear-border-top) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bento-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(115, 82, 255, 0.35) !important;
+      border-top: 1px solid rgba(115, 82, 255, 0.55) !important;
+      box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.85), 0 0 25px -5px rgba(115, 82, 255, 0.22) !important;
+    }
+
+    /* Glowing Pulse Dot */
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      box-shadow: 0 0 8px currentColor;
+      animation: linearPulseGlow 1.8s infinite ease-in-out;
+      vertical-align: middle;
+    }
+
+    @keyframes linearPulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Inline Sparkline Containers */
+    .sparkline-wrap {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .sparkline-svg {
+      width: 110px;
+      height: 32px;
+      overflow: visible;
+    }
+
+    /* Audio Waveform Spectrograph (Linear Style) */
+    .linear-waveform-box {
+      background: rgba(8, 11, 18, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.7);
+    }
+
+    .waveform-bars {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 52px;
+      padding: 6px 0;
+      position: relative;
+    }
+
+    .wave-bar {
+      flex: 1;
+      min-width: 3px;
+      max-width: 6px;
+      border-radius: 3px;
+      transition: height 0.15s ease, opacity 0.15s ease;
+      opacity: 0.85;
+    }
+    .wave-bar:hover {
+      opacity: 1;
+      filter: brightness(1.3);
+    }
+    .wave-bar.mgr {
+      background: linear-gradient(180deg, #7352ff 0%, #4f2ae8 100%);
+    }
+    .wave-bar.cli {
+      background: linear-gradient(180deg, #00d4ff 0%, #0284c7 100%);
+    }
+    .wave-bar.active-play {
+      animation: wavePulseAnim 0.7s infinite alternate ease-in-out;
+    }
+
+    @keyframes wavePulseAnim {
+      0% { transform: scaleY(0.7); }
+      100% { transform: scaleY(1.35); }
+    }
+
+    .waveform-timeline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      margin-top: 6px;
+      position: relative;
+    }
+
+    .wave-pins-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .wave-pin {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .wave-pin:hover {
+      transform: translateY(-1px);
+    }
+    .wave-pin-red {
+      background: rgba(244, 63, 94, 0.14);
+      color: #fca5a5;
+      border: 1px solid rgba(244, 63, 94, 0.35);
+    }
+    .wave-pin-green {
+      background: rgba(16, 185, 129, 0.14);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .wave-pin-cyan {
+      background: rgba(0, 212, 255, 0.14);
+      color: #67e8f9;
+      border: 1px solid rgba(0, 212, 255, 0.35);
+    }
+
   </style>
 </head>
 <body>
@@ -1203,42 +1376,94 @@
         </div>
       </div>
 
-      <!-- 4 Top Cards -->
+      <!-- 4 Top Bento KPI Cards (Linear Dark Edition with Sparklines) -->
       <div class="grid-4">
+        <!-- Card 1: Target Plan -->
         <div class="bento-card">
           <div class="bento-card-header">
             <span class="bento-card-title">План месяца (Точка Б)</span>
-            <span class="badge-info">🎯 НОРМАТИВ</span>
+            <span class="badge-info"><span class="pulse-dot" style="background: #38bdf8;"></span>🎯 НОРМАТИВ</span>
           </div>
-          <div id="metricPlanVal" class="metric-value">5 000 000 ₽</div>
-          <div class="metric-sub">Целевой таргет компании Самозанятый</div>
+          <div id="metricPlanVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">5 000 000 ₽</div>
+          <div class="sparkline-wrap">
+            <div class="metric-sub" style="margin-top: 0;">Целевой таргет компании Самозанятый</div>
+            <svg class="sparkline-svg" viewBox="0 0 110 32">
+              <defs>
+                <linearGradient id="gradPlan" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
+                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M 0,26 L 18,24 L 36,20 L 54,16 L 72,12 L 90,8 L 110,4 L 110,32 L 0,32 Z" fill="url(#gradPlan)"/>
+              <path d="M 0,26 L 18,24 L 36,20 L 54,16 L 72,12 L 90,8 L 110,4" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
         </div>
 
+        <!-- Card 2: Actual Closed-Won -->
         <div class="bento-card">
           <div class="bento-card-header">
             <span class="bento-card-title">Факт закрытой выручки</span>
-            <span id="metricFactBadge" class="badge-won">🟢 10.0% ВЫПОЛНЕНО</span>
+            <span id="metricFactBadge" class="badge-won"><span class="pulse-dot" style="background: #10b981;"></span>🟢 10.0% ВЫПОЛНЕНО</span>
           </div>
-          <div id="metricFactVal" class="metric-value" style="color: #34d399;">500 000 ₽</div>
-          <div class="metric-sub">Сделка stage_id = 6 (B24 Кейс 10, УЗИП)</div>
+          <div id="metricFactVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">500 000 ₽</div>
+          <div class="sparkline-wrap">
+            <div class="metric-sub" style="margin-top: 0;">Сделка stage_id = 6 (B24 Кейс 10, УЗИП)</div>
+            <svg class="sparkline-svg" viewBox="0 0 110 32">
+              <defs>
+                <linearGradient id="gradFact" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M 0,30 L 25,30 L 50,30 L 75,30 L 90,12 L 110,8 L 110,32 L 0,32 Z" fill="url(#gradFact)"/>
+              <path d="M 0,30 L 25,30 L 50,30 L 75,30 L 90,12 L 110,8" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
         </div>
 
+        <!-- Card 3: SSOT Forecast -->
         <div class="bento-card">
           <div class="bento-card-header">
             <span class="bento-card-title">Взвешенный SSOT прогноз</span>
-            <span class="badge-warn">🟡 РИСК -52.5%</span>
+            <span class="badge-warn"><span class="pulse-dot" style="background: #fbbf24;"></span>🟡 РИСК -52.5%</span>
           </div>
-          <div id="metricSsotVal" class="metric-value" style="color: #fbbf24;">2 375 000 ₽</div>
-          <div class="metric-sub">Математическое ожидание кассы с учетом вероятностей</div>
+          <div id="metricSsotVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">2 375 000 ₽</div>
+          <div class="sparkline-wrap">
+            <div class="metric-sub" style="margin-top: 0;">Мат. ожидание кассы с учетом вероятностей</div>
+            <svg class="sparkline-svg" viewBox="0 0 110 32">
+              <defs>
+                <linearGradient id="gradSsot" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M 0,22 L 20,24 L 40,18 L 60,20 L 80,14 L 110,12 L 110,32 L 0,32 Z" fill="url(#gradSsot)"/>
+              <path d="M 0,22 L 20,24 L 40,18 L 60,20 L 80,14 L 110,12" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
         </div>
 
+        <!-- Card 4: Active Pipeline -->
         <div class="bento-card">
           <div class="bento-card-header">
             <span class="bento-card-title">Активный пайплайн воронки</span>
-            <span class="badge-info">9 СДЕЛОК</span>
+            <span class="badge-info"><span class="pulse-dot" style="background: #00d4ff;"></span>9 СДЕЛОК</span>
           </div>
-          <div id="metricPipeVal" class="metric-value" style="color: var(--accent-cyan);">4 500 000 ₽</div>
-          <div class="metric-sub">В работе на этапах 1..5 воронки CRM</div>
+          <div id="metricPipeVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">4 500 000 ₽</div>
+          <div class="sparkline-wrap">
+            <div class="metric-sub" style="margin-top: 0;">В работе на этапах 1..5 воронки CRM</div>
+            <svg class="sparkline-svg" viewBox="0 0 110 32">
+              <defs>
+                <linearGradient id="gradPipe" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M 0,16 L 20,12 L 40,18 L 60,10 L 80,14 L 110,6 L 110,32 L 0,32 Z" fill="url(#gradPipe)"/>
+              <path d="M 0,16 L 20,12 L 40,18 L 60,10 L 80,14 L 110,6" fill="none" stroke="#00d4ff" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -2640,19 +2865,59 @@
         <button onclick="closeCallModal()" class="btn btn-ghost" style="padding: 6px 10px; border-radius: 50%;">✕</button>
       </div>
 
-      <!-- Audio Player Simulation -->
-      <div style="padding: 14px 18px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <button id="btnPlayAudio" onclick="togglePlaySimulation()" class="btn btn-primary" style="padding: 8px 12px; border-radius: var(--radius-pill);">
-            <span>▶ Воспроизвести</span>
-          </button>
-          <div style="font-size: 0.76rem; color: var(--text-secondary);">
-            Запись звонка <span id="modalAudioDuration">1:57</span> &bull; 32 kbps mono
+      <!-- Linear-grade Interactive Audio Waveform Spectrograph -->
+      <div class="linear-waveform-box">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button id="btnPlayAudio" onclick="togglePlaySimulation()" class="btn btn-primary" style="padding: 8px 16px; border-radius: var(--radius-pill); box-shadow: 0 0 16px var(--accent-purple-glow);">
+              <span>▶ Воспроизвести</span>
+            </button>
+            <div>
+              <div style="font-size: 0.82rem; font-weight: 700; color: #fff;">
+                Спектрограмма диалога <span style="font-size: 0.68rem; color: #34d399; margin-left: 6px;">● Gemini 3.5 Speech AI</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">
+                Длительность: <strong id="modalAudioDuration" style="color: #fff;">1:57</strong> &bull; 32 kbps mono &bull; Talk/Listen: <span style="color: #c4b5fd;">45% Менеджер</span> / <span style="color: #67e8f9;">55% Клиент</span>
+              </div>
+            </div>
           </div>
+          <a id="modalCrmLink" href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="font-size: 0.74rem;">
+            <span>Открыть в CRM &nearr;</span>
+          </a>
         </div>
-        <a id="modalCrmLink" href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="font-size: 0.74rem;">
-          <span>Открыть сделку в CRM &nearr;</span>
-        </a>
+
+        <!-- 42-Bar Voice Acoustics Visualizer -->
+        <div class="waveform-bars" id="waveformBarsContainer">
+          <div class="wave-bar mgr" id="wbar-0" style="height: 14px;" title="Таймкод: 0с"></div><div class="wave-bar cli" id="wbar-1" style="height: 22px;" title="Таймкод: 2с"></div><div class="wave-bar mgr" id="wbar-2" style="height: 38px;" title="Таймкод: 5с"></div><div class="wave-bar cli" id="wbar-3" style="height: 26px;" title="Таймкод: 8с"></div><div class="wave-bar mgr" id="wbar-4" style="height: 42px;" title="Таймкод: 11с"></div><div class="wave-bar cli" id="wbar-5" style="height: 48px;" title="Таймкод: 14с"></div><div class="wave-bar mgr" id="wbar-6" style="height: 32px;" title="Таймкод: 16с"></div><div class="wave-bar cli" id="wbar-7" style="height: 20px;" title="Таймкод: 19с"></div><div class="wave-bar mgr" id="wbar-8" style="height: 16px;" title="Таймкод: 22с"></div><div class="wave-bar cli" id="wbar-9" style="height: 28px;" title="Таймкод: 25с"></div><div class="wave-bar mgr" id="wbar-10" style="height: 44px;" title="Таймкод: 28с"></div><div class="wave-bar cli" id="wbar-11" style="height: 50px;" title="Таймкод: 30с"></div><div class="wave-bar mgr" id="wbar-12" style="height: 36px;" title="Таймкод: 33с"></div><div class="wave-bar cli" id="wbar-13" style="height: 18px;" title="Таймкод: 36с"></div><div class="wave-bar mgr" id="wbar-14" style="height: 12px;" title="Таймкод: 39с"></div><div class="wave-bar cli" id="wbar-15" style="height: 30px;" title="Таймкод: 42с"></div><div class="wave-bar mgr" id="wbar-16" style="height: 46px;" title="Таймкод: 44с"></div><div class="wave-bar cli" id="wbar-17" style="height: 52px;" title="Таймкод: 47с"></div><div class="wave-bar mgr" id="wbar-18" style="height: 40px;" title="Таймкод: 50с"></div><div class="wave-bar cli" id="wbar-19" style="height: 24px;" title="Таймкод: 53с"></div><div class="wave-bar mgr" id="wbar-20" style="height: 18px;" title="Таймкод: 56с"></div><div class="wave-bar cli" id="wbar-21" style="height: 34px;" title="Таймкод: 58с"></div><div class="wave-bar mgr" id="wbar-22" style="height: 48px;" title="Таймкод: 61с"></div><div class="wave-bar cli" id="wbar-23" style="height: 42px;" title="Таймкод: 64с"></div><div class="wave-bar mgr" id="wbar-24" style="height: 28px;" title="Таймкод: 67с"></div><div class="wave-bar cli" id="wbar-25" style="height: 16px;" title="Таймкод: 70с"></div><div class="wave-bar mgr" id="wbar-26" style="height: 22px;" title="Таймкод: 72с"></div><div class="wave-bar cli" id="wbar-27" style="height: 38px;" title="Таймкод: 75с"></div><div class="wave-bar mgr" id="wbar-28" style="height: 50px;" title="Таймкод: 78с"></div><div class="wave-bar cli" id="wbar-29" style="height: 44px;" title="Таймкод: 81с"></div><div class="wave-bar mgr" id="wbar-30" style="height: 30px;" title="Таймкод: 84с"></div><div class="wave-bar cli" id="wbar-31" style="height: 18px;" title="Таймкод: 86с"></div><div class="wave-bar mgr" id="wbar-32" style="height: 24px;" title="Таймкод: 89с"></div><div class="wave-bar cli" id="wbar-33" style="height: 40px;" title="Таймкод: 92с"></div><div class="wave-bar mgr" id="wbar-34" style="height: 48px;" title="Таймкод: 95с"></div><div class="wave-bar cli" id="wbar-35" style="height: 36px;" title="Таймкод: 98с"></div><div class="wave-bar mgr" id="wbar-36" style="height: 22px;" title="Таймкод: 100с"></div><div class="wave-bar cli" id="wbar-37" style="height: 14px;" title="Таймкод: 103с"></div><div class="wave-bar mgr" id="wbar-38" style="height: 28px;" title="Таймкод: 106с"></div><div class="wave-bar cli" id="wbar-39" style="height: 42px;" title="Таймкод: 109с"></div><div class="wave-bar mgr" id="wbar-40" style="height: 32px;" title="Таймкод: 112с"></div><div class="wave-bar cli" id="wbar-41" style="height: 18px;" title="Таймкод: 114с"></div>
+        </div>
+
+        <!-- Scrubber Timeline & Speaker Markers -->
+        <div class="waveform-timeline">
+          <span style="font-family: 'JetBrains Mono', monospace;" id="audioCurrentTime">0:00</span>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; color: #c4b5fd;">
+              <span style="width: 8px; height: 8px; border-radius: 2px; background: #7352ff; display: inline-block;"></span> Речь менеджера
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; color: #67e8f9;">
+              <span style="width: 8px; height: 8px; border-radius: 2px; background: #00d4ff; display: inline-block;"></span> Реплики клиента
+            </span>
+          </div>
+          <span style="font-family: 'JetBrains Mono', monospace;" id="audioTotalTime">1:57</span>
+        </div>
+
+        <!-- AI Objection & Next Step Milestone Pins -->
+        <div class="wave-pins-bar">
+          <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">ИИ-Маркеры диалога:</span>
+          <span class="wave-pin wave-pin-cyan" onclick="showToast('00:15 Приветствие', 'Менеджер представился и назвал компанию.')">
+            <span>⏱ 00:15 Приветствие</span>
+          </span>
+          <span class="wave-pin wave-pin-red" onclick="showToast('00:54 Возражение', 'Клиент: Скиньте на почту, не интересно.')">
+            <span>⚠️ 00:54 Возражение «Скиньте на почту»</span>
+          </span>
+          <span class="wave-pin wave-pin-red" id="wavePinStep" onclick="showToast('01:45 Next Step', 'Слив: точный день и время не зафиксированы.')">
+            <span>🚨 01:45 Слив Next Step</span>
+          </span>
+        </div>
       </div>
 
       <!-- CR1..CR13 Score Bar -->
@@ -3377,20 +3642,71 @@
         pillsWrap.appendChild(span);
       });
 
+      const totalTimeEl = document.getElementById('audioTotalTime');
+      if (totalTimeEl) totalTimeEl.textContent = call.duration;
+      const curTimeEl = document.getElementById('audioCurrentTime');
+      if (curTimeEl) curTimeEl.textContent = '0:00';
+      playSeconds = 0;
+
+      const stepPin = document.getElementById('wavePinStep');
+      if (stepPin) {
+        if (call.next_step === 1) {
+          stepPin.className = 'wave-pin wave-pin-green';
+          stepPin.innerHTML = '<span>✅ Next Step зафиксирован</span>';
+          stepPin.onclick = () => showToast('Next Step зафиксирован', 'Менеджер четко зафиксировал дату и время следующего контакта.');
+        } else {
+          stepPin.className = 'wave-pin wave-pin-red';
+          stepPin.innerHTML = '<span>🚨 Слив Next Step</span>';
+          stepPin.onclick = () => showToast('Слив Next Step', 'Дата и время следующего контакта не согласованы.');
+        }
+      }
+
       document.getElementById('callModal').style.display = 'flex';
     }
 
     function closeCallModal() {
+      if (isPlayingAudio) {
+        togglePlaySimulation();
+      }
       document.getElementById('callModal').style.display = 'none';
     }
 
+    let waveformInterval = null;
+    let isPlayingAudio = false;
+    let playSeconds = 0;
+
     function togglePlaySimulation() {
       const btn = document.getElementById('btnPlayAudio');
-      if (btn.textContent.includes('Воспроизвести')) {
-        btn.textContent = '⏸ Пауза';
-        showToast('Аудиоплеер', 'Воспроизведение записи звонка...');
+      const bars = document.querySelectorAll('.wave-bar');
+      const timeEl = document.getElementById('audioCurrentTime');
+
+      if (!isPlayingAudio) {
+        isPlayingAudio = true;
+        btn.innerHTML = '<span>⏸ Пауза</span>';
+        btn.style.background = '#4f2ae8';
+        showToast('Аудиоплеер Linear AI', 'Воспроизведение аудиозаписи звонка со спектрограммой...');
+        
+        bars.forEach((b, i) => {
+          b.classList.add('active-play');
+          b.style.animationDelay = (i * 0.04) + 's';
+        });
+
+        waveformInterval = setInterval(() => {
+          playSeconds++;
+          const mins = Math.floor(playSeconds / 60);
+          const secs = (playSeconds % 60).toString().padStart(2, '0');
+          if (timeEl) timeEl.textContent = `${mins}:${secs}`;
+          if (playSeconds >= 117) { // 1:57
+            togglePlaySimulation();
+            playSeconds = 0;
+          }
+        }, 1000);
       } else {
-        btn.textContent = '▶ Воспроизвести';
+        isPlayingAudio = false;
+        btn.innerHTML = '<span>▶ Воспроизвести</span>';
+        btn.style.background = '';
+        bars.forEach(b => b.classList.remove('active-play'));
+        if (waveformInterval) clearInterval(waveformInterval);
       }
     }
 
