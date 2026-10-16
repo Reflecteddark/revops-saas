@@ -2868,7 +2868,7 @@
               </div>
             </div>
           </div>
-          <button class="btn btn-emerald" onclick="document.getElementById('script-case01').scrollIntoView({behavior: 'smooth'})" style="font-size: 0.74rem;">
+          <button class="btn btn-emerald" onclick="event.stopPropagation(); document.getElementById('script-case01').scrollIntoView({behavior: 'smooth'})" style="font-size: 0.74rem;">
             <span>⚡ Разбор звонков и дожим (15 мин)</span>
           </button>
         </div>
@@ -3148,8 +3148,6 @@
           </div>
         </div>
       </div>
-      </div>
-      </div>
 
       <!-- COMPONENT: 13-факторный радар стандартов речи Gemini (Chart.js Radar) -->
       <div class="bento-card" style="margin-bottom: 22px;">
@@ -3168,10 +3166,10 @@
             <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">Срез сотрудника:</span>
             <select id="radarRepSelector" onchange="updateRadarChart(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
               <option value="all">Команда в целом (10 звонков, 9.1/13)</option>
-              <option value="Заряна">Заряна (10.5/13 • 0% брака)</option>
+              <option value="Заряна">Заряна (9.8/13 • 5 звонков)</option>
               <option value="Надежда">Надежда (12.0/13 • Рекорд)</option>
               <option value="Виктория">Виктория (9.5/13 • Норма)</option>
-              <option value="Светлана">Светлана (6.3/13 • P0 Зона риска)</option>
+              <option value="Светлана">Светлана (5.5/13 • P0 Зона риска)</option>
             </select>
           </div>
         </div>
@@ -3688,19 +3686,9 @@
                 <td>B24 Кейс 01: Услуги лояльности клиентов</td>
                 <td>500 000 ₽</td>
                 <td>Первичный контакт</td>
-                <td>Дмитрий Федотов</td>
+                <td><strong style="color: #fff;">Светлана</strong></td>
                 <td><span class="badge-warn">7 / 13</span></td>
-                <td><span class="badge-lost">🔴 Ложное согласие (cr4=0)</span></td>
-                <td>Срочный перезвон РОПа: квалифицировать боль и ЛПР</td>
-              </tr>
-              <tr>
-                <td><strong>B24-82</strong></td>
-                <td>B24 Кейс 02: Сопровождение гос закупок</td>
-                <td>500 000 ₽</td>
-                <td>Первичный контакт</td>
-                <td>Дмитрий Федотов</td>
-                <td><span class="badge-won">12 / 13</span></td>
-                <td><span class="badge-lost">🔴 Ложное согласие (cr4=0)</span></td>
+                <td><span class="badge-lost">🔴 Слив на почту (cr1=0, cr4=0)</span></td>
                 <td>Срочный перезвон РОПа: квалифицировать боль и ЛПР</td>
               </tr>
               <tr>
@@ -3708,10 +3696,20 @@
                 <td>B24 Кейс 03: Продажа ортопедических матрасов</td>
                 <td>500 000 ₽</td>
                 <td>Переговоры</td>
-                <td>Дмитрий Федотов</td>
+                <td><strong style="color: #fff;">Заряна</strong></td>
                 <td><span class="badge-warn">8 / 13</span></td>
-                <td><span class="badge-lost">🔴 Ложное согласие (cr4=0)</span></td>
-                <td>Срочный перезвон РОПа: квалифицировать боль и ЛПР</td>
+                <td><span class="badge-lost">🔴 Плавающий слот (cr1=0, cr3=0)</span></td>
+                <td>РОП: согласовать точное время встречи и статус ЛПР</td>
+              </tr>
+              <tr>
+                <td><strong>B24-86</strong></td>
+                <td>B24 Кейс 04: Производство кухонь на заказ</td>
+                <td>500 000 ₽</td>
+                <td>Первичный контакт</td>
+                <td><strong style="color: #fff;">Светлана</strong></td>
+                <td><span class="badge-lost">4 / 13</span></td>
+                <td><span class="badge-lost">🔴 Слив КП на почту (cr1=0, cr8=0)</span></td>
+                <td>Срочно подключить РОПа к повторному звонку</td>
               </tr>
             </tbody>
           </table>
@@ -3850,7 +3848,7 @@
                 <td><span class="badge-won">100%</span></td>
                 <td><span class="badge-lost">0%</span></td>
                 <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-lost">20%</span></td>
+                <td><span class="badge-won">80%</span></td>
                 <td><span class="badge-won">100%</span></td>
                 <td><strong style="color: #34d399;">9.8 / 13</strong></td>
                 <td><span class="badge-won">#TopPerformer</span></td>
@@ -3912,7 +3910,7 @@
       <div class="bento-card">
         <div class="bento-card-header">
           <span class="bento-card-title">👥 Расчетная ведомость премий и динамический Payroll (Привязка к речи)</span>
-          <span class="badge-warn">ОБЩИЙ ФОТ: 347 500 ₽</span>
+          <span class="badge-warn">ОБЩИЙ ФОТ: 394 000 ₽</span>
         </div>
         <div class="table-container" style="margin-bottom: 14px;">
           <table>

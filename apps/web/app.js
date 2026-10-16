@@ -1414,7 +1414,7 @@ const CALLS_DATA = [
           unit: ' б.',
           isCurrency: false
         },
-        nextstep: {
+        step: {
           label: 'Фиксация Next Step, %',
           data: nextstep,
           colors: ['#f59e0b', '#10b981', '#38bdf8', '#ef4444'],
@@ -1492,8 +1492,9 @@ const CALLS_DATA = [
     }
 
     function setRepChartMetric(metricKey) {
-      if (!repPerfChartInstance || !REP_METRICS[metricKey]) return;
-      const m = REP_METRICS[metricKey];
+      const repMetrics = getDynamicRepMetrics();
+      if (!repPerfChartInstance || !repMetrics[metricKey]) return;
+      const m = repMetrics[metricKey];
 
       // Update button styles
       const buttons = ['pipe', 'score', 'step', 'risk'];
