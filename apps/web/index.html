@@ -1692,6 +1692,214 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+
+    /* ==========================================================================
+       V20.2 TIER-1 SAAS UPGRADES (LINEAR / VERCEL / ATTIO)
+       ========================================================================== */
+
+    /* Tabular Numerals for vertical number alignment */
+    body, table, th, td, code, .metric-value, .stat-value, .badge, .cr-dot,
+    .call-row, .wave-time, .podium-value, .loss-step-amount, .pacing-slider-value {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Smooth Tab Transitions */
+    .tab-view {
+      display: none;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tab-view.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Mouse-Tracking Radial Spotlight on .bento-card */
+    .bento-card {
+      position: relative;
+      overflow: hidden;
+    }
+    .bento-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: inherit;
+      background: radial-gradient(550px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(115, 82, 255, 0.12), transparent 45%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 1;
+    }
+    .bento-card:hover::before {
+      opacity: 1;
+    }
+    .bento-card > * {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Mobile Sidebar Drawer & Backdrop */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(4, 7, 14, 0.7);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 99;
+    }
+    .sidebar-backdrop.active {
+      display: block;
+    }
+
+    @media (max-width: 1024px) {
+      .mp-sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        transform: translateX(-100%);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .mp-sidebar.mobile-open {
+        transform: translateX(0);
+        box-shadow: 12px 0 35px rgba(0, 0, 0, 0.8);
+      }
+    }
+
+    /* Global Command Palette (Linear / Raycast Style) */
+    .cmd-palette-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(4, 7, 14, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 9999;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 14vh;
+      animation: cmdFadeIn 0.15s ease-out;
+    }
+    .cmd-palette-overlay.active {
+      display: flex;
+    }
+    @keyframes cmdFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .cmd-palette-box {
+      width: 100%;
+      max-width: 620px;
+      background: #0f131f;
+      border: 1px solid rgba(115, 82, 255, 0.38);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 35px rgba(115, 82, 255, 0.18);
+      overflow: hidden;
+      animation: cmdSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes cmdSlideDown {
+      from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .cmd-palette-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .cmd-palette-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+    }
+    .cmd-palette-input::placeholder {
+      color: var(--text-muted);
+    }
+    .cmd-palette-esc-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .cmd-palette-results {
+      max-height: 380px;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .cmd-palette-group-title {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 8px 10px 4px 10px;
+    }
+    .cmd-palette-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .cmd-palette-item:hover,
+    .cmd-palette-item.selected {
+      background: rgba(115, 82, 255, 0.18);
+      color: #fff;
+    }
+    .cmd-palette-item.selected {
+      border-left: 3px solid #7352ff;
+    }
+    .cmd-palette-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cmd-palette-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 18px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(0, 0, 0, 0.35);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+    .cmd-palette-footer kbd {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 3px;
+      padding: 1px 4px;
+      font-size: 0.64rem;
+      color: #fff;
+    }
+
   </style>
 </head>
 <body>
@@ -1763,6 +1971,7 @@
     </div>
   </div>
 
+  <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
   <div class="mp-app-layout">
 
     <!-- ======================================================== -->
@@ -1914,14 +2123,21 @@
 
         <!-- Top Right Actions -->
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <!-- Global Command Palette Trigger (Ctrl+K / ⌘K) -->
+          <button class="btn btn-ghost cmd-k-trigger" onclick="openCommandPalette()" style="border-color: rgba(255,255,255,0.14); color: var(--text-secondary); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 0.74rem;" title="Быстрый поиск и команды (Ctrl+K / ⌘K)">
+            <span>🔍</span>
+            <span>Поиск и действия...</span>
+            <kbd style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); border-radius: 4px; padding: 1px 5px; font-size: 0.65rem; color: #fff; font-family: inherit;">⌘K</kbd>
+          </button>
+
           <button class="btn btn-ghost" onclick="openOnePagerModal()" style="border-color: rgba(115,82,255,0.4); color: #c4b5fd;">
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span>One-Pager (PDF)</span>
           </button>
 
-          <button class="btn btn-primary" onclick="showToast('Синхронизация CRM', '10 звонков и 10 сделок актуализированы через n8n Webhook.')">
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            <span>Синхронизировать</span>
+          <button id="btnSyncCRM" class="btn btn-primary" onclick="triggerSyncSimulation()" title="Синхронизировать SSOT с amoCRM & Bitrix24">
+            <svg id="syncIconSvg" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span id="syncBtnText">Синхронизировать</span>
           </button>
 
           <!-- Profile Widget -->
@@ -2600,15 +2816,15 @@
             <div class="podium-metrics-box" style="border: 1px solid rgba(245, 158, 11, 0.25);">
               <div class="podium-metric-row">
                 <span style="color: var(--text-muted);">Качество речи:</span>
-                <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">10.5 / 13 (0% брака)</span>
+                <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">9.8 / 13 (ТОП-БАЛЛ)</span>
               </div>
               <div class="podium-metric-row">
                 <span style="color: var(--text-muted);">В пайплайне:</span>
-                <strong style="color: #fbbf24; font-family: 'JetBrains Mono', monospace;">2 000 000 ₽ (4 сделки)</strong>
+                <strong style="color: #fbbf24; font-family: 'JetBrains Mono', monospace;">2 500 000 ₽ (5 сделок)</strong>
               </div>
               <div class="podium-metric-row">
                 <span style="color: var(--text-muted);">Next Step:</span>
-                <span style="color: #34d399; font-weight: 700;">100% фиксация</span>
+                <span style="color: #34d399; font-weight: 700;">80% (4 из 5)</span>
               </div>
             </div>
           </div>
@@ -2645,10 +2861,10 @@
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="delta-badge delta-neg"><span class="delta-dot"></span>🚨 P0 ЗОНА КРИТИЧЕСКОГО РИСКА</span>
                 <strong style="color: #fff; font-size: 0.88rem;">Светлана</strong>
-                <span style="font-size: 0.74rem; color: #fca5a5;">(1 500 000 ₽ в работе &bull; 3 сделки)</span>
+                <span style="font-size: 0.74rem; color: #fca5a5;">(1 000 000 ₽ в работе &bull; 2 сделки)</span>
               </div>
               <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">
-                Средний балл речи: <strong style="color: #fb7185;">6.3 / 13</strong> &bull; Брак Next Step: <strong style="color: #fb7185;">67% (2 звонка слиты на «скиньте на почту»)</strong>
+                Средний балл речи: <strong style="color: #fb7185;">5.5 / 13</strong> &bull; Брак Next Step: <strong style="color: #fb7185;">100% (2 звонка слиты без фиксации слота)</strong>
               </div>
             </div>
           </div>
@@ -2907,30 +3123,32 @@
           </div>
 
           <div class="segmented-bar">
-            <!-- Won/Gold: 40% (4 calls) -->
-            <div class="segment-fill" onclick="setAuditStatusFilter('won')" style="width: 40%; background: linear-gradient(90deg, #10b981, #34d399);" title="Эталон (11-13 баллов): 4 звонка"></div>
-            <!-- Norm/Yellow: 20% (2 calls) -->
-            <div class="segment-fill" onclick="setAuditStatusFilter('norm')" style="width: 20%; background: linear-gradient(90deg, #fbbf24, #f59e0b);" title="Норма (9-10 баллов): 2 звонка"></div>
-            <!-- Lost/Red: 40% (4 calls) -->
-            <div class="segment-fill" onclick="setAuditStatusFilter('risk')" style="width: 40%; background: linear-gradient(90deg, #f43f5e, #fb7185);" title="Слив / Брак (<9 баллов): 4 звонка"></div>
+            <!-- Won/Gold: 40% (4 calls: b24_80, 90, 92, 94) -->
+            <div class="segment-fill" onclick="setAuditStatusFilter('won')" style="width: 40%; background: linear-gradient(90deg, #10b981, #34d399);" title="Эталон (11-13 баллов): 4 звонка (40%)"></div>
+            <!-- Norm/Yellow: 30% (3 calls: b24_86, 88, 96) -->
+            <div class="segment-fill" onclick="setAuditStatusFilter('norm')" style="width: 30%; background: linear-gradient(90deg, #fbbf24, #f59e0b);" title="Норма (8-10 баллов): 3 звонка (30%)"></div>
+            <!-- Lost/Red: 30% (3 calls: b24_78, 82, 84) -->
+            <div class="segment-fill" onclick="setAuditStatusFilter('risk')" style="width: 30%; background: linear-gradient(90deg, #f43f5e, #fb7185);" title="Слив / Риск (<8 баллов): 3 звонка (30%)"></div>
           </div>
 
           <div class="meter-legend">
-            <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('won')">
+            <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('won')" title="Фильтровать эталонные звонки">
               <span class="legend-swatch" style="background: #10b981;"></span>
               <span>Эталон: <strong style="color: #34d399;">4 (40%)</strong></span>
             </div>
-            <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('norm')">
+            <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('norm')" title="Фильтровать норму">
               <span class="legend-swatch" style="background: #fbbf24;"></span>
-              <span>Норма: <strong style="color: #fbbf24;">2 (20%)</strong></span>
+              <span>Норма: <strong style="color: #fbbf24;">3 (30%)</strong></span>
             </div>
-            <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('risk')">
-              <span class="legend-swatch" style="background: #fb7185;"></span>
-              <span>Слив: <strong style="color: #fb7185;">4 (40%)</strong></span>
+            <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('risk')" title="Фильтровать риски">
+              <span class="legend-swatch" style="background: #f43f5e;"></span>
+              <span>Слив / Риск: <strong style="color: #fb7185;">3 (30%)</strong></span>
             </div>
             <span style="color: var(--text-muted); font-size: 0.68rem;">Кликните сегмент для фильтра</span>
           </div>
         </div>
+      </div>
+      </div>
       </div>
 
       <!-- COMPONENT: 13-факторный радар стандартов речи Gemini (Chart.js Radar) -->
@@ -2978,12 +3196,11 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary);">Фильтр менеджера:</span>
             <select id="filterManager" onchange="filterCallsTable()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
-              <option value="all">Все менеджеры (10 звонков)</option>
-              <option value="Заряна">Заряна (4 звонка)</option>
+              <option value="all">Все менеджеры (4)</option>
+              <option value="Заряна">Заряна (5 звонков)</option>
               <option value="Виктория">Виктория (2 звонка)</option>
               <option value="Светлана">Светлана (2 звонка)</option>
               <option value="Надежда">Надежда (1 звонок)</option>
-              <option value="Рьяна">Рьяна (1 звонок)</option>
             </select>
 
             <select id="filterStatus" onchange="filterCallsTable()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
@@ -3624,19 +3841,19 @@
             <tbody>
               <tr>
                 <td><strong>Заряна</strong></td>
-                <td>4</td>
-                <td><span class="badge-warn">75%</span></td>
+                <td>5</td>
+                <td><span class="badge-warn">80%</span></td>
                 <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-lost">50%</span></td>
+                <td><span class="badge-warn">60%</span></td>
+                <td><span class="badge-warn">60%</span></td>
                 <td><span class="badge-won">100%</span></td>
                 <td><span class="badge-won">100%</span></td>
                 <td><span class="badge-lost">0%</span></td>
                 <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-warn">75%</span></td>
+                <td><span class="badge-lost">20%</span></td>
                 <td><span class="badge-won">100%</span></td>
-                <td><strong style="color: #34d399;">9.5 / 13</strong></td>
-                <td><span class="badge-info">#Farmer</span></td>
+                <td><strong style="color: #34d399;">9.8 / 13</strong></td>
+                <td><span class="badge-won">#TopPerformer</span></td>
               </tr>
               <tr>
                 <td><strong>Надежда</strong></td>
@@ -3652,7 +3869,7 @@
                 <td><span class="badge-won">100%</span></td>
                 <td><span class="badge-won">100%</span></td>
                 <td><strong style="color: #34d399;">12.0 / 13</strong></td>
-                <td><span class="badge-won">#Closer</span></td>
+                <td><span class="badge-won">#RecordHolder</span></td>
               </tr>
               <tr>
                 <td><strong>Виктория</strong></td>
@@ -3660,7 +3877,7 @@
                 <td><span class="badge-won">100%</span></td>
                 <td><span class="badge-won">100%</span></td>
                 <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-lost">50%</span></td>
+                <td><span class="badge-warn">50%</span></td>
                 <td><span class="badge-warn">50%</span></td>
                 <td><span class="badge-won">100%</span></td>
                 <td><span class="badge-lost">0%</span></td>
@@ -3684,23 +3901,7 @@
                 <td><span class="badge-warn">50%</span></td>
                 <td><span class="badge-warn">50%</span></td>
                 <td><strong style="color: #fb7185; cursor: pointer;" onclick="drillDownSkill('Светлана', 'Все звонки')">5.5 / 13 ↗</strong></td>
-                <td><span class="badge-lost">#Junior (Брак)</span></td>
-              </tr>
-              <tr>
-                <td><strong>Рьяна</strong></td>
-                <td>1</td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-lost">0%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><strong style="color: #34d399;">11.0 / 13</strong></td>
-                <td><span class="badge-won">#Senior</span></td>
+                <td><span class="badge-lost">#P0Hazard</span></td>
               </tr>
             </tbody>
           </table>
@@ -3733,7 +3934,7 @@
                 <td>150 000 ₽</td>
                 <td>3.0%</td>
                 <td><span class="badge-won">1.05 (+5%)</span></td>
-                <td><strong>150 000 ₽</strong></td>
+                <td><strong style="font-family: 'JetBrains Mono', monospace;">150 000 ₽</strong></td>
                 <td><span class="badge-won">🟢 Бонус за личные закрытия + надбавка речи (+5%)</span></td>
               </tr>
               <tr>
@@ -3741,9 +3942,9 @@
                 <td>КАМ (Enterprise)</td>
                 <td>100 000 ₽</td>
                 <td>5.0%</td>
-                <td><span class="badge-lost">0.70 (-30%)</span></td>
-                <td><strong>100 000 ₽</strong></td>
-                <td><span class="badge-lost">🔴 ДЕПРЕМИРОВАНИЕ (-30% бонуса за срыв звонков)</span></td>
+                <td><span class="badge-won">1.15 (+15%)</span></td>
+                <td><strong style="font-family: 'JetBrains Mono', monospace;">115 000 ₽</strong></td>
+                <td><span class="badge-won">🟢 Максимальный бонус за эталон речи (12.0/13)</span></td>
               </tr>
               <tr>
                 <td><strong>Виктория</strong></td>
@@ -3751,8 +3952,17 @@
                 <td>70 000 ₽</td>
                 <td>0.0%</td>
                 <td><span class="badge-won">1.10 (+10%)</span></td>
-                <td><strong>97 500 ₽</strong></td>
+                <td><strong style="font-family: 'JetBrains Mono', monospace;">77 000 ₽</strong></td>
                 <td><span class="badge-won">🟢 Премия за квалификацию + надбавка речи (+10%)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Светлана</strong></td>
+                <td>Менеджер по продажам</td>
+                <td>60 000 ₽</td>
+                <td>4.0%</td>
+                <td><span class="badge-lost">0.70 (-30%)</span></td>
+                <td><strong style="font-family: 'JetBrains Mono', monospace; color: #fb7185;">52 000 ₽</strong></td>
+                <td><span class="badge-lost">🔴 ДЕПРЕМИРОВАНИЕ (-30% бонуса за срыв Next Step)</span></td>
               </tr>
             </tbody>
           </table>
@@ -4253,1552 +4463,27 @@
   </div>
 
   <!-- Javascript -->
-  <script>
-
-    const CALLS_DATA = [
-      {
-        id: "b24_activity_78",
-        deal_id: "B24-80",
-        deal_title: "B24 Кейс 01: Услуги повышения лояльности клиентов (asales)",
-        client: "Клиника стоматологии (Александр Васильевич)",
-        manager: "Светлана",
-        stage: "Первичный контакт",
-        duration: "1:57",
-        amount: "500 000 ₽",
-        score: 7,
-        status: "risk",
-        status_label: "🔴 СЛИВ (НЕТ NEXT STEP)",
-        risk_amount: "500 000 ₽",
-        next_step: 0,
-        cr: [0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1],
-        error_summary: "нет жесткого Next Step; не выявлены боли и срочность; нет квалификации ЛПР; нет попытки закрытия на встречу после презентации",
-        recommendation: "Сфокусируйтесь на выявлении актуальных проблем клиники перед презентацией и обязательно фиксируйте конкретный день и время для следующего контакта или отправки материалов с последующим созвоном",
-        transcript: `Менеджер: Здравствуйте, меня зовут Светлана, компания... Могу я поговорить с Александром Васильевичем?
-Клиент: А сейчас, к сожалению, нет. А что вы хотели?
-Менеджер: А я хотела обсудить с ним вопросы инвестиций. Скажите, пожалуйста, а в какое время и в какой день лучше позвонить?
-Клиент: Скиньте нам предложение на электронную почту.
-Менеджер: Вы знаете, именно это я и хочу сделать, но просто изначально мне необходимо обсудить некоторые детали с руководством... Подскажите, как я могу с ним связаться?
-Клиент: Ага, секундочку, сейчас подождите... Да?
-Менеджер: Здравствуйте, меня зовут Светлана. Я говорю с Александром Васильевичем?
-Клиент: Да, слушаю вас.
-Менеджер: Наша компания более 14 лет занимается программами лояльности 'умная лояльность', которая позволяет увеличить прибыль на 20-40% за год... Давайте я расскажу поподробнее.
-Клиент: Я вас, Светлана, услышал, но пока мы по другой специфике идем... не интересно на сегодняшний день. Вы можете скинуть информацию на имейл, если возобновится интерес, я свяжусь.
-Менеджер: Ясно, понятно. Вы тогда продиктуйте ваш электронный адрес... Спасибо, скинем. Всего доброго.`
-      },
-      {
-        id: "b24_activity_80",
-        deal_id: "B24-82",
-        deal_title: "B24 Кейс 02: Услуги сопровождения гос закупок (asales)",
-        client: "Геодезия и Экология (Игорь)",
-        manager: "Надежда",
-        stage: "Первичный контакт",
-        duration: "2:09",
-        amount: "500 000 ₽",
-        score: 12,
-        status: "won",
-        status_label: "🟢 ЭТАЛОН",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
-        error_summary: "Менеджер не привел конкретных примеров или кейсов выигранных тендеров в нише клиента для подтверждения экспертности.",
-        recommendation: "При следующем звонке подготовьте 1-2 успешных кейса в сфере геодезии и экологии с конкретными цифрами по суммам выигранных госконтрактов.",
-        transcript: `Менеджер: Алло, добрый день. Меня зовут Надежда. Скажите, пожалуйста, с кем можно поговорить по вопросу сопровождения участия в тендере по госзаказам?
-Клиент: Ну, наверное, не с кем, мы принципиально не работаем с государством.
-Менеджер: А как вас зовут?
-Клиент: Игорь.
-Менеджер: Игорь, я правильно поняла, что именно вы принимаете решения по данным вопросам?
-Клиент: Ну в том числе, да. Наше государство коррумпировано, не хотим тратить время.
-Менеджер: Игорь, на сегодняшний день тендеры жестко контролируются и сведены к прозрачности. Стоимость исчисляется миллионами рублей... Я предлагаю пообщаться с нашим специалистом, это ни к чему не обязывает. В понедельник в 15:00 было бы удобно?
-Клиент: Да, вполне нормально. В понедельник в 15:00 жду звонка.
-Менеджер: Договорились, 13 октября в 15:00 наш специалист свяжется с вами. Всего доброго!`
-      },
-      {
-        id: "b24_activity_82",
-        deal_id: "B24-84",
-        deal_title: "B24 Кейс 03: Продажа ортопедических матрасов (asales)",
-        client: "Мебельное производство (Сергей Юрьевич)",
-        manager: "Заряна",
-        stage: "Переговоры",
-        duration: "2:21",
-        amount: "500 000 ₽",
-        score: 8,
-        status: "risk",
-        status_label: "🔴 СЛИВ (НЕТ NEXT STEP)",
-        risk_amount: "500 000 ₽",
-        next_step: 0,
-        cr: [0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1],
-        error_summary: "Нет четкой фиксации времени встречи (согласован только созвон для уточнения); менеджер перебивал клиента в начале разговора; не уточнена должность ЛПР.",
-        recommendation: "При назначении встречи сразу фиксируй точное время и место, либо делай созвон в строго оговоренный час для подтверждения планов.",
-        transcript: `Менеджер: Алло, добрый день. Меня зовут Заряна. Скажите, пожалуйста, это Сергей Юрьевич? Вы получили материалы по ортопедическим матрасам?
-Клиент: Да, получил. Давайте дело дойдет до матрасов, там уже непосредственно будем разговаривать.
-Менеджер: Скажите, пожалуйста, вы готовы встретиться со специалистом во вторник в 12:00?
-Клиент: Понимаете, я не знаю, где я буду во вторник в 12:00. Буду на производстве или по городу разъезжать.
-Менеджер: Хорошо, тогда во вторник в 11:00 наш специалист перезвонит вам.
-Клиент: Да, хорошо.`
-      },
-      {
-        id: "b24_activity_84",
-        deal_id: "B24-86",
-        deal_title: "B24 Кейс 04: Продажа CRM Битрикс24 (asales)",
-        client: "Отдел продаж (Алексей)",
-        manager: "Светлана",
-        stage: "Переговоры",
-        duration: "2:33",
-        amount: "500 000 ₽",
-        score: 4,
-        status: "risk",
-        status_label: "🔴 СЛИВ (НЕТ NEXT STEP)",
-        risk_amount: "500 000 ₽",
-        next_step: 0,
-        cr: [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
-        error_summary: "Менеджер не согласовал четкий следующий шаг с конкретным временем; не отработал возражение про отправку коммерческого предложения на почту; перебивал клиента в процессе презентации.",
-        recommendation: "Алексей, давайте я отправлю вам презентацию на почту, как вы просили, а в четверг в 14:00 созвонимся, чтобы обсудить ключевые отличия от вашей текущей системы и ответить на вопросы. Вам удобно будет в это время?",
-        transcript: `Менеджер: Здравствуйте, меня зовут Светлана. Алексей, скажите, вы уже пользуетесь CRM?
-Клиент: Да, у нас 1С и МойСклад.
-Менеджер: Мы занимаемся внедрением Bitrix24... Я предлагаю встретиться с руководителем нашей компании.
-Клиент: Вы пришлите по почте коммерческое предложение. Что там вкратце о Битриксе?
-Менеджер: А почему бы нам просто не встретиться?
-Клиент: Я не могу сказать, конец месяца, шеф уезжает. Присылайте на почту sales...`
-      },
-      {
-        id: "b24_activity_86",
-        deal_id: "B24-88",
-        deal_title: "B24 Кейс 05: Услуги софинансирования кредита (asales)",
-        client: "Частный клиент (Николай Петрович)",
-        manager: "Виктория",
-        stage: "Принимают решение",
-        duration: "2:45",
-        amount: "500 000 ₽",
-        score: 8,
-        status: "norm",
-        status_label: "🟡 НОРМА",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
-        error_summary: "Менеджер монологом зачитал условия услуги без пауз; не выявлены конкретные параметры кредита клиента; слабая работа с возражением 'пока нет'.",
-        recommendation: "Задавай больше уточняющих вопросов о действующих кредитах клиента перед презентацией продукта, чтобы точнее попадать в его потребность.",
-        transcript: `Менеджер: Добрый день, меня зовут Виктория. Николай Петрович, у нас есть услуга софинансирования кредитов с гарантией полного закрытия...
-Клиент: Ну пока как-то нет, меня всё устраивает.
-Менеджер: Николай Петрович, наш специалист готов сделать детальный расчет экономии. Завтра в 10:00 утра вам будет удобно принять звонок?
-Клиент: Ну да, давайте так. Нормально.`
-      },
-      {
-        id: "b24_activity_88",
-        deal_id: "B24-90",
-        deal_title: "B24 Кейс 06: Продажа ортопедических матрасов (asales)",
-        client: "Розничный магазин (Александр)",
-        manager: "Заряна",
-        stage: "Принимают решение",
-        duration: "2:57",
-        amount: "500 000 ₽",
-        score: 9,
-        status: "norm",
-        status_label: "🟡 НОРМА",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-        error_summary: "Менеджер не представила название своей компании в начале разговора; не уточнила точную роль собеседника в принятии решений; не использовала кейсы для презентации ценности.",
-        recommendation: "Обязательно четко называть компанию при приветствии и перед предложением встречи использовать конкретные примеры успешной работы с аналогичными магазинами.",
-        transcript: `Менеджер: Добрый день, Александр. Меня зовут Заряна. Наш специалист готов подъехать к вам и подробно рассказать об условиях сотрудничества. Завтра в 15:00 будет удобно?
-Клиент: Да, пускай позвонит за час, что он едет.
-Менеджер: Хорошо, Александр, договорились. Завтра в 15:00 специалист будет у вас.`
-      },
-      {
-        id: "b24_activity_90",
-        deal_id: "B24-92",
-        deal_title: "B24 Кейс 07: Продажа наглядных пособий и учебного оборудования (asales)",
-        client: "Школа (Нина Васильевна, директор)",
-        manager: "Заряна",
-        stage: "Согласование договора",
-        duration: "3:09",
-        amount: "500 000 ₽",
-        score: 11,
-        status: "won",
-        status_label: "🟢 ЭТАЛОН",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-        error_summary: "Отсутствие полноценной презентации кейсов; неполный регламент приветствия на первом этапе звонка.",
-        recommendation: "Подготовьте к звонку специалиста примеры успешных поставок для школ в вашем регионе и кейсы по оргтехнике, чтобы закрыть запрос клиента по ноутбукам.",
-        transcript: `Менеджер: Добрый день, Нина Васильевна. Наша компания занимается поставками учебного оборудования и наглядных пособий со скидкой 30%...
-Клиент: А у вас оргтехника есть? Ноутбуки, системные блоки?
-Менеджер: Наш специалист свяжется с вами и обсудит спецификацию. Завтра в 12:00 будет удобно?
-Клиент: Удобно, хорошо, жду.`
-      },
-      {
-        id: "b24_activity_92",
-        deal_id: "B24-94",
-        deal_title: "B24 Кейс 08: Продажа устройства защиты от перенапряжений (asales)",
-        client: "Технос (Валерий Борисович, гендиректор)",
-        manager: "Рьяна",
-        stage: "Согласование договора",
-        duration: "3:21",
-        amount: "500 000 ₽",
-        score: 11,
-        status: "won",
-        status_label: "🟢 ЭТАЛОН",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-        error_summary: "Менеджер не представила компанию в начале разговора; не использовала кейсы для подкрепления ценности предложения.",
-        recommendation: "Обязательно представляй компанию в самом начале разговора и сразу переходи к выгодам, используя цифры и примеры работы с аналогичными компаниями.",
-        transcript: `Менеджер: Валерий Борисович, предлагаем УЗИП европейского качества по лучшей цене из наличия на 200 линий...
-Клиент: Давайте после праздников во вторник наберите, обсудим бюджетные места.
-Менеджер: Договорились, во вторник в 14:00 наш специалист перезвонит вам.
-Клиент: Хорошо, пусть звонит.`
-      },
-      {
-        id: "b24_activity_94",
-        deal_id: "B24-96",
-        deal_title: "B24 Кейс 09: Продажа медтехники и медоборудования (asales)",
-        client: "Оптовая компания (Елена Владимировна, закупки)",
-        manager: "Виктория",
-        stage: "Счёт / Оплата",
-        duration: "3:33",
-        amount: "500 000 ₽",
-        score: 11,
-        status: "won",
-        status_label: "🟢 ЭТАЛОН",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1],
-        error_summary: "Слишком длинный монолог о компании в начале звонка; не выявлены конкретные потребности клиента по ассортименту.",
-        recommendation: "Сокращай презентацию компании и задавай больше открытых вопросов о том, какие именно позиции оборудования клиент чаще всего закупает под заказ.",
-        transcript: `Менеджер: Елена Владимировна, мы поставляем медтехнику и мебель для косметологии напрямую из Германии и Китая...
-Клиент: У нас в основном оборудование под заказ идет.
-Менеджер: Я направлю коммерческое предложение, а в понедельник в 12:00 наш специалист свяжется с вами, чтобы обсудить оптовые цены.
-Клиент: Да, в 12:00 отлично.`
-      },
-      {
-        id: "b24_activity_96",
-        deal_id: "B24-98",
-        deal_title: "B24 Кейс 10: Продажа устройств защиты от перенапряжений (asales)",
-        client: "Главный инженер (Роман)",
-        manager: "Заряна",
-        stage: "Успешно реализовано",
-        duration: "3:45",
-        amount: "500 000 ₽",
-        score: 10,
-        status: "norm",
-        status_label: "🟡 НОРМА",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-        error_summary: "Менеджер не представила название компании в начале разговора; не были детально выявлены потребности и боли клиента; отсутствовала аргументация через кейсы.",
-        recommendation: "Начните следующий звонок с четкого представления компании и себя. Перед презентацией продукта задайте клиенту больше открытых вопросов.",
-        transcript: `Менеджер: Роман, здравствуйте. У нас есть поставки УЗИП по спеццене 1100 руб. и бесплатные технические консультации инженера.
-Клиент: Устроит, если специалист расскажет, как это использовать.
-Менеджер: Договорились, специалист завтра в 13:00 перезвонит вам.
-Клиент: Да, нормально, хорошо.`
-      }
-    ];
-
-
-    // ==========================================================================
-    // AUTH ACCESS GATE LOGIC
-    // ==========================================================================
-    const AUTH_STORAGE_KEY = 'revops_enterprise_session_v1';
-
-    const VALID_CREDENTIALS = [
-      {
-        login: 'dmitriyfedotov1908@gmail.com',
-        keys: ['revops2025', '1908', 'tnt-001', 'fedotov', 'admin'],
-        name: 'Дмитрий Федотов',
-        role: 'РОП • Руководитель ОП',
-        tenant: 'TNT-001 • Самозанятый'
-      },
-      {
-        login: 'admin',
-        keys: ['revops2025', 'admin', 'tnt-001', '1908'],
-        name: 'Администратор RevOps',
-        role: 'Admin / Супервайзер',
-        tenant: 'TNT-001 • Самозанятый'
-      },
-      {
-        login: 'rop',
-        keys: ['revops2025', '1908', 'tnt-001'],
-        name: 'Дмитрий Федотов',
-        role: 'РОП • Руководитель ОП',
-        tenant: 'TNT-001 • Самозанятый'
-      }
-    ];
-
-    function checkAuth() {
-      try {
-        const rawSession = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
-        if (rawSession) {
-          const session = JSON.parse(rawSession);
-          if (session && session.authenticated) {
-            applyAuthenticatedSession(session);
-            return true;
-          }
-        }
-      } catch (e) {
-        console.error('Session parse error', e);
-      }
-      showAuthGate();
-      return false;
-    }
-
-    function showAuthGate() {
-      const overlay = document.getElementById('authOverlay');
-      if (overlay) overlay.classList.remove('authenticated');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function applyAuthenticatedSession(session) {
-      const overlay = document.getElementById('authOverlay');
-      if (overlay) overlay.classList.add('authenticated');
-      document.body.style.overflow = '';
-      if (session && session.name) {
-        const nameEl = document.getElementById('loggedUserName');
-        if (nameEl) nameEl.textContent = session.name;
-      }
-    }
-
-    function handleAuthSubmit(e) {
-      if (e) e.preventDefault();
-      const loginInput = document.getElementById('authLogin');
-      const passInput = document.getElementById('authPassword');
-      const rememberCheckbox = document.getElementById('authRemember');
-      const errorBox = document.getElementById('authErrorBox');
-      const card = document.getElementById('authCard');
-
-      const loginVal = (loginInput.value || '').trim().toLowerCase();
-      const passVal = (passInput.value || '').trim().toLowerCase();
-
-      errorBox.style.display = 'none';
-
-      let foundUser = null;
-      for (const cred of VALID_CREDENTIALS) {
-        if (cred.login.toLowerCase() === loginVal && cred.keys.map(k => k.toLowerCase()).includes(passVal)) {
-          foundUser = cred;
-          break;
-        }
-      }
-
-      if (!foundUser && (passVal === 'revops2025' || passVal === 'tnt-001' || passVal === '1908')) {
-        foundUser = VALID_CREDENTIALS[0];
-      }
-
-      if (!foundUser) {
-        errorBox.style.display = 'block';
-        card.classList.add('shake');
-        setTimeout(() => card.classList.remove('shake'), 400);
-        return false;
-      }
-
-      const sessionData = {
-        authenticated: true,
-        login: foundUser.login,
-        name: foundUser.name,
-        role: foundUser.role,
-        tenant: foundUser.tenant,
-        timestamp: Date.now()
-      };
-
-      const storage = rememberCheckbox.checked ? localStorage : sessionStorage;
-      storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sessionData));
-
-      applyAuthenticatedSession(sessionData);
-      showToast('Доступ разрешён', `Добро пожаловать в систему, ${foundUser.name}!`);
-      return false;
-    }
-
-    function logout() {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      sessionStorage.removeItem(AUTH_STORAGE_KEY);
-      showToast('Сессия завершена', 'Вы успешно вышли из закрытого контура.');
-      setTimeout(() => {
-        showAuthGate();
-      }, 300);
-    }
-
-
-    // ==========================================================================
-    // MPSTATS SIDEBAR TOGGLE & TOOL SEARCH
-    // ==========================================================================
-    function toggleSidebar() {
-      const sb = document.getElementById('mpSidebar');
-      if (sb) {
-        sb.classList.toggle('collapsed');
-        const isCollapsed = sb.classList.contains('collapsed');
-        localStorage.setItem('revops_sidebar_collapsed', isCollapsed ? '1' : '0');
-        if (mcChartInstance) {
-          setTimeout(() => mcChartInstance.resize(), 260);
-        }
-      }
-    }
-
-    function filterSidebarItems() {
-      const q = (document.getElementById('sidebarToolSearch')?.value || '').trim().toLowerCase();
-      const items = document.querySelectorAll('.mp-nav-item');
-      items.forEach(it => {
-        const text = it.textContent.toLowerCase();
-        if (!q || text.includes(q)) {
-          it.style.display = 'flex';
-        } else {
-          it.style.display = 'none';
-        }
-      });
-    }
-
-    // ==========================================================================
-    // MPSTATS CSV EXPORT (AG-GRID DOWNLOAD)
-    // ==========================================================================
-    function exportCallsToCSV() {
-      let csv = "Call ID;Сделка;Менеджер;Чек;Длительность;Этап;Next Step;Балл;Статус;Дефекты речи;Рекомендация РОПу\n";
-      CALLS_DATA.forEach(c => {
-        csv += `"${c.id}";"${c.deal_title}";"${c.manager}";"${c.amount}";"${c.duration}";"${c.stage}";"${c.next_step ? 'Да' : 'Нет'}";"${c.score}/13";"${c.status_label}";"${c.error_summary.replace(/"/g, '""')}";"${c.recommendation.replace(/"/g, '""')}"\n`;
-      });
-      const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `RevOps_Calls_Audit_TNT-001_${new Date().toISOString().slice(0,10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast('Экспорт завершен', 'Файл отчета CSV успешно скачан!');
-    }
-
-    // ==========================================================================
-    // TABS SWITCHING
-    // ==========================================================================
-    const ALL_TABS = ['pulse', 'express', 'rop', 'audit', 'leaks', 'impact', 'montecarlo', 'skills', 'settings'];
-
-
-    const TAB_LABELS = {
-      pulse: '1. Пульс выручки',
-      express: '2. Экспресс 3 цифры',
-      rop: '3. Пульт РОПа 15 мин',
-      audit: '4. ИИ-Аудит звонков',
-      leaks: '5. Диагностика утечек',
-      impact: '6. AI Impact & Детектор',
-      montecarlo: '7. Монте-Карло 3.0',
-      skills: '8. Навыки & Payroll',
-      settings: '9. Паспорт & E2E'
-    };
-
-    function filterRepAudit(repName) {
-      switchTab('audit');
-      const sel = document.getElementById('filterManager');
-      if (sel) {
-        sel.value = repName;
-        filterCallsTable();
-      }
-      showToast('Фильтр по менеджеру', `Открыт аудит звонков сотрудника: ${repName}`);
-    }
-
-    function switchTab(tabId) {
-      ALL_TABS.forEach(t => {
-        const btn = document.getElementById('tab-' + t) || document.getElementById('sb-' + t);
-        const view = document.getElementById('view-' + t);
-        if (btn) btn.classList.remove('active');
-        if (view) view.classList.remove('active');
-      });
-
-      const activeBtn = document.getElementById('tab-' + tabId) || document.getElementById('sb-' + tabId);
-      const activeView = document.getElementById('view-' + tabId);
-      if (activeBtn) activeBtn.classList.add('active');
-      if (activeView) activeView.classList.add('active');
-
-      if (tabId === 'montecarlo' && mcChartInstance) {
-        mcChartInstance.resize();
-      }
-      if (tabId === 'pulse' && revPacingChartInstance) {
-        revPacingChartInstance.resize();
-      }
-      if (tabId === 'rop' && repPerfChartInstance) {
-        repPerfChartInstance.resize();
-      }
-      if (tabId === 'audit' && speechRadarChartInstance) {
-        speechRadarChartInstance.resize();
-      }
-    }
-
-    // ==========================================================================
-    // CALLS TABLE & MODAL
-    // ==========================================================================
-    const CRITERIA_NAMES = [
-      "1. Next Step", "2. Инициатива", "3. ЛПР", "4. Боли", "5. Дорого",
-      "6. Я подумаю", "7. Кейсы", "8. Закрытие", "9. Приветствие",
-      "10. Чистота речи", "11. Talk/Listen", "12. Итог", "13. Маржа"
-    ];
-
-    function initCallsTable() {
-      filterCallsTable();
-    }
-
-
-    let currentTableDensity = 'excel-pro';
-    let activeExpandedCallId = null;
-
-    function setTableDensity(mode) {
-      currentTableDensity = mode;
-      const tc = document.getElementById('callsTableContainer');
-      const btnPro = document.getElementById('btnDensityPro');
-      const btnComfort = document.getElementById('btnDensityComfort');
-
-      if (mode === 'excel-pro') {
-        if (tc) tc.classList.add('excel-pro');
-        if (btnPro) { btnPro.style.background = 'rgba(115,82,255,0.3)'; btnPro.style.color = '#fff'; }
-        if (btnComfort) { btnComfort.style.background = 'transparent'; btnComfort.style.color = 'var(--text-secondary)'; }
-      } else {
-        if (tc) tc.classList.remove('excel-pro');
-        if (btnComfort) { btnComfort.style.background = 'rgba(115,82,255,0.3)'; btnComfort.style.color = '#fff'; }
-        if (btnPro) { btnPro.style.background = 'transparent'; btnPro.style.color = 'var(--text-secondary)'; }
-      }
-      localStorage.setItem('revops_table_density', mode);
-      showToast('Режим таблицы', mode === 'excel-pro' ? 'Включен ультра-плотный режим (Excel Pro)' : 'Включен комфортный режим');
-    }
-
-    function toggleInlineCallDetails(callId, event) {
-      if (event) event.stopPropagation();
-
-      const existingExpand = document.getElementById(`expand-row-${callId}`);
-      if (existingExpand) {
-        existingExpand.remove();
-        const mainRow = document.getElementById(`call-row-${callId}`);
-        if (mainRow) mainRow.classList.remove('expanded');
-        activeExpandedCallId = null;
-        return;
-      }
-
-      // Close previously open drawer if any
-      if (activeExpandedCallId) {
-        const prevExpand = document.getElementById(`expand-row-${activeExpandedCallId}`);
-        if (prevExpand) prevExpand.remove();
-        const prevRow = document.getElementById(`call-row-${activeExpandedCallId}`);
-        if (prevRow) prevRow.classList.remove('expanded');
-      }
-
-      const mainRow = document.getElementById(`call-row-${callId}`);
-      const call = CALLS_DATA.find(c => c.id === callId);
-      if (!mainRow || !call) return;
-
-      mainRow.classList.add('expanded');
-      activeExpandedCallId = callId;
-
-      const expandTr = document.createElement('tr');
-      expandTr.id = `expand-row-${callId}`;
-      expandTr.className = 'inline-expand-row';
-
-      const nextStepColor = call.next_step === 1 ? '#10b981' : '#f43f5e';
-      const nextStepBg = call.next_step === 1 ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)';
-      const nextStepText = call.next_step === 1 ? '✓ Слот встречи зафиксирован' : '✕ Слив: точный день и время не зафиксированы';
-
-      expandTr.innerHTML = `
-        <td colspan="22" class="inline-expand-cell">
-          <div class="inline-expand-drawer">
-            <!-- Header Bar -->
-            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; flex-wrap: wrap;">
-              <div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="badge-info" style="font-family: 'JetBrains Mono', monospace;">${call.id}</span>
-                  <span class="badge-won">${call.deal_id}</span>
-                  <span style="font-size: 0.72rem; color: var(--text-muted);">&bull; Длительность: <strong>${call.duration}</strong></span>
-                </div>
-                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 4px;">
-                  ${call.deal_title}
-                </h3>
-                <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
-                  Менеджер: <strong>${call.manager}</strong> &bull; Клиент: ${call.client} &bull; Сумма: <strong style="color: #34d399; font-family: 'JetBrains Mono', monospace;">${call.amount}</strong> &bull; Этап: ${call.stage}
-                </div>
-              </div>
-
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="btn btn-emerald" onclick="copyRescueScriptByCallId('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px;">
-                  <span>💬 Скопировать в WhatsApp</span>
-                </button>
-                <button class="btn btn-primary" onclick="openCallModal('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px;">
-                  <span>Полный экран &nearr;</span>
-                </button>
-                <button class="btn btn-ghost" onclick="toggleInlineCallDetails('${call.id}')" style="padding: 6px 10px; font-size: 0.72rem;">✕ Свернуть</button>
-              </div>
-            </div>
-
-            <!-- 4-Step Audit Timeline -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;">
-              <div style="padding: 8px; background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; border-radius: 4px;">
-                <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:00 &bull; Вступление</div>
-                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Приветствие и регламент</div>
-              </div>
-              <div style="padding: 8px; background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; border-radius: 4px;">
-                <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:35 &bull; Квалификация</div>
-                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Выявление болей и ЛПР</div>
-              </div>
-              <div style="padding: 8px; background: rgba(251,191,36,0.08); border-left: 3px solid #fbbf24; border-radius: 4px;">
-                <div style="font-size: 0.68rem; color: #fde68a; font-weight: 700;">1:10 &bull; Презентация</div>
-                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Оффер и кейсы</div>
-              </div>
-              <div style="padding: 8px; background: ${nextStepBg}; border-left: 3px solid ${nextStepColor}; border-radius: 4px;">
-                <div style="font-size: 0.68rem; color: ${nextStepColor}; font-weight: 700;">1:45 &bull; Next Step</div>
-                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">${nextStepText}</div>
-              </div>
-            </div>
-
-            <!-- 2-Column Details: Left = Error & Recommendation, Right = Transcript -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div style="display: flex; flex-direction: column; gap: 10px;">
-                <div style="padding: 12px; background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.3); border-radius: var(--radius-sm);">
-                  <div style="font-size: 0.7rem; font-weight: 700; color: #fb7185; text-transform: uppercase;">ДЕФЕКТЫ РЕЧИ И ОШИБКИ:</div>
-                  <div style="font-size: 0.78rem; color: #fff; margin-top: 4px; line-height: 1.4;">${call.error_summary}</div>
-                </div>
-
-                <div style="padding: 12px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: var(--radius-sm);">
-                  <div style="font-size: 0.7rem; font-weight: 700; color: #34d399; text-transform: uppercase;">РЕКОМЕНДАЦИЯ РОПу / ИИ-КОУЧИНГ:</div>
-                  <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">${call.recommendation}</div>
-                </div>
-
-                <div style="padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 0.74rem;">
-                  <span style="color: var(--text-muted);">Выручка под угрозой:</span> <strong style="color: #fb7185; font-family: 'JetBrains Mono', monospace;">${call.risk_amount}</strong>
-                </div>
-              </div>
-
-              <div>
-                <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
-                  Стенограмма диалога (Gemini 3.5 Flash):
-                </div>
-                <pre style="white-space: pre-wrap; font-family: 'Inter', sans-serif; font-size: 0.74rem; line-height: 1.5; color: var(--text-primary); background: rgba(0,0,0,0.4); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); max-height: 200px; overflow-y: auto;">${call.transcript}</pre>
-              </div>
-            </div>
-          </div>
-        </td>
-      `;
-
-      mainRow.parentNode.insertBefore(expandTr, mainRow.nextSibling);
-    }
-
-    function copyRescueScriptByCallId(callId) {
-      // Map to case
-      const caseMap = {
-        'b24_activity_78': 'case01',
-        'b24_activity_80': 'case02',
-        'b24_activity_82': 'case03',
-        'b24_activity_84': 'case04',
-        'b24_activity_86': 'case05'
-      };
-      const key = caseMap[callId];
-      if (key && typeof copyRescueScript === 'function') {
-        copyRescueScript(key);
-      } else {
-        showToast('WhatsApp Скрипт', 'Шаблон сообщения скопирован в буфер обмена.');
-      }
-    }
-
-    function filterCallsTable() {
-      const mgr = document.getElementById('filterManager')?.value || 'all';
-      const st = document.getElementById('filterStatus')?.value || 'all';
-      const q = (document.getElementById('transcriptSearch')?.value || '').trim().toLowerCase();
-      const tbody = document.getElementById('callsTableBody');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-
-      const filtered = CALLS_DATA.filter(call => {
-        const matchMgr = (mgr === 'all' || call.manager === mgr);
-        const matchSt = (st === 'all' || call.status === st);
-        let matchQuery = true;
-        if (q) {
-          const haystack = (call.transcript + ' ' + call.deal_title + ' ' + call.client + ' ' + call.error_summary + ' ' + call.manager).toLowerCase();
-          matchQuery = haystack.includes(q);
-        }
-        return matchMgr && matchSt && matchQuery;
-      });
-
-      const badge = document.getElementById('searchResultBadge');
-      if (badge) {
-        badge.textContent = `${filtered.length} из ${CALLS_DATA.length} звонков`;
-        badge.className = (q && filtered.length < CALLS_DATA.length) ? 'badge-warn' : 'badge-info';
-      }
-
-      const rowsCountEl = document.getElementById('agRowsCount');
-      if (rowsCountEl) rowsCountEl.textContent = `${filtered.length} строк`;
-
-      filtered.forEach((call, rowIdx) => {
-        const tr = document.createElement('tr');
-        tr.id = `call-row-${call.id}`;
-        tr.className = 'call-row';
-
-        let scoreBadge = '';
-        if (call.score >= 11) scoreBadge = `<span class="badge-won" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
-        else if (call.score >= 8) scoreBadge = `<span class="badge-warn" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
-        else scoreBadge = `<span class="badge-lost" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
-
-        let statusPill = '';
-        if (call.status === 'won') statusPill = `<span class="badge-won">🟢 Эталон</span>`;
-        else if (call.status === 'norm') statusPill = `<span class="badge-warn">🟡 Норма</span>`;
-        else statusPill = `<span class="badge-lost">🔴 Слив</span>`;
-
-        let searchSnippet = '';
-        if (q && call.transcript.toLowerCase().includes(q)) {
-          const idx = call.transcript.toLowerCase().indexOf(q);
-          const start = Math.max(0, idx - 30);
-          const end = Math.min(call.transcript.length, idx + q.length + 50);
-          const rawSnippet = call.transcript.substring(start, end);
-          const highlighted = rawSnippet.replace(new RegExp(`(${q})`, 'gi'), '<mark class="search-highlight">$1</mark>');
-          searchSnippet = `<div style="font-size: 0.70rem; color: var(--accent-cyan); margin-top: 3px;">💬 "...${highlighted}..."</div>`;
-        }
-
-        // 13 criteria heatmap cells
-        let crCells = '';
-        call.cr.forEach((val, idx) => {
-          const pass = (val === 1);
-          const icon = pass ? '1' : '0';
-          const cls = pass ? 'cr-pass' : 'cr-fail';
-          const tip = `${pass ? '✓ Выполнено' : '✕ Дефект'}: ${CRITERIA_NAMES[idx]}`;
-          crCells += `<td style="text-align: center; padding: 4px 2px;"><span class="cr-dot ${cls}" title="${tip}">${icon}</span></td>`;
-        });
-
-        const riskCol = (call.status === 'risk')
-          ? `<strong style="color: #fb7185; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem;">${call.risk_amount}</strong>`
-          : `<span style="color: #34d399; font-size: 0.72rem;">0 ₽</span>`;
-
-        tr.innerHTML = `
-          <td><code style="color: var(--accent-cyan); font-size: 0.74rem;">${call.id}</code></td>
-          <td>
-            <div style="font-weight: 700; color: #fff; font-size: 0.78rem;">${call.deal_title}</div>
-            <div style="font-size: 0.70rem; color: var(--text-muted);">${call.client}</div>
-            ${searchSnippet}
-          </td>
-          <td><strong style="font-size: 0.76rem;">${call.manager}</strong></td>
-          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 700;">${call.amount}</td>
-          <td><span style="font-size: 0.72rem; color: var(--text-secondary);">${call.stage}</span></td>
-          ${crCells}
-          <td style="text-align: center;">${scoreBadge}</td>
-          <td style="text-align: center;">${statusPill}</td>
-          <td style="text-align: right;">${riskCol}</td>
-          <td style="text-align: center;">
-            <button class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border-color: rgba(115,82,255,0.3); color: #c4b5fd;" onclick="toggleInlineCallDetails('${call.id}', event)">
-              <span>Разбор ▾</span>
-            </button>
-          </td>
-        `;
-
-        tr.onclick = (e) => {
-          if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
-            toggleInlineCallDetails(call.id);
-          }
-        };
-
-        tbody.appendChild(tr);
-      });
-
-      // Calculate team summary for each cr1..cr13
-      let crSums = Array(13).fill(0);
-      let totalRisk = 0;
-      let totalScore = 0;
-
-      filtered.forEach(c => {
-        c.cr.forEach((val, idx) => {
-          if (val === 1) crSums[idx]++;
-        });
-        totalScore += c.score;
-        if (c.status === 'risk') totalRisk += 500000;
-      });
-
-      const count = filtered.length || 1;
-      let crFootCells = '';
-      crSums.forEach((sum, idx) => {
-        const pct = Math.round((sum / count) * 100);
-        let color = '#34d399';
-        if (pct < 50) color = '#fb7185';
-        else if (pct < 80) color = '#fbbf24';
-        crFootCells += `<td style="text-align: center; padding: 6px 2px; font-size: 0.68rem; color: ${color};" title="Среднее по команде: ${CRITERIA_NAMES[idx]} = ${pct}%">${pct}%</td>`;
-      });
-
-      const avgScore = (totalScore / count).toFixed(1);
-      const foot = document.getElementById('callsTableFoot');
-      if (foot) {
-        foot.innerHTML = `
-          <tr>
-            <td colspan="5" style="padding: 8px 12px; color: #fff; font-size: 0.74rem;">
-              <span>📊 СРЕДНИЙ % ПРОХОЖДЕНИЯ СТАНДАРТОВ (КОМАНДА):</span>
-            </td>
-            ${crFootCells}
-            <td style="text-align: center; color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">${avgScore}/13</td>
-            <td style="text-align: center;"><span class="badge-won" style="font-size: 0.65rem;">70% Win</span></td>
-            <td style="text-align: right; color: #fb7185; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">${totalRisk.toLocaleString('ru-RU')} ₽</td>
-            <td style="text-align: center; font-size: 0.70rem; color: var(--text-muted);">${count} звонков</td>
-          </tr>
-        `;
-      }
-    }
-
-
-    function setAuditStatusFilter(status) {
-      const sel = document.getElementById('filterStatus');
-      if (sel) {
-        sel.value = status;
-        filterCallsTable();
-        const labelMap = { won: '🟢 Эталон', norm: '🟡 Норма', risk: '🔴 Слив' };
-        showToast('Фильтр применён', 'Отображены звонки категории: ' + (labelMap[status] || status));
-      }
-    }
-
-    function clearSearch() {
-      const input = document.getElementById('transcriptSearch');
-      if (input) input.value = '';
-      document.getElementById('filterManager').value = 'all';
-      document.getElementById('filterStatus').value = 'all';
-      filterCallsTable();
-      showToast('Поиск сброшен', 'Отображены все 10 звонков.');
-    }
-
-
-    function openCallModal(callId) {
-      const call = CALLS_DATA.find(c => c.id === callId);
-      if (!call) return;
-
-      document.getElementById('modalCallIdBadge').textContent = call.id;
-      document.getElementById('modalDealTitle').textContent = call.deal_title;
-      document.getElementById('modalClientMeta').textContent = 
-        `Менеджер: ${call.manager} • Клиент: ${call.client} • Сумма: ${call.amount} • Этап: ${call.stage}`;
-      document.getElementById('modalAudioDuration').textContent = call.duration;
-      document.getElementById('modalErrorSummary').textContent = call.error_summary;
-      document.getElementById('modalRecommendation').textContent = call.recommendation;
-      document.getElementById('modalTranscript').textContent = call.transcript;
-
-      // Update Step Timeline Next Step status
-      const tlStep = document.getElementById('stepTimelineNextStep');
-      const tlStatus = document.getElementById('stepTimelineNextStepStatus');
-      const tlTime = document.getElementById('stepTimelineNextStepTime');
-      if (tlStep && tlStatus && tlTime) {
-        if (call.next_step === 1) {
-          tlStep.style.background = 'rgba(16, 185, 129, 0.08)';
-          tlStep.style.borderLeftColor = '#10b981';
-          tlTime.style.color = '#34d399';
-          tlStatus.textContent = '✓ Слот встречи зафиксирован';
-          tlStatus.style.color = '#34d399';
-        } else {
-          tlStep.style.background = 'rgba(244, 63, 94, 0.08)';
-          tlStep.style.borderLeftColor = '#f43f5e';
-          tlTime.style.color = '#fca5a5';
-          tlStatus.textContent = '✕ Слив: нет точного времени';
-          tlStatus.style.color = '#fca5a5';
-        }
-      }
-
-      // Pills
-      const pillsWrap = document.getElementById('modalCriteriaPills');
-      pillsWrap.innerHTML = '';
-      call.cr.forEach((val, idx) => {
-        const span = document.createElement('span');
-        span.style.padding = '3px 8px';
-        span.style.borderRadius = '4px';
-        span.style.fontSize = '0.7rem';
-        span.style.fontWeight = '600';
-        if (val === 1) {
-          span.style.background = 'rgba(16, 185, 129, 0.2)';
-          span.style.color = '#34d399';
-          span.textContent = `✓ ${CRITERIA_NAMES[idx]}`;
-        } else {
-          span.style.background = 'rgba(244, 63, 94, 0.2)';
-          span.style.color = '#fb7185';
-          span.textContent = `✕ ${CRITERIA_NAMES[idx]}`;
-        }
-        pillsWrap.appendChild(span);
-      });
-
-      const totalTimeEl = document.getElementById('audioTotalTime');
-      if (totalTimeEl) totalTimeEl.textContent = call.duration;
-      const curTimeEl = document.getElementById('audioCurrentTime');
-      if (curTimeEl) curTimeEl.textContent = '0:00';
-      playSeconds = 0;
-
-      const stepPin = document.getElementById('wavePinStep');
-      if (stepPin) {
-        if (call.next_step === 1) {
-          stepPin.className = 'wave-pin wave-pin-green';
-          stepPin.innerHTML = '<span>✅ Next Step зафиксирован</span>';
-          stepPin.onclick = () => showToast('Next Step зафиксирован', 'Менеджер четко зафиксировал дату и время следующего контакта.');
-        } else {
-          stepPin.className = 'wave-pin wave-pin-red';
-          stepPin.innerHTML = '<span>🚨 Слив Next Step</span>';
-          stepPin.onclick = () => showToast('Слив Next Step', 'Дата и время следующего контакта не согласованы.');
-        }
-      }
-
-      document.getElementById('callModal').style.display = 'flex';
-    }
-
-    function closeCallModal() {
-      if (isPlayingAudio) {
-        togglePlaySimulation();
-      }
-      document.getElementById('callModal').style.display = 'none';
-    }
-
-    let waveformInterval = null;
-    let isPlayingAudio = false;
-    let playSeconds = 0;
-
-    function togglePlaySimulation() {
-      const btn = document.getElementById('btnPlayAudio');
-      const bars = document.querySelectorAll('.wave-bar');
-      const timeEl = document.getElementById('audioCurrentTime');
-
-      if (!isPlayingAudio) {
-        isPlayingAudio = true;
-        btn.innerHTML = '<span>⏸ Пауза</span>';
-        btn.style.background = '#4f2ae8';
-        showToast('Аудиоплеер Linear AI', 'Воспроизведение аудиозаписи звонка со спектрограммой...');
-        
-        bars.forEach((b, i) => {
-          b.classList.add('active-play');
-          b.style.animationDelay = (i * 0.04) + 's';
-        });
-
-        waveformInterval = setInterval(() => {
-          playSeconds++;
-          const mins = Math.floor(playSeconds / 60);
-          const secs = (playSeconds % 60).toString().padStart(2, '0');
-          if (timeEl) timeEl.textContent = `${mins}:${secs}`;
-          if (playSeconds >= 117) { // 1:57
-            togglePlaySimulation();
-            playSeconds = 0;
-          }
-        }, 1000);
-      } else {
-        isPlayingAudio = false;
-        btn.innerHTML = '<span>▶ Воспроизвести</span>';
-        btn.style.background = '';
-        bars.forEach(b => b.classList.remove('active-play'));
-        if (waveformInterval) clearInterval(waveformInterval);
-      }
-    }
-
-
-    // ==========================================================================
-    // EXECUTIVE ONE-PAGER MODAL
-    // ==========================================================================
-    function openOnePagerModal() {
-      const modal = document.getElementById('onePagerModal');
-      if (modal) modal.style.display = 'flex';
-    }
-
-    function closeOnePagerModal() {
-      const modal = document.getElementById('onePagerModal');
-      if (modal) modal.style.display = 'none';
-    }
-
-    // ==========================================================================
-    // PERIOD SELECTOR (TAB 1: PULSE)
-    // ==========================================================================
-    function setPulsePeriod(period) {
-      ['today', '7d', 'month'].forEach(id => {
-        const btn = document.getElementById('btnPeriod' + id.charAt(0).toUpperCase() + id.slice(1));
-        if (btn) {
-          if (id === period) {
-            btn.className = 'btn btn-primary';
-          } else {
-            btn.className = 'btn btn-ghost';
-          }
-        }
-      });
-
-      const syncText = document.getElementById('periodSyncText');
-      if (period === 'today') {
-        document.getElementById('metricPlanVal').textContent = '250 000 ₽';
-        document.getElementById('metricFactVal').textContent = '0 ₽';
-        document.getElementById('metricFactBadge').textContent = '0.0% ВЫПОЛНЕНО';
-        document.getElementById('metricSsotVal').textContent = '120 000 ₽';
-        document.getElementById('metricPipeVal').textContent = '4 500 000 ₽';
-        if (syncText) syncText.textContent = 'Срез за 16 октября 2026 (Сегодня)';
-        showToast('Период: Сегодня', 'Показана суточная операционная активность.');
-      } else if (period === '7d') {
-        document.getElementById('metricPlanVal').textContent = '1 250 000 ₽';
-        document.getElementById('metricFactVal').textContent = '500 000 ₽';
-        document.getElementById('metricFactBadge').textContent = '40.0% ВЫПОЛНЕНО';
-        document.getElementById('metricSsotVal').textContent = '850 000 ₽';
-        document.getElementById('metricPipeVal').textContent = '4 500 000 ₽';
-        if (syncText) syncText.textContent = 'Срез за последние 7 дней (10 звонков)';
-        showToast('Период: 7 дней', 'Показаны данные за прошедшую неделю.');
-      } else {
-        document.getElementById('metricPlanVal').textContent = '5 000 000 ₽';
-        document.getElementById('metricFactVal').textContent = '500 000 ₽';
-        document.getElementById('metricFactBadge').textContent = '🟢 10.0% ВЫПОЛНЕНО';
-        document.getElementById('metricSsotVal').textContent = '2 375 000 ₽';
-        document.getElementById('metricPipeVal').textContent = '4 500 000 ₽';
-        if (syncText) syncText.textContent = 'Синхронизировано: amoCRM + Битрикс24 (16.10.2026, 21:50)';
-        showToast('Период: Октябрь 2026', 'Показан полный месячный контур компании.');
-      }
-    }
-
-    // ==========================================================================
-    // SKILLS DRILL-DOWN TO AUDIT
-    // ==========================================================================
-    function drillDownSkill(mgr, critName) {
-      switchTab('audit');
-      const mgrSelect = document.getElementById('filterManager');
-      if (mgrSelect) mgrSelect.value = mgr;
-      const search = document.getElementById('transcriptSearch');
-      if (search) search.value = '';
-      filterCallsTable();
-      showToast('Аудит навыка: ' + mgr, 'Показаны звонки для разбора критерия ' + critName);
-    }
-
-    // ==========================================================================
-    // WHATSAPP SCRIPT COPY
-    // ==========================================================================
-    function copyRescueScript(caseKey) {
-      const el = document.getElementById('script-' + caseKey);
-      if (!el) return;
-      const text = el.innerText.replace(/"/g, '').trim();
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('Текст скопирован в буфер!', 'Вставьте готовый скрипт в WhatsApp или Telegram клиенту.');
-      }).catch(() => {
-        showToast('Готово', 'Текст готов к отправке клиенту.');
-      });
-    }
-
-    // ==========================================================================
-    // TOAST NOTIFICATION
-    // ==========================================================================
-    function showToast(title, desc) {
-      const box = document.getElementById('toastBox');
-      document.getElementById('toastTitle').textContent = title;
-      document.getElementById('toastDesc').textContent = desc;
-      box.style.display = 'block';
-      setTimeout(() => { box.style.display = 'none'; }, 3500);
-    }
-
-    // ==========================================================================
-    // EXPRESS 3 NUMBERS CALCULATOR (TAB 2)
-    // ==========================================================================
-    function recalcExpress() {
-      const leads = parseInt(document.getElementById('rngLeadsExp').value, 10);
-      const check = parseInt(document.getElementById('rngCheckExp').value, 10);
-      const mgr = parseInt(document.getElementById('rngMgrExp').value, 10);
-
-      document.getElementById('valLeadsExp').textContent = leads + ' шт';
-      document.getElementById('valCheckExp').textContent = check.toLocaleString('ru-RU') + ' ₽';
-      document.getElementById('valMgrExp').textContent = mgr + ' чел';
-
-      // Formulas from master dump:
-      // Lost = 340,000 baseline scaled
-      const baseRatio = (leads * check) / 5000000;
-      const lost = Math.round(340000 * baseRatio);
-      const basePlan = Math.round(500000 * baseRatio * 1.204);
-      const optPlan = Math.round(500000 * baseRatio * 1.34);
-
-      document.getElementById('expLostRev').textContent = lost.toLocaleString('ru-RU') + ' ₽';
-      document.getElementById('expBasePlan').textContent = basePlan.toLocaleString('ru-RU') + ' ₽';
-      document.getElementById('expOptPlan').textContent = optPlan.toLocaleString('ru-RU') + ' ₽';
-    }
-
-    // ==========================================================================
-    // MONTE CARLO CHART & SIMULATOR (TAB 7)
-    // ==========================================================================
-    let mcChartInstance = null;
-    function initMonteCarloChart() {
-      const ctx = document.getElementById('mcChart');
-      if (!ctx) return;
-
-      const labels = ['1.2M', '1.5M', '1.86M (P10)', '2.2M', '2.58M (P50)', '2.9M', '3.21M (P90)', '3.6M', '4.0M', '4.5M', '5.0M'];
-      const dataValues = [40, 110, 290, 480, 620, 510, 310, 180, 95, 45, 20];
-
-      mcChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Плотность вероятности (исходов из 10 000)',
-            data: dataValues,
-            backgroundColor: function(context) {
-              const idx = context.dataIndex;
-              if (idx === 2) return 'rgba(244, 63, 94, 0.75)'; // P10 red
-              if (idx === 4) return 'rgba(0, 212, 255, 0.85)';  // P50 cyan
-              if (idx === 6) return 'rgba(16, 185, 129, 0.85)'; // P90 green
-              return 'rgba(115, 82, 255, 0.45)';
-            },
-            borderRadius: 6,
-            borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.1)'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(255, 255, 255, 0.04)' },
-              ticks: { color: '#94a3b8', font: { size: 10 } }
-            },
-            y: {
-              grid: { color: 'rgba(255, 255, 255, 0.04)' },
-              ticks: { color: '#64748b', font: { size: 10 } }
-            }
-          }
-        }
-      });
-    }
-
-    function updateSimulation() {
-      const leads = document.getElementById('rngLeads').value;
-      const qual = document.getElementById('rngQual').value;
-      const close = document.getElementById('rngClose').value;
-
-      document.getElementById('lblLeads').textContent = leads + ' шт';
-      document.getElementById('lblQual').textContent = qual + '%';
-      document.getElementById('lblClose').textContent = close + '%';
-
-      const projected = Math.round(leads * (qual / 100) * (close / 100) * 500000);
-      document.getElementById('simVerdictText').textContent = 
-        `Прогноз кассы при входящем потоке ${leads} лидов: ${projected.toLocaleString('ru-RU')} ₽!`;
-
-      showToast('Монте-Карло пересчитан', `Прогноз выручки: ${projected.toLocaleString('ru-RU')} ₽`);
-    }
-
-    // ==========================================================================
-    // INITIALIZATION ON DOM READY
-    // ==========================================================================
-
-    // ==========================================================================
-    // INTERACTIVE CHARTS ENGINE (CHART.JS 4.4.2 SUITE)
-    // ==========================================================================
-    let revPacingChartInstance = null;
-    let repPerfChartInstance = null;
-    let speechRadarChartInstance = null;
-
-    let currentRevMode = 'cum'; // 'cum' or 'daily'
-    let currentConversionMultiplier = 1.0;
-
-    const PACING_LABELS = ['1 Окт', '3 Окт', '6 Окт', '9 Окт', '12 Окт', '15 Окт', '18 Окт', '21 Окт', '24 Окт', '27 Окт', '30 Окт'];
-    const PLAN_CUM_DATA = [0, 500000, 1000000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 4500000, 5000000];
-    const FACT_CUM_DATA = [0, 0, 0, 0, 0, 500000, 500000, 500000, 500000, 500000, 500000];
-
-    function calculateSsotData(multiplier) {
-      return [
-        null, null, null, null, null,
-        500000,
-        Math.round(500000 + 400000 * multiplier),
-        Math.round(500000 + 800000 * multiplier),
-        Math.round(500000 + 1200000 * multiplier),
-        Math.round(500000 + 1550000 * multiplier),
-        Math.round(500000 + 1875000 * multiplier)
-      ];
-    }
-
-    function initRevenuePacingChart() {
-      const ctx = document.getElementById('revenuePacingChart');
-      if (!ctx) return;
-
-      const ssotData = calculateSsotData(currentConversionMultiplier);
-
-      revPacingChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: PACING_LABELS,
-          datasets: [
-            {
-              label: 'Факт Won (500 000 ₽)',
-              data: FACT_CUM_DATA,
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.12)',
-              borderWidth: 3,
-              fill: true,
-              tension: 0.35,
-              pointRadius: [0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0],
-              pointBackgroundColor: '#34d399',
-              pointBorderColor: '#fff',
-              pointHoverRadius: 8
-            },
-            {
-              label: 'План таргета (5 000 000 ₽)',
-              data: PLAN_CUM_DATA,
-              borderColor: '#00d4ff',
-              borderWidth: 2,
-              borderDash: [5, 5],
-              fill: false,
-              tension: 0.1,
-              pointRadius: 0
-            },
-            {
-              label: 'SSOT Прогноз кассы',
-              data: ssotData,
-              borderColor: '#fbbf24',
-              backgroundColor: 'rgba(251, 191, 36, 0.08)',
-              borderWidth: 2.5,
-              fill: true,
-              tension: 0.35,
-              pointRadius: [0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 6],
-              pointBackgroundColor: '#fbbf24',
-              pointHoverRadius: 8
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(14, 18, 28, 0.95)',
-              titleColor: '#fff',
-              bodyColor: '#cbd5e1',
-              borderColor: 'rgba(255, 255, 255, 0.12)',
-              borderWidth: 1,
-              padding: 12,
-              displayColors: true,
-              callbacks: {
-                label: function(context) {
-                  const val = context.parsed.y;
-                  if (val === null || val === undefined) return '';
-                  return ` ${context.dataset.label}: ${val.toLocaleString('ru-RU')} ₽`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(255, 255, 255, 0.04)' },
-              ticks: { color: '#94a3b8', font: { size: 11 } }
-            },
-            y: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: {
-                color: '#94a3b8',
-                font: { family: 'JetBrains Mono', size: 11 },
-                callback: function(value) {
-                  return (value / 1000000).toFixed(1) + 'M ₽';
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function setRevenueChartMode(mode) {
-      if (!revPacingChartInstance) return;
-      currentRevMode = mode;
-      
-      const btnCum = document.getElementById('btnChartModeCum');
-      const btnDaily = document.getElementById('btnChartModeDaily');
-
-      if (mode === 'cum') {
-        btnCum.style.background = 'rgba(115,82,255,0.3)';
-        btnCum.style.color = '#fff';
-        btnDaily.style.background = 'transparent';
-        btnDaily.style.color = 'var(--text-secondary)';
-
-        revPacingChartInstance.data.datasets[0].data = FACT_CUM_DATA;
-        revPacingChartInstance.data.datasets[1].data = PLAN_CUM_DATA;
-        revPacingChartInstance.data.datasets[2].data = calculateSsotData(currentConversionMultiplier);
-        revPacingChartInstance.options.scales.y.ticks.callback = function(val) {
-          return (val / 1000000).toFixed(1) + 'M ₽';
-        };
-      } else {
-        btnDaily.style.background = 'rgba(115,82,255,0.3)';
-        btnDaily.style.color = '#fff';
-        btnCum.style.background = 'transparent';
-        btnCum.style.color = 'var(--text-secondary)';
-
-        // Daily values
-        const dailyPlan = Array(11).fill(166667);
-        const dailyFact = [0, 0, 0, 0, 0, 500000, 0, 0, 0, 0, 0];
-        const dailySsot = [0, 0, 0, 0, 0, 500000, 133333, 133333, 133333, 133333, 133333];
-
-        revPacingChartInstance.data.datasets[0].data = dailyFact;
-        revPacingChartInstance.data.datasets[1].data = dailyPlan;
-        revPacingChartInstance.data.datasets[2].data = dailySsot;
-        revPacingChartInstance.options.scales.y.ticks.callback = function(val) {
-          return (val / 1000).toFixed(0) + 'k ₽';
-        };
-      }
-      revPacingChartInstance.update();
-    }
-
-    function toggleChartSeries(idx) {
-      if (!revPacingChartInstance) return;
-      const isVisible = revPacingChartInstance.isDatasetVisible(idx);
-      if (isVisible) {
-        revPacingChartInstance.hide(idx);
-      } else {
-        revPacingChartInstance.show(idx);
-      }
-    }
-
-    function updateRevenueSimulation(val) {
-      currentConversionMultiplier = val / 100;
-      document.getElementById('lblConversionVal').textContent = val + '%';
-      
-      const totalProjected = Math.round(500000 + 1875000 * currentConversionMultiplier);
-      document.getElementById('lblSimProjectedCash').textContent = totalProjected.toLocaleString('ru-RU') + ' ₽';
-
-      if (revPacingChartInstance && currentRevMode === 'cum') {
-        revPacingChartInstance.data.datasets[2].data = calculateSsotData(currentConversionMultiplier);
-        revPacingChartInstance.update('none');
-      }
-    }
-
-    function resetRevenueSimulation() {
-      const slider = document.getElementById('sliderConversion');
-      if (slider) slider.value = 100;
-      updateRevenueSimulation(100);
-      showToast('Симулятор сброшен', 'Конверсия воронки возвращена к 100% (норматив).');
-    }
-
-    // ==========================================================================
-    // REP PERFORMANCE COMPARISON CHART
-    // ==========================================================================
-    const REP_NAMES = ['Заряна 👑', 'Надежда 🥈', 'Виктория 🥉', 'Светлана 🚨'];
-    const REP_METRICS = {
-      pipe: {
-        label: 'Пайплайн в работе, ₽',
-        data: [2000000, 500000, 1000000, 1500000],
-        colors: ['#f59e0b', '#94a3b8', '#d97706', '#ef4444'],
-        unit: ' ₽',
-        isCurrency: true
-      },
-      score: {
-        label: 'Средний балл речи Gemini (/13)',
-        data: [10.5, 12.0, 9.5, 6.3],
-        colors: ['#34d399', '#10b981', '#38bdf8', '#fb7185'],
-        unit: ' / 13',
-        isCurrency: false
-      },
-      step: {
-        label: 'Дисциплина Next Step, %',
-        data: [100, 100, 100, 33.3],
-        colors: ['#34d399', '#34d399', '#34d399', '#f43f5e'],
-        unit: '%',
-        isCurrency: false
-      },
-      risk: {
-        label: 'Выручка под угрозой брака, ₽',
-        data: [0, 0, 0, 1500000],
-        colors: ['#10b981', '#10b981', '#10b981', '#ef4444'],
-        unit: ' ₽',
-        isCurrency: true
-      }
-    };
-
-    function initRepPerformanceChart() {
-      const ctx = document.getElementById('repPerformanceChart');
-      if (!ctx) return;
-
-      const m = REP_METRICS['pipe'];
-
-      repPerfChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: REP_NAMES,
-          datasets: [{
-            label: m.label,
-            data: m.data,
-            backgroundColor: m.colors,
-            borderRadius: 6,
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.1)'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(14, 18, 28, 0.95)',
-              titleColor: '#fff',
-              bodyColor: '#cbd5e1',
-              borderColor: 'rgba(255, 255, 255, 0.12)',
-              borderWidth: 1,
-              padding: 10,
-              callbacks: {
-                label: function(context) {
-                  const val = context.parsed.y;
-                  return ` ${context.dataset.label}: ${val.toLocaleString('ru-RU')}`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { color: '#fff', font: { weight: 600, size: 12 } }
-            },
-            y: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: {
-                color: '#94a3b8',
-                font: { family: 'JetBrains Mono', size: 11 },
-                callback: function(value) {
-                  return (value >= 1000000 ? (value/1000000).toFixed(1) + 'M' : value >= 1000 ? (value/1000).toFixed(0) + 'k' : value);
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function setRepChartMetric(metricKey) {
-      if (!repPerfChartInstance || !REP_METRICS[metricKey]) return;
-      const m = REP_METRICS[metricKey];
-
-      // Update button styles
-      const buttons = ['pipe', 'score', 'step', 'risk'];
-      buttons.forEach(b => {
-        const el = document.getElementById('btnRepMetric' + b.charAt(0).toUpperCase() + b.slice(1));
-        if (el) {
-          if (b === metricKey) {
-            el.className = 'btn btn-primary';
-          } else {
-            el.className = 'btn btn-ghost';
-          }
-        }
-      });
-
-      repPerfChartInstance.data.datasets[0].label = m.label;
-      repPerfChartInstance.data.datasets[0].data = m.data;
-      repPerfChartInstance.data.datasets[0].backgroundColor = m.colors;
-
-      if (m.isCurrency) {
-        repPerfChartInstance.options.scales.y.ticks.callback = function(val) {
-          return (val / 1000000).toFixed(1) + 'M ₽';
-        };
-      } else {
-        repPerfChartInstance.options.scales.y.ticks.callback = function(val) {
-          return val + m.unit;
-        };
-      }
-
-      repPerfChartInstance.update();
-      showToast('Метрика графика изменена', `Отображен разрез: ${m.label}`);
-    }
-
-    // ==========================================================================
-    // 13 B2B CRITERIA RADAR CHART
-    // ==========================================================================
-    const RADAR_CRITERIA_LABELS = [
-      '1. Next Step', '2. Инициатива', '3. ЛПР', '4. Боли', '5. Дорого',
-      '6. Подумаю', '7. Кейсы', '8. Закрытие', '9. Приветствие',
-      '10. Чистота', '11. Talk/Listen', '12. Итог', '13. Маржа'
-    ];
-
-    const RADAR_DATA_MAP = {
-      all: [70, 100, 70, 60, 60, 80, 40, 70, 100, 90, 80, 80, 90],
-      'Заряна': [75, 100, 100, 75, 100, 100, 50, 100, 100, 100, 80, 80, 100],
-      'Надежда': [100, 100, 100, 100, 100, 100, 0, 100, 100, 100, 100, 100, 100],
-      'Виктория': [100, 100, 50, 50, 50, 100, 0, 100, 100, 100, 80, 80, 100],
-      'Светлана': [0, 100, 50, 0, 0, 50, 50, 0, 100, 70, 60, 50, 70]
-    };
-
-    function initSpeechRadarChart() {
-      const ctx = document.getElementById('speechRadarChart');
-      if (!ctx) return;
-
-      speechRadarChartInstance = new Chart(ctx, {
-        type: 'radar',
-        data: {
-          labels: RADAR_CRITERIA_LABELS,
-          datasets: [
-            {
-              label: 'Эталон B2B (100%)',
-              data: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
-              borderColor: 'rgba(0, 212, 255, 0.4)',
-              borderWidth: 1.5,
-              borderDash: [4, 4],
-              pointRadius: 0,
-              fill: false
-            },
-            {
-              label: 'Факт выполнения, %',
-              data: RADAR_DATA_MAP['all'],
-              borderColor: '#8b5cf6',
-              backgroundColor: 'rgba(139, 92, 246, 0.22)',
-              borderWidth: 2.5,
-              pointBackgroundColor: '#8b5cf6',
-              pointBorderColor: '#fff',
-              pointRadius: 4,
-              fill: true
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: true,
-              labels: { color: '#cbd5e1', font: { size: 11 } }
-            },
-            tooltip: {
-              backgroundColor: 'rgba(14, 18, 28, 0.95)',
-              titleColor: '#fff',
-              bodyColor: '#cbd5e1',
-              callbacks: {
-                label: function(ctx) {
-                  return ` ${ctx.dataset.label}: ${ctx.parsed.r}%`;
-                }
-              }
-            }
-          },
-          scales: {
-            r: {
-              min: 0,
-              max: 100,
-              angleLines: { color: 'rgba(255, 255, 255, 0.08)' },
-              grid: { color: 'rgba(255, 255, 255, 0.06)' },
-              pointLabels: {
-                color: '#cbd5e1',
-                font: { size: 10, weight: 600 }
-              },
-              ticks: {
-                display: false,
-                stepSize: 25
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function updateRadarChart(repName) {
-      if (!speechRadarChartInstance) return;
-      const data = RADAR_DATA_MAP[repName] || RADAR_DATA_MAP['all'];
-      speechRadarChartInstance.data.datasets[1].data = data;
-      speechRadarChartInstance.data.datasets[1].label = (repName === 'all' ? 'Команда (Факт %)' : `Факт ${repName} (%)`);
-      
-      if (repName === 'Светлана') {
-        speechRadarChartInstance.data.datasets[1].borderColor = '#fb7185';
-        speechRadarChartInstance.data.datasets[1].backgroundColor = 'rgba(244, 63, 94, 0.25)';
-        speechRadarChartInstance.data.datasets[1].pointBackgroundColor = '#ef4444';
-      } else {
-        speechRadarChartInstance.data.datasets[1].borderColor = '#8b5cf6';
-        speechRadarChartInstance.data.datasets[1].backgroundColor = 'rgba(139, 92, 246, 0.22)';
-        speechRadarChartInstance.data.datasets[1].pointBackgroundColor = '#8b5cf6';
-      }
-
-      speechRadarChartInstance.update();
-      showToast('Радар перестроен', `Отображены 13 речевых критериев для: ${repName}`);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      checkAuth();
-      if (localStorage.getItem('revops_sidebar_collapsed') === '1') {
-        const sb = document.getElementById('mpSidebar');
-        if (sb) sb.classList.add('collapsed');
-      }
-      initCallsTable();
-      const savedDensity = localStorage.getItem('revops_table_density') || 'excel-pro';
-      setTableDensity(savedDensity);
-      initMonteCarloChart();
-      initRevenuePacingChart();
-      initRepPerformanceChart();
-      initSpeechRadarChart();
-    });
-  </script>
+  <script src="app.js"></script>
+
+
+  <!-- Global Command Palette Modal (Ctrl+K / Cmd+K) -->
+  <div id="cmdPaletteOverlay" class="cmd-palette-overlay" onclick="closeCommandPalette(event)">
+    <div class="cmd-palette-box" onclick="event.stopPropagation()">
+      <div class="cmd-palette-header">
+        <span style="font-size: 1rem;">🔍</span>
+        <input type="text" id="cmdPaletteInput" class="cmd-palette-input" placeholder="Введите раздел, сделку, менеджера или действие..." oninput="handleCmdPaletteSearch(this.value)" autocomplete="off" />
+        <span class="cmd-palette-esc-badge" onclick="closeCommandPalette()">ESC</span>
+      </div>
+      <div id="cmdPaletteResults" class="cmd-palette-results">
+        <!-- Rendered via JS -->
+      </div>
+      <div class="cmd-palette-footer">
+        <span><kbd>↑</kbd> <kbd>↓</kbd> Навигация</span>
+        <span><kbd>↵</kbd> Выбрать</span>
+        <span><kbd>ESC</kbd> Закрыть</span>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>

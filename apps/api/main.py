@@ -128,8 +128,16 @@ def get_favicon():
 
 # Mount Web Dashboard
 INDEX_HTML = BASE_DIR / "apps" / "web" / "index.html"
+APP_JS = BASE_DIR / "apps" / "web" / "app.js"
+
 if INDEX_HTML.exists():
     @app.get("/", response_class=HTMLResponse)
     def serve_dashboard():
         with open(INDEX_HTML, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
+
+if APP_JS.exists():
+    @app.get("/app.js")
+    def serve_app_js():
+        return FileResponse(APP_JS, media_type="application/javascript")
+
