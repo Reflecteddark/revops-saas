@@ -526,6 +526,83 @@
       text-align: left;
       line-height: 1.4;
     }
+
+    /* Search highlight */
+    mark.search-highlight {
+      background: rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+
+    /* Clickable skill badge */
+    .clickable-skill {
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      display: inline-block;
+    }
+    .clickable-skill:hover {
+      transform: scale(1.12);
+      filter: brightness(1.25);
+    }
+
+    /* Print Styles for Executive One-Pager */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #onePagerModal, #onePagerModal * {
+        visibility: visible !important;
+      }
+      #onePagerModal {
+        position: absolute !important;
+        inset: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        display: block !important;
+        padding: 0 !important;
+      }
+      #onePagerPrintArea {
+        width: 100% !important;
+        max-width: 100% !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 24px !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #onePagerPrintArea * {
+        color: #000000 !important;
+      }
+    }
+
+    /* Mobile Responsive Optimizations */
+    @media (max-width: 768px) {
+      .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .brand-group {
+        width: 100%;
+      }
+      .tabs-bar {
+        padding: 4px;
+        gap: 4px;
+      }
+      .tab-btn {
+        padding: 6px 10px;
+        font-size: 0.72rem;
+      }
+      .modal-box {
+        padding: 16px;
+        border-radius: var(--radius-md);
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -632,6 +709,11 @@
         <button class="btn btn-primary" onclick="showToast('Синхронизация CRM', '10 звонков и 10 сделок актуализированы через n8n Webhook.')">
           <span>Синхронизировать</span>
         </button>
+        <button class="btn btn-ghost" onclick="openOnePagerModal()" style="border-color: rgba(115,82,255,0.4); color: #c4b5fd;" title="Сформировать презентационный A4 One-Pager для Собственника">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span>📄 One-Pager (PDF)</span>
+        </button>
+
 
         <!-- Profile & Logout Widget -->
         <div class="user-profile-widget" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
@@ -682,7 +764,20 @@
     <!-- TAB 1: ОПЕРАЦИОННЫЙ ПУЛЬС                                -->
     <!-- ======================================================== -->
     <div id="view-pulse" class="tab-view active">
-      
+
+      <!-- Period Selector & Status -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Период среза:</span>
+          <button id="btnPeriodToday" class="btn btn-ghost" style="padding: 5px 12px; font-size: 0.74rem;" onclick="setPulsePeriod('today')">Сегодня</button>
+          <button id="btnPeriod7d" class="btn btn-ghost" style="padding: 5px 12px; font-size: 0.74rem;" onclick="setPulsePeriod('7d')">Последние 7 дней</button>
+          <button id="btnPeriodMonth" class="btn btn-primary" style="padding: 5px 12px; font-size: 0.74rem;" onclick="setPulsePeriod('month')">Октябрь 2026 (Месяц)</button>
+        </div>
+        <div id="periodIndicatorBadge" class="badge-info" style="display: flex; align-items: center; gap: 6px;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; display: inline-block;"></span>
+          <span id="periodSyncText">Синхронизировано: amoCRM + Битрикс24 (16.10.2026, 21:50)</span>
+        </div>
+      </div>
       <!-- Banner Отставание от плана -->
       <div style="padding: 14px 18px; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -703,16 +798,16 @@
             <span class="bento-card-title">План месяца (Точка Б)</span>
             <span class="badge-info">🎯 НОРМАТИВ</span>
           </div>
-          <div class="metric-value">5 000 000 ₽</div>
+          <div id="metricPlanVal" class="metric-value">5 000 000 ₽</div>
           <div class="metric-sub">Целевой таргет компании Самозанятый</div>
         </div>
 
         <div class="bento-card">
           <div class="bento-card-header">
             <span class="bento-card-title">Факт закрытой выручки</span>
-            <span class="badge-won">🟢 10.0% ВЫПОЛНЕНО</span>
+            <span id="metricFactBadge" class="badge-won">🟢 10.0% ВЫПОЛНЕНО</span>
           </div>
-          <div class="metric-value" style="color: #34d399;">500 000 ₽</div>
+          <div id="metricFactVal" class="metric-value" style="color: #34d399;">500 000 ₽</div>
           <div class="metric-sub">Сделка stage_id = 6 (B24 Кейс 10, УЗИП)</div>
         </div>
 
@@ -721,7 +816,7 @@
             <span class="bento-card-title">Взвешенный SSOT прогноз</span>
             <span class="badge-warn">🟡 РИСК -52.5%</span>
           </div>
-          <div class="metric-value" style="color: #fbbf24;">2 375 000 ₽</div>
+          <div id="metricSsotVal" class="metric-value" style="color: #fbbf24;">2 375 000 ₽</div>
           <div class="metric-sub">Математическое ожидание кассы с учетом вероятностей</div>
         </div>
 
@@ -730,7 +825,7 @@
             <span class="bento-card-title">Активный пайплайн воронки</span>
             <span class="badge-info">9 СДЕЛОК</span>
           </div>
-          <div class="metric-value" style="color: var(--accent-cyan);">4 500 000 ₽</div>
+          <div id="metricPipeVal" class="metric-value" style="color: var(--accent-cyan);">4 500 000 ₽</div>
           <div class="metric-sub">В работе на этапах 1..5 воронки CRM</div>
         </div>
       </div>
@@ -1231,31 +1326,43 @@
         </div>
       </div>
 
-      <!-- Controls & Filter -->
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Фильтр менеджера:</span>
-          <select id="filterManager" onchange="filterCallsTable()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
-            <option value="all">Все менеджеры (10 звонков)</option>
-            <option value="Заряна">Заряна (4 звонка)</option>
-            <option value="Виктория">Виктория (2 звонка)</option>
-            <option value="Светлана">Светлана (2 звонка)</option>
-            <option value="Надежда">Надежда (1 звонок)</option>
-            <option value="Рьяна">Рьяна (1 звонок)</option>
-          </select>
-
-          <select id="filterStatus" onchange="filterCallsTable()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
-            <option value="all">Все статусы</option>
-            <option value="won">🟢 Эталон (11-13 баллов)</option>
-            <option value="norm">🟡 Норма (7-10 баллов)</option>
-            <option value="risk">🔴 Слив (&lt;9 баллов / нет Next Step)</option>
-          </select>
+      <!-- Search & Controls Bar -->
+      <div style="background: rgba(14,18,28,0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 260px; position: relative;">
+            <input type="text" id="transcriptSearch" class="auth-input" style="padding-left: 36px; font-size: 0.82rem;" placeholder="🔎 Смысловой поиск по стенограммам (дорого, Битрикс, скидка, матрас, шеф, договор, инвестиции)..." oninput="filterCallsTable()">
+            <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <span id="searchResultBadge" class="badge-info" style="font-size: 0.76rem; padding: 6px 12px;">10 из 10 звонков</span>
+          <button class="btn btn-ghost" onclick="clearSearch()" style="font-size: 0.74rem;">Сбросить</button>
         </div>
 
-        <div style="font-size: 0.74rem; color: var(--text-muted);">
-          Модель: <strong>Google Gemini 3.5 Flash</strong> &bull; Strict JSON &bull; application/json
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary);">Фильтр менеджера:</span>
+            <select id="filterManager" onchange="filterCallsTable()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
+              <option value="all">Все менеджеры (10 звонков)</option>
+              <option value="Заряна">Заряна (4 звонка)</option>
+              <option value="Виктория">Виктория (2 звонка)</option>
+              <option value="Светлана">Светлана (2 звонка)</option>
+              <option value="Надежда">Надежда (1 звонок)</option>
+              <option value="Рьяна">Рьяна (1 звонок)</option>
+            </select>
+
+            <select id="filterStatus" onchange="filterCallsTable()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.78rem;">
+              <option value="all">Все статусы</option>
+              <option value="won">🟢 Эталон (11-13 баллов)</option>
+              <option value="norm">🟡 Норма (7-10 баллов)</option>
+              <option value="risk">🔴 Слив (&lt;9 баллов / нет Next Step)</option>
+            </select>
+          </div>
+
+          <div style="font-size: 0.72rem; color: var(--text-muted);">
+            Модель: <strong>Google Gemini 3.5 Flash</strong> &bull; Strict JSON &bull; application/json
+          </div>
         </div>
       </div>
+
 
       <!-- Calls Table -->
       <div class="bento-card" style="margin-bottom: 22px;">
@@ -1745,17 +1852,17 @@
               <tr>
                 <td><strong>Светлана</strong></td>
                 <td>2</td>
-                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-lost clickable-skill" onclick="drillDownSkill('Светлана', 'cr1 Next Step')" title="Клик для разбора звонков">0% 🔍</span></td>
                 <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-lost">0%</span></td>
-                <td><span class="badge-lost">0%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-lost">0%</span></td>
+                <td><span class="badge-warn clickable-skill" onclick="drillDownSkill('Светлана', 'cr3 ЛПР')">50%</span></td>
+                <td><span class="badge-lost clickable-skill" onclick="drillDownSkill('Светлана', 'cr4 Боли')" title="Клик для разбора звонков">0% 🔍</span></td>
+                <td><span class="badge-lost clickable-skill" onclick="drillDownSkill('Светлана', 'cr5 Дорого')">0% 🔍</span></td>
                 <td><span class="badge-warn">50%</span></td>
                 <td><span class="badge-warn">50%</span></td>
-                <td><strong style="color: #fb7185;">5.5 / 13</strong></td>
+                <td><span class="badge-lost clickable-skill" onclick="drillDownSkill('Светлана', 'cr8 Закрытие')">0% 🔍</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><span class="badge-warn">50%</span></td>
+                <td><strong style="color: #fb7185; cursor: pointer;" onclick="drillDownSkill('Светлана', 'Все звонки')">5.5 / 13 ↗</strong></td>
                 <td><span class="badge-lost">#Junior (Брак)</span></td>
               </tr>
               <tr>
@@ -2122,6 +2229,122 @@
           ПОЛНЫЙ ТРАНСКРИПТ ДИАЛОГА (GEMINI 3.5 FLASH):
         </div>
         <pre id="modalTranscript" style="white-space: pre-wrap; font-family: 'Inter', sans-serif; font-size: 0.78rem; line-height: 1.6; color: var(--text-primary); background: rgba(0,0,0,0.4); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); max-height: 320px; overflow-y: auto;"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Executive One-Pager (Printable / PDF) -->
+  <div id="onePagerModal" class="modal-backdrop">
+    <div class="modal-box" style="width: 980px; max-width: 96vw; background: #0c0f17; border: 1px solid rgba(115,82,255,0.4); padding: 32px;" id="onePagerPrintArea">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 16px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="tenant-badge" style="font-size: 0.72rem;">TNT-001 • САМОЗАНЯТЫЙ</span>
+            <span class="badge-won">🟢 ЭТАЛОННАЯ СХОДИМОСТЬ (100% SSOT)</span>
+          </div>
+          <h2 style="font-size: 1.45rem; font-weight: 800; color: #fff; margin-top: 6px;">
+            RevOps Executive One-Pager &bull; Управленческий дайджест
+          </h2>
+          <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
+            Отчетный срез: Октябрь 2026 &bull; РОП: Дмитрий Федотов (info@ai-rop.ru) &bull; amoCRM API v4 + Битрикс24 REST
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;" class="no-print">
+          <button class="btn btn-primary" onclick="window.print()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            <span>Печать / Сохранить в PDF</span>
+          </button>
+          <button onclick="closeOnePagerModal()" class="btn btn-ghost" style="padding: 8px 12px; border-radius: 50%;">✕</button>
+        </div>
+      </div>
+
+      <!-- 4 One-Pager Grid Sections -->
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 20px;">
+        <!-- Box 1: Экономический Пульс -->
+        <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <div style="font-size: 0.74rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 8px;">
+            1. Экономический пульс и касса
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">План месяца:</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #fff;">5 000 000 ₽</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">Факт Won:</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #34d399;">500 000 ₽ (10%)</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">Взвешенный SSOT:</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;">2 375 000 ₽</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">Пайплайн в работе:</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #c4b5fd;">4 500 000 ₽ (9 сд.)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Box 2: Речевой ИИ-Аудит -->
+        <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <div style="font-size: 0.74rem; font-weight: 700; color: #34d399; text-transform: uppercase; margin-bottom: 8px;">
+            2. Качество речи и речевая дисциплина (Gemini 3.5 Flash)
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">Средний балл речи:</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #34d399;">9.1 / 13 (70.0%)</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">Фиксация Next Step:</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;">70.0% (7/10)</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">Брак речи (&lt;9 баллов):</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #fb7185;">4 звонка (1.5M ₽)</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">Эталонные диалоги:</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: var(--accent-cyan);">4 звонка (68% Win)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Box 3 & 4 Grid -->
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;">
+        <!-- Box 3: Топ-5 сделок в риске -->
+        <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <div style="font-size: 0.74rem; font-weight: 700; color: #fb7185; text-transform: uppercase; margin-bottom: 8px;">
+            3. Пульт РОПа: Сделки в риске срыва (2 500 000 ₽)
+          </div>
+          <div style="font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary);">
+            <div>&bull; <strong>Кейс 01 (Лояльность):</strong> 500k ₽ &bull; Слив на почту &bull; Перезвон РОПа</div>
+            <div>&bull; <strong>Кейс 02 (Госзакупки):</strong> 500k ₽ &bull; Возражение недоверия &bull; Оффер Zoom</div>
+            <div>&bull; <strong>Кейс 03 (Матрасы):</strong> 500k ₽ &bull; Плавающий слот &bull; Фиксация вторник 12:00</div>
+            <div>&bull; <strong>Кейс 04 (Битрикс24):</strong> 500k ₽ &bull; Сравнение с 1С &bull; Сравнит. матрица</div>
+            <div>&bull; <strong>Кейс 05 (Кредит):</strong> 500k ₽ &bull; Возражение 'пока нет' &bull; Расчет выгоды</div>
+          </div>
+        </div>
+
+        <!-- Box 4: Монте-Карло Прогноз -->
+        <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <div style="font-size: 0.74rem; font-weight: 700; color: #a78bfa; text-transform: uppercase; margin-bottom: 8px;">
+            4. Вероятностный коридор Монте-Карло 3.0
+          </div>
+          <div style="font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary);">
+            <div>&bull; <strong>P10 (Пессимистичный):</strong> 1 863 250 ₽ (90% гарантия)</div>
+            <div>&bull; <strong>P50 (Медиана):</strong> 2 578 250 ₽ (математическое ожидание)</div>
+            <div>&bull; <strong>P90 (Оптимистичный с ИИ):</strong> 3 213 650 ₽</div>
+            <div>&bull; <strong>Вероятность плана 5.0M ₽:</strong> 45.0%</div>
+            <div style="margin-top: 6px; color: #34d399; font-weight: 700;">Вердикт: Для взятия 5 млн ₽ необходим дожим сделок Кейс 01 и Кейс 02.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-muted);">
+        <span>RevOps Enterprise OS V20.0 &bull; Centurial Baseline 160 QA &bull; 152-ФЗ РФ Compliant</span>
+        <span>Сформировано: 16.10.2026 22:30 &bull; Подпись РОПа: ____________________</span>
       </div>
     </div>
   </div>
@@ -2538,14 +2761,30 @@
     function filterCallsTable() {
       const mgr = document.getElementById('filterManager').value;
       const st = document.getElementById('filterStatus').value;
+      const q = (document.getElementById('transcriptSearch')?.value || '').trim().toLowerCase();
       const tbody = document.getElementById('callsTableBody');
       tbody.innerHTML = '';
 
       const filtered = CALLS_DATA.filter(call => {
         const matchMgr = (mgr === 'all' || call.manager === mgr);
         const matchSt = (st === 'all' || call.status === st);
-        return matchMgr && matchSt;
+        let matchQuery = true;
+        if (q) {
+          const haystack = (call.transcript + ' ' + call.deal_title + ' ' + call.client + ' ' + call.error_summary + ' ' + call.manager).toLowerCase();
+          matchQuery = haystack.includes(q);
+        }
+        return matchMgr && matchSt && matchQuery;
       });
+
+      const badge = document.getElementById('searchResultBadge');
+      if (badge) {
+        badge.textContent = `${filtered.length} из ${CALLS_DATA.length} звонков`;
+        if (q && filtered.length < CALLS_DATA.length) {
+          badge.className = 'badge-warn';
+        } else {
+          badge.className = 'badge-info';
+        }
+      }
 
       filtered.forEach(call => {
         const tr = document.createElement('tr');
@@ -2562,11 +2801,22 @@
 
         const nextStepPill = call.next_step === 1 ? `<span class="badge-won">✅ ДА</span>` : `<span class="badge-lost">❌ НЕТ</span>`;
 
+        let searchSnippet = '';
+        if (q && call.transcript.toLowerCase().includes(q)) {
+          const idx = call.transcript.toLowerCase().indexOf(q);
+          const start = Math.max(0, idx - 40);
+          const end = Math.min(call.transcript.length, idx + q.length + 60);
+          const rawSnippet = call.transcript.substring(start, end);
+          const highlighted = rawSnippet.replace(new RegExp(`(${q})`, 'gi'), '<mark class="search-highlight">$1</mark>');
+          searchSnippet = `<div style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 4px; background: rgba(0,212,255,0.06); padding: 4px 8px; border-radius: 4px; border-left: 2px solid var(--accent-cyan);">💬 "...${highlighted}..."</div>`;
+        }
+
         tr.innerHTML = `
           <td><code style="color: var(--accent-cyan); font-size: 0.76rem;">${call.id}</code></td>
           <td>
             <div style="font-weight: 700; color: #fff;">${call.deal_title}</div>
             <div style="font-size: 0.72rem; color: var(--text-muted);">${call.client}</div>
+            ${searchSnippet}
           </td>
           <td><strong>${call.manager}</strong></td>
           <td>${call.amount}</td>
@@ -2584,6 +2834,16 @@
         tbody.appendChild(tr);
       });
     }
+
+    function clearSearch() {
+      const input = document.getElementById('transcriptSearch');
+      if (input) input.value = '';
+      document.getElementById('filterManager').value = 'all';
+      document.getElementById('filterStatus').value = 'all';
+      filterCallsTable();
+      showToast('Поиск сброшен', 'Отображены все 10 звонков.');
+    }
+
 
     function openCallModal(callId) {
       const call = CALLS_DATA.find(c => c.id === callId);
@@ -2634,6 +2894,76 @@
       } else {
         btn.textContent = '▶ Воспроизвести';
       }
+    }
+
+
+    // ==========================================================================
+    // EXECUTIVE ONE-PAGER MODAL
+    // ==========================================================================
+    function openOnePagerModal() {
+      const modal = document.getElementById('onePagerModal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeOnePagerModal() {
+      const modal = document.getElementById('onePagerModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    // ==========================================================================
+    // PERIOD SELECTOR (TAB 1: PULSE)
+    // ==========================================================================
+    function setPulsePeriod(period) {
+      ['today', '7d', 'month'].forEach(id => {
+        const btn = document.getElementById('btnPeriod' + id.charAt(0).toUpperCase() + id.slice(1));
+        if (btn) {
+          if (id === period) {
+            btn.className = 'btn btn-primary';
+          } else {
+            btn.className = 'btn btn-ghost';
+          }
+        }
+      });
+
+      const syncText = document.getElementById('periodSyncText');
+      if (period === 'today') {
+        document.getElementById('metricPlanVal').textContent = '250 000 ₽';
+        document.getElementById('metricFactVal').textContent = '0 ₽';
+        document.getElementById('metricFactBadge').textContent = '0.0% ВЫПОЛНЕНО';
+        document.getElementById('metricSsotVal').textContent = '120 000 ₽';
+        document.getElementById('metricPipeVal').textContent = '4 500 000 ₽';
+        if (syncText) syncText.textContent = 'Срез за 16 октября 2026 (Сегодня)';
+        showToast('Период: Сегодня', 'Показана суточная операционная активность.');
+      } else if (period === '7d') {
+        document.getElementById('metricPlanVal').textContent = '1 250 000 ₽';
+        document.getElementById('metricFactVal').textContent = '500 000 ₽';
+        document.getElementById('metricFactBadge').textContent = '40.0% ВЫПОЛНЕНО';
+        document.getElementById('metricSsotVal').textContent = '850 000 ₽';
+        document.getElementById('metricPipeVal').textContent = '4 500 000 ₽';
+        if (syncText) syncText.textContent = 'Срез за последние 7 дней (10 звонков)';
+        showToast('Период: 7 дней', 'Показаны данные за прошедшую неделю.');
+      } else {
+        document.getElementById('metricPlanVal').textContent = '5 000 000 ₽';
+        document.getElementById('metricFactVal').textContent = '500 000 ₽';
+        document.getElementById('metricFactBadge').textContent = '🟢 10.0% ВЫПОЛНЕНО';
+        document.getElementById('metricSsotVal').textContent = '2 375 000 ₽';
+        document.getElementById('metricPipeVal').textContent = '4 500 000 ₽';
+        if (syncText) syncText.textContent = 'Синхронизировано: amoCRM + Битрикс24 (16.10.2026, 21:50)';
+        showToast('Период: Октябрь 2026', 'Показан полный месячный контур компании.');
+      }
+    }
+
+    // ==========================================================================
+    // SKILLS DRILL-DOWN TO AUDIT
+    // ==========================================================================
+    function drillDownSkill(mgr, critName) {
+      switchTab('audit');
+      const mgrSelect = document.getElementById('filterManager');
+      if (mgrSelect) mgrSelect.value = mgr;
+      const search = document.getElementById('transcriptSearch');
+      if (search) search.value = '';
+      filterCallsTable();
+      showToast('Аудит навыка: ' + mgr, 'Показаны звонки для разбора критерия ' + critName);
     }
 
     // ==========================================================================
