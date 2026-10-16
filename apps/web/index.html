@@ -603,6 +603,325 @@
       }
     }
 
+
+    /* ==========================================================================
+       MPSTATS ENTERPRISE LAYOUT SYSTEM
+       ========================================================================== */
+    .mp-app-layout {
+      display: flex;
+      min-height: 100vh;
+      background: var(--bg-void);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Left Collapsible Sidebar */
+    .mp-sidebar {
+      width: 256px;
+      flex-shrink: 0;
+      background: rgba(10, 13, 20, 0.95);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+      transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      scrollbar-width: thin;
+    }
+
+    .mp-sidebar.collapsed {
+      width: 68px;
+    }
+
+    .mp-sidebar-header {
+      height: 64px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+
+    .mp-brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-purple), #4f2ae8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 0 16px var(--accent-purple-glow);
+      flex-shrink: 0;
+    }
+
+    .mp-brand-badge svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .mp-brand-text {
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .mp-brand-name {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mp-brand-ver {
+      font-size: 0.62rem;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(115, 82, 255, 0.2);
+      color: #c4b5fd;
+      border: 1px solid rgba(115, 82, 255, 0.4);
+    }
+
+    .mp-brand-sub {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .mp-sidebar-toggle {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .mp-sidebar-toggle:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
+    .mp-sidebar.collapsed .mp-sidebar-toggle svg {
+      transform: rotate(180deg);
+    }
+
+    /* AI-Supervisor Card in Sidebar */
+    .mp-ai-card {
+      margin: 12px 14px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, rgba(115,82,255,0.18), rgba(0,212,255,0.12));
+      border: 1px solid rgba(115,82,255,0.3);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    .mp-sidebar-search {
+      margin: 4px 14px 12px;
+      position: relative;
+    }
+
+    .mp-sidebar-search input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 7px 10px 7px 30px;
+      font-size: 0.74rem;
+      color: #fff;
+      outline: none;
+    }
+
+    .mp-sidebar-search input:focus {
+      border-color: var(--accent-purple);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .mp-sidebar-search svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    /* Nav Items */
+    .mp-nav-group {
+      padding: 0 10px;
+      margin-bottom: 14px;
+    }
+
+    .mp-nav-group-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding: 6px 10px 4px;
+    }
+
+    .mp-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: transparent;
+      border: 1px solid transparent;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .mp-nav-item:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .mp-nav-item.active {
+      color: #fff;
+      background: rgba(115, 82, 255, 0.22);
+      border-color: rgba(115, 82, 255, 0.45);
+      box-shadow: 0 0 14px rgba(115, 82, 255, 0.2);
+    }
+
+    .mp-nav-icon {
+      font-size: 0.9rem;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .mp-nav-label {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mp-sidebar-footer {
+      margin-top: auto;
+      padding: 14px 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Collapsed Sidebar Rules */
+    .mp-sidebar.collapsed .mp-brand-text,
+    .mp-sidebar.collapsed .mp-ai-card,
+    .mp-sidebar.collapsed .mp-sidebar-search,
+    .mp-sidebar.collapsed .mp-nav-label,
+    .mp-sidebar.collapsed .badge-lost,
+    .mp-sidebar.collapsed .badge-info,
+    .mp-sidebar.collapsed .mp-nav-group-title,
+    .mp-sidebar.collapsed .mp-sidebar-footer span {
+      display: none !important;
+    }
+
+    .mp-sidebar.collapsed .mp-nav-item {
+      justify-content: center;
+      padding: 10px 0;
+    }
+
+    .mp-sidebar.collapsed .mp-sidebar-header {
+      padding: 0 12px;
+      justify-content: center;
+    }
+
+    /* Main Container & Topbar */
+    .mp-main-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow-y: auto;
+    }
+
+    .mp-topbar {
+      height: 64px;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(10, 13, 20, 0.7);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+
+    .mp-tenant-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mp-tenant-selector:hover {
+      border-color: rgba(115, 82, 255, 0.4);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .mp-content-area {
+      padding: 24px 28px 80px;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* MPSTATS Ag-Grid Style Toolbar */
+    .mp-ag-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1024px) {
+      .mp-sidebar {
+        position: fixed;
+        left: -260px;
+        transition: left 0.25s ease;
+      }
+      .mp-sidebar.mobile-open {
+        left: 0;
+      }
+      .mp-topbar {
+        padding: 0 16px;
+      }
+      .mp-content-area {
+        padding: 16px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -674,91 +993,184 @@
     </div>
   </div>
 
-  <div class="app-shell">
+  <div class="mp-app-layout">
 
-    <!-- Top Dashboard Header -->
-    <header class="dashboard-header">
-      <div class="brand-group">
-        <div class="brand-badge" aria-hidden="true">
+    <!-- ======================================================== -->
+    <!-- MPSTATS LEFT COLLAPSIBLE ENTERPRISE SIDEBAR              -->
+    <!-- ======================================================== -->
+    <aside id="mpSidebar" class="mp-sidebar">
+      <!-- Brand Header -->
+      <div class="mp-sidebar-header">
+        <div class="mp-brand-badge">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         </div>
-        <div class="brand-title">
-          <h1>
-            <span>RevOps Platform V20.0</span>
-            <span class="tenant-badge">TNT-001 • Самозанятый</span>
-            <span class="badge-won">🟢 100% READY</span>
-          </h1>
-          <p>Behavioral Intelligence Edition &bull; Битрикс24 REST + amoCRM API v4</p>
+        <div class="mp-brand-text">
+          <div class="mp-brand-name">RevOps OS <span class="mp-brand-ver">V20.0</span></div>
+          <div class="mp-brand-sub">Behavioral Intelligence</div>
+        </div>
+        <button class="mp-sidebar-toggle" onclick="toggleSidebar()" title="Свернуть / Развернуть меню">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+        </button>
+      </div>
+
+      <!-- AI-Supervisor Promo Banner (MPSTATS-Style) -->
+      <div class="mp-ai-card">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.1rem;">🤖</span>
+          <div style="line-height: 1.2;">
+            <div style="font-size: 0.74rem; font-weight: 800; color: #fff;">Gemini 3.5 Flash</div>
+            <div style="font-size: 0.64rem; color: #34d399;">● ИИ-Супервайзер 24/7</div>
+          </div>
+        </div>
+        <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 6px;">
+          100% аудит звонков &bull; Strict JSON &bull; 13 B2B-стандартов
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <a href="/" class="btn btn-ghost" title="Вернуться на сайт ai-rop.ru">
+      <!-- Quick Tool Search in Sidebar -->
+      <div class="mp-sidebar-search">
+        <input type="text" id="sidebarToolSearch" placeholder="Поиск витрин..." oninput="filterSidebarItems()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+
+      <!-- Nav Items: 1. Оперативное управление -->
+      <div class="mp-nav-group">
+        <div class="mp-nav-group-title">Оперативное управление</div>
+        <button id="sb-pulse" class="mp-nav-item active" onclick="switchTab('pulse')">
+          <span class="mp-nav-icon">📊</span>
+          <span class="mp-nav-label">1. Пульс выручки</span>
+        </button>
+        <button id="sb-express" class="mp-nav-item" onclick="switchTab('express')">
+          <span class="mp-nav-icon">⚡</span>
+          <span class="mp-nav-label">2. Экспресс 3 цифры</span>
+        </button>
+        <button id="sb-rop" class="mp-nav-item" onclick="switchTab('rop')">
+          <span class="mp-nav-icon">📋</span>
+          <span class="mp-nav-label">3. Пульт РОПа 15 мин</span>
+          <span class="badge-lost" style="font-size: 0.62rem; margin-left: auto;">5 сд.</span>
+        </button>
+      </div>
+
+      <!-- Nav Items: 2. Речевой ИИ & Аудит -->
+      <div class="mp-nav-group">
+        <div class="mp-nav-group-title">Речевой ИИ & Аудит</div>
+        <button id="sb-audit" class="mp-nav-item" onclick="switchTab('audit')">
+          <span class="mp-nav-icon">🎙️</span>
+          <span class="mp-nav-label">4. ИИ-Аудит звонков</span>
+          <span class="badge-info" style="font-size: 0.62rem; margin-left: auto;">10</span>
+        </button>
+        <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')">
+          <span class="mp-nav-icon">🎯</span>
+          <span class="mp-nav-label">8. Навыки & Payroll</span>
+        </button>
+        <button id="sb-impact" class="mp-nav-item" onclick="switchTab('impact')">
+          <span class="mp-nav-icon">📈</span>
+          <span class="mp-nav-label">6. AI Impact & Детектор</span>
+        </button>
+      </div>
+
+      <!-- Nav Items: 3. Финансы & Аналитика -->
+      <div class="mp-nav-group">
+        <div class="mp-nav-group-title">Финансы & Аналитика</div>
+        <button id="sb-leaks" class="mp-nav-item" onclick="switchTab('leaks')">
+          <span class="mp-nav-icon">💸</span>
+          <span class="mp-nav-label">5. Диагностика утечек</span>
+        </button>
+        <button id="sb-montecarlo" class="mp-nav-item" onclick="switchTab('montecarlo')">
+          <span class="mp-nav-icon">🎲</span>
+          <span class="mp-nav-label">7. Монте-Карло 3.0</span>
+        </button>
+      </div>
+
+      <!-- Nav Items: 4. Система & Интеграции -->
+      <div class="mp-nav-group">
+        <div class="mp-nav-group-title">Система & Интеграции</div>
+        <button id="sb-settings" class="mp-nav-item" onclick="switchTab('settings')">
+          <span class="mp-nav-icon">⚙️</span>
+          <span class="mp-nav-label">9. Паспорт & E2E</span>
+        </button>
+        <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item">
+          <span class="mp-nav-icon">🟦</span>
+          <span class="mp-nav-label">Битрикс24 REST &nearr;</span>
+        </a>
+        <a href="https://revopsofficial.amocrm.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item">
+          <span class="mp-nav-icon">🔗</span>
+          <span class="mp-nav-label">amoCRM API v4 &nearr;</span>
+        </a>
+      </div>
+
+      <!-- Sidebar Footer Link -->
+      <div class="mp-sidebar-footer">
+        <a href="/" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); text-decoration: none; font-size: 0.72rem;">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
           <span>На сайт ai-rop.ru</span>
         </a>
-
-        <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="border-color: rgba(0,212,255,0.3); color: var(--accent-cyan);">
-          <span>🟦 Битрикс24</span>
-        </a>
-
-        <a href="https://revopsofficial.amocrm.ru" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="border-color: rgba(115,82,255,0.3); color: #c4b5fd;">
-          <span>🔗 amoCRM</span>
-        </a>
-
-        <button class="btn btn-primary" onclick="showToast('Синхронизация CRM', '10 звонков и 10 сделок актуализированы через n8n Webhook.')">
-          <span>Синхронизировать</span>
-        </button>
-        <button class="btn btn-ghost" onclick="openOnePagerModal()" style="border-color: rgba(115,82,255,0.4); color: #c4b5fd;" title="Сформировать презентационный A4 One-Pager для Собственника">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          <span>📄 One-Pager (PDF)</span>
-        </button>
-
-
-        <!-- Profile & Logout Widget -->
-        <div class="user-profile-widget" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-          <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #7352ff, #00d4ff); display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; color: #fff;">ДФ</div>
-          <div style="text-align: left; line-height: 1.2;">
-            <div id="loggedUserName" style="font-size: 0.74rem; font-weight: 700; color: #fff;">Дмитрий Федотов</div>
-            <div style="font-size: 0.66rem; color: #34d399;">● РОП (TNT-001)</div>
-          </div>
-          <button class="btn btn-ghost" style="padding: 4px 8px; margin-left: 4px; font-size: 0.72rem; color: #fb7185; border-color: rgba(244,63,94,0.3);" onclick="logout()" title="Выйти из кабинета">
-            <span>Выйти</span>
-          </button>
-        </div>
       </div>
-    </header>
+    </aside>
 
-    <!-- Navigation Tabs Bar (9 Ключевых Витрин из Google Sheets) -->
-    <nav class="tabs-bar">
-      <button id="tab-pulse" class="tab-btn active" onclick="switchTab('pulse')">
-        <span>📊 1. Пульс выручки</span>
-      </button>
-      <button id="tab-express" class="tab-btn" onclick="switchTab('express')">
-        <span>⚡ 2. Экспресс 3 цифры</span>
-      </button>
-      <button id="tab-rop" class="tab-btn" onclick="switchTab('rop')">
-        <span>📋 3. Пульт РОПа 15 мин</span>
-      </button>
-      <button id="tab-audit" class="tab-btn" onclick="switchTab('audit')">
-        <span>🎙️ 4. ИИ-Аудит звонков (10)</span>
-      </button>
-      <button id="tab-leaks" class="tab-btn" onclick="switchTab('leaks')">
-        <span>💸 5. Диагностика утечек</span>
-      </button>
-      <button id="tab-impact" class="tab-btn" onclick="switchTab('impact')">
-        <span>📊 6. AI Impact & Детектор</span>
-      </button>
-      <button id="tab-montecarlo" class="tab-btn" onclick="switchTab('montecarlo')">
-        <span>🎲 7. Монте-Карло 3.0</span>
-      </button>
-      <button id="tab-skills" class="tab-btn" onclick="switchTab('skills')">
-        <span>🎯 8. Навыки & Payroll</span>
-      </button>
-      <button id="tab-settings" class="tab-btn" onclick="switchTab('settings')">
-        <span>⚙️ 9. Паспорт & E2E Контур</span>
-      </button>
-    </nav>
+    <!-- ======================================================== -->
+    <!-- MPSTATS MAIN CONTAINER & TOP UTILITY BAR                 -->
+    <!-- ======================================================== -->
+    <div class="mp-main-container">
+      
+      <header class="mp-topbar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <!-- Mobile Sidebar Toggle -->
+          <button class="btn btn-ghost" onclick="toggleSidebar()" style="display: inline-flex;" title="Меню">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+
+          <!-- MPSTATS Tenant / Connection Selector (like Сизмедглобал New ▾) -->
+          <div class="mp-tenant-selector">
+            <span style="font-size: 0.85rem;">🏢</span>
+            <div>
+              <div style="font-size: 0.64rem; color: var(--text-muted); line-height: 1;">Тенант / Подключение</div>
+              <div style="font-size: 0.78rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 4px;">
+                <span>Самозанятый (TNT-001)</span>
+                <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+              </div>
+            </div>
+            <span class="badge-won" style="font-size: 0.62rem; margin-left: 4px;">🟢 Dual-CRM Active</span>
+          </div>
+
+          <!-- MPSTATS Period Selector (like in MPSTATS 1222.html) -->
+          <div class="mp-period-selector" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.74rem;">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span style="color: #fff; font-weight: 600;">16.09.2026 - 16.10.2026 (30 дней)</span>
+            <span style="color: var(--text-muted); font-size: 0.68rem; margin-left: 4px;">Сравнить с прошлым:</span>
+            <span class="badge-won" style="font-size: 0.60rem; padding: 1px 5px; cursor: pointer;" title="Сравнение периодов активно">ВКЛ</span>
+          </div>
+        </div>
+
+        <!-- Top Right Actions -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-ghost" onclick="openOnePagerModal()" style="border-color: rgba(115,82,255,0.4); color: #c4b5fd;">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span>One-Pager (PDF)</span>
+          </button>
+
+          <button class="btn btn-primary" onclick="showToast('Синхронизация CRM', '10 звонков и 10 сделок актуализированы через n8n Webhook.')">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>Синхронизировать</span>
+          </button>
+
+          <!-- Profile Widget -->
+          <div class="user-profile-widget" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #7352ff, #00d4ff); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: #fff;">ДФ</div>
+            <div style="text-align: left; line-height: 1.1;">
+              <div id="loggedUserName" style="font-size: 0.72rem; font-weight: 700; color: #fff;">Дмитрий Федотов</div>
+              <div style="font-size: 0.64rem; color: #34d399;">● РОП (TNT-001)</div>
+            </div>
+            <button class="btn btn-ghost" style="padding: 3px 6px; margin-left: 4px; font-size: 0.68rem; color: #fb7185; border-color: rgba(244,63,94,0.3);" onclick="logout()" title="Выйти из кабинета">
+              <span>Выйти</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- MPSTATS Content Area -->
+      <div class="mp-content-area">
+
 
     <!-- ======================================================== -->
     <!-- TAB 1: ОПЕРАЦИОННЫЙ ПУЛЬС                                -->
@@ -1364,15 +1776,50 @@
       </div>
 
 
-      <!-- Calls Table -->
+      <!-- Calls Table (MPSTATS Ag-Grid Style) -->
       <div class="bento-card" style="margin-bottom: 22px;">
         <div class="bento-card-header">
           <span class="bento-card-title">Реестр звонков и сквозная сверка сделок (raw_calls &harr; raw_deals)</span>
           <span class="badge-won">10 СИНХРОНИЗИРОВАНО</span>
         </div>
+      <!-- MPSTATS Ag-Grid Style Action Toolbar -->
+      <div class="mp-ag-toolbar">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-ghost" onclick="showToast('Столбцы Ag-Grid', 'Отображены все 13 параметров B2B-аудита речи.')" style="font-size: 0.74rem;">
+            <span>⚙️ Столбцы (13) ▾</span>
+          </button>
+          <button class="btn btn-ghost" onclick="document.getElementById('transcriptSearch').focus()" style="font-size: 0.74rem;">
+            <span>🔍 Фильтры</span>
+          </button>
+          <button class="btn btn-emerald" onclick="exportCallsToCSV()" style="font-size: 0.74rem;">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>📥 Скачать Excel (CSV)</span>
+          </button>
+          <button class="btn btn-ghost" onclick="clearSearch()" style="font-size: 0.74rem;">
+            <span>Сбросить</span>
+          </button>
+        </div>
+
+        <div style="font-size: 0.72rem; color: var(--text-muted);">
+          Реестр звонков: <strong id="agRowsCount" style="color: #fff;">10 строк</strong> &bull; Strict JSON application/json
+        </div>
+      </div>
         <div class="table-container">
           <table id="callsTable">
             <thead>
+              <!-- Top Tier Group Headers (MPSTATS Style) -->
+              <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <th colspan="3" style="text-align: center; color: var(--accent-cyan); border-right: 1px solid rgba(255,255,255,0.08); font-size: 0.68rem;">
+                  1. ПАРАМЕТРЫ ДИАЛОГА (CRM)
+                </th>
+                <th colspan="4" style="text-align: center; color: #c4b5fd; border-right: 1px solid rgba(255,255,255,0.08); font-size: 0.68rem;">
+                  2. РЕЧЕВОЙ АУДИТ GEMINI 3.5 FLASH (13 B2B-СТАНДАРТОВ)
+                </th>
+                <th colspan="3" style="text-align: center; color: #34d399; font-size: 0.68rem;">
+                  3. ФИНАНСОВЫЙ СТАТУС & РАЗБОР
+                </th>
+              </tr>
+              <!-- Sub Tier Column Headers -->
               <tr>
                 <th>Call ID</th>
                 <th>Сделка / Контрагент</th>
@@ -2173,7 +2620,9 @@
 
     </div>
 
-  </div> <!-- /app-shell -->
+      </div> <!-- /mp-content-area -->
+    </div> <!-- /mp-main-container -->
+  </div> <!-- /mp-app-layout -->
 
   <!-- Modal Dialog: Full Call Details & Transcript -->
   <div id="callModal" class="modal-backdrop">
@@ -2722,6 +3171,55 @@
       }, 300);
     }
 
+
+    // ==========================================================================
+    // MPSTATS SIDEBAR TOGGLE & TOOL SEARCH
+    // ==========================================================================
+    function toggleSidebar() {
+      const sb = document.getElementById('mpSidebar');
+      if (sb) {
+        sb.classList.toggle('collapsed');
+        const isCollapsed = sb.classList.contains('collapsed');
+        localStorage.setItem('revops_sidebar_collapsed', isCollapsed ? '1' : '0');
+        if (mcChartInstance) {
+          setTimeout(() => mcChartInstance.resize(), 260);
+        }
+      }
+    }
+
+    function filterSidebarItems() {
+      const q = (document.getElementById('sidebarToolSearch')?.value || '').trim().toLowerCase();
+      const items = document.querySelectorAll('.mp-nav-item');
+      items.forEach(it => {
+        const text = it.textContent.toLowerCase();
+        if (!q || text.includes(q)) {
+          it.style.display = 'flex';
+        } else {
+          it.style.display = 'none';
+        }
+      });
+    }
+
+    // ==========================================================================
+    // MPSTATS CSV EXPORT (AG-GRID DOWNLOAD)
+    // ==========================================================================
+    function exportCallsToCSV() {
+      let csv = "Call ID;Сделка;Менеджер;Чек;Длительность;Этап;Next Step;Балл;Статус;Дефекты речи;Рекомендация РОПу\n";
+      CALLS_DATA.forEach(c => {
+        csv += `"${c.id}";"${c.deal_title}";"${c.manager}";"${c.amount}";"${c.duration}";"${c.stage}";"${c.next_step ? 'Да' : 'Нет'}";"${c.score}/13";"${c.status_label}";"${c.error_summary.replace(/"/g, '""')}";"${c.recommendation.replace(/"/g, '""')}"\n`;
+      });
+      const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `RevOps_Calls_Audit_TNT-001_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Экспорт завершен', 'Файл отчета CSV успешно скачан!');
+    }
+
     // ==========================================================================
     // TABS SWITCHING
     // ==========================================================================
@@ -2729,13 +3227,13 @@
 
     function switchTab(tabId) {
       ALL_TABS.forEach(t => {
-        const btn = document.getElementById('tab-' + t);
+        const btn = document.getElementById('tab-' + t) || document.getElementById('sb-' + t);
         const view = document.getElementById('view-' + t);
         if (btn) btn.classList.remove('active');
         if (view) view.classList.remove('active');
       });
 
-      const activeBtn = document.getElementById('tab-' + tabId);
+      const activeBtn = document.getElementById('tab-' + tabId) || document.getElementById('sb-' + tabId);
       const activeView = document.getElementById('view-' + tabId);
       if (activeBtn) activeBtn.classList.add('active');
       if (activeView) activeView.classList.add('active');
@@ -3086,6 +3584,10 @@
     // ==========================================================================
     document.addEventListener('DOMContentLoaded', () => {
       checkAuth();
+      if (localStorage.getItem('revops_sidebar_collapsed') === '1') {
+        const sb = document.getElementById('mpSidebar');
+        if (sb) sb.classList.add('collapsed');
+      }
       initCallsTable();
       initMonteCarloChart();
     });
