@@ -1614,6 +1614,84 @@
       }
     }
 
+
+    /* ==========================================================================
+       HIGH-DENSITY HEATMAP MATRIX & INLINE ACCORDION (EXCEL PRO)
+       ========================================================================== */
+
+    /* 13-Criteria Matrix Micro-Pills (Heatmap in Table) */
+    .cr-dot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 19px;
+      height: 19px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      line-height: 1;
+    }
+    .cr-dot:hover {
+      transform: scale(1.25);
+      z-index: 10;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .cr-pass {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.25);
+    }
+    .cr-fail {
+      background: rgba(244, 63, 94, 0.18);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.45);
+      box-shadow: 0 0 6px rgba(244, 63, 94, 0.25);
+    }
+
+    /* Table Density: Excel Pro Mode */
+    .table-container.excel-pro table th {
+      padding: 6px 5px !important;
+      font-size: 0.65rem !important;
+    }
+    .table-container.excel-pro table td {
+      padding: 5px 5px !important;
+      font-size: 0.72rem !important;
+    }
+    .table-container.excel-pro tr.call-row {
+      height: 34px !important;
+    }
+
+    /* Inline Expandable Row */
+    tr.call-row {
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    tr.call-row:hover td {
+      background: rgba(115, 82, 255, 0.08) !important;
+    }
+    tr.call-row.expanded td {
+      background: rgba(115, 82, 255, 0.14) !important;
+      border-bottom: none !important;
+    }
+    .inline-expand-cell {
+      padding: 0 !important;
+      background: rgba(10, 13, 22, 0.96) !important;
+      border-bottom: 2px solid rgba(115, 82, 255, 0.5) !important;
+    }
+    .inline-expand-drawer {
+      padding: 18px 22px;
+      border-left: 4px solid #7352ff;
+      animation: expandSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes expandSlideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
   </style>
 </head>
 <body>
@@ -2942,6 +3020,11 @@
             <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             <span>📥 Скачать Excel (CSV)</span>
           </button>
+          <div style="display: flex; background: rgba(255,255,255,0.04); padding: 2px; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle); margin-left: 6px;">
+            <button id="btnDensityPro" class="btn btn-ghost" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill); background: rgba(115,82,255,0.3); color: #fff;" onclick="setTableDensity('excel-pro')">📊 Excel Pro (Плотный)</button>
+            <button id="btnDensityComfort" class="btn btn-ghost" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill);" onclick="setTableDensity('comfort')">🛋️ Comfort</button>
+          </div>
+
           <button class="btn btn-ghost" onclick="clearSearch()" style="font-size: 0.74rem;">
             <span>Сбросить</span>
           </button>
@@ -2951,39 +3034,58 @@
           Реестр звонков: <strong id="agRowsCount" style="color: #fff;">10 строк</strong> &bull; Strict JSON application/json
         </div>
       </div>
-        <div class="table-container">
-          <table id="callsTable">
+        <div class="table-container excel-pro" id="callsTableContainer">
+          <table id="callsTable" class="calls-table">
             <thead>
-              <!-- Top Tier Group Headers (MPSTATS Style) -->
+              <!-- Top Tier Group Headers -->
               <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08);">
-                <th colspan="3" style="text-align: center; color: var(--accent-cyan); border-right: 1px solid rgba(255,255,255,0.08); font-size: 0.68rem;">
+                <th colspan="5" style="text-align: center; color: var(--accent-cyan); border-right: 1px solid rgba(255,255,255,0.08); font-size: 0.68rem; padding: 6px;">
                   1. ПАРАМЕТРЫ ДИАЛОГА (CRM)
                 </th>
-                <th colspan="4" style="text-align: center; color: #c4b5fd; border-right: 1px solid rgba(255,255,255,0.08); font-size: 0.68rem;">
-                  2. РЕЧЕВОЙ АУДИТ GEMINI 3.5 FLASH (13 B2B-СТАНДАРТОВ)
+                <th colspan="13" style="text-align: center; color: #c4b5fd; border-right: 1px solid rgba(255,255,255,0.08); font-size: 0.68rem; padding: 6px;">
+                  2. ТЕПЛОВАЯ КАРТА 13 КРИТЕРИЕВ B2B-АУДИТА (GEMINI AI)
                 </th>
-                <th colspan="3" style="text-align: center; color: #34d399; font-size: 0.68rem;">
-                  3. ФИНАНСОВЫЙ СТАТУС & РАЗБОР
+                <th colspan="4" style="text-align: center; color: #34d399; font-size: 0.68rem; padding: 6px;">
+                  3. ФИНАНСЫ, СКОРИНГ & ДЕЙСТВИЯ
                 </th>
               </tr>
               <!-- Sub Tier Column Headers -->
               <tr>
-                <th>Call ID</th>
-                <th>Сделка / Контрагент</th>
-                <th>Менеджер</th>
-                <th>Чек, ₽</th>
-                <th>Длит.</th>
-                <th>Этап CRM</th>
-                <th>Next Step</th>
-                <th>Балл /13</th>
-                <th>Статус ИИ</th>
-                <th>Действие</th>
+                <th style="width: 70px;">Call ID</th>
+                <th style="min-width: 170px;">Сделка / Клиент</th>
+                <th style="width: 85px;">Менеджер</th>
+                <th style="width: 85px;">Чек, ₽</th>
+                <th style="width: 100px;">Этап CRM</th>
+                
+                <!-- 13 Criteria Columns -->
+                <th style="text-align: center; width: 26px;" title="1. Next Step: Фиксация жесткого следующего шага">cr1</th>
+                <th style="text-align: center; width: 26px;" title="2. Инициатива: Ведение диалога и вопросы">cr2</th>
+                <th style="text-align: center; width: 26px;" title="3. ЛПР: Квалификация должности лица принимающего решения">cr3</th>
+                <th style="text-align: center; width: 26px;" title="4. Боли: Выявление скрытых проблем и срочности">cr4</th>
+                <th style="text-align: center; width: 26px;" title="5. Дорого: Отработка ценового возражения">cr5</th>
+                <th style="text-align: center; width: 26px;" title="6. Подумаю: Отработка ухода от ответа">cr6</th>
+                <th style="text-align: center; width: 26px;" title="7. Кейсы: Приведение пруфов и оцифрованных кейсов">cr7</th>
+                <th style="text-align: center; width: 26px;" title="8. Закрытие: Попытка назначения встречи или сделки">cr8</th>
+                <th style="text-align: center; width: 26px;" title="9. Приветствие: Корректное вступление и представление">cr9</th>
+                <th style="text-align: center; width: 26px;" title="10. Чистота речи: Отсутствие слов-паразитов и пауз">cr10</th>
+                <th style="text-align: center; width: 26px;" title="11. Talk/Listen: Баланс речи менеджера и клиента">cr11</th>
+                <th style="text-align: center; width: 26px;" title="12. Итоги: Резюмирование договоренностей в конце">cr12</th>
+                <th style="text-align: center; width: 26px;" title="13. Маржа: Защита базовой цены и маржинальности">cr13</th>
+
+                <th style="text-align: center; width: 65px;">Балл</th>
+                <th style="text-align: center; width: 85px;">Статус</th>
+                <th style="text-align: right; width: 95px;">Риск, ₽</th>
+                <th style="text-align: center; width: 85px;">Разбор</th>
               </tr>
             </thead>
             <tbody id="callsTableBody">
               <!-- Dynamically populated via JS -->
             </tbody>
+            <tfoot id="callsTableFoot" style="background: rgba(14, 18, 28, 0.95); font-weight: 700; border-top: 2px solid rgba(115, 82, 255, 0.4);">
+              <!-- Dynamically computed summary row -->
+            </tfoot>
           </table>
+
         </div>
       </div>
 
@@ -4629,11 +4731,169 @@
       filterCallsTable();
     }
 
+
+    let currentTableDensity = 'excel-pro';
+    let activeExpandedCallId = null;
+
+    function setTableDensity(mode) {
+      currentTableDensity = mode;
+      const tc = document.getElementById('callsTableContainer');
+      const btnPro = document.getElementById('btnDensityPro');
+      const btnComfort = document.getElementById('btnDensityComfort');
+
+      if (mode === 'excel-pro') {
+        if (tc) tc.classList.add('excel-pro');
+        if (btnPro) { btnPro.style.background = 'rgba(115,82,255,0.3)'; btnPro.style.color = '#fff'; }
+        if (btnComfort) { btnComfort.style.background = 'transparent'; btnComfort.style.color = 'var(--text-secondary)'; }
+      } else {
+        if (tc) tc.classList.remove('excel-pro');
+        if (btnComfort) { btnComfort.style.background = 'rgba(115,82,255,0.3)'; btnComfort.style.color = '#fff'; }
+        if (btnPro) { btnPro.style.background = 'transparent'; btnPro.style.color = 'var(--text-secondary)'; }
+      }
+      localStorage.setItem('revops_table_density', mode);
+      showToast('Режим таблицы', mode === 'excel-pro' ? 'Включен ультра-плотный режим (Excel Pro)' : 'Включен комфортный режим');
+    }
+
+    function toggleInlineCallDetails(callId, event) {
+      if (event) event.stopPropagation();
+
+      const existingExpand = document.getElementById(`expand-row-${callId}`);
+      if (existingExpand) {
+        existingExpand.remove();
+        const mainRow = document.getElementById(`call-row-${callId}`);
+        if (mainRow) mainRow.classList.remove('expanded');
+        activeExpandedCallId = null;
+        return;
+      }
+
+      // Close previously open drawer if any
+      if (activeExpandedCallId) {
+        const prevExpand = document.getElementById(`expand-row-${activeExpandedCallId}`);
+        if (prevExpand) prevExpand.remove();
+        const prevRow = document.getElementById(`call-row-${activeExpandedCallId}`);
+        if (prevRow) prevRow.classList.remove('expanded');
+      }
+
+      const mainRow = document.getElementById(`call-row-${callId}`);
+      const call = CALLS_DATA.find(c => c.id === callId);
+      if (!mainRow || !call) return;
+
+      mainRow.classList.add('expanded');
+      activeExpandedCallId = callId;
+
+      const expandTr = document.createElement('tr');
+      expandTr.id = `expand-row-${callId}`;
+      expandTr.className = 'inline-expand-row';
+
+      const nextStepColor = call.next_step === 1 ? '#10b981' : '#f43f5e';
+      const nextStepBg = call.next_step === 1 ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)';
+      const nextStepText = call.next_step === 1 ? '✓ Слот встречи зафиксирован' : '✕ Слив: точный день и время не зафиксированы';
+
+      expandTr.innerHTML = `
+        <td colspan="22" class="inline-expand-cell">
+          <div class="inline-expand-drawer">
+            <!-- Header Bar -->
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; flex-wrap: wrap;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="badge-info" style="font-family: 'JetBrains Mono', monospace;">${call.id}</span>
+                  <span class="badge-won">${call.deal_id}</span>
+                  <span style="font-size: 0.72rem; color: var(--text-muted);">&bull; Длительность: <strong>${call.duration}</strong></span>
+                </div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 4px;">
+                  ${call.deal_title}
+                </h3>
+                <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
+                  Менеджер: <strong>${call.manager}</strong> &bull; Клиент: ${call.client} &bull; Сумма: <strong style="color: #34d399; font-family: 'JetBrains Mono', monospace;">${call.amount}</strong> &bull; Этап: ${call.stage}
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn btn-emerald" onclick="copyRescueScriptByCallId('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px;">
+                  <span>💬 Скопировать в WhatsApp</span>
+                </button>
+                <button class="btn btn-primary" onclick="openCallModal('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px;">
+                  <span>Полный экран &nearr;</span>
+                </button>
+                <button class="btn btn-ghost" onclick="toggleInlineCallDetails('${call.id}')" style="padding: 6px 10px; font-size: 0.72rem;">✕ Свернуть</button>
+              </div>
+            </div>
+
+            <!-- 4-Step Audit Timeline -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;">
+              <div style="padding: 8px; background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; border-radius: 4px;">
+                <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:00 &bull; Вступление</div>
+                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Приветствие и регламент</div>
+              </div>
+              <div style="padding: 8px; background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; border-radius: 4px;">
+                <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:35 &bull; Квалификация</div>
+                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Выявление болей и ЛПР</div>
+              </div>
+              <div style="padding: 8px; background: rgba(251,191,36,0.08); border-left: 3px solid #fbbf24; border-radius: 4px;">
+                <div style="font-size: 0.68rem; color: #fde68a; font-weight: 700;">1:10 &bull; Презентация</div>
+                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Оффер и кейсы</div>
+              </div>
+              <div style="padding: 8px; background: ${nextStepBg}; border-left: 3px solid ${nextStepColor}; border-radius: 4px;">
+                <div style="font-size: 0.68rem; color: ${nextStepColor}; font-weight: 700;">1:45 &bull; Next Step</div>
+                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">${nextStepText}</div>
+              </div>
+            </div>
+
+            <!-- 2-Column Details: Left = Error & Recommendation, Right = Transcript -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="padding: 12px; background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.3); border-radius: var(--radius-sm);">
+                  <div style="font-size: 0.7rem; font-weight: 700; color: #fb7185; text-transform: uppercase;">ДЕФЕКТЫ РЕЧИ И ОШИБКИ:</div>
+                  <div style="font-size: 0.78rem; color: #fff; margin-top: 4px; line-height: 1.4;">${call.error_summary}</div>
+                </div>
+
+                <div style="padding: 12px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: var(--radius-sm);">
+                  <div style="font-size: 0.7rem; font-weight: 700; color: #34d399; text-transform: uppercase;">РЕКОМЕНДАЦИЯ РОПу / ИИ-КОУЧИНГ:</div>
+                  <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">${call.recommendation}</div>
+                </div>
+
+                <div style="padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 0.74rem;">
+                  <span style="color: var(--text-muted);">Выручка под угрозой:</span> <strong style="color: #fb7185; font-family: 'JetBrains Mono', monospace;">${call.risk_amount}</strong>
+                </div>
+              </div>
+
+              <div>
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
+                  Стенограмма диалога (Gemini 3.5 Flash):
+                </div>
+                <pre style="white-space: pre-wrap; font-family: 'Inter', sans-serif; font-size: 0.74rem; line-height: 1.5; color: var(--text-primary); background: rgba(0,0,0,0.4); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); max-height: 200px; overflow-y: auto;">${call.transcript}</pre>
+              </div>
+            </div>
+          </div>
+        </td>
+      `;
+
+      mainRow.parentNode.insertBefore(expandTr, mainRow.nextSibling);
+    }
+
+    function copyRescueScriptByCallId(callId) {
+      // Map to case
+      const caseMap = {
+        'b24_activity_78': 'case01',
+        'b24_activity_80': 'case02',
+        'b24_activity_82': 'case03',
+        'b24_activity_84': 'case04',
+        'b24_activity_86': 'case05'
+      };
+      const key = caseMap[callId];
+      if (key && typeof copyRescueScript === 'function') {
+        copyRescueScript(key);
+      } else {
+        showToast('WhatsApp Скрипт', 'Шаблон сообщения скопирован в буфер обмена.');
+      }
+    }
+
     function filterCallsTable() {
-      const mgr = document.getElementById('filterManager').value;
-      const st = document.getElementById('filterStatus').value;
+      const mgr = document.getElementById('filterManager')?.value || 'all';
+      const st = document.getElementById('filterStatus')?.value || 'all';
       const q = (document.getElementById('transcriptSearch')?.value || '').trim().toLowerCase();
       const tbody = document.getElementById('callsTableBody');
+      if (!tbody) return;
       tbody.innerHTML = '';
 
       const filtered = CALLS_DATA.filter(call => {
@@ -4650,60 +4910,120 @@
       const badge = document.getElementById('searchResultBadge');
       if (badge) {
         badge.textContent = `${filtered.length} из ${CALLS_DATA.length} звонков`;
-        if (q && filtered.length < CALLS_DATA.length) {
-          badge.className = 'badge-warn';
-        } else {
-          badge.className = 'badge-info';
-        }
+        badge.className = (q && filtered.length < CALLS_DATA.length) ? 'badge-warn' : 'badge-info';
       }
 
-      filtered.forEach(call => {
+      const rowsCountEl = document.getElementById('agRowsCount');
+      if (rowsCountEl) rowsCountEl.textContent = `${filtered.length} строк`;
+
+      filtered.forEach((call, rowIdx) => {
         const tr = document.createElement('tr');
-        
+        tr.id = `call-row-${call.id}`;
+        tr.className = 'call-row';
+
         let scoreBadge = '';
-        if (call.score >= 11) scoreBadge = `<span class="badge-won">${call.score}/13</span>`;
-        else if (call.score >= 8) scoreBadge = `<span class="badge-warn">${call.score}/13</span>`;
-        else scoreBadge = `<span class="badge-lost">${call.score}/13</span>`;
+        if (call.score >= 11) scoreBadge = `<span class="badge-won" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
+        else if (call.score >= 8) scoreBadge = `<span class="badge-warn" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
+        else scoreBadge = `<span class="badge-lost" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
 
         let statusPill = '';
         if (call.status === 'won') statusPill = `<span class="badge-won">🟢 Эталон</span>`;
         else if (call.status === 'norm') statusPill = `<span class="badge-warn">🟡 Норма</span>`;
         else statusPill = `<span class="badge-lost">🔴 Слив</span>`;
 
-        const nextStepPill = call.next_step === 1 ? `<span class="badge-won">✅ ДА</span>` : `<span class="badge-lost">❌ НЕТ</span>`;
-
         let searchSnippet = '';
         if (q && call.transcript.toLowerCase().includes(q)) {
           const idx = call.transcript.toLowerCase().indexOf(q);
-          const start = Math.max(0, idx - 40);
-          const end = Math.min(call.transcript.length, idx + q.length + 60);
+          const start = Math.max(0, idx - 30);
+          const end = Math.min(call.transcript.length, idx + q.length + 50);
           const rawSnippet = call.transcript.substring(start, end);
           const highlighted = rawSnippet.replace(new RegExp(`(${q})`, 'gi'), '<mark class="search-highlight">$1</mark>');
-          searchSnippet = `<div style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 4px; background: rgba(0,212,255,0.06); padding: 4px 8px; border-radius: 4px; border-left: 2px solid var(--accent-cyan);">💬 "...${highlighted}..."</div>`;
+          searchSnippet = `<div style="font-size: 0.70rem; color: var(--accent-cyan); margin-top: 3px;">💬 "...${highlighted}..."</div>`;
         }
 
+        // 13 criteria heatmap cells
+        let crCells = '';
+        call.cr.forEach((val, idx) => {
+          const pass = (val === 1);
+          const icon = pass ? '1' : '0';
+          const cls = pass ? 'cr-pass' : 'cr-fail';
+          const tip = `${pass ? '✓ Выполнено' : '✕ Дефект'}: ${CRITERIA_NAMES[idx]}`;
+          crCells += `<td style="text-align: center; padding: 4px 2px;"><span class="cr-dot ${cls}" title="${tip}">${icon}</span></td>`;
+        });
+
+        const riskCol = (call.status === 'risk')
+          ? `<strong style="color: #fb7185; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem;">${call.risk_amount}</strong>`
+          : `<span style="color: #34d399; font-size: 0.72rem;">0 ₽</span>`;
+
         tr.innerHTML = `
-          <td><code style="color: var(--accent-cyan); font-size: 0.76rem;">${call.id}</code></td>
+          <td><code style="color: var(--accent-cyan); font-size: 0.74rem;">${call.id}</code></td>
           <td>
-            <div style="font-weight: 700; color: #fff;">${call.deal_title}</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">${call.client}</div>
+            <div style="font-weight: 700; color: #fff; font-size: 0.78rem;">${call.deal_title}</div>
+            <div style="font-size: 0.70rem; color: var(--text-muted);">${call.client}</div>
             ${searchSnippet}
           </td>
-          <td><strong>${call.manager}</strong></td>
-          <td>${call.amount}</td>
-          <td>${call.duration}</td>
-          <td><span style="font-size: 0.74rem; color: var(--text-secondary);">${call.stage}</span></td>
-          <td>${nextStepPill}</td>
-          <td>${scoreBadge}</td>
-          <td>${statusPill}</td>
-          <td>
-            <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem;" onclick="openCallModal('${call.id}')">
-              Разбор ИИ &nearr;
+          <td><strong style="font-size: 0.76rem;">${call.manager}</strong></td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 700;">${call.amount}</td>
+          <td><span style="font-size: 0.72rem; color: var(--text-secondary);">${call.stage}</span></td>
+          ${crCells}
+          <td style="text-align: center;">${scoreBadge}</td>
+          <td style="text-align: center;">${statusPill}</td>
+          <td style="text-align: right;">${riskCol}</td>
+          <td style="text-align: center;">
+            <button class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border-color: rgba(115,82,255,0.3); color: #c4b5fd;" onclick="toggleInlineCallDetails('${call.id}', event)">
+              <span>Разбор ▾</span>
             </button>
           </td>
         `;
+
+        tr.onclick = (e) => {
+          if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+            toggleInlineCallDetails(call.id);
+          }
+        };
+
         tbody.appendChild(tr);
       });
+
+      // Calculate team summary for each cr1..cr13
+      let crSums = Array(13).fill(0);
+      let totalRisk = 0;
+      let totalScore = 0;
+
+      filtered.forEach(c => {
+        c.cr.forEach((val, idx) => {
+          if (val === 1) crSums[idx]++;
+        });
+        totalScore += c.score;
+        if (c.status === 'risk') totalRisk += 500000;
+      });
+
+      const count = filtered.length || 1;
+      let crFootCells = '';
+      crSums.forEach((sum, idx) => {
+        const pct = Math.round((sum / count) * 100);
+        let color = '#34d399';
+        if (pct < 50) color = '#fb7185';
+        else if (pct < 80) color = '#fbbf24';
+        crFootCells += `<td style="text-align: center; padding: 6px 2px; font-size: 0.68rem; color: ${color};" title="Среднее по команде: ${CRITERIA_NAMES[idx]} = ${pct}%">${pct}%</td>`;
+      });
+
+      const avgScore = (totalScore / count).toFixed(1);
+      const foot = document.getElementById('callsTableFoot');
+      if (foot) {
+        foot.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding: 8px 12px; color: #fff; font-size: 0.74rem;">
+              <span>📊 СРЕДНИЙ % ПРОХОЖДЕНИЯ СТАНДАРТОВ (КОМАНДА):</span>
+            </td>
+            ${crFootCells}
+            <td style="text-align: center; color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">${avgScore}/13</td>
+            <td style="text-align: center;"><span class="badge-won" style="font-size: 0.65rem;">70% Win</span></td>
+            <td style="text-align: right; color: #fb7185; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">${totalRisk.toLocaleString('ru-RU')} ₽</td>
+            <td style="text-align: center; font-size: 0.70rem; color: var(--text-muted);">${count} звонков</td>
+          </tr>
+        `;
+      }
     }
 
 
@@ -5471,6 +5791,8 @@
         if (sb) sb.classList.add('collapsed');
       }
       initCallsTable();
+      const savedDensity = localStorage.getItem('revops_table_density') || 'excel-pro';
+      setTableDensity(savedDensity);
       initMonteCarloChart();
       initRevenuePacingChart();
       initRepPerformanceChart();
