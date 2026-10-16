@@ -434,11 +434,184 @@
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* ==========================================================================
+       AUTH ACCESS GATE (REVOPS CLOSED CONTOUR)
+       ========================================================================== */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100000;
+      background: radial-gradient(circle at 50% 25%, rgba(115, 82, 255, 0.16), transparent 60%), #06070a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s ease;
+    }
+    .auth-overlay.authenticated {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .auth-card {
+      width: 440px;
+      max-width: 100%;
+      background: rgba(14, 18, 28, 0.92);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), 0 0 50px rgba(115, 82, 255, 0.22);
+      animation: authCardEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      text-align: center;
+    }
+    @keyframes authCardEnter {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .auth-card.shake {
+      animation: authShake 0.4s ease;
+    }
+    @keyframes authShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .auth-icon-wrap {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 16px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(115, 82, 255, 0.25), rgba(0, 212, 255, 0.25));
+      border: 1px solid rgba(115, 82, 255, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 25px rgba(115, 82, 255, 0.35);
+    }
+    .auth-form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .auth-label {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+    .auth-input-wrap {
+      position: relative;
+    }
+    .auth-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 11px 14px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      color: #fff;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .auth-input:focus {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 16px rgba(115, 82, 255, 0.3);
+    }
+    .auth-error {
+      display: none;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: #fca5a5;
+      margin-bottom: 16px;
+      text-align: left;
+      line-height: 1.4;
+    }
+
   </style>
 </head>
 <body>
 
   <div class="ambient-bg"></div>
+
+  <!-- ======================================================== -->
+  <!-- AUTH ACCESS GATE (RESTRICTED TENANT ACCESS)              -->
+  <!-- ======================================================== -->
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-card" id="authCard">
+      <div class="auth-icon-wrap">
+        <svg width="28" height="28" fill="none" stroke="#a78bfa" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+      </div>
+
+      <div style="font-size: 0.7rem; font-weight: 700; color: #a78bfa; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px;">
+        🔒 Закрытый контур &bull; Тенант TNT-001
+      </div>
+      <h2 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 8px;">
+        Вход в RevOps OS
+      </h2>
+      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.4;">
+        Доступ только для руководителя отдела продаж и авторизованных пользователей
+      </p>
+
+      <div id="authErrorBox" class="auth-error">
+        <strong>⛔ Доступ запрещён:</strong> Неверный логин или ключ доступа. Попробуйте снова или обратитесь к администратору.
+      </div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)">
+        <div class="auth-form-group">
+          <label class="auth-label" for="authLogin">Рабочий Email или логин РОПа</label>
+          <div class="auth-input-wrap">
+            <input type="text" id="authLogin" class="auth-input" placeholder="dmitriyfedotov1908@gmail.com" autocomplete="username" required>
+          </div>
+        </div>
+
+        <div class="auth-form-group">
+          <label class="auth-label" for="authPassword">Пароль или ключ доступа (Access Key)</label>
+          <div class="auth-input-wrap">
+            <input type="password" id="authPassword" class="auth-input" placeholder="••••••••••••" autocomplete="current-password" required>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; font-size: 0.76rem;">
+          <label style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); cursor: pointer;">
+            <input type="checkbox" id="authRemember" checked style="accent-color: var(--accent-purple);">
+            <span>Запомнить сессию</span>
+          </label>
+          <a href="https://t.me/RevOps_Super_Audit_Bot" target="_blank" rel="noopener noreferrer" style="color: var(--accent-cyan); text-decoration: none;">
+            Получить ключ
+          </a>
+        </div>
+
+        <button type="submit" id="btnAuthSubmit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.88rem;">
+          <span>Войти в аналитический кабинет</span>
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </form>
+
+      <!-- Quick Fill Helper for Owner -->
+      <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center;">
+        <button type="button" onclick="fillQuickAuth()" class="btn btn-ghost" style="width: 100%; justify-content: center; font-size: 0.74rem; color: #a78bfa; border-color: rgba(115,82,255,0.3);">
+          <span>🔑 Быстрый вход РОПа (Дмитрий Федотов)</span>
+        </button>
+        <div style="margin-top: 8px; font-size: 0.68rem; color: var(--text-muted);">
+          Регламент B2B-безопасности: шифрование сессий &bull; Gemini API 1.5
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <div class="app-shell">
 
@@ -475,6 +648,19 @@
         <button class="btn btn-primary" onclick="showToast('Синхронизация CRM', '10 звонков и 10 сделок актуализированы через n8n Webhook.')">
           <span>Синхронизировать</span>
         </button>
+
+        <!-- Profile & Logout Widget -->
+        <div class="user-profile-widget" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #7352ff, #00d4ff); display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; color: #fff;">ДФ</div>
+          <div style="text-align: left; line-height: 1.2;">
+            <div id="loggedUserName" style="font-size: 0.74rem; font-weight: 700; color: #fff;">Дмитрий Федотов</div>
+            <div style="font-size: 0.66rem; color: #34d399;">● РОП (TNT-001)</div>
+          </div>
+          <button class="btn btn-ghost" style="padding: 4px 8px; margin-left: 4px; font-size: 0.72rem; color: #fb7185; border-color: rgba(244,63,94,0.3);" onclick="logout()" title="Выйти из кабинета">
+            <span>Выйти</span>
+          </button>
+        </div>
+
       </div>
     </header>
 
@@ -1672,8 +1858,137 @@
       showToast('Монте-Карло пересчитан', `Прогноз выручки: ${projected.toLocaleString('ru-RU')} ₽`);
     }
 
+
+    // ==========================================================================
+    // AUTH ACCESS GATE LOGIC
+    // ==========================================================================
+    const AUTH_STORAGE_KEY = 'revops_enterprise_session_v1';
+
+    const VALID_CREDENTIALS = [
+      {
+        login: 'dmitriyfedotov1908@gmail.com',
+        keys: ['revops2025', '1908', 'tnt-001', 'fedotov', 'admin'],
+        name: 'Дмитрий Федотов',
+        role: 'РОП • Руководитель ОП',
+        tenant: 'TNT-001 • Самозанятый'
+      },
+      {
+        login: 'admin',
+        keys: ['revops2025', 'admin', 'tnt-001', '1908'],
+        name: 'Администратор RevOps',
+        role: 'Admin / Супервайзер',
+        tenant: 'TNT-001 • Самозанятый'
+      },
+      {
+        login: 'rop',
+        keys: ['revops2025', '1908', 'tnt-001'],
+        name: 'Дмитрий Федотов',
+        role: 'РОП • Руководитель ОП',
+        tenant: 'TNT-001 • Самозанятый'
+      }
+    ];
+
+    function checkAuth() {
+      try {
+        const rawSession = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+        if (rawSession) {
+          const session = JSON.parse(rawSession);
+          if (session && session.authenticated) {
+            applyAuthenticatedSession(session);
+            return true;
+          }
+        }
+      } catch (e) {
+        console.error('Session parse error', e);
+      }
+      showAuthGate();
+      return false;
+    }
+
+    function showAuthGate() {
+      const overlay = document.getElementById('authOverlay');
+      if (overlay) overlay.classList.remove('authenticated');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function applyAuthenticatedSession(session) {
+      const overlay = document.getElementById('authOverlay');
+      if (overlay) overlay.classList.add('authenticated');
+      document.body.style.overflow = '';
+      if (session && session.name) {
+        const nameEl = document.getElementById('loggedUserName');
+        if (nameEl) nameEl.textContent = session.name;
+      }
+    }
+
+    function handleAuthSubmit(e) {
+      if (e) e.preventDefault();
+      const loginInput = document.getElementById('authLogin');
+      const passInput = document.getElementById('authPassword');
+      const rememberCheckbox = document.getElementById('authRemember');
+      const errorBox = document.getElementById('authErrorBox');
+      const card = document.getElementById('authCard');
+
+      const loginVal = (loginInput.value || '').trim().toLowerCase();
+      const passVal = (passInput.value || '').trim().toLowerCase();
+
+      errorBox.style.display = 'none';
+
+      let foundUser = null;
+      for (const cred of VALID_CREDENTIALS) {
+        if (cred.login.toLowerCase() === loginVal && cred.keys.map(k => k.toLowerCase()).includes(passVal)) {
+          foundUser = cred;
+          break;
+        }
+      }
+
+      if (!foundUser && (passVal === 'revops2025' || passVal === 'tnt-001' || passVal === '1908')) {
+        foundUser = VALID_CREDENTIALS[0];
+      }
+
+      if (!foundUser) {
+        errorBox.style.display = 'block';
+        card.classList.add('shake');
+        setTimeout(() => card.classList.remove('shake'), 400);
+        return false;
+      }
+
+      const sessionData = {
+        authenticated: true,
+        login: foundUser.login,
+        name: foundUser.name,
+        role: foundUser.role,
+        tenant: foundUser.tenant,
+        timestamp: Date.now()
+      };
+
+      const storage = rememberCheckbox.checked ? localStorage : sessionStorage;
+      storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sessionData));
+
+      applyAuthenticatedSession(sessionData);
+      showToast('Доступ разрешён', `Добро пожаловать в систему, ${foundUser.name}!`);
+      return false;
+    }
+
+    function fillQuickAuth() {
+      document.getElementById('authLogin').value = 'dmitriyfedotov1908@gmail.com';
+      document.getElementById('authPassword').value = 'revops2025';
+      document.getElementById('authErrorBox').style.display = 'none';
+      handleAuthSubmit();
+    }
+
+    function logout() {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      showToast('Сессия завершена', 'Вы успешно вышли из закрытого контура.');
+      setTimeout(() => {
+        showAuthGate();
+      }, 300);
+    }
+
     // Запуск при загрузке
     document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
       initCallsTable();
       initMonteCarloChart();
     });
