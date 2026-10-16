@@ -1095,6 +1095,507 @@
       border: 1px solid rgba(0, 212, 255, 0.35);
     }
 
+
+    /* ==========================================================================
+       DRIBBLE & DASHBOARDCN PREMIUM FINTECH COMPONENTS (CSS/SVG)
+       ========================================================================== */
+
+    /* 5. Premial Delta Badges */
+    .delta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .delta-badge:hover {
+      transform: translateY(-1px);
+    }
+    .delta-pos {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.32);
+      box-shadow: 0 0 14px -3px rgba(16, 185, 129, 0.3);
+    }
+    .delta-neg {
+      background: rgba(244, 63, 94, 0.12);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.32);
+      box-shadow: 0 0 14px -3px rgba(244, 63, 94, 0.3);
+    }
+    .delta-warn {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.32);
+      box-shadow: 0 0 14px -3px rgba(245, 158, 11, 0.3);
+    }
+    .delta-cyan {
+      background: rgba(0, 212, 255, 0.12);
+      color: #38bdf8;
+      border: 1px solid rgba(0, 212, 255, 0.32);
+      box-shadow: 0 0 14px -3px rgba(0, 212, 255, 0.3);
+    }
+    .delta-purple {
+      background: rgba(115, 82, 255, 0.12);
+      color: #a78bfa;
+      border: 1px solid rgba(115, 82, 255, 0.32);
+      box-shadow: 0 0 14px -3px rgba(115, 82, 255, 0.3);
+    }
+    .delta-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 6px currentColor;
+      animation: linearPulseGlow 1.8s infinite ease-in-out;
+    }
+
+    /* 1. Activity Rings (Apple Watch / Dribbble Dark) */
+    .activity-rings-card {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 22px 26px;
+      background: var(--linear-bg-card);
+      border: 1px solid var(--linear-border-subtle);
+      border-top: 1px solid var(--linear-border-top);
+      border-radius: var(--radius-lg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .activity-rings-card::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(115, 82, 255, 0.16) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .rings-svg-container {
+      position: relative;
+      width: 156px;
+      height: 156px;
+      flex-shrink: 0;
+    }
+    .rings-center-metric {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      text-align: center;
+    }
+    .rings-center-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .rings-center-sub {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 4px;
+    }
+    .rings-breakdown {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .ring-legend-col {
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-md);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .ring-legend-col:hover {
+      background: rgba(255, 255, 255, 0.045);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+    .ring-legend-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .ring-legend-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .ring-progress-track {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .ring-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    /* 2. Пьедестал РОПа / Rep Leaderboard Podium */
+    .rop-pedestal-card {
+      background: var(--linear-bg-card);
+      border: 1px solid var(--linear-border-subtle);
+      border-top: 1px solid var(--linear-border-top);
+      border-radius: var(--radius-lg);
+      padding: 22px 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.65);
+    }
+    .podium-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr 1fr;
+      gap: 16px;
+      align-items: flex-end;
+      margin-top: 18px;
+      margin-bottom: 18px;
+    }
+    .podium-card {
+      background: rgba(14, 18, 28, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      position: relative;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    .podium-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .podium-card.rank-1 {
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.1) 0%, rgba(14, 18, 28, 0.95) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-top: 2px solid #f59e0b;
+      box-shadow: 0 14px 40px -10px rgba(245, 158, 11, 0.28);
+      transform: translateY(-8px);
+    }
+    .podium-card.rank-1:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 18px 50px -8px rgba(245, 158, 11, 0.38);
+    }
+    .podium-card.rank-2 {
+      border-top: 2px solid #94a3b8;
+    }
+    .podium-card.rank-3 {
+      border-top: 2px solid #d97706;
+    }
+    .podium-avatar-wrap {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 12px;
+    }
+    .podium-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.25rem;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+      border: 2px solid var(--border-subtle);
+    }
+    .podium-card.rank-1 .podium-avatar {
+      border-color: #f59e0b;
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+    }
+    .podium-card.rank-2 .podium-avatar {
+      border-color: #94a3b8;
+      box-shadow: 0 0 14px rgba(148, 163, 184, 0.4);
+      color: #cbd5e1;
+    }
+    .podium-card.rank-3 .podium-avatar {
+      border-color: #d97706;
+      box-shadow: 0 0 14px rgba(217, 119, 6, 0.4);
+      color: #f59e0b;
+    }
+    .podium-crown {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.35rem;
+      filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.65));
+    }
+    .podium-rep-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .podium-role-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .podium-metrics-box {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.74rem;
+      text-align: left;
+    }
+    .podium-metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hazard-alert-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      background: rgba(244, 63, 94, 0.08);
+      border: 1px solid rgba(244, 63, 94, 0.32);
+      border-radius: var(--radius-md);
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .hazard-rep-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid #ef4444;
+      box-shadow: 0 0 14px rgba(239, 68, 68, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.15);
+      flex-shrink: 0;
+    }
+
+    /* 3. Funnel Loss Stepper */
+    .loss-funnel-card {
+      background: var(--linear-bg-card);
+      border: 1px solid var(--linear-border-subtle);
+      border-top: 1px solid var(--linear-border-top);
+      border-radius: var(--radius-lg);
+      padding: 22px 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.65);
+    }
+    .stepper-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .funnel-step {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      background: rgba(14, 18, 28, 0.7);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    .funnel-step:hover {
+      transform: translateX(4px);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    }
+    .funnel-step-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 0;
+      opacity: 0.18;
+      border-radius: var(--radius-md) 0 0 var(--radius-md);
+      transition: width 0.4s ease;
+    }
+    .funnel-step-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .step-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .step-num-badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.74rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+    .step-title-text {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .step-desc-text {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .step-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .step-amount-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.08rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    /* 4. Segmented Meters */
+    .segmented-meters-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .meter-card {
+      background: var(--linear-bg-card);
+      border: 1px solid var(--linear-border-subtle);
+      border-top: 1px solid var(--linear-border-top);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: 0 10px 25px -8px rgba(0, 0, 0, 0.6);
+    }
+    .meter-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .meter-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .segmented-bar {
+      display: flex;
+      height: 14px;
+      border-radius: 7px;
+      overflow: hidden;
+      gap: 2px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .segment-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease, filter 0.2s ease;
+      position: relative;
+      cursor: pointer;
+    }
+    .segment-fill:hover {
+      filter: brightness(1.25);
+    }
+    .meter-legend {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-swatch {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    @media (max-width: 860px) {
+      .activity-rings-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .rings-breakdown {
+        grid-template-columns: 1fr;
+        width: 100%;
+      }
+      .podium-grid {
+        grid-template-columns: 1fr;
+      }
+      .podium-card.rank-1 {
+        order: -1;
+        transform: none;
+      }
+      .segmented-meters-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1376,13 +1877,110 @@
         </div>
       </div>
 
+      <!-- COMPONENT 1: Activity Rings (Apple Watch / Dribbble Dark) & Target Discipline -->
+      <div class="activity-rings-card">
+        <div class="rings-svg-container">
+          <svg viewBox="0 0 160 160" width="156" height="156" style="transform: rotate(-90deg);">
+            <defs>
+              <linearGradient id="ringGradWon" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#10b981"/>
+                <stop offset="100%" stop-color="#34d399"/>
+              </linearGradient>
+              <linearGradient id="ringGradStep" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#00d4ff"/>
+                <stop offset="100%" stop-color="#38bdf8"/>
+              </linearGradient>
+              <linearGradient id="ringGradSpeech" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#7352ff"/>
+                <stop offset="100%" stop-color="#a78bfa"/>
+              </linearGradient>
+              <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+              </filter>
+            </defs>
+            <!-- Background Tracks -->
+            <circle cx="80" cy="80" r="64" fill="none" stroke="rgba(16, 185, 129, 0.12)" stroke-width="9"/>
+            <circle cx="80" cy="80" r="48" fill="none" stroke="rgba(0, 212, 255, 0.12)" stroke-width="9"/>
+            <circle cx="80" cy="80" r="32" fill="none" stroke="rgba(115, 82, 255, 0.12)" stroke-width="9"/>
+
+            <!-- Active Glowing Progress Rings -->
+            <!-- Outer: Closed-Won Fact (10.0% => offset = 402.12 * (1 - 0.10) = 361.91) -->
+            <circle cx="80" cy="80" r="64" fill="none" stroke="url(#ringGradWon)" stroke-width="9"
+                    stroke-dasharray="402.12" stroke-dashoffset="361.91" stroke-linecap="round" filter="url(#ringGlow)"/>
+
+            <!-- Middle: Next Step Discipline (70.0% => offset = 301.59 * (1 - 0.70) = 90.48) -->
+            <circle cx="80" cy="80" r="48" fill="none" stroke="url(#ringGradStep)" stroke-width="9"
+                    stroke-dasharray="301.59" stroke-dashoffset="90.48" stroke-linecap="round" filter="url(#ringGlow)"/>
+
+            <!-- Inner: Speech Quality Index (70.0% => offset = 201.06 * (1 - 0.70) = 60.32) -->
+            <circle cx="80" cy="80" r="32" fill="none" stroke="url(#ringGradSpeech)" stroke-width="9"
+                    stroke-dasharray="201.06" stroke-dashoffset="60.32" stroke-linecap="round" filter="url(#ringGlow)"/>
+          </svg>
+          <div class="rings-center-metric">
+            <span class="rings-center-val">70%</span>
+            <span class="rings-center-sub">CORE REVOPS</span>
+          </div>
+        </div>
+
+        <div class="rings-breakdown">
+          <!-- Col 1: Fact Won -->
+          <div class="ring-legend-col">
+            <div class="ring-legend-title">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; box-shadow: 0 0 8px #10b981;"></span>
+              <span>1. План выручки (Won)</span>
+            </div>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span class="ring-legend-val" style="color: #34d399;">10.0%</span>
+              <span class="delta-badge delta-pos"><span class="delta-dot"></span>▲ +500 000 ₽</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Факт закрыто: 500k ₽ из 5.0M ₽ (дефицит 4.5M ₽)</div>
+            <div class="ring-progress-track">
+              <div class="ring-progress-fill" style="width: 10%; background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 8px rgba(16,185,129,0.5);"></div>
+            </div>
+          </div>
+
+          <!-- Col 2: Next Step -->
+          <div class="ring-legend-col">
+            <div class="ring-legend-title">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #00d4ff; display: inline-block; box-shadow: 0 0 8px #00d4ff;"></span>
+              <span>2. Дисциплина Next Step</span>
+            </div>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span class="ring-legend-val" style="color: #38bdf8;">70.0%</span>
+              <span class="delta-badge delta-cyan"><span class="delta-dot"></span>7 из 10 сделок</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">3 звонка отпущены без даты (риск утечки 1.5M ₽)</div>
+            <div class="ring-progress-track">
+              <div class="ring-progress-fill" style="width: 70%; background: linear-gradient(90deg, #00d4ff, #38bdf8); box-shadow: 0 0 8px rgba(0,212,255,0.5);"></div>
+            </div>
+          </div>
+
+          <!-- Col 3: Speech Quality -->
+          <div class="ring-legend-col">
+            <div class="ring-legend-title">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #7352ff; display: inline-block; box-shadow: 0 0 8px #7352ff;"></span>
+              <span>3. Индекс речи Gemini</span>
+            </div>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span class="ring-legend-val" style="color: #c4b5fd;">9.1 / 13</span>
+              <span class="delta-badge delta-purple"><span class="delta-dot"></span>▲ 70% ЭТАЛОН</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">13 критериев B2B: норматив &ge; 9.0 (4 эталона, 4 слива)</div>
+            <div class="ring-progress-track">
+              <div class="ring-progress-fill" style="width: 70%; background: linear-gradient(90deg, #7352ff, #a78bfa); box-shadow: 0 0 8px rgba(115,82,255,0.5);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 4 Top Bento KPI Cards (Linear Dark Edition with Sparklines) -->
       <div class="grid-4">
         <!-- Card 1: Target Plan -->
         <div class="bento-card">
           <div class="bento-card-header">
             <span class="bento-card-title">План месяца (Точка Б)</span>
-            <span class="badge-info"><span class="pulse-dot" style="background: #38bdf8;"></span>🎯 НОРМАТИВ</span>
+            <span class="delta-badge delta-cyan"><span class="delta-dot"></span>🎯 5.0M ₽ НОРМАТИВ</span>
           </div>
           <div id="metricPlanVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">5 000 000 ₽</div>
           <div class="sparkline-wrap">
@@ -1404,7 +2002,7 @@
         <div class="bento-card">
           <div class="bento-card-header">
             <span class="bento-card-title">Факт закрытой выручки</span>
-            <span id="metricFactBadge" class="badge-won"><span class="pulse-dot" style="background: #10b981;"></span>🟢 10.0% ВЫПОЛНЕНО</span>
+            <span id="metricFactBadge" class="delta-badge delta-pos"><span class="delta-dot"></span>▲ +10.0% ВЫПОЛНЕНО</span>
           </div>
           <div id="metricFactVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">500 000 ₽</div>
           <div class="sparkline-wrap">
@@ -1426,7 +2024,7 @@
         <div class="bento-card">
           <div class="bento-card-header">
             <span class="bento-card-title">Взвешенный SSOT прогноз</span>
-            <span class="badge-warn"><span class="pulse-dot" style="background: #fbbf24;"></span>🟡 РИСК -52.5%</span>
+            <span class="delta-badge delta-warn"><span class="delta-dot"></span>▼ -52.5% РИСК SSOT</span>
           </div>
           <div id="metricSsotVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">2 375 000 ₽</div>
           <div class="sparkline-wrap">
@@ -1448,7 +2046,7 @@
         <div class="bento-card">
           <div class="bento-card-header">
             <span class="bento-card-title">Активный пайплайн воронки</span>
-            <span class="badge-info"><span class="pulse-dot" style="background: #00d4ff;"></span>9 СДЕЛОК</span>
+            <span class="delta-badge delta-purple"><span class="delta-dot"></span>● 9 СДЕЛОК В РАБОТЕ</span>
           </div>
           <div id="metricPipeVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">4 500 000 ₽</div>
           <div class="sparkline-wrap">
@@ -1781,6 +2379,116 @@
         </div>
       </div>
 
+      <!-- COMPONENT 2: Пьедестал РОПа (Rep Leaderboard + Avatar Rings + P0 Hazard) -->
+      <div class="rop-pedestal-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.08em;">
+              🏆 РЕЙТИНГ И ДИСЦИПЛИНА МЕНЕДЖЕРОВ ОП
+            </div>
+            <h2 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              Пьедестал производительности отдела продаж
+            </h2>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="delta-badge delta-pos"><span class="delta-dot"></span>4 МЕНЕДЖЕРА В СРЕЗЕ</span>
+            <span class="delta-badge delta-purple">Gemini Score 9.1</span>
+          </div>
+        </div>
+
+        <div class="podium-grid">
+          <!-- 2nd Place: Надежда (Left) -->
+          <div class="podium-card rank-2">
+            <div class="podium-avatar-wrap">
+              <div class="podium-avatar">Н</div>
+            </div>
+            <div class="podium-rep-name">Надежда</div>
+            <div class="podium-role-badge">🥈 2 МЕСТО &bull; ЭТАЛОН СКРИПТА</div>
+            <div class="podium-metrics-box">
+              <div class="podium-metric-row">
+                <span style="color: var(--text-muted);">Качество речи:</span>
+                <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">12.0 / 13 (РЕКОРД)</span>
+              </div>
+              <div class="podium-metric-row">
+                <span style="color: var(--text-muted);">В пайплайне:</span>
+                <strong style="color: #fff; font-family: 'JetBrains Mono', monospace;">500 000 ₽</strong>
+              </div>
+              <div class="podium-metric-row">
+                <span style="color: var(--text-muted);">Next Step:</span>
+                <span style="color: #34d399; font-weight: 700;">100% (1 из 1)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1st Place: Заряна (Center - Raised) -->
+          <div class="podium-card rank-1">
+            <div class="podium-avatar-wrap">
+              <span class="podium-crown">👑</span>
+              <div class="podium-avatar">З</div>
+            </div>
+            <div class="podium-rep-name">Заряна</div>
+            <div class="podium-role-badge" style="color: #f59e0b; font-weight: 800;">🥇 1 МЕСТО &bull; ТОП-ПЕРФОРМЕР</div>
+            <div class="podium-metrics-box" style="border: 1px solid rgba(245, 158, 11, 0.25);">
+              <div class="podium-metric-row">
+                <span style="color: var(--text-muted);">Качество речи:</span>
+                <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">10.5 / 13 (0% брака)</span>
+              </div>
+              <div class="podium-metric-row">
+                <span style="color: var(--text-muted);">В пайплайне:</span>
+                <strong style="color: #fbbf24; font-family: 'JetBrains Mono', monospace;">2 000 000 ₽ (4 сделки)</strong>
+              </div>
+              <div class="podium-metric-row">
+                <span style="color: var(--text-muted);">Next Step:</span>
+                <span style="color: #34d399; font-weight: 700;">100% фиксация</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3rd Place: Виктория (Right) -->
+          <div class="podium-card rank-3">
+            <div class="podium-avatar-wrap">
+              <div class="podium-avatar">В</div>
+            </div>
+            <div class="podium-rep-name">Виктория</div>
+            <div class="podium-role-badge">🥉 3 МЕСТО &bull; СТАБИЛЬНОСТЬ</div>
+            <div class="podium-metrics-box">
+              <div class="podium-metric-row">
+                <span style="color: var(--text-muted);">Качество речи:</span>
+                <span class="delta-badge delta-cyan" style="padding: 1px 6px; font-size: 0.68rem;">9.5 / 13 (НОРМА)</span>
+              </div>
+              <div class="podium-metric-row">
+                <span style="color: var(--text-muted);">В пайплайне:</span>
+                <strong style="color: #fff; font-family: 'JetBrains Mono', monospace;">1 000 000 ₽ (2 сделки)</strong>
+              </div>
+              <div class="podium-metric-row">
+                <span style="color: var(--text-muted);">Next Step:</span>
+                <span style="color: #34d399; font-weight: 700;">100% (2 из 2)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- P0 Hazard Rep Alert Card -->
+        <div class="hazard-alert-strip">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div class="hazard-rep-avatar">С</div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="delta-badge delta-neg"><span class="delta-dot"></span>🚨 P0 ЗОНА КРИТИЧЕСКОГО РИСКА</span>
+                <strong style="color: #fff; font-size: 0.88rem;">Светлана</strong>
+                <span style="font-size: 0.74rem; color: #fca5a5;">(1 500 000 ₽ в работе &bull; 3 сделки)</span>
+              </div>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">
+                Средний балл речи: <strong style="color: #fb7185;">6.3 / 13</strong> &bull; Брак Next Step: <strong style="color: #fb7185;">67% (2 звонка слиты на «скиньте на почту»)</strong>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-emerald" onclick="document.getElementById('script-case01').scrollIntoView({behavior: 'smooth'})" style="font-size: 0.74rem;">
+            <span>⚡ Разбор звонков и дожим (15 мин)</span>
+          </button>
+        </div>
+      </div>
+
       <div class="bento-card" style="margin-bottom: 22px;">
         <div class="bento-card-header">
           <span class="bento-card-title">🚨 Топ-5 сделок в риске с готовыми скриптами спасения</span>
@@ -1963,6 +2671,73 @@
         </div>
       </div>
 
+      <!-- COMPONENT 4: Сегментные шкалы Talk/Listen & Качества речи (dashboardcn) -->
+      <div class="segmented-meters-grid">
+        <!-- Meter 1: Talk-to-Listen Balance -->
+        <div class="meter-card">
+          <div class="meter-header">
+            <div class="meter-title">
+              <span>🎙️ Баланс речевой доминанты (Talk-to-Listen)</span>
+            </div>
+            <span class="delta-badge delta-pos"><span class="delta-dot"></span>🟢 ИДЕАЛЬНЫЙ БАЛАНС</span>
+          </div>
+
+          <div class="segmented-bar">
+            <!-- Manager Talk: 42% -->
+            <div class="segment-fill" style="width: 42%; background: linear-gradient(90deg, #7352ff, #8b5cf6); box-shadow: 0 0 10px rgba(115,82,255,0.4);" title="Речь менеджера: 42%"></div>
+            <!-- Client Talk: 58% -->
+            <div class="segment-fill" style="width: 58%; background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 10px rgba(16,185,129,0.4);" title="Речь клиента: 58%"></div>
+          </div>
+
+          <div class="meter-legend">
+            <div class="legend-item">
+              <span class="legend-swatch" style="background: #8b5cf6;"></span>
+              <span>Менеджер: <strong style="color: #fff;">42%</strong> (Вопросы и ведение)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-swatch" style="background: #10b981;"></span>
+              <span>Клиент: <strong style="color: #fff;">58%</strong> (Ответы и боли)</span>
+            </div>
+            <span style="color: var(--text-muted); font-size: 0.68rem;">Норма B2B: 40-45% / 55-60%</span>
+          </div>
+        </div>
+
+        <!-- Meter 2: Quality Spectrum -->
+        <div class="meter-card">
+          <div class="meter-header">
+            <div class="meter-title">
+              <span>📊 Спектр качества звонков (10 диалогов)</span>
+            </div>
+            <span class="delta-badge delta-cyan"><span class="delta-dot"></span>Gemini Score 9.1</span>
+          </div>
+
+          <div class="segmented-bar">
+            <!-- Won/Gold: 40% (4 calls) -->
+            <div class="segment-fill" onclick="setAuditStatusFilter('won')" style="width: 40%; background: linear-gradient(90deg, #10b981, #34d399);" title="Эталон (11-13 баллов): 4 звонка"></div>
+            <!-- Norm/Yellow: 20% (2 calls) -->
+            <div class="segment-fill" onclick="setAuditStatusFilter('norm')" style="width: 20%; background: linear-gradient(90deg, #fbbf24, #f59e0b);" title="Норма (9-10 баллов): 2 звонка"></div>
+            <!-- Lost/Red: 40% (4 calls) -->
+            <div class="segment-fill" onclick="setAuditStatusFilter('risk')" style="width: 40%; background: linear-gradient(90deg, #f43f5e, #fb7185);" title="Слив / Брак (<9 баллов): 4 звонка"></div>
+          </div>
+
+          <div class="meter-legend">
+            <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('won')">
+              <span class="legend-swatch" style="background: #10b981;"></span>
+              <span>Эталон: <strong style="color: #34d399;">4 (40%)</strong></span>
+            </div>
+            <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('norm')">
+              <span class="legend-swatch" style="background: #fbbf24;"></span>
+              <span>Норма: <strong style="color: #fbbf24;">2 (20%)</strong></span>
+            </div>
+            <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('risk')">
+              <span class="legend-swatch" style="background: #fb7185;"></span>
+              <span>Слив: <strong style="color: #fb7185;">4 (40%)</strong></span>
+            </div>
+            <span style="color: var(--text-muted); font-size: 0.68rem;">Кликните сегмент для фильтра</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Search & Controls Bar -->
       <div style="background: rgba(14,18,28,0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
@@ -2104,6 +2879,131 @@
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: #a78bfa; font-weight: 700;">ИТОГО КАССА TO-BE</div>
             <div style="font-size: 1.5rem; font-weight: 800; color: #a78bfa; font-family: 'JetBrains Mono', monospace;">3 550 000 ₽</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPONENT 3: Воронка финансовых утечек (Funnel Loss Stepper) -->
+      <div class="loss-funnel-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: #fb7185; text-transform: uppercase; letter-spacing: 0.08em;">
+              📉 СТУПЕНЧАТАЯ ВОРОНКА УТЕЧЕК ВЫРУЧКИ (FUNNEL LOSS STEPPER)
+            </div>
+            <h2 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              От валового таргета 5 000 000 ₽ к защищенной кассе SSOT 2 375 000 ₽
+            </h2>
+          </div>
+          <span class="delta-badge delta-neg"><span class="delta-dot"></span>-2 625 000 ₽ СУММАРНЫЙ ДЕФИЦИТ</span>
+        </div>
+
+        <div class="stepper-container">
+          <!-- Step 1: Gross Target -->
+          <div class="funnel-step">
+            <div class="funnel-step-bar" style="width: 100%; background: linear-gradient(90deg, #38bdf8, #00d4ff);"></div>
+            <div class="funnel-step-content">
+              <div class="step-left">
+                <div class="step-num-badge">1</div>
+                <div>
+                  <div class="step-title-text">Целевой план продаж (Точка Б компании)</div>
+                  <div class="step-desc-text">План месяца 100% &bull; Нормативная планка выручки</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-cyan">100.0% БАЗА</span>
+                <span class="step-amount-val" style="color: #38bdf8;">5 000 000 ₽</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Next Step Leaks -->
+          <div class="funnel-step">
+            <div class="funnel-step-bar" style="width: 77.5%; background: linear-gradient(90deg, #f43f5e, #fb7185);"></div>
+            <div class="funnel-step-content">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(244,63,94,0.2); border-color: rgba(244,63,94,0.4); color: #fca5a5;">2</div>
+                <div>
+                  <div class="step-title-text">Утечка: Звонки без жесткого Next Step (30% звонков)</div>
+                  <div class="step-desc-text">3 сделки из 10 ушли в «подумаем» без фиксированного слота созвона</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-neg"><span class="delta-dot"></span>-1 125 000 ₽</span>
+                <span class="step-amount-val" style="color: #fb7185;">3 875 000 ₽</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: SLA КП Overdue -->
+          <div class="funnel-step">
+            <div class="funnel-step-bar" style="width: 68.5%; background: linear-gradient(90deg, #fbbf24, #f59e0b);"></div>
+            <div class="funnel-step-content">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(251,191,36,0.2); border-color: rgba(251,191,36,0.4); color: #fde68a;">3</div>
+                <div>
+                  <div class="step-title-text">Утечка: Зависание на согласовании КП &gt; 48 часов</div>
+                  <div class="step-desc-text">Потеря темпа сделки и конверсии на этапе коммерческого предложения</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-warn"><span class="delta-dot"></span>-450 000 ₽</span>
+                <span class="step-amount-val" style="color: #fbbf24;">3 425 000 ₽</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Illusory Pipeline & Zombies -->
+          <div class="funnel-step">
+            <div class="funnel-step-bar" style="width: 55%; background: linear-gradient(90deg, #ef4444, #dc2626);"></div>
+            <div class="funnel-step-content">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #fca5a5;">4</div>
+                <div>
+                  <div class="step-title-text">Утечка: «Черный ящик» CRM &bull; Зомби-сделки</div>
+                  <div class="step-desc-text">Сделки с ложным движением без подтвержденного бюджета ЛПР</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-neg"><span class="delta-dot"></span>-675 000 ₽</span>
+                <span class="step-amount-val" style="color: #f87171;">2 750 000 ₽</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5: DSO & Attrition -->
+          <div class="funnel-step">
+            <div class="funnel-step-bar" style="width: 47.5%; background: linear-gradient(90deg, #a855f7, #7352ff);"></div>
+            <div class="funnel-step-content">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.4); color: #d8b4fe;">5</div>
+                <div>
+                  <div class="step-title-text">Утечка: Задержки оплат и риск дебиторки (DSO)</div>
+                  <div class="step-desc-text">Кассовый лаг между выставлением счёта и поступлением денег на р/с</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-purple"><span class="delta-dot"></span>-375 000 ₽</span>
+                <span class="step-amount-val" style="color: #c084fc;">2 375 000 ₽</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 6: SSOT Safe Final -->
+          <div class="funnel-step" style="border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.06);">
+            <div class="funnel-step-bar" style="width: 47.5%; background: linear-gradient(90deg, #10b981, #059669); opacity: 0.35;"></div>
+            <div class="funnel-step-content">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: #10b981; border-color: #34d399; color: #fff;">✓</div>
+                <div>
+                  <div class="step-title-text" style="color: #34d399; font-weight: 800;">Твёрдый взвешенный прогноз кассы (SSOT Safe Cash)</div>
+                  <div class="step-desc-text">Математическое ожидание выручки с учетом вероятностей и фильтра зомби</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-pos"><span class="delta-dot"></span>🛡️ SSOT ГАРАНТИЯ</span>
+                <span class="step-amount-val" style="color: #34d399; font-size: 1.25rem;">2 375 000 ₽</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -3596,6 +4496,17 @@
         `;
         tbody.appendChild(tr);
       });
+    }
+
+
+    function setAuditStatusFilter(status) {
+      const sel = document.getElementById('filterStatus');
+      if (sel) {
+        sel.value = status;
+        filterCallsTable();
+        const labelMap = { won: '🟢 Эталон', norm: '🟡 Норма', risk: '🔴 Слив' };
+        showToast('Фильтр применён', 'Отображены звонки категории: ' + (labelMap[status] || status));
+      }
     }
 
     function clearSearch() {
