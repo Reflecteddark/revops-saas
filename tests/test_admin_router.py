@@ -142,4 +142,31 @@ def test_clients_list_and_register():
     assert del_resp.json()["success"] is True
 
 
+def test_features_config_and_toggle():
+    """Verifies reading and toggling feature flags."""
+    resp = client.get("/api/v1/admin/features")
+    assert resp.status_code == 200
+    assert "features" in resp.json()
+
+    # Toggle existing or check error on unknown
+    toggle_resp = client.post("/api/v1/admin/features/toggle", json={"code": "999.999", "enabled": True})
+    assert toggle_resp.status_code == 404
+
+
+def test_healer_status_action():
+    """Verifies healer status action returns valid response."""
+    resp = client.post("/api/v1/admin/healer/action", json={"action": "status"})
+    assert resp.status_code == 200
+    assert "output" in resp.json()
+
+
+def test_cco_action_summary():
+    """Verifies CCO engine summary execution."""
+    resp = client.post("/api/v1/admin/cco/action", json={"action": "summary", "tenant": "TNT-001"})
+    assert resp.status_code == 200
+    assert "output" in resp.json()
+    assert resp.json()["success"] is True
+
+
+
 

@@ -6756,6 +6756,9 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
               <span>Остановить все</span>
             </button>
+            <button onclick="archiveDesktopLaunchers()" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 0.8rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="Перенести все батники с Рабочего стола в защищённый архив">
+              <span>📦 Очистить Рабочий стол</span>
+            </button>
             <button onclick="loadAdminStatus()" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 0.8rem;" title="Обновить статус служб">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
               <span>Обновить</span>
@@ -7099,7 +7102,136 @@
         </div>
       </div>
 
-      <!-- MODULE 6: ИНТЕРАКТИВНАЯ ВЕБ-КОНСОЛЬ & ЖУРНАЛ ЛОГОВ (ПОЛНАЯ ЗАМЕНА ЧЕРНЫХ ОКОН CMD) -->
+      <!-- MODULE 6: ИИ КОММЕРЧЕСКИЙ ДИРЕКТОР (CCO) & АВТОНОМНЫЕ АГЕНТЫ -->
+      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(22, 18, 38, 0.95) 0%, rgba(12, 11, 20, 0.98) 100%); border: 1px solid rgba(251, 191, 36, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div class="bento-card-header" style="margin-bottom: 14px;">
+          <span class="bento-card-title">
+            <span class="title-icon" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </span>
+            6. ИИ Коммерческий Директор (CCO) & Автономные Агенты
+          </span>
+          <span class="badge-warn" style="font-size: 0.65rem;">Вместо run_cco.bat & run_logic_agent.cmd</span>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+          Интеллектуальный аудит воронки, финансовый прогноз выручки, выявление зависших сделок, разбор речевых критериев cr1..cr13 команды и мгновенная отправка отчёта в Telegram владельцу в 1 клик.
+        </div>
+
+        <!-- CCO Actions Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px;">
+          <button onclick="runCCOAction('summary')" class="btn-modern-primary" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 700; color: #fff;">📋 Экспресс-сводка CCO</div>
+              <div style="font-size: 0.68rem; opacity: 0.85;">Executive Summary для собственника</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('send_telegram')" class="btn-modern-primary" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: rgba(52, 211, 153, 0.4); padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 700; color: #fff;">📱 Отправить сводку в Telegram</div>
+              <div style="font-size: 0.68rem; opacity: 0.85;">Отчёт владельцу в @RevOps_Super_Audit_Bot</div>
+            </div>
+            <span>🚀</span>
+          </button>
+
+          <button onclick="runCCOAction('pipeline')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 600; color: #fff;">📊 Здоровье воронки</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Pipeline Health & конверсии</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('forecast')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 600; color: #fff;">🎯 Прогноз выполнения плана</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Sales Forecast & взвешенный пайплайн</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('team')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 600; color: #fff;">👥 Разбор команды: cr1..cr13</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Качество речи vs потерянные деньги</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('stalled')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 600; color: var(--accent-rose);">⚠️ Зависшие сделки (>7 дней)</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Сделки в зоне риска срыва</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('workflow_audit')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left; grid-column: 1 / -1;">
+            <div>
+              <div style="font-weight: 600; color: var(--accent-cyan);">🔬 Сквозной аудит Data Lineage & Бизнес-логики воркфлоу</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Сверка цепочки CRM (amoCRM / Bitrix24) ➔ n8n ➔ Google Sheets без расхождений</div>
+            </div>
+            <span>⚙️ Запуск аудита</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MODULE 7: ДЕЖУРНЫЙ DEVOPS & QA HEALER (24/7 РЕВИЗОР ФЛОТА) -->
+      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(16, 24, 28, 0.95) 0%, rgba(10, 14, 18, 0.98) 100%); border: 1px solid rgba(52, 211, 153, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div class="bento-card-header" style="margin-bottom: 14px;">
+          <span class="bento-card-title">
+            <span class="title-icon" style="background: rgba(52, 211, 153, 0.2); color: #34d399;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </span>
+            7. Дежурный DevOps & QA Healer (Ревизор Флота 24/7)
+          </span>
+          <span class="badge-won" style="font-size: 0.65rem;">Вместо 🩺_Дежурный_DevOps_QA_Healer.bat</span>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+          Автономный дежурный ревизор каждые 15 минут сканирует все узлы флота, шлюзы Gemini и Telegram, туннель Cloudflare, токены CRM и таблицы. При обнаружении дрейфа формул или залипания процессов производит мгновенное самоисцеление (Self-Healing).
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+          <button onclick="runHealerAction('run_now')" class="btn-modern-primary" style="padding: 9px 16px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 8px;">
+            <span>⚡ Внеочередной аудит и самоисцеление прямо сейчас</span>
+          </button>
+          <button onclick="runHealerAction('install')" class="btn-modern-ghost" style="padding: 9px 14px; font-size: 0.78rem; color: #34d399; border-color: rgba(52, 211, 153, 0.35);">
+            <span>🟢 Включить автодежурство (каждые 15 мин)</span>
+          </button>
+          <button onclick="fetchAdminLogs('healer')" class="btn-modern-ghost" style="padding: 9px 14px; font-size: 0.78rem;">
+            <span>📄 Показать healer_duty.log</span>
+          </button>
+          <button onclick="runHealerAction('uninstall')" class="btn-modern-ghost" style="padding: 9px 12px; font-size: 0.78rem; color: var(--accent-rose);">
+            <span>🔴 Отключить дежурство</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MODULE 8: КАСТОМНЫЕ МОДУЛИ & FEATURE FLAGS -->
+      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(18, 16, 28, 0.95) 0%, rgba(10, 10, 16, 0.98) 100%); border: 1px solid rgba(124, 58, 237, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div class="bento-card-header" style="margin-bottom: 14px;">
+          <span class="bento-card-title">
+            <span class="title-icon" style="background: rgba(124, 58, 237, 0.2); color: #a78bfa;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </span>
+            8. Кастомные Модули & Управление Опциями (Feature Flags)
+          </span>
+          <span class="badge-info" style="font-size: 0.65rem;">Вместо Управление_Кастомными_Опциями.bat</span>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+          Динамическое включение и выключение кастомных плагинов (Follow-Up для мессенджеров, детекторы сливов и токсичности, утренние и вечерние Telegram-сводки). Изменения применяются мгновенно без перезапуска.
+        </div>
+
+        <div id="adminFeaturesListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="color: var(--text-muted); font-size: 0.75rem;">Загрузка параметров конфигурации модулей...</div>
+        </div>
+      </div>
+
+      <!-- MODULE 9: ИНТЕРАКТИВНАЯ ВЕБ-КОНСОЛЬ & ЖУРНАЛ ЛОГОВ (ПОЛНАЯ ЗАМЕНА ЧЕРНЫХ ОКОН CMD) -->
       <div class="bento-card" style="padding: 0; overflow: hidden; border: 1px solid rgba(124, 58, 237, 0.25);">
         <!-- Terminal Header -->
         <div style="padding: 10px 16px; background: rgba(5, 5, 8, 0.95); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">

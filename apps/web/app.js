@@ -3084,6 +3084,8 @@ async function loadAdminStatus() {
     if (dailyStatusLabel) dailyStatusLabel.textContent = data.tasks.daily_sync.status_label;
     if (dailyNextRun) dailyNextRun.textContent = data.tasks.daily_sync.next_run;
 
+    // Load dynamic features config
+    loadFeaturesConfig();
   } catch (err) {
     console.warn('[Admin] Не удалось загрузить статус:', err);
   }
@@ -3480,6 +3482,155 @@ async function deleteClientAccess(login) {
 }
 
 // ==========================================================================
+// CCO AI AGENT & WORKFLOW LOGIC CONTROLS
+// ==========================================================================
+
+async function runCCOAction(action) {
+  if (isAdminActionRunning) return;
+  isAdminActionRunning = true;
+  appendAdminTerminalLog(`ИИ Коммерческий Директор: запуск действия [${action}]...`, 'info');
+  showToast('ИИ Комдир (CCO)', `Запуск: ${action}...`);
+
+  try {
+    const res = await adminFetch('/api/v1/admin/cco/action', {
+      method: 'POST',
+      body: JSON.stringify({ action, tenant: 'TNT-001' })
+    });
+    const data = await res.json();
+    if (data.output) {
+      const lines = data.output.split('\n');
+      lines.forEach(l => {
+        if (l.trim()) appendAdminTerminalLog(l.trim(), data.success ? 'success' : 'error');
+      });
+    }
+    appendAdminTerminalLog(data.success ? `Успешно: ${data.desc || action}` : `Сбой CCO: ${data.error || 'Ошибка'}`, data.success ? 'success' : 'error');
+    showToast('ИИ Комдир (CCO)', data.success ? 'Анализ готов!' : 'Ошибка выполнения');
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка вызова CCO: ${err.message}`, 'error');
+    showToast('Ошибка CCO', err.message);
+  } finally {
+    isAdminActionRunning = false;
+  }
+}
+
+async function runHealerAction(action) {
+  if (isAdminActionRunning) return;
+  isAdminActionRunning = true;
+  appendAdminTerminalLog(`Дежурный DevOps & QA Healer: действие [${action}]...`, 'info');
+  showToast('QA Healer', `Выполняется: ${action}`);
+
+  try {
+    const res = await adminFetch('/api/v1/admin/healer/action', {
+      method: 'POST',
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (data.output) {
+      data.output.split('\n').forEach(l => {
+        if (l.trim()) appendAdminTerminalLog(l.trim(), data.success ? 'success' : 'error');
+      });
+    }
+    showToast('QA Healer', data.success ? 'Команда выполнена' : 'Сбой операции');
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка QA Healer: ${err.message}`, 'error');
+  } finally {
+    isAdminActionRunning = false;
+  }
+}
+
+async function loadFeaturesConfig() {
+  const container = document.getElementById('adminFeaturesListContainer');
+  if (!container) return;
+
+  try {
+    const res = await adminFetch('/api/v1/admin/features');
+    const data = await res.json();
+    const features = data.features || {};
+
+    const entries = Object.entries(features);
+    if (!entries.length) {
+      container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.75rem;">Конфигурация модулей загружается...</div>';
+      return;
+    }
+
+    container.innerHTML = entries.map(([code, feat]) => {
+      const isChecked = feat.enabled ? 'checked' : '';
+      return `
+        <div style="padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <div style="flex: 1;">
+            <div style="font-size: 0.78rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: 'JetBrains Mono', monospace; color: #a78bfa;">[${code}]</span>
+              <span>${feat.name || code}</span>
+              <span class="badge-info" style="font-size: 0.60rem; padding: 1px 6px;">${feat.category || 'Модуль'}</span>
+            </div>
+            <div style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 3px;">
+              ${feat.description || ''}
+            </div>
+          </div>
+          <label style="position: relative; display: inline-block; width: 38px; height: 20px; flex-shrink: 0; cursor: pointer;">
+            <input type="checkbox" ${isChecked} onchange="toggleFeatureFlag('${code}', this.checked)" style="opacity: 0; width: 0; height: 0;">
+            <span style="position: absolute; cursor: pointer; inset: 0; background-color: ${feat.enabled ? '#34d399' : 'rgba(255,255,255,0.15)'}; border-radius: 20px; transition: .2s;">
+              <span style="position: absolute; content: ''; height: 14px; width: 14px; left: ${feat.enabled ? '21px' : '3px'}; bottom: 3px; background-color: white; border-radius: 50%; transition: .2s;"></span>
+            </span>
+          </label>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<div style="color: var(--accent-rose); font-size: 0.75rem;">Ошибка загрузки опций: ${err.message}</div>`;
+  }
+}
+
+async function toggleFeatureFlag(code, enabled) {
+  appendAdminTerminalLog(`Переключение опции [${code}] ➔ ${enabled ? 'ВКЛ' : 'ВЫКЛ'}...`, 'info');
+  try {
+    const res = await adminFetch('/api/v1/admin/features/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ code, enabled })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Модули RevOps', `Опция [${code}] ${enabled ? 'активирована' : 'выключена'}`);
+      loadFeaturesConfig();
+    }
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка переключения: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
+  }
+}
+
+async function archiveDesktopLaunchers() {
+  if (!confirm('Перенести все .bat файлы и ярлыки RevOps с Рабочего стола в защищённый архив revops-enterprise-os/desktop_launchers_archive/?\n\nВсе функции продолжат работать из этой админки на 100%.')) {
+    return;
+  }
+  appendAdminTerminalLog('📦 Запуск безопасной архивации батников с Рабочего стола...', 'info');
+  showToast('Архивация', 'Очистка Рабочего стола...');
+
+  try {
+    const res = await adminFetch('/api/v1/admin/desktop/archive', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      appendAdminTerminalLog(`Архивация завершена: перемещено ${data.moved_count} файлов в папку:`, 'success');
+      appendAdminTerminalLog(data.archive_dir, 'info');
+      if (data.moved_files && data.moved_files.length) {
+        data.moved_files.forEach(f => appendAdminTerminalLog(`  ✓ ${f}`, 'success'));
+      }
+      const badge = document.getElementById('adminDesktopBadge');
+      if (badge) {
+        badge.textContent = '🟢 РАБОЧИЙ СТОЛ ЧИСТ (0 БАТНИКОВ)';
+        badge.className = 'badge-won';
+      }
+      showToast('Рабочий стол очищен!', `Архивировано ${data.moved_count} файлов`);
+    } else {
+      appendAdminTerminalLog(`Ошибка архивации: ${data.errors ? data.errors.join(', ') : 'Неизвестная ошибка'}`, 'error');
+    }
+  } catch (err) {
+    appendAdminTerminalLog(`Сбой архивации: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
+  }
+}
+
+// ==========================================================================
 // EXPOSE INTERACTIVE HANDLERS GLOBALLY ON WINDOW FOR INLINE ONCLICK EVENTS
 // ==========================================================================
 window.copyRescueScript = typeof copyRescueScript !== 'undefined' ? copyRescueScript : null;
@@ -3522,5 +3673,11 @@ window.registerNewClientAccess = typeof registerNewClientAccess !== 'undefined' 
 window.copyClientInviteMessage = typeof copyClientInviteMessage !== 'undefined' ? copyClientInviteMessage : null;
 window.deleteClientAccess = typeof deleteClientAccess !== 'undefined' ? deleteClientAccess : null;
 window.renderAdminClientsTable = typeof renderAdminClientsTable !== 'undefined' ? renderAdminClientsTable : null;
+window.runCCOAction = typeof runCCOAction !== 'undefined' ? runCCOAction : null;
+window.runHealerAction = typeof runHealerAction !== 'undefined' ? runHealerAction : null;
+window.loadFeaturesConfig = typeof loadFeaturesConfig !== 'undefined' ? loadFeaturesConfig : null;
+window.toggleFeatureFlag = typeof toggleFeatureFlag !== 'undefined' ? toggleFeatureFlag : null;
+window.archiveDesktopLaunchers = typeof archiveDesktopLaunchers !== 'undefined' ? archiveDesktopLaunchers : null;
+
 
 

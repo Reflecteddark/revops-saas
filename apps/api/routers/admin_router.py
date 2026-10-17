@@ -925,3 +925,279 @@ def delete_client(login: str):
     append_console_log(f"Удалён аккаунт клиента: {clean_login}", "warning")
     return {"success": True, "message": f"Клиент {clean_login} удалён"}
 
+
+# ============================================================================
+# CCO AI AGENT & WORKFLOW LOGIC AGENT
+# ============================================================================
+
+MY_AI_CREW_DIR = Path.home() / "my_ai_crew"
+MY_AI_CREW_PYTHON = MY_AI_CREW_DIR / "venv" / "Scripts" / "python.exe"
+if not MY_AI_CREW_PYTHON.exists():
+    MY_AI_CREW_PYTHON = Path(sys.executable)
+
+FEATURES_CONFIG_FILE = ENTERPRISE_OS_DIR / "features_config.json"
+
+
+class CCOActionRequest(BaseModel):
+    action: str = Field(..., description="Action: summary, pipeline, forecast, team, stalled, send_telegram, workflow_audit")
+    tenant: Optional[str] = Field("TNT-001", description="Tenant ID")
+
+
+@router.post("/cco/action")
+def execute_cco_action(req: CCOActionRequest):
+    """
+    Executes AI Commercial Director (CCO) engine & logic agent.
+    Replaces run_cco.bat, run_logic_agent.cmd, run_telegram.bat.
+    """
+    action = req.action.lower()
+    tenant = req.tenant or "TNT-001"
+    cco_script = MY_AI_CREW_DIR / "commercial_director_engine.py"
+    logic_script = MY_AI_CREW_DIR / "workflow_logic_agent.py"
+
+    cmd = [str(MY_AI_CREW_PYTHON)]
+
+    if action == "summary":
+        cmd.extend([str(cco_script), "--tenant", tenant, "--summary"])
+        desc = "Сводка Коммерческого Директора (Executive Summary)"
+    elif action == "pipeline":
+        cmd.extend([str(cco_script), "--tenant", tenant, "--pipeline"])
+        desc = "Анализ здоровья воронки (Pipeline Health)"
+    elif action == "forecast":
+        cmd.extend([str(cco_script), "--tenant", tenant, "--forecast"])
+        desc = "Финансовый прогноз выполнения плана"
+    elif action == "team":
+        cmd.extend([str(cco_script), "--tenant", tenant, "--team"])
+        desc = "Разбор команды: cr1..cr13 vs упущенная выручка"
+    elif action == "stalled":
+        cmd.extend([str(cco_script), "--tenant", tenant, "--stalled"])
+        desc = "Анализ зависших сделок (>7 дней)"
+    elif action == "send_telegram":
+        cmd.extend([str(cco_script), "--tenant", tenant, "--summary", "--send"])
+        desc = "Отправка сводки CCO в Telegram владельцу"
+    elif action == "workflow_audit":
+        cmd.extend([str(logic_script), "--audit", "--tenant", tenant])
+        desc = "Сквозной аудит логики воркфлоу и баланса данных"
+    else:
+        raise HTTPException(status_code=400, detail=f"Неизвестное действие CCO: {action}")
+
+    append_console_log(f"Запуск CCO: {desc}...", "info")
+
+    try:
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=120,
+            cwd=str(MY_AI_CREW_DIR)
+        )
+        output = res.stdout if res.stdout else res.stderr
+        ok = (res.returncode == 0)
+
+        # Log summary in console
+        last_lines = [line.strip() for line in output.splitlines() if line.strip()][-6:]
+        for line in last_lines:
+            append_console_log(line, "success" if ok else "warning")
+
+        return {
+            "success": ok,
+            "action": action,
+            "desc": desc,
+            "output": output,
+            "returncode": res.returncode
+        }
+    except subprocess.TimeoutExpired:
+        err = "Таймаут выполнения команды CCO (120 сек)"
+        append_console_log(err, "error")
+        return {"success": False, "error": err}
+    except Exception as e:
+        err = f"Ошибка запуска CCO: {e}"
+        append_console_log(err, "error")
+        return {"success": False, "error": err}
+
+
+# ============================================================================
+# DEVOPS & QA HEALER ACTION
+# ============================================================================
+
+class HealerActionRequest(BaseModel):
+    action: str = Field(..., description="Action: run_now, install, uninstall, status, view_logs")
+
+
+@router.post("/healer/action")
+def execute_healer_action(req: HealerActionRequest):
+    """
+    Manages Autonomous DevOps and QA Healer.
+    Replaces 🩺_Дежурный_DevOps_QA_Healer.bat.
+    """
+    action = req.action.lower()
+    setup_script = MY_AI_CREW_DIR / "setup_healer_task.ps1"
+    healer_engine = MY_AI_CREW_DIR / "qa_healer_engine.py"
+    log_file = MY_AI_CREW_DIR / "logs" / "healer_duty.log"
+
+    if action == "run_now":
+        append_console_log("Запуск внеочередного аудита и самоисцеления флота (QA Healer)...", "info")
+        cmd = [str(MY_AI_CREW_PYTHON), str(healer_engine), "--all-tenants", "--duty"]
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+            ok = (res.returncode == 0)
+            output = res.stdout if res.stdout else res.stderr
+            last_lines = [line.strip() for line in output.splitlines() if line.strip()][-5:]
+            for line in last_lines:
+                append_console_log(line, "success" if ok else "error")
+            return {"success": ok, "output": output}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    elif action == "status":
+        cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(setup_script), "-Action", "Status"]
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        return {"success": res.returncode == 0, "output": res.stdout}
+
+    elif action == "install":
+        append_console_log("Регистрация задачи 'RevOps_DevOps_QA_Healer' в планировщике (каждые 15 мин)...", "info")
+        cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(setup_script), "-Action", "Install"]
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        ok = (res.returncode == 0)
+        append_console_log("Дежурный ревизор успешно установлен на автозапуск раз в 15 минут!", "success" if ok else "error")
+        return {"success": ok, "output": res.stdout}
+
+    elif action == "uninstall":
+        append_console_log("Удаление задачи дежурного ревизора из планировщика...", "warning")
+        cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(setup_script), "-Action", "Uninstall"]
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        return {"success": res.returncode == 0, "output": res.stdout}
+
+    elif action == "view_logs":
+        if log_file.exists():
+            try:
+                with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+                    lines = f.readlines()
+                tail = "".join(lines[-35:])
+                return {"success": True, "output": tail}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+        return {"success": False, "output": "Журнал healer_duty.log пока не создан"}
+
+    raise HTTPException(status_code=400, detail=f"Неизвестное действие Healer: {action}")
+
+
+# ============================================================================
+# FEATURE FLAGS & CUSTOM ADDONS
+# ============================================================================
+
+class FeatureToggleRequest(BaseModel):
+    code: str = Field(..., description="Feature code, e.g. '5.1', '6.1'")
+    enabled: bool = Field(..., description="Target status")
+
+
+@router.get("/features")
+def get_features_config():
+    """Returns dynamic feature flags from features_config.json."""
+    if FEATURES_CONFIG_FILE.exists():
+        try:
+            with open(FEATURES_CONFIG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error reading features config: {e}")
+    return {"features": {}}
+
+
+@router.post("/features/toggle")
+def toggle_feature_flag(req: FeatureToggleRequest):
+    """Toggles specific feature flag in features_config.json."""
+    if not FEATURES_CONFIG_FILE.exists():
+        raise HTTPException(status_code=404, detail="Конфигурационный файл features_config.json не найден")
+
+    try:
+        with open(FEATURES_CONFIG_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        features = data.get("features", {})
+        if req.code not in features:
+            raise HTTPException(status_code=404, detail=f"Модуль с кодом {req.code} не найден")
+
+        features[req.code]["enabled"] = req.enabled
+        with open(FEATURES_CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        feat_name = features[req.code].get("name", req.code)
+        state_str = "ВКЛЮЧЁН 🟢" if req.enabled else "ВЫКЛЮЧЕН ⚪"
+        append_console_log(f"Опция [{req.code}] {feat_name}: {state_str}", "info")
+
+        return {
+            "success": True,
+            "code": req.code,
+            "enabled": req.enabled,
+            "feature": features[req.code]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error toggling feature: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# DESKTOP LAUNCHERS ARCHIVER & CLEANER
+# ============================================================================
+
+@router.post("/desktop/archive")
+def archive_desktop_launchers():
+    """
+    Safely moves all RevOps .bat files and shortcuts from Desktop
+    into revops-enterprise-os/desktop_launchers_archive/ to keep Desktop completely clean.
+    Personal files and games remain untouched.
+    """
+    import shutil
+
+    desktop_dir = Path.home() / "Desktop"
+    archive_dir = ENTERPRISE_OS_DIR / "desktop_launchers_archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+
+    revops_targets = [
+        "Запустить_Все_Службы_RevOps.bat",
+        "Остановить_Все_Службы_RevOps.bat",
+        "Статус_Служб_RevOps.bat",
+        "⏰_Настройка_Автозадачи_Раз_в_Сутки.bat",
+        "⚡ Запустить сервис PDF-отчетов.bat",
+        "🔄_Единое_Обновление_Всех_Таблиц.bat",
+        "🚀 Запуск ИИ Агента (CrewAI).bat",
+        "🩺_Дежурный_DevOps_QA_Healer.bat",
+        "run_cco — ярлык.lnk",
+        "run_logic_agent — ярлык.lnk",
+        "run_telegram — ярлык.lnk",
+        "Интеграция_CRM_Таблица_n8n — ярлык.lnk",
+        "Новая_компания — ярлык.lnk",
+        "Управление_Кастомными_Опциями — ярлык.lnk",
+    ]
+
+    moved_files = []
+    errors = []
+
+    for item_name in revops_targets:
+        source_path = desktop_dir / item_name
+        if source_path.exists():
+            dest_path = archive_dir / item_name
+            try:
+                if dest_path.exists():
+                    dest_path.unlink()
+                shutil.move(str(source_path), str(dest_path))
+                moved_files.append(item_name)
+                append_console_log(f"📦 Архивирован лаунчер: {item_name}", "info")
+            except Exception as e:
+                errors.append(f"{item_name}: {e}")
+
+    summary_msg = f"Архивировано {len(moved_files)} файлов с Рабочего стола в {archive_dir}"
+    append_console_log(summary_msg, "success")
+
+    return {
+        "success": True,
+        "moved_count": len(moved_files),
+        "moved_files": moved_files,
+        "archive_dir": str(archive_dir),
+        "errors": errors
+    }
+
+
