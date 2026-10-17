@@ -1567,18 +1567,18 @@ const CALLS_DATA = [
               label: 'Выручка',
               data: [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
               backgroundColor: '#7c3aed',
-              borderRadius: 6,
+              borderRadius: 100,
               borderSkipped: false,
-              barPercentage: 0.55,
+              barPercentage: 0.4,
               categoryPercentage: 0.7
             },
             {
               label: 'План',
               data: [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830],
               backgroundColor: '#f36594',
-              borderRadius: 6,
+              borderRadius: 100,
               borderSkipped: false,
-              barPercentage: 0.55,
+              barPercentage: 0.4,
               categoryPercentage: 0.7
             }
           ]
@@ -1606,13 +1606,13 @@ const CALLS_DATA = [
           },
           scales: {
             x: {
-              grid: { display: false },
-              ticks: { color: tickColor, font: { size: 11, family: 'Inter' } }
+              grid: { display: false, drawBorder: false },
+              ticks: { color: '#71717a', font: { size: 11, family: 'Inter' } }
             },
             y: {
-              grid: { color: gridColor },
+              grid: { color: 'rgba(255, 255, 255, 0.03)', drawBorder: false },
               ticks: {
-                color: tickColor,
+                color: '#71717a',
                 font: { size: 11, family: 'Inter' },
                 callback: (v) => v + 'k'
               }
