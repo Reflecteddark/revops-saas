@@ -288,7 +288,7 @@ const CALLS_DATA = [
     ];
 
     async function sha256Hex(str) {
-      if (window.crypto && window.crypto.subtle && window.crypto.subtle.digest) {
+      if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle && window.crypto.subtle.digest && typeof TextEncoder !== 'undefined') {
         const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
         return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
       }
