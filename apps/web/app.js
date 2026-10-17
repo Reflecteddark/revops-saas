@@ -1,241 +1,8 @@
-let CALLS_DATA = [
-      {
-        id: "b24_activity_78",
-        deal_id: "B24-80",
-        deal_title: "B24 Кейс 01: Услуги повышения лояльности клиентов (asales)",
-        client: "Клиника стоматологии (Александр Васильевич)",
-        manager: "Светлана",
-        stage: "Первичный контакт",
-        duration: "1:57",
-        amount: "500 000 ₽",
-        score: 7,
-        status: "risk",
-        status_label: "СЛИВ (НЕТ NEXT STEP)",
-        risk_amount: "500 000 ₽",
-        next_step: 0,
-        cr: [0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1],
-        error_summary: "нет жесткого Next Step; не выявлены боли и срочность; нет квалификации ЛПР; нет попытки закрытия на встречу после презентации",
-        recommendation: "Сфокусируйтесь на выявлении актуальных проблем клиники перед презентацией и обязательно фиксируйте конкретный день и время для следующего контакта или отправки материалов с последующим созвоном",
-        transcript: `Менеджер: Здравствуйте, меня зовут Светлана, компания... Могу я поговорить с Александром Васильевичем?
-Клиент: А сейчас, к сожалению, нет. А что вы хотели?
-Менеджер: А я хотела обсудить с ним вопросы инвестиций. Скажите, пожалуйста, а в какое время и в какой день лучше позвонить?
-Клиент: Скиньте нам предложение на электронную почту.
-Менеджер: Вы знаете, именно это я и хочу сделать, но просто изначально мне необходимо обсудить некоторые детали с руководством... Подскажите, как я могу с ним связаться?
-Клиент: Ага, секундочку, сейчас подождите... Да?
-Менеджер: Здравствуйте, меня зовут Светлана. Я говорю с Александром Васильевичем?
-Клиент: Да, слушаю вас.
-Менеджер: Наша компания более 14 лет занимается программами лояльности 'умная лояльность', которая позволяет увеличить прибыль на 20-40% за год... Давайте я расскажу поподробнее.
-Клиент: Я вас, Светлана, услышал, но пока мы по другой специфике идем... не интересно на сегодняшний день. Вы можете скинуть информацию на имейл, если возобновится интерес, я свяжусь.
-Менеджер: Ясно, понятно. Вы тогда продиктуйте ваш электронный адрес... Спасибо, скинем. Всего доброго.`
-      },
-      {
-        id: "b24_activity_80",
-        deal_id: "B24-82",
-        deal_title: "B24 Кейс 02: Услуги сопровождения гос закупок (asales)",
-        client: "Геодезия и Экология (Игорь)",
-        manager: "Надежда",
-        stage: "Первичный контакт",
-        duration: "2:09",
-        amount: "500 000 ₽",
-        score: 12,
-        status: "won",
-        status_label: "ЭТАЛОН",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
-        error_summary: "Менеджер не привел конкретных примеров или кейсов выигранных тендеров в нише клиента для подтверждения экспертности.",
-        recommendation: "При следующем звонке подготовьте 1-2 успешных кейса в сфере геодезии и экологии с конкретными цифрами по суммам выигранных госконтрактов.",
-        transcript: `Менеджер: Алло, добрый день. Меня зовут Надежда. Скажите, пожалуйста, с кем можно поговорить по вопросу сопровождения участия в тендере по госзаказам?
-Клиент: Ну, наверное, не с кем, мы принципиально не работаем с государством.
-Менеджер: А как вас зовут?
-Клиент: Игорь.
-Менеджер: Игорь, я правильно поняла, что именно вы принимаете решения по данным вопросам?
-Клиент: Ну в том числе, да. Наше государство коррумпировано, не хотим тратить время.
-Менеджер: Игорь, на сегодняшний день тендеры жестко контролируются и сведены к прозрачности. Стоимость исчисляется миллионами рублей... Я предлагаю пообщаться с нашим специалистом, это ни к чему не обязывает. В понедельник в 15:00 было бы удобно?
-Клиент: Да, вполне нормально. В понедельник в 15:00 жду звонка.
-Менеджер: Договорились, 13 октября в 15:00 наш специалист свяжется с вами. Всего доброго!`
-      },
-      {
-        id: "b24_activity_82",
-        deal_id: "B24-84",
-        deal_title: "B24 Кейс 03: Продажа ортопедических матрасов (asales)",
-        client: "Мебельное производство (Сергей Юрьевич)",
-        manager: "Заряна",
-        stage: "Переговоры",
-        duration: "2:21",
-        amount: "500 000 ₽",
-        score: 8,
-        status: "risk",
-        status_label: "СЛИВ (НЕТ NEXT STEP)",
-        risk_amount: "500 000 ₽",
-        next_step: 0,
-        cr: [0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1],
-        error_summary: "Нет четкой фиксации времени встречи (согласован только созвон для уточнения); менеджер перебивал клиента в начале разговора; не уточнена должность ЛПР.",
-        recommendation: "При назначении встречи сразу фиксируй точное время и место, либо делай созвон в строго оговоренный час для подтверждения планов.",
-        transcript: `Менеджер: Алло, добрый день. Меня зовут Заряна. Скажите, пожалуйста, это Сергей Юрьевич? Вы получили материалы по ортопедическим матрасам?
-Клиент: Да, получил. Давайте дело дойдет до матрасов, там уже непосредственно будем разговаривать.
-Менеджер: Скажите, пожалуйста, вы готовы встретиться со специалистом во вторник в 12:00?
-Клиент: Понимаете, я не знаю, где я буду во вторник в 12:00. Буду на производстве или по городу разъезжать.
-Менеджер: Хорошо, тогда во вторник в 11:00 наш специалист перезвонит вам.
-Клиент: Да, хорошо.`
-      },
-      {
-        id: "b24_activity_84",
-        deal_id: "B24-86",
-        deal_title: "B24 Кейс 04: Продажа CRM Битрикс24 (asales)",
-        client: "Отдел продаж (Алексей)",
-        manager: "Светлана",
-        stage: "Переговоры",
-        duration: "2:33",
-        amount: "500 000 ₽",
-        score: 4,
-        status: "risk",
-        status_label: "СЛИВ (НЕТ NEXT STEP)",
-        risk_amount: "500 000 ₽",
-        next_step: 0,
-        cr: [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
-        error_summary: "Менеджер не согласовал четкий следующий шаг с конкретным временем; не отработал возражение про отправку коммерческого предложения на почту; перебивал клиента в процессе презентации.",
-        recommendation: "Алексей, давайте я отправлю вам презентацию на почту, как вы просили, а в четверг в 14:00 созвонимся, чтобы обсудить ключевые отличия от вашей текущей системы и ответить на вопросы. Вам удобно будет в это время?",
-        transcript: `Менеджер: Здравствуйте, меня зовут Светлана. Алексей, скажите, вы уже пользуетесь CRM?
-Клиент: Да, у нас 1С и МойСклад.
-Менеджер: Мы занимаемся внедрением Bitrix24... Я предлагаю встретиться с руководителем нашей компании.
-Клиент: Вы пришлите по почте коммерческое предложение. Что там вкратце о Битриксе?
-Менеджер: А почему бы нам просто не встретиться?
-Клиент: Я не могу сказать, конец месяца, шеф уезжает. Присылайте на почту sales...`
-      },
-      {
-        id: "b24_activity_86",
-        deal_id: "B24-88",
-        deal_title: "B24 Кейс 05: Услуги софинансирования кредита (asales)",
-        client: "Частный клиент (Николай Петрович)",
-        manager: "Виктория",
-        stage: "Принимают решение",
-        duration: "2:45",
-        amount: "500 000 ₽",
-        score: 8,
-        status: "norm",
-        status_label: "НОРМА",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
-        error_summary: "Менеджер монологом зачитал условия услуги без пауз; не выявлены конкретные параметры кредита клиента; слабая работа с возражением 'пока нет'.",
-        recommendation: "Задавай больше уточняющих вопросов о действующих кредитах клиента перед презентацией продукта, чтобы точнее попадать в его потребность.",
-        transcript: `Менеджер: Добрый день, меня зовут Виктория. Николай Петрович, у нас есть услуга софинансирования кредитов с гарантией полного закрытия...
-Клиент: Ну пока как-то нет, меня всё устраивает.
-Менеджер: Николай Петрович, наш специалист готов сделать детальный расчет экономии. Завтра в 10:00 утра вам будет удобно принять звонок?
-Клиент: Ну да, давайте так. Нормально.`
-      },
-      {
-        id: "b24_activity_88",
-        deal_id: "B24-90",
-        deal_title: "B24 Кейс 06: Продажа ортопедических матрасов (asales)",
-        client: "Розничный магазин (Александр)",
-        manager: "Заряна",
-        stage: "Принимают решение",
-        duration: "2:57",
-        amount: "500 000 ₽",
-        score: 9,
-        status: "norm",
-        status_label: "НОРМА",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-        error_summary: "Менеджер не представила название своей компании в начале разговора; не уточнила точную роль собеседника в принятии решений; не использовала кейсы для презентации ценности.",
-        recommendation: "Обязательно четко называть компанию при приветствии и перед предложением встречи использовать конкретные примеры успешной работы с аналогичными магазинами.",
-        transcript: `Менеджер: Добрый день, Александр. Меня зовут Заряна. Наш специалист готов подъехать к вам и подробно рассказать об условиях сотрудничества. Завтра в 15:00 будет удобно?
-Клиент: Да, пускай позвонит за час, что он едет.
-Менеджер: Хорошо, Александр, договорились. Завтра в 15:00 специалист будет у вас.`
-      },
-      {
-        id: "b24_activity_90",
-        deal_id: "B24-92",
-        deal_title: "B24 Кейс 07: Продажа наглядных пособий и учебного оборудования (asales)",
-        client: "Школа (Нина Васильевна, директор)",
-        manager: "Заряна",
-        stage: "Согласование договора",
-        duration: "3:09",
-        amount: "500 000 ₽",
-        score: 11,
-        status: "won",
-        status_label: "ЭТАЛОН",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-        error_summary: "Отсутствие полноценной презентации кейсов; неполный регламент приветствия на первом этапе звонка.",
-        recommendation: "Подготовьте к звонку специалиста примеры успешных поставок для школ в вашем регионе и кейсы по оргтехнике, чтобы закрыть запрос клиента по ноутбукам.",
-        transcript: `Менеджер: Добрый день, Нина Васильевна. Наша компания занимается поставками учебного оборудования и наглядных пособий со скидкой 30%...
-Клиент: А у вас оргтехника есть? Ноутбуки, системные блоки?
-Менеджер: Наш специалист свяжется с вами и обсудит спецификацию. Завтра в 12:00 будет удобно?
-Клиент: Удобно, хорошо, жду.`
-      },
-      {
-        id: "b24_activity_92",
-        deal_id: "B24-94",
-        deal_title: "B24 Кейс 08: Продажа устройства защиты от перенапряжений (asales)",
-        client: "Технос (Валерий Борисович, гендиректор)",
-        manager: "Заряна",
-        stage: "Согласование договора",
-        duration: "3:21",
-        amount: "500 000 ₽",
-        score: 11,
-        status: "won",
-        status_label: "ЭТАЛОН",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-        error_summary: "Менеджер не представила компанию в начале разговора; не использовала кейсы для подкрепления ценности предложения.",
-        recommendation: "Обязательно представляй компанию в самом начале разговора и сразу переходи к выгодам, используя цифры и примеры работы с аналогичными компаниями.",
-        transcript: `Менеджер: Валерий Борисович, предлагаем УЗИП европейского качества по лучшей цене из наличия на 200 линий...
-Клиент: Давайте после праздников во вторник наберите, обсудим бюджетные места.
-Менеджер: Договорились, во вторник в 14:00 наш специалист перезвонит вам.
-Клиент: Хорошо, пусть звонит.`
-      },
-      {
-        id: "b24_activity_94",
-        deal_id: "B24-96",
-        deal_title: "B24 Кейс 09: Продажа медтехники и медоборудования (asales)",
-        client: "Оптовая компания (Елена Владимировна, закупки)",
-        manager: "Виктория",
-        stage: "Счёт / Оплата",
-        duration: "3:33",
-        amount: "500 000 ₽",
-        score: 11,
-        status: "won",
-        status_label: "ЭТАЛОН",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1],
-        error_summary: "Слишком длинный монолог о компании в начале звонка; не выявлены конкретные потребности клиента по ассортименту.",
-        recommendation: "Сокращай презентацию компании и задавай больше открытых вопросов о том, какие именно позиции оборудования клиент чаще всего закупает под заказ.",
-        transcript: `Менеджер: Елена Владимировна, мы поставляем медтехнику и мебель для косметологии напрямую из Германии и Китая...
-Клиент: У нас в основном оборудование под заказ идет.
-Менеджер: Я направлю коммерческое предложение, а в понедельник в 12:00 наш специалист свяжется с вами, чтобы обсудить оптовые цены.
-Клиент: Да, в 12:00 отлично.`
-      },
-      {
-        id: "b24_activity_96",
-        deal_id: "B24-98",
-        deal_title: "B24 Кейс 10: Продажа устройств защиты от перенапряжений (asales)",
-        client: "Главный инженер (Роман)",
-        manager: "Заряна",
-        stage: "Успешно реализовано",
-        duration: "3:45",
-        amount: "500 000 ₽",
-        score: 10,
-        status: "norm",
-        status_label: "НОРМА",
-        risk_amount: "0 ₽",
-        next_step: 1,
-        cr: [1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-        error_summary: "Менеджер не представила название компании в начале разговора; не были детально выявлены потребности и боли клиента; отсутствовала аргументация через кейсы.",
-        recommendation: "Начните следующий звонок с четкого представления компании и себя. Перед презентацией продукта задайте клиенту больше открытых вопросов.",
-        transcript: `Менеджер: Роман, здравствуйте. У нас есть поставки УЗИП по спеццене 1100 руб. и бесплатные технические консультации инженера.
-Клиент: Устроит, если специалист расскажет, как это использовать.
-Менеджер: Договорились, специалист завтра в 13:00 перезвонит вам.
-Клиент: Да, нормально, хорошо.`
-      }
-    ];
+const REVOPS_API_BASE = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+  ? ''
+  : (typeof window !== 'undefined' && window.location.hostname.includes('ai-rop.ru') && !window.location.hostname.startsWith('report.') ? 'https://report.ai-rop.ru' : '');
 
+let CALLS_DATA = [];
 
     // ==========================================================================
     // CRYPTOGRAPHIC AUTH ACCESS GATE LOGIC (SHA-256 & HMAC SESSION GUARD)
@@ -1130,10 +897,12 @@ let CALLS_DATA = [
     function clearSearch() {
       const input = document.getElementById('transcriptSearch');
       if (input) input.value = '';
-      document.getElementById('filterManager').value = 'all';
-      document.getElementById('filterStatus').value = 'all';
+      const fMgr = document.getElementById('filterManager');
+      const fSt = document.getElementById('filterStatus');
+      if (fMgr) fMgr.value = 'all';
+      if (fSt) fSt.value = 'all';
       filterCallsTable();
-      showToast('Поиск сброшен', 'Отображены все 10 звонков.');
+      showToast('Поиск сброшен', `Отображены все ${CALLS_DATA.length} звонков.`);
     }
 
 
@@ -1349,29 +1118,45 @@ let CALLS_DATA = [
       });
 
       const syncText = document.getElementById('periodSyncText');
+      let totalFact = 0;
+      CALLS_DATA.forEach(c => {
+        if (c.status === 'won') {
+          const rawAmt = c.amount ? parseInt(String(c.amount).replace(/\D/g, '')) : 500000;
+          totalFact += (rawAmt || 500000);
+        }
+      });
+      const computedSsot = CALLS_DATA.length * 250000;
+      const computedPipe = CALLS_DATA.length * 500000;
+
       if (period === 'today') {
         animateCounter(document.getElementById('metricPlanVal'), 250000);
-        animateCounter(document.getElementById('metricFactVal'), 0);
-        document.getElementById('metricFactBadge').textContent = '0.0% ВЫПОЛНЕНО';
-        animateCounter(document.getElementById('metricSsotVal'), 120000);
-        animateCounter(document.getElementById('metricPipeVal'), 4500000);
-        if (syncText) syncText.textContent = 'Срез за 16 октября 2026 (Сегодня)';
+        animateCounter(document.getElementById('metricFactVal'), totalFact);
+        const pct = totalFact > 0 ? ((totalFact / 250000) * 100).toFixed(1) : '0.0';
+        const b = document.getElementById('metricFactBadge');
+        if (b) b.textContent = `${pct}% ВЫПОЛНЕНО`;
+        animateCounter(document.getElementById('metricSsotVal'), computedSsot);
+        if (document.getElementById('metricPipeVal')) animateCounter(document.getElementById('metricPipeVal'), computedPipe);
+        if (syncText) syncText.textContent = `Срез за сегодня (${CALLS_DATA.length} звонков)`;
         showToast('Период: Сегодня', 'Показана суточная операционная активность.');
       } else if (period === '7d') {
         animateCounter(document.getElementById('metricPlanVal'), 1250000);
-        animateCounter(document.getElementById('metricFactVal'), 500000);
-        document.getElementById('metricFactBadge').textContent = '40.0% ВЫПОЛНЕНО';
-        animateCounter(document.getElementById('metricSsotVal'), 850000);
-        animateCounter(document.getElementById('metricPipeVal'), 4500000);
-        if (syncText) syncText.textContent = 'Срез за последние 7 дней (10 звонков)';
+        animateCounter(document.getElementById('metricFactVal'), totalFact);
+        const pct = totalFact > 0 ? ((totalFact / 1250000) * 100).toFixed(1) : '0.0';
+        const b = document.getElementById('metricFactBadge');
+        if (b) b.textContent = `${pct}% ВЫПОЛНЕНО`;
+        animateCounter(document.getElementById('metricSsotVal'), computedSsot);
+        if (document.getElementById('metricPipeVal')) animateCounter(document.getElementById('metricPipeVal'), computedPipe);
+        if (syncText) syncText.textContent = `Срез за последние 7 дней (${CALLS_DATA.length} звонков)`;
         showToast('Период: 7 дней', 'Показаны данные за прошедшую неделю.');
       } else {
         animateCounter(document.getElementById('metricPlanVal'), 5000000);
-        animateCounter(document.getElementById('metricFactVal'), 500000);
-        document.getElementById('metricFactBadge').textContent = '10.0% ВЫПОЛНЕНО';
-        animateCounter(document.getElementById('metricSsotVal'), 2375000);
-        animateCounter(document.getElementById('metricPipeVal'), 4500000);
-        if (syncText) syncText.textContent = 'Синхронизировано: amoCRM + Битрикс24 (16.10.2026, 21:50)';
+        animateCounter(document.getElementById('metricFactVal'), totalFact);
+        const pct = totalFact > 0 ? ((totalFact / 5000000) * 100).toFixed(1) : '0.0';
+        const b = document.getElementById('metricFactBadge');
+        if (b) b.textContent = `${pct}% ВЫПОЛНЕНО`;
+        animateCounter(document.getElementById('metricSsotVal'), computedSsot);
+        if (document.getElementById('metricPipeVal')) animateCounter(document.getElementById('metricPipeVal'), computedPipe);
+        if (syncText) syncText.textContent = `Синхронизировано: amoCRM + Битрикс24 (${CALLS_DATA.length} звонков)`;
         showToast('Период: Октябрь 2026', 'Показан полный месячный контур компании.');
       }
     }
@@ -1695,6 +1480,7 @@ let CALLS_DATA = [
         revGrad.addColorStop(1, '#6d28d9');
       }
 
+      const isZero = CALLS_DATA.length === 0;
       developDissectionChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1702,7 +1488,7 @@ let CALLS_DATA = [
           datasets: [
             {
               label: 'Выручка',
-              data: [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
+              data: isZero ? Array(12).fill(0) : [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
               backgroundColor: revGrad,
               hoverBackgroundColor: '#c4b5fd',
               borderRadius: 6,
@@ -1712,7 +1498,7 @@ let CALLS_DATA = [
             },
             {
               label: 'План',
-              data: [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830],
+              data: isZero ? Array(12).fill(0) : [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830],
               backgroundColor: isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.10)',
               hoverBackgroundColor: isLight ? 'rgba(15, 23, 42, 0.22)' : 'rgba(255, 255, 255, 0.20)',
               borderRadius: 6,
@@ -1769,14 +1555,15 @@ let CALLS_DATA = [
       if (!ctx) return;
       const isLight = getThemeMode() === 'light'; // FIX: объявлена переменная isLight
 
+      const isZero = CALLS_DATA.length === 0;
       developDonutChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
           labels: ['Эталонные звонки', 'Встреча назначена', 'Следующий шаг взят', 'Риск срыва сделки', 'Fake Yes сливы'],
           datasets: [
             {
-              data: [34, 25, 17, 12, 6],
-              backgroundColor: ['#8b5cf6', '#6366f1', '#38bdf8', '#f59e0b', '#f43f5e'],
+              data: isZero ? [1] : [34, 25, 17, 12, 6],
+              backgroundColor: isZero ? ['rgba(255, 255, 255, 0.05)'] : ['#8b5cf6', '#6366f1', '#38bdf8', '#f59e0b', '#f43f5e'],
               borderWidth: 2,
               borderColor: isLight ? '#ffffff' : '#0b0b10',
               hoverOffset: 3
@@ -1827,6 +1614,7 @@ let CALLS_DATA = [
       const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.035)';
       const tickColor = isLight ? '#71717a' : '#52525b';
 
+      const isZero = CALLS_DATA.length === 0;
       developSplineChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1834,7 +1622,7 @@ let CALLS_DATA = [
           datasets: [
             {
               label: 'SSOT Факт',
-              data: [240, 310, 460, 380, 540, 470, 610],
+              data: isZero ? [0, 0, 0, 0, 0, 0, 0] : [240, 310, 460, 380, 540, 470, 610],
               borderColor: '#8b5cf6',
               backgroundColor: grad1,
               borderWidth: 2,
@@ -1848,7 +1636,7 @@ let CALLS_DATA = [
             },
             {
               label: 'Базовый тренд',
-              data: [310, 420, 390, 520, 460, 590, 540],
+              data: isZero ? [0, 0, 0, 0, 0, 0, 0] : [310, 420, 390, 520, 460, 590, 540],
               borderColor: isLight ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.22)',
               borderDash: [4, 4],
               borderWidth: 1.5,
@@ -2010,10 +1798,14 @@ let CALLS_DATA = [
       });
     }
 
-    function updateSimulation() {
-      const leads = document.getElementById('rngLeads').value;
-      const qual = document.getElementById('rngQual').value;
-      const close = document.getElementById('rngClose').value;
+    function updateSimulation(notify = true) {
+      const rngL = document.getElementById('rngLeads');
+      const rngQ = document.getElementById('rngQual');
+      const rngC = document.getElementById('rngClose');
+      if (!rngL || !rngQ || !rngC) return;
+      const leads = rngL.value;
+      const qual = rngQ.value;
+      const close = rngC.value;
 
       document.getElementById('lblLeads').textContent = leads + ' шт';
       document.getElementById('lblQual').textContent = qual + '%';
@@ -2023,7 +1815,9 @@ let CALLS_DATA = [
       document.getElementById('simVerdictText').textContent = 
         `Прогноз кассы при входящем потоке ${leads} лидов: ${projected.toLocaleString('ru-RU')} ₽!`;
 
-      showToast('Монте-Карло пересчитан', `Прогноз выручки: ${projected.toLocaleString('ru-RU')} ₽`);
+      if (notify && typeof showToast === 'function') {
+        showToast('Монте-Карло пересчитан', `Прогноз выручки: ${projected.toLocaleString('ru-RU')} ₽`);
+      }
     }
 
     // ==========================================================================
@@ -2503,49 +2297,50 @@ let CALLS_DATA = [
     let cmdPaletteSelectedIndex = 0;
     let filteredCmdItems = [];
 
-    const ALL_CMD_ITEMS = [
-      // AI Quick Inquiries (2026 AI-Native Affordance)
-      { type: 'AI', icon: '◆', label: 'Спросить AI про текущий экран...', action: () => openAiAsk('Что требует моего внимания прямо сейчас?') },
-      { type: 'AI', icon: '◆', label: 'AI: Какие сделки под угрозой?', action: () => openAiAsk('Какие сделки под угрозой?') },
-      { type: 'AI', icon: '◆', label: 'AI: Что значит дефицит 4.5M?', action: () => openAiAsk('Что значит дефицит 4.5M?') },
-      // Tabs Navigation
-      { type: 'Раздел', icon: '→', label: '1. Пульс выручки', action: () => switchTab('pulse') },
-      { type: 'Раздел', icon: '→', label: '2. Экспресс-аудит звонков', action: () => switchTab('express') },
-      { type: 'Раздел', icon: '→', label: '3. Пьедестал РОПа & Рейтинг', action: () => switchTab('rop') },
-      { type: 'Раздел', icon: '→', label: '4. ИИ-Аудит звонков & Тепловая карта', action: () => switchTab('audit') },
-      { type: 'Раздел', icon: '→', label: '5. Диагностика утечек выручки', action: () => switchTab('leaks') },
-      { type: 'Раздел', icon: '→', label: '6. Влияние на выручку & Детектор Fake Yes', action: () => switchTab('impact') },
-      { type: 'Раздел', icon: '→', label: '7. Monte Carlo 3.0 симуляция', action: () => switchTab('montecarlo') },
-      { type: 'Раздел', icon: '→', label: '8. Навыки & Динамический Payroll', action: () => switchTab('skills') },
-      { type: 'Раздел', icon: '→', label: '9. Настройки & E2E Контур', action: () => switchTab('settings') },
-      { type: 'Раздел', icon: '→', label: '10. Админ-кабинет (Управление проектом)', action: () => switchTab('admin') },
+    function getCommandPaletteItems() {
+      const baseItems = [
+        // AI Quick Inquiries
+        { type: 'AI', icon: '◆', label: 'Спросить AI про текущий экран...', action: () => openAiAsk('Что требует моего внимания прямо сейчас?') },
+        { type: 'AI', icon: '◆', label: 'AI: Какие сделки под угрозой?', action: () => openAiAsk('Какие сделки под угрозой?') },
+        // Tabs Navigation
+        { type: 'Раздел', icon: '→', label: '1. Пульс выручки', action: () => switchTab('pulse') },
+        { type: 'Раздел', icon: '→', label: '2. Экспресс 3 цифры', action: () => switchTab('express') },
+        { type: 'Раздел', icon: '→', label: '3. Пульт РОПа 15 мин', action: () => switchTab('rop') },
+        { type: 'Раздел', icon: '→', label: '4. ИИ-Аудит звонков', action: () => switchTab('audit') },
+        { type: 'Раздел', icon: '→', label: '5. Диагностика утечек выручки', action: () => switchTab('leaks') },
+        { type: 'Раздел', icon: '→', label: '6. AI Impact & Детектор Fake Yes', action: () => switchTab('impact') },
+        { type: 'Раздел', icon: '→', label: '7. Monte Carlo 3.0 симуляция', action: () => switchTab('montecarlo') },
+        { type: 'Раздел', icon: '→', label: '8. Навыки & Payroll', action: () => switchTab('skills') },
+        { type: 'Раздел', icon: '→', label: '9. Паспорт & E2E Контур', action: () => switchTab('settings') },
+        { type: 'Раздел', icon: '→', label: '10. Админ-кабинет (Управление проектом)', action: () => switchTab('admin') },
 
-      // CRM Deals Drilldown
-      { type: 'Сделка', icon: '§', label: 'B24-80: Услуги повышения лояльности (Светлана • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_78'); } },
-      { type: 'Сделка', icon: '§', label: 'B24-82: Сопровождение гос закупок (Надежда • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_80'); } },
-      { type: 'Сделка', icon: '§', label: 'B24-84: Продажа ортопедических матрасов (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_82'); } },
-      { type: 'Сделка', icon: '§', label: 'B24-86: Производство кухонь (Светлана • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_84'); } },
-      { type: 'Сделка', icon: '§', label: 'B24-88: Юридические услуги банкротства (Виктория • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_86'); } },
-      { type: 'Сделка', icon: '§', label: 'B24-90: Поставка складского оборудования (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_88'); } },
-      { type: 'Сделка', icon: '§', label: 'B24-92: Разработка CRM под ключ (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_90'); } },
-      { type: 'Сделка', icon: '§', label: 'B24-94: Стройматериалы и аренда спецтехники (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_92'); } },
-      { type: 'Сделка', icon: '§', label: 'B24-96: Оптовая торговля автозапчастями (Виктория • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_94'); } },
-      { type: 'Сделка', icon: '§', label: 'B24-98: Обучение корпоративному английскому (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_96'); } },
+        // Quick Actions
+        { type: 'Действие', icon: '↵', label: 'Экспорт реестра звонков в CSV', action: () => exportCallsToCSV() },
+        { type: 'Действие', icon: '↵', label: 'Синхронизировать CRM & n8n (SSOT Re-Sync)', action: () => triggerSyncSimulation() },
+        { type: 'Действие', icon: '↵', label: 'Включить ультра-плотный режим (Excel Pro 34px)', action: () => setTableDensity('excel-pro') },
+        { type: 'Действие', icon: '↵', label: 'Включить комфортный режим таблицы (Comfort)', action: () => setTableDensity('comfort') },
+        { type: 'Действие', icon: '↵', label: 'Выйти из учетной записи (PIN Gate)', action: () => logout() }
+      ];
 
-      // Reps
-      { type: 'Менеджер', icon: '@', label: 'Заряна: РОП / Топ-перформер (5 звонков • 2 500 000 ₽)', action: () => filterRepAudit('Заряна') },
-      { type: 'Менеджер', icon: '@', label: 'Надежда: КАМ Enterprise / Рекорд речи 12/13 (1 звонок • 500 000 ₽)', action: () => filterRepAudit('Надежда') },
-      { type: 'Менеджер', icon: '@', label: 'Виктория: Квалификация / 100% Next Step (2 звонка • 1 000 000 ₽)', action: () => filterRepAudit('Виктория') },
-      { type: 'Менеджер', icon: '@', label: 'Светлана: P0 Риск срыва / 0% Next Step (2 звонка • 1 000 000 ₽)', action: () => filterRepAudit('Светлана') },
+      // Live Deals from CALLS_DATA
+      const dealItems = CALLS_DATA.map(c => ({
+        type: 'Сделка',
+        icon: '§',
+        label: `${c.deal_title || c.id} (${c.manager || 'Менеджер'} • ${c.amount || '0 ₽'})`,
+        action: () => { switchTab('audit'); openCallModal(c.id); }
+      }));
 
-      // Quick Actions
-      { type: 'Действие', icon: '↵', label: 'Экспорт реестра звонков в CSV', action: () => exportCallsToCSV() },
-      { type: 'Действие', icon: '↵', label: 'Открыть Executive One-Pager (PDF/Печать)', action: () => openOnePagerModal() },
-      { type: 'Действие', icon: '↵', label: 'Синхронизировать CRM & n8n (SSOT Re-Sync)', action: () => triggerSyncSimulation() },
-      { type: 'Действие', icon: '↵', label: 'Включить ультра-плотный режим (Excel Pro 34px)', action: () => setTableDensity('excel-pro') },
-      { type: 'Действие', icon: '↵', label: 'Включить комфортный режим таблицы (Comfort)', action: () => setTableDensity('comfort') },
-      { type: 'Действие', icon: '↵', label: 'Выйти из учетной записи (PIN Gate)', action: () => logout() }
-    ];
+      // Live Reps from CALLS_DATA
+      const managers = Array.from(new Set(CALLS_DATA.map(c => c.manager).filter(Boolean)));
+      const mgrItems = managers.map(mgr => ({
+        type: 'Менеджер',
+        icon: '@',
+        label: `${mgr}: аудит звонков (${CALLS_DATA.filter(c => c.manager === mgr).length} звонков)`,
+        action: () => filterRepAudit(mgr)
+      }));
+
+      return [...baseItems, ...dealItems, ...mgrItems];
+    }
 
     function openCommandPalette() {
       const overlay = document.getElementById('cmdPaletteOverlay');
@@ -2588,7 +2383,7 @@ let CALLS_DATA = [
       if (!resContainer) return;
       const q = (query || '').trim().toLowerCase();
 
-      filteredCmdItems = ALL_CMD_ITEMS.filter(item => {
+      filteredCmdItems = getCommandPaletteItems().filter(item => {
         if (item.label.includes('Админ-кабинет') && !isAdminAuthorized()) {
           return false;
         }
@@ -2688,7 +2483,7 @@ let CALLS_DATA = [
 
     async function fetchLiveCallsData(showFeedback = false) {
       try {
-        const res = await fetch('/api/v1/calls/data?tenant_id=TNT-001');
+        const res = await fetch(`${REVOPS_API_BASE}/api/v1/calls/data?tenant_id=TNT-001`);
         if (!res.ok) throw new Error('API status ' + res.status);
         const data = await res.json();
         if (data && Array.isArray(data.calls)) {
@@ -2711,7 +2506,10 @@ let CALLS_DATA = [
     function initWebSocketListener() {
       if (liveWs && liveWs.readyState === WebSocket.OPEN) return;
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/org/TNT-001`;
+      const wsHost = (typeof window !== 'undefined' && window.location.hostname.includes('ai-rop.ru') && !window.location.hostname.startsWith('report.'))
+        ? 'report.ai-rop.ru'
+        : window.location.host;
+      const wsUrl = `${protocol}//${wsHost}/ws/org/TNT-001`;
       try {
         liveWs = new WebSocket(wsUrl);
         liveWs.onopen = () => {
@@ -2770,22 +2568,230 @@ let CALLS_DATA = [
         initSpeechRadarChart(repName);
       }
       if (typeof initRepPerformanceChart === 'function') initRepPerformanceChart();
-      if (typeof updateSimulation === 'function') updateSimulation();
+      if (typeof updateSimulation === 'function') updateSimulation(false);
 
       // Recalculate Fact and SSOT from live data
       let totalFact = 0;
       CALLS_DATA.forEach(c => {
-        if (c.status === 'won') totalFact += 500000;
+        if (c.status === 'won') {
+          const rawAmt = c.amount ? parseInt(String(c.amount).replace(/\D/g, '')) : 500000;
+          totalFact += (rawAmt || 500000);
+        }
       });
 
       const factVal = document.getElementById('metricFactVal');
-      if (factVal) animateCounter(factVal, totalFact > 0 ? totalFact : 500000, 900);
+      if (factVal) animateCounter(factVal, totalFact, 900);
 
       const ssotVal = document.getElementById('metricSsotVal');
       if (ssotVal) {
-        const computedSsot = Math.max(1200000, CALLS_DATA.length * 250000);
+        const computedSsot = CALLS_DATA.length * 250000;
         animateCounter(ssotVal, computedSsot, 900);
       }
+
+      const factBadge = document.getElementById('metricFactBadge');
+      if (factBadge) {
+        const plan = 5000000;
+        const pct = ((totalFact / plan) * 100).toFixed(1);
+        factBadge.textContent = `${pct}%`;
+      }
+
+      const defVal = document.getElementById('metricDeficitVal');
+      if (defVal) {
+        const plan = 5000000;
+        const diff = totalFact - plan;
+        defVal.textContent = diff < 0 ? `-${(Math.abs(diff)/1000000).toFixed(1)}M ₽` : `+${(diff/1000000).toFixed(1)}M ₽`;
+      }
+
+      const ssotTip = document.getElementById('metricSsotTooltip');
+      if (ssotTip) {
+        const computedSsot = CALLS_DATA.length * 250000;
+        ssotTip.textContent = computedSsot > 0 ? `${(computedSsot / 1000000).toFixed(2)}M ₽ SSOT` : '0 ₽ SSOT';
+      }
+
+      // Update recent calls in Pulse Tab
+      renderPulseRecentCalls();
+      // Update funnel in Pulse Tab
+      renderPulseFunnel();
+      // Update Donut, Spline, Dissection and Rings
+      updateDevelopBentoCharts();
+
+      // Update Tab 3 Podium
+      const pCards = document.getElementById('ropPedestalCards');
+      const pEmpty = document.getElementById('ropPedestalEmpty');
+      if (pCards && pEmpty) {
+        pCards.style.display = CALLS_DATA.length === 0 ? 'none' : 'block';
+        pEmpty.style.display = CALLS_DATA.length === 0 ? 'block' : 'none';
+      }
+    }
+
+    function renderPulseRecentCalls() {
+      const container = document.getElementById('pulseRecentCallsList');
+      const badgeCount = document.getElementById('pulseRecentCallsCount');
+      if (badgeCount) badgeCount.textContent = `Все (${CALLS_DATA.length})`;
+      if (!container) return;
+
+      if (CALLS_DATA.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+            <div style="font-size: 1.8rem; margin-bottom: 6px; opacity: 0.5;">🎙️</div>
+            <strong style="color: #fff; font-size: 0.88rem; display: block; margin-bottom: 2px;">Нет звонков</strong>
+            <div style="font-size: 0.72rem; color: var(--text-secondary);">Ожидание поступления звонков из телефонии CRM через n8n</div>
+          </div>
+        `;
+        return;
+      }
+
+      const topCalls = CALLS_DATA.slice(0, 4);
+      let html = '';
+      topCalls.forEach(call => {
+        let iconClass = 'tx-icon-purple';
+        let valClass = call.status === 'won' ? 'val-won' : (call.status === 'risk' ? 'val-lost' : 'val-info');
+        let scoreClass = call.score >= 11 ? 'score-won' : (call.score >= 8 ? 'score-info' : 'score-lost');
+        let scoreLabel = call.score >= 11 ? `${call.score}/13 Эталон` : (call.score >= 8 ? `${call.score}/13 Норма` : `${call.score}/13 Слив`);
+        html += `
+          <div class="develop-tx-item" onclick="openCallModal('${call.id}')" style="cursor: pointer;">
+            <div class="develop-tx-icon ${iconClass}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+            </div>
+            <div class="develop-tx-details">
+              <div class="develop-tx-name">${call.manager || 'Менеджер'} &bull; <span class="score-badge ${scoreClass}">${scoreLabel}</span></div>
+              <div class="develop-tx-time">${call.client || 'Клиент'}</div>
+            </div>
+            <div class="develop-tx-val ${valClass}">${call.amount || '0 ₽'}</div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function renderPulseFunnel() {
+      const totalCalls = CALLS_DATA.length;
+      const countWon = CALLS_DATA.filter(c => c.status === 'won').length;
+      const countZoom = CALLS_DATA.filter(c => c.next_step === 1 || (c.cr && c.cr[0] === 1)).length;
+      const countOffer = CALLS_DATA.filter(c => c.cr && c.cr[7] === 1).length;
+      const countContract = CALLS_DATA.filter(c => c.cr && c.cr[11] === 1).length;
+
+      const val1 = totalCalls * 500000;
+      const val2 = countZoom * 500000;
+      const val3 = countOffer * 500000;
+      const val4 = countContract * 500000;
+      const val5 = countWon * 500000;
+
+      const fVal1 = document.getElementById('funnelVal1');
+      const fVal2 = document.getElementById('funnelVal2');
+      const fVal3 = document.getElementById('funnelVal3');
+      const fVal4 = document.getElementById('funnelVal4');
+      const fVal5 = document.getElementById('funnelVal5');
+
+      const fFill1 = document.getElementById('funnelFill1');
+      const fFill2 = document.getElementById('funnelFill2');
+      const fFill3 = document.getElementById('funnelFill3');
+      const fFill4 = document.getElementById('funnelFill4');
+      const fFill5 = document.getElementById('funnelFill5');
+
+      const maxVal = Math.max(val1, 500000);
+      if (fVal1) fVal1.textContent = val1.toLocaleString('ru-RU') + ' ₽';
+      if (fVal2) fVal2.textContent = val2.toLocaleString('ru-RU') + ' ₽';
+      if (fVal3) fVal3.textContent = val3.toLocaleString('ru-RU') + ' ₽';
+      if (fVal4) fVal4.textContent = val4.toLocaleString('ru-RU') + ' ₽';
+      if (fVal5) fVal5.textContent = val5.toLocaleString('ru-RU') + ' ₽';
+
+      if (fFill1) fFill1.style.width = totalCalls > 0 ? `${Math.round((val1 / maxVal) * 100)}%` : '0%';
+      if (fFill2) fFill2.style.width = totalCalls > 0 ? `${Math.round((val2 / maxVal) * 100)}%` : '0%';
+      if (fFill3) fFill3.style.width = totalCalls > 0 ? `${Math.round((val3 / maxVal) * 100)}%` : '0%';
+      if (fFill4) fFill4.style.width = totalCalls > 0 ? `${Math.round((val4 / maxVal) * 100)}%` : '0%';
+      if (fFill5) fFill5.style.width = totalCalls > 0 ? `${Math.round((val5 / maxVal) * 100)}%` : '0%';
+    }
+
+    function updateDevelopBentoCharts() {
+      const total = CALLS_DATA.length;
+      const wonCount = CALLS_DATA.filter(c => c.status === 'won').length;
+      const zoomCount = CALLS_DATA.filter(c => c.next_step === 1).length;
+      const nextStepCount = CALLS_DATA.filter(c => c.cr && c.cr[0] === 1).length;
+      const riskCount = CALLS_DATA.filter(c => c.status === 'risk').length;
+      const lostCount = CALLS_DATA.filter(c => c.score < 7).length;
+
+      // Donut Chart
+      if (typeof developDonutChartInstance !== 'undefined' && developDonutChartInstance) {
+        if (total === 0) {
+          developDonutChartInstance.data.datasets[0].data = [1];
+          developDonutChartInstance.data.datasets[0].backgroundColor = ['rgba(255, 255, 255, 0.05)'];
+        } else {
+          developDonutChartInstance.data.datasets[0].data = [
+            Math.round((wonCount / total) * 100),
+            Math.round((zoomCount / total) * 100),
+            Math.round((nextStepCount / total) * 100),
+            Math.round((riskCount / total) * 100),
+            Math.round((lostCount / total) * 100)
+          ];
+          developDonutChartInstance.data.datasets[0].backgroundColor = ['#8b5cf6', '#6366f1', '#38bdf8', '#f59e0b', '#f43f5e'];
+        }
+        developDonutChartInstance.update('none');
+
+        const centerNum = document.getElementById('donutCenterNum');
+        const centerSub = document.getElementById('donutCenterSub');
+        if (centerNum) centerNum.textContent = total > 0 ? `${Math.round((wonCount / total) * 100)}%` : '0%';
+        if (centerSub) centerSub.textContent = total > 0 ? 'Core' : '0 звонков';
+      }
+
+      // Spline Chart
+      if (typeof developSplineChartInstance !== 'undefined' && developSplineChartInstance) {
+        if (total === 0) {
+          developSplineChartInstance.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0];
+          developSplineChartInstance.data.datasets[1].data = [0, 0, 0, 0, 0, 0, 0];
+        } else {
+          const dailyWon = Array(7).fill(0);
+          CALLS_DATA.forEach((c, idx) => {
+            const dayIdx = idx % 7;
+            if (c.status === 'won') dailyWon[dayIdx] += 500;
+          });
+          developSplineChartInstance.data.datasets[0].data = dailyWon;
+        }
+        developSplineChartInstance.update('none');
+      }
+
+      // Dissection Chart
+      if (typeof developDissectionChartInstance !== 'undefined' && developDissectionChartInstance) {
+        if (total === 0) {
+          developDissectionChartInstance.data.datasets[0].data = Array(12).fill(0);
+          developDissectionChartInstance.data.datasets[1].data = Array(12).fill(0);
+        }
+        developDissectionChartInstance.update('none');
+      }
+
+      // Spending Rings
+      const wonPct = total > 0 ? Math.round((wonCount / total) * 100) : 0;
+      const nsPct = total > 0 ? Math.round((CALLS_DATA.filter(c => c.next_step === 1 || (c.cr && c.cr[0] === 1)).length / total) * 100) : 0;
+      const docPct = total > 0 ? Math.round((CALLS_DATA.filter(c => c.cr && c.cr[11] === 1).length / total) * 100) : 0;
+      const payPct = total > 0 ? Math.round((wonCount / total) * 100) : 0;
+
+      const rValWon = document.getElementById('ringValWon');
+      const rFillWon = document.getElementById('ringFillWon');
+      if (rValWon) rValWon.textContent = `${wonPct}%`;
+      if (rFillWon) rFillWon.setAttribute('stroke-dasharray', `${wonPct}, 100`);
+
+      const rValNs = document.getElementById('ringValNs');
+      const rFillNs = document.getElementById('ringFillNs');
+      if (rValNs) rValNs.textContent = `${nsPct}%`;
+      if (rFillNs) rFillNs.setAttribute('stroke-dasharray', `${nsPct}, 100`);
+
+      const rValDoc = document.getElementById('ringValDoc');
+      const rFillDoc = document.getElementById('ringFillDoc');
+      if (rValDoc) rValDoc.textContent = `${docPct}%`;
+      if (rFillDoc) rFillDoc.setAttribute('stroke-dasharray', `${docPct}, 100`);
+
+      const rValPay = document.getElementById('ringValPay');
+      const rFillPay = document.getElementById('ringFillPay');
+      if (rValPay) rValPay.textContent = `${payPct}%`;
+      if (rFillPay) rFillPay.setAttribute('stroke-dasharray', `${payPct}, 100`);
+
+      // Sidebar badges
+      const sbBadgeAudit = document.getElementById('sbBadgeAudit');
+      if (sbBadgeAudit) sbBadgeAudit.textContent = `${total}`;
+      const sbBadgeRop = document.getElementById('sbBadgeRop');
+      if (sbBadgeRop) sbBadgeRop.textContent = `${total} сд.`;
+      const syncBadge = document.getElementById('syncStatusBadge');
+      if (syncBadge) syncBadge.textContent = `${total} СИНХРОНИЗИРОВАНО`;
     }
 
     async function triggerSyncSimulation() {
@@ -3010,9 +3016,6 @@ async function triggerSelfHealingAudit() {
 // ==========================================================================
 // ADMIN DASHBOARD & FLEET CONTROL CENTER
 // ==========================================================================
-const REVOPS_API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? ''
-  : (window.location.hostname.includes('ai-rop.ru') && !window.location.hostname.startsWith('report.') ? 'https://report.ai-rop.ru' : '');
 
 function getAdminAuthHeaders() {
   const headers = { 'Content-Type': 'application/json' };

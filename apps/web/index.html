@@ -4279,7 +4279,7 @@
         <button id="sb-rop" class="mp-nav-item" onclick="switchTab('rop')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span>
           <span class="mp-nav-label">3. Пульт РОПа 15 мин</span>
-          <span class="badge-lost" style="font-size: 0.62rem; margin-left: auto;">5 сд.</span>
+          <span class="badge-lost" id="sbBadgeRop" style="font-size: 0.62rem; margin-left: auto;">0 сд.</span>
         </button>
       </div>
 
@@ -4289,7 +4289,7 @@
         <button id="sb-audit" class="mp-nav-item" onclick="switchTab('audit')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 19v4m-4 0h8"/></svg></span>
           <span class="mp-nav-label">4. ИИ-Аудит звонков</span>
-          <span class="badge-info" style="font-size: 0.62rem; margin-left: auto;">10</span>
+          <span class="badge-info" id="sbBadgeAudit" style="font-size: 0.62rem; margin-left: auto;">0</span>
         </button>
         <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
@@ -4424,18 +4424,18 @@
           
           <!-- Row 1: Editorial Hybrid KPI Block (Linear/Vercel style) -->
           <div class="develop-editorial-kpis" style="position: relative; display: grid; grid-template-columns: 1.35fr 1fr; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 28px; margin-bottom: 8px;">
-            <button class="card-ai-ask" onclick="openAiAsk('Что значит дефицит 4.5M?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
+            <button class="card-ai-ask" onclick="openAiAsk('Что значит дефицит плана?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
             <!-- Hero — без рамки -->
             <div style="padding-right: 36px;">
               <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
                 <div class="kpi-hero-label" style="margin-bottom: 0;">Главный KPI &bull; Октябрь 2026</div>
                 <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
               </div>
-              <div class="kpi-hero kpi-hero-live" id="metricFactVal">500 000 ₽</div>
+              <div class="kpi-hero kpi-hero-live" id="metricFactVal">0 ₽</div>
               <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
                 <div class="develop-pill pill-pos">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
-                  <span id="metricFactBadge">+10.0%</span>
+                  <span id="metricFactBadge">0.0%</span>
                   <span class="pill-sub">к плану</span>
                 </div>
                 <svg class="develop-sparkline" viewBox="0 0 120 40" style="width: 100px; height: 32px;">
@@ -4459,9 +4459,9 @@
               </div>
               <div class="kpi-secondary" id="metricPlanVal">5 000 000 ₽</div>
               <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-                <div class="develop-pill pill-neg">
+                <div class="develop-pill pill-neg" id="metricDeficitPill">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-                  <span>-4.5M ₽</span>
+                  <span id="metricDeficitVal">-5.0M ₽</span>
                   <span class="pill-sub">дефицит плана</span>
                 </div>
                 <svg class="develop-sparkline" viewBox="0 0 120 40" style="width: 100px; height: 32px;">
@@ -4503,51 +4503,13 @@
             <div class="develop-card">
               <div class="develop-card-header">
                 <span class="develop-card-title">Последние звонки</span>
-                <span class="develop-dropdown" onclick="switchTab('audit')">Все (10) <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                <span class="develop-dropdown" id="pulseRecentCallsCount" onclick="switchTab('audit')">Все (0) <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
               </div>
-              <div class="develop-tx-list">
-                <div class="develop-tx-item" onclick="openCallModal('b24_activity_80')" style="cursor: pointer;">
-                  <div class="develop-tx-icon tx-icon-purple">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-                  </div>
-                  <div class="develop-tx-details">
-                    <div class="develop-tx-name">Надежда &bull; <span class="score-badge score-won">12/13 Эталон</span></div>
-                    <div class="develop-tx-time">Сегодня, 15:45 &bull; Геодезия и Экология</div>
-                  </div>
-                  <div class="develop-tx-val val-won">+500 000 ₽</div>
-                </div>
-
-                <div class="develop-tx-item" onclick="openCallModal('b24_activity_86')" style="cursor: pointer;">
-                  <div class="develop-tx-icon tx-icon-pink">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                  </div>
-                  <div class="develop-tx-details">
-                    <div class="develop-tx-name">Виктория &bull; <span class="score-badge score-info">8/13 Норма</span></div>
-                    <div class="develop-tx-time">Сегодня, 14:10 &bull; Частный клиент (Николай Петрович)</div>
-                  </div>
-                  <div class="develop-tx-val val-won">+500 000 ₽</div>
-                </div>
-
-                <div class="develop-tx-item" onclick="openCallModal('b24_activity_78')" style="cursor: pointer;">
-                  <div class="develop-tx-icon tx-icon-cyan">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
-                  </div>
-                  <div class="develop-tx-details">
-                    <div class="develop-tx-name">Светлана &bull; <span class="score-badge score-lost">7/13 Слив</span></div>
-                    <div class="develop-tx-time">Сегодня, 12:00 &bull; Клиника стоматологии</div>
-                  </div>
-                  <div class="develop-tx-val val-lost">0 ₽</div>
-                </div>
-
-                <div class="develop-tx-item" onclick="openCallModal('b24_activity_96')" style="cursor: pointer;">
-                  <div class="develop-tx-icon tx-icon-amber">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  </div>
-                  <div class="develop-tx-details">
-                    <div class="develop-tx-name">Заряна &bull; <span class="score-badge score-won">10/13 Договор</span></div>
-                    <div class="develop-tx-time">Сегодня, 10:15 &bull; УЗИП Системс</div>
-                  </div>
-                  <div class="develop-tx-val val-won">+500 000 ₽</div>
+              <div class="develop-tx-list" id="pulseRecentCallsList">
+                <div style="padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+                  <div style="font-size: 1.8rem; margin-bottom: 6px; opacity: 0.5;">🎙️</div>
+                  <strong style="color: #fff; font-size: 0.88rem; display: block; margin-bottom: 2px;">Нет звонков</strong>
+                  <div style="font-size: 0.72rem; color: var(--text-secondary);">Ожидание поступления звонков из телефонии CRM через n8n</div>
                 </div>
               </div>
             </div>
@@ -4558,41 +4520,41 @@
                 <span class="develop-card-title">Воронка продаж SSOT</span>
                 <span class="develop-dropdown" onclick="switchTab('rop')">Октябрь <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
               </div>
-              <div class="develop-inv-list">
+              <div class="develop-inv-list" id="pulseFunnelList">
                 <div class="develop-inv-item">
                   <div class="develop-inv-top">
                     <span class="develop-inv-name">1. Квалификация</span>
-                    <span class="develop-inv-val">4 500 000 ₽</span>
+                    <span class="develop-inv-val" id="funnelVal1">0 ₽</span>
                   </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 90%; background: #7c3aed;"></div></div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill1" style="width: 0%; background: #7c3aed;"></div></div>
                 </div>
                 <div class="develop-inv-item">
                   <div class="develop-inv-top">
                     <span class="develop-inv-name">2. Встреча проведена / Zoom</span>
-                    <span class="develop-inv-val">2 800 000 ₽</span>
+                    <span class="develop-inv-val" id="funnelVal2">0 ₽</span>
                   </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 62%; background: #8b5cf6;"></div></div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill2" style="width: 0%; background: #8b5cf6;"></div></div>
                 </div>
                 <div class="develop-inv-item">
                   <div class="develop-inv-top">
                     <span class="develop-inv-name">3. Коммерческое предложение</span>
-                    <span class="develop-inv-val">1 500 000 ₽</span>
+                    <span class="develop-inv-val" id="funnelVal3">0 ₽</span>
                   </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 40%; background: #00d4ff;"></div></div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill3" style="width: 0%; background: #00d4ff;"></div></div>
                 </div>
                 <div class="develop-inv-item">
                   <div class="develop-inv-top">
                     <span class="develop-inv-name">4. Согласование договора</span>
-                    <span class="develop-inv-val">850 000 ₽</span>
+                    <span class="develop-inv-val" id="funnelVal4">0 ₽</span>
                   </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 25%; background: #f36594;"></div></div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill4" style="width: 0%; background: #f36594;"></div></div>
                 </div>
                 <div class="develop-inv-item">
                   <div class="develop-inv-top">
                     <span class="develop-inv-name">5. Оплата (Closed-Won)</span>
-                    <span class="develop-inv-val">500 000 ₽</span>
+                    <span class="develop-inv-val" id="funnelVal5">0 ₽</span>
                   </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 15%; background: #34d399;"></div></div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill5" style="width: 0%; background: #34d399;"></div></div>
                 </div>
               </div>
             </div>
@@ -4618,7 +4580,7 @@
                 <span class="bank-card-exp">LIVE SYNC</span>
               </div>
               <div class="bank-card-bal-lbl" style="margin-top: 10px;">Взвешенный прогноз SSOT</div>
-              <div class="bank-card-balance" id="metricSsotVal">2 375 000 ₽</div>
+              <div class="bank-card-balance" id="metricSsotVal">0 ₽</div>
               <div class="bank-card-bottom-row" style="margin-top: 4px; padding-top: 8px; border-top: 1px solid rgba(124, 58, 237, 0.20);">
                 <span style="font-size: 0.70rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
                   <svg width="12" height="12" fill="none" stroke="#10b981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
@@ -4639,16 +4601,16 @@
               <div class="donut-chart-box">
                 <canvas id="developDonutChart"></canvas>
                 <div class="donut-center-badge">
-                  <span class="donut-center-num">70%</span>
-                  <span class="donut-center-sub">Core</span>
+                  <span class="donut-center-num" id="donutCenterNum">0%</span>
+                  <span class="donut-center-sub" id="donutCenterSub">0 звонков</span>
                 </div>
               </div>
               <div class="donut-legend-list">
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #8b5cf6;"></span><span>Эталонные звонки (34%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #6366f1;"></span><span>Встреча назначена (25%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #38bdf8;"></span><span>Следующий шаг (17%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f59e0b;"></span><span>Риск срыва сделки (12%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f43f5e;"></span><span>Fake Yes сливы (6%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #8b5cf6;"></span><span>Эталонные звонки (0%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #6366f1;"></span><span>Встреча назначена (0%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #38bdf8;"></span><span>Следующий шаг (0%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f59e0b;"></span><span>Риск срыва сделки (0%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f43f5e;"></span><span>Fake Yes сливы (0%)</span></div>
               </div>
             </div>
 
@@ -4662,40 +4624,40 @@
             <div class="spending-rings-flex">
               <div class="spending-ring-box">
                 <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-purple" stroke-dasharray="57, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val">57%</span>
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-purple" id="ringFillWon" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val" id="ringValWon">0%</span>
                 </div>
                 <span class="spending-ring-title">Эталон</span>
               </div>
 
               <div class="spending-ring-box">
                 <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-pink" stroke-dasharray="76, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val">76%</span>
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-pink" id="ringFillNs" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val" id="ringValNs">0%</span>
                 </div>
                 <span class="spending-ring-title">Next Step</span>
               </div>
 
               <div class="spending-ring-box">
                 <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-cyan" stroke-dasharray="21, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val">21%</span>
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-cyan" id="ringFillDoc" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val" id="ringValDoc">0%</span>
                 </div>
                 <span class="spending-ring-title">Договор</span>
               </div>
 
               <div class="spending-ring-box">
                 <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-green" stroke-dasharray="34, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val">34%</span>
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-green" id="ringFillPay" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val" id="ringValPay">0%</span>
                 </div>
                 <span class="spending-ring-title">Оплата</span>
               </div>
 
               <div class="spending-ring-box">
                 <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-violet" stroke-dasharray="10, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val">10%</span>
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-violet" id="ringFillPlan" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val" id="ringValPlan">0%</span>
                 </div>
                 <span class="spending-ring-title">План</span>
               </div>
@@ -4715,7 +4677,8 @@
             <div style="height: 180px; position: relative; width: 100%;">
               <canvas id="developSplineChart"></canvas>
               <div class="develop-floating-tooltip">
-                <span>2.37M ₽ SSOT</span>
+                <span id="metricSsotTooltip">0 ₽ SSOT</span>
+              </div>
               </div>
               <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
             </div>
@@ -4957,96 +4920,105 @@
           </div>
         </div>
 
-        <div class="podium-grid">
-          <!-- 2nd Place: Надежда (Left) -->
-          <div class="podium-card rank-2" style="cursor: pointer;" onclick="filterRepAudit('Надежда')" title="Нажмите для фильтрации звонков Надежды">
-            <div class="podium-avatar-wrap">
-              <div class="podium-avatar">Н</div>
+        <div id="ropPedestalCards" style="display: none;">
+          <div class="podium-grid">
+            <!-- 2nd Place: Надежда (Left) -->
+            <div class="podium-card rank-2" style="cursor: pointer;" onclick="filterRepAudit('Надежда')" title="Нажмите для фильтрации звонков Надежды">
+              <div class="podium-avatar-wrap">
+                <div class="podium-avatar">Н</div>
+              </div>
+              <div class="podium-rep-name">Надежда</div>
+              <div class="podium-role-badge">2 МЕСТО &bull; ЭТАЛОН СКРИПТА</div>
+              <div class="podium-metrics-box">
+                <div class="podium-metric-row">
+                  <span style="color: var(--text-muted);">Качество речи:</span>
+                  <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">12.0 / 13 (РЕКОРД)</span>
+                </div>
+                <div class="podium-metric-row">
+                  <span style="color: var(--text-muted);">В пайплайне:</span>
+                  <strong style="color: #fff; font-family: 'JetBrains Mono', monospace;">500 000 ₽</strong>
+                </div>
+                <div class="podium-metric-row">
+                  <span style="color: var(--text-muted);">Next Step:</span>
+                  <span style="color: #34d399; font-weight: 700;">100% (1 из 1)</span>
+                </div>
+              </div>
             </div>
-            <div class="podium-rep-name">Надежда</div>
-            <div class="podium-role-badge">2 МЕСТО &bull; ЭТАЛОН СКРИПТА</div>
-            <div class="podium-metrics-box">
-              <div class="podium-metric-row">
-                <span style="color: var(--text-muted);">Качество речи:</span>
-                <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">12.0 / 13 (РЕКОРД)</span>
+
+            <!-- 1st Place: Заряна (Center - Raised) -->
+            <div class="podium-card rank-1" style="cursor: pointer;" onclick="filterRepAudit('Заряна')" title="Нажмите для фильтрации звонков Заряны">
+              <div class="podium-avatar-wrap">
+                <span class="podium-crown" style="font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fbbf24;">ТОП-1</span>
+                <div class="podium-avatar">З</div>
               </div>
-              <div class="podium-metric-row">
-                <span style="color: var(--text-muted);">В пайплайне:</span>
-                <strong style="color: #fff; font-family: 'JetBrains Mono', monospace;">500 000 ₽</strong>
+              <div class="podium-rep-name">Заряна</div>
+              <div class="podium-role-badge" style="color: #f59e0b; font-weight: 800;">1 МЕСТО &bull; ТОП-ПЕРФОРМЕР</div>
+              <div class="podium-metrics-box" style="border: 1px solid rgba(245, 158, 11, 0.25);">
+                <div class="podium-metric-row">
+                  <span style="color: var(--text-muted);">Качество речи:</span>
+                  <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">9.8 / 13 (ТОП-БАЛЛ)</span>
+                </div>
+                <div class="podium-metric-row">
+                  <span style="color: var(--text-muted);">В пайплайне:</span>
+                  <strong style="color: #fbbf24; font-family: 'JetBrains Mono', monospace;">2 500 000 ₽ (5 сделок)</strong>
+                </div>
+                <div class="podium-metric-row">
+                  <span style="color: var(--text-muted);">Next Step:</span>
+                  <span style="color: #34d399; font-weight: 700;">80% (4 из 5)</span>
+                </div>
               </div>
-              <div class="podium-metric-row">
-                <span style="color: var(--text-muted);">Next Step:</span>
-                <span style="color: #34d399; font-weight: 700;">100% (1 из 1)</span>
+            </div>
+
+            <!-- 3rd Place: Виктория (Right) -->
+            <div class="podium-card rank-3" style="cursor: pointer;" onclick="filterRepAudit('Виктория')" title="Нажмите для фильтрации звонков Виктории">
+              <div class="podium-avatar-wrap">
+                <div class="podium-avatar">В</div>
+              </div>
+              <div class="podium-rep-name">Виктория</div>
+              <div class="podium-role-badge">3 МЕСТО &bull; СТАБИЛЬНОСТЬ</div>
+              <div class="podium-metrics-box">
+                <div class="podium-metric-row">
+                  <span style="color: var(--text-muted);">Качество речи:</span>
+                  <span class="delta-badge delta-cyan" style="padding: 1px 6px; font-size: 0.68rem;">9.5 / 13 (НОРМА)</span>
+                </div>
+                <div class="podium-metric-row">
+                  <span style="color: var(--text-muted);">В пайплайне:</span>
+                  <strong style="color: #fff; font-family: 'JetBrains Mono', monospace;">1 000 000 ₽ (2 сделки)</strong>
+                </div>
+                <div class="podium-metric-row">
+                  <span style="color: var(--text-muted);">Next Step:</span>
+                  <span style="color: #34d399; font-weight: 700;">100% (2 из 2)</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- 1st Place: Заряна (Center - Raised) -->
-          <div class="podium-card rank-1" style="cursor: pointer;" onclick="filterRepAudit('Заряна')" title="Нажмите для фильтрации звонков Заряны">
-            <div class="podium-avatar-wrap">
-              <span class="podium-crown" style="font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fbbf24;">ТОП-1</span>
-              <div class="podium-avatar">З</div>
-            </div>
-            <div class="podium-rep-name">Заряна</div>
-            <div class="podium-role-badge" style="color: #f59e0b; font-weight: 800;">1 МЕСТО &bull; ТОП-ПЕРФОРМЕР</div>
-            <div class="podium-metrics-box" style="border: 1px solid rgba(245, 158, 11, 0.25);">
-              <div class="podium-metric-row">
-                <span style="color: var(--text-muted);">Качество речи:</span>
-                <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">9.8 / 13 (ТОП-БАЛЛ)</span>
-              </div>
-              <div class="podium-metric-row">
-                <span style="color: var(--text-muted);">В пайплайне:</span>
-                <strong style="color: #fbbf24; font-family: 'JetBrains Mono', monospace;">2 500 000 ₽ (5 сделок)</strong>
-              </div>
-              <div class="podium-metric-row">
-                <span style="color: var(--text-muted);">Next Step:</span>
-                <span style="color: #34d399; font-weight: 700;">80% (4 из 5)</span>
+          <!-- P0 Hazard Rep Alert Card -->
+          <div class="hazard-alert-strip" style="cursor: pointer;" onclick="filterRepAudit('Светлана')" title="Нажмите для разбора критических звонков Светланы">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div class="hazard-rep-avatar">С</div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="delta-badge delta-neg"><span class="delta-dot"></span>P0 ЗОНА КРИТИЧЕСКОГО РИСКА</span>
+                  <strong style="color: #fff; font-size: 0.88rem;">Светлана</strong>
+                  <span style="font-size: 0.74rem; color: #fca5a5;">(1 000 000 ₽ в работе &bull; 2 сделки)</span>
+                </div>
+                <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">
+                  Средний балл речи: <strong style="color: #fb7185;">5.5 / 13</strong> &bull; Брак Next Step: <strong style="color: #fb7185;">100% (2 звонка слиты без фиксации слота)</strong>
+                </div>
               </div>
             </div>
-          </div>
-
-          <!-- 3rd Place: Виктория (Right) -->
-          <div class="podium-card rank-3" style="cursor: pointer;" onclick="filterRepAudit('Виктория')" title="Нажмите для фильтрации звонков Виктории">
-            <div class="podium-avatar-wrap">
-              <div class="podium-avatar">В</div>
-            </div>
-            <div class="podium-rep-name">Виктория</div>
-            <div class="podium-role-badge">3 МЕСТО &bull; СТАБИЛЬНОСТЬ</div>
-            <div class="podium-metrics-box">
-              <div class="podium-metric-row">
-                <span style="color: var(--text-muted);">Качество речи:</span>
-                <span class="delta-badge delta-cyan" style="padding: 1px 6px; font-size: 0.68rem;">9.5 / 13 (НОРМА)</span>
-              </div>
-              <div class="podium-metric-row">
-                <span style="color: var(--text-muted);">В пайплайне:</span>
-                <strong style="color: #fff; font-family: 'JetBrains Mono', monospace;">1 000 000 ₽ (2 сделки)</strong>
-              </div>
-              <div class="podium-metric-row">
-                <span style="color: var(--text-muted);">Next Step:</span>
-                <span style="color: #34d399; font-weight: 700;">100% (2 из 2)</span>
-              </div>
-            </div>
+            <button class="btn btn-emerald" onclick="event.stopPropagation(); document.getElementById('script-case01').scrollIntoView({behavior: 'smooth'})" style="font-size: 0.74rem;">
+              <span>Разбор звонков и дожим (15 мин)</span>
+            </button>
           </div>
         </div>
 
-        <!-- P0 Hazard Rep Alert Card -->
-        <div class="hazard-alert-strip" style="cursor: pointer;" onclick="filterRepAudit('Светлана')" title="Нажмите для разбора критических звонков Светланы">
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <div class="hazard-rep-avatar">С</div>
-            <div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="delta-badge delta-neg"><span class="delta-dot"></span>P0 ЗОНА КРИТИЧЕСКОГО РИСКА</span>
-                <strong style="color: #fff; font-size: 0.88rem;">Светлана</strong>
-                <span style="font-size: 0.74rem; color: #fca5a5;">(1 000 000 ₽ в работе &bull; 2 сделки)</span>
-              </div>
-              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">
-                Средний балл речи: <strong style="color: #fb7185;">5.5 / 13</strong> &bull; Брак Next Step: <strong style="color: #fb7185;">100% (2 звонка слиты без фиксации слота)</strong>
-              </div>
-            </div>
-          </div>
-          <button class="btn btn-emerald" onclick="event.stopPropagation(); document.getElementById('script-case01').scrollIntoView({behavior: 'smooth'})" style="font-size: 0.74rem;">
-            <span>Разбор звонков и дожим (15 мин)</span>
-          </button>
+        <!-- Zero State Placeholder for Podium -->
+        <div id="ropPedestalEmpty" style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.08); border-radius: 12px; margin-top: 14px;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">🏆</div>
+          <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 4px;">Пьедестал рейтинга пуст (Нулевое состояние)</strong>
+          <div style="font-size: 0.74rem; color: var(--text-secondary);">Ожидание звонков менеджеров для автоматического расчёта рейтинга и зон риска</div>
         </div>
       </div>
 
@@ -5374,7 +5346,7 @@
             <input type="text" id="transcriptSearch" class="auth-input" style="padding-left: 36px; font-size: 0.82rem;" placeholder="Смысловой поиск по стенограммам (дорого, Битрикс, скидка, матрас, шеф, договор, инвестиции)..." oninput="filterCallsTable()">
             <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           </div>
-          <span id="searchResultBadge" class="badge-info" style="font-size: 0.76rem; padding: 6px 12px;">10 из 10 звонков</span>
+          <span id="searchResultBadge" class="badge-info" style="font-size: 0.76rem; padding: 6px 12px;">0 из 0 звонков</span>
           <button class="btn btn-ghost" onclick="clearSearch()" style="font-size: 0.74rem;">Сбросить</button>
         </div>
 
@@ -5382,11 +5354,7 @@
           <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
             <!-- Hidden selects for 100% programmatic & test compatibility -->
             <select id="filterManager" onchange="filterCallsTable()" style="display: none;">
-              <option value="all">Все менеджеры (4)</option>
-              <option value="Заряна">Заряна (5 звонков)</option>
-              <option value="Виктория">Виктория (2 звонка)</option>
-              <option value="Светлана">Светлана (2 звонка)</option>
-              <option value="Надежда">Надежда (1 звонок)</option>
+              <option value="all">Все менеджеры (0)</option>
             </select>
 
             <select id="filterStatus" onchange="filterCallsTable()" style="display: none;">
@@ -5400,11 +5368,7 @@
             <div class="segmented-pills-bar" id="pillManagerGroup">
               <span class="pills-label">Менеджер:</span>
               <div class="segmented-pills-group">
-                <button type="button" class="pill-btn active" data-rep="all" onclick="setPillManagerFilter('all')">Все (10)</button>
-                <button type="button" class="pill-btn" data-rep="Заряна" onclick="setPillManagerFilter('Заряна')"><span class="rep-avatar-xs rep-z">З</span> Заряна (5)</button>
-                <button type="button" class="pill-btn" data-rep="Виктория" onclick="setPillManagerFilter('Виктория')"><span class="rep-avatar-xs rep-v">В</span> Виктория (2)</button>
-                <button type="button" class="pill-btn" data-rep="Светлана" onclick="setPillManagerFilter('Светлана')"><span class="rep-avatar-xs rep-s">С</span> Светлана (2)</button>
-                <button type="button" class="pill-btn" data-rep="Надежда" onclick="setPillManagerFilter('Надежда')"><span class="rep-avatar-xs rep-n">Н</span> Надежда (1)</button>
+                <button type="button" class="pill-btn active" data-rep="all" onclick="setPillManagerFilter('all')">Все (0)</button>
               </div>
             </div>
 
@@ -5413,9 +5377,9 @@
               <span class="pills-label">Вердикт:</span>
               <div class="segmented-pills-group">
                 <button type="button" class="pill-btn active" data-status="all" onclick="setPillStatusFilter('all')">Все</button>
-                <button type="button" class="pill-btn" data-status="won" onclick="setPillStatusFilter('won')"><span class="status-dot dot-won"></span> Эталон (4)</button>
-                <button type="button" class="pill-btn" data-status="norm" onclick="setPillStatusFilter('norm')"><span class="status-dot dot-norm"></span> Норма (3)</button>
-                <button type="button" class="pill-btn" data-status="risk" onclick="setPillStatusFilter('risk')"><span class="status-dot dot-risk"></span> Слив (3)</button>
+                <button type="button" class="pill-btn" data-status="won" onclick="setPillStatusFilter('won')"><span class="status-dot dot-won"></span> Эталон (0)</button>
+                <button type="button" class="pill-btn" data-status="norm" onclick="setPillStatusFilter('norm')"><span class="status-dot dot-norm"></span> Норма (0)</button>
+                <button type="button" class="pill-btn" data-status="risk" onclick="setPillStatusFilter('risk')"><span class="status-dot dot-risk"></span> Слив (0)</button>
               </div>
             </div>
           </div>
@@ -5432,7 +5396,7 @@
         <button class="card-ai-ask" onclick="openAiAsk('Какие менеджеры чаще всего сливают Next Step?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
         <div class="bento-card-header">
           <span class="bento-card-title">Реестр звонков и сквозная сверка сделок (raw_calls &harr; raw_deals)</span>
-          <span class="badge-won">10 СИНХРОНИЗИРОВАНО</span>
+          <span class="badge-won" id="syncStatusBadge">0 СИНХРОНИЗИРОВАНО</span>
         </div>
       <!-- MPSTATS Ag-Grid Style Action Toolbar -->
       <div class="mp-ag-toolbar">
@@ -5458,7 +5422,7 @@
         </div>
 
         <div style="font-size: 0.72rem; color: var(--text-muted);">
-          Реестр звонков: <strong id="agRowsCount" style="color: #fff;">10 строк</strong> &bull; Strict JSON application/json
+          Реестр звонков: <strong id="agRowsCount" style="color: #fff;">0 строк</strong> &bull; Strict JSON application/json
         </div>
       </div>
         <div id="callsTableContainer">
