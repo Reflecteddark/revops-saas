@@ -1238,6 +1238,55 @@ const CALLS_DATA = [
         showToast('Готово', 'Текст готов к отправке клиенту.');
       });
     }
+    window.copyRescueScript = copyRescueScript;
+
+    // ==========================================================================
+    // ACCENT THEME SWITCHER (SNOWUI COLOR SCHEMES)
+    // ==========================================================================
+    function setAccentTheme(themeName) {
+      const root = document.documentElement;
+      const themes = {
+        cyan: {
+          brand: '#33d1ff',
+          brandGlow: 'rgba(51, 209, 255, 0.35)',
+          borderFocus: 'rgba(51, 209, 255, 0.45)'
+        },
+        purple: {
+          brand: '#b899eb',
+          brandGlow: 'rgba(184, 153, 235, 0.35)',
+          borderFocus: 'rgba(184, 153, 235, 0.45)'
+        },
+        emerald: {
+          brand: '#6be6d3',
+          brandGlow: 'rgba(107, 230, 211, 0.35)',
+          borderFocus: 'rgba(107, 230, 211, 0.45)'
+        },
+        amber: {
+          brand: '#ffb55b',
+          brandGlow: 'rgba(255, 181, 91, 0.35)',
+          borderFocus: 'rgba(255, 181, 91, 0.45)'
+        }
+      };
+
+      const t = themes[themeName] || themes.cyan;
+      root.style.setProperty('--brand', t.brand);
+      root.style.setProperty('--brand-glow', t.brandGlow);
+      root.style.setProperty('--border-focus', t.borderFocus);
+
+      document.querySelectorAll('.accent-dot').forEach(dot => {
+        if (dot.getAttribute('data-theme') === themeName) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+
+      try {
+        localStorage.setItem('revops_accent_theme', themeName);
+      } catch (e) {}
+      showToast('Тема оформления', `Установлен акцент: ${themeName.toUpperCase()}`);
+    }
+    window.setAccentTheme = setAccentTheme;
 
     // ==========================================================================
     // TOAST NOTIFICATION
@@ -1842,6 +1891,11 @@ const CALLS_DATA = [
       initSpotlight();
       initWaveformScrubbing();
 
+      const savedTheme = localStorage.getItem('revops_accent_theme') || 'cyan';
+      if (typeof setAccentTheme === 'function') {
+        setAccentTheme(savedTheme);
+      }
+
       const cmdInput = document.getElementById('cmdPaletteInput');
       if (cmdInput) {
         cmdInput.addEventListener('keydown', handleCmdPaletteKeydown);
@@ -2239,3 +2293,27 @@ function triggerSelfHealingAudit() {
     isSelfHealingActive = false;
   }, 1600);
 }
+
+// ==========================================================================
+// EXPOSE INTERACTIVE HANDLERS GLOBALLY ON WINDOW FOR INLINE ONCLICK EVENTS
+// ==========================================================================
+window.copyRescueScript = typeof copyRescueScript !== 'undefined' ? copyRescueScript : null;
+window.copyRescueScriptByCallId = typeof copyRescueScriptByCallId !== 'undefined' ? copyRescueScriptByCallId : null;
+window.setAccentTheme = typeof setAccentTheme !== 'undefined' ? setAccentTheme : null;
+window.copyPlaybookScript = typeof copyPlaybookScript !== 'undefined' ? copyPlaybookScript : null;
+window.setPillManagerFilter = typeof setPillManagerFilter !== 'undefined' ? setPillManagerFilter : null;
+window.setPillStatusFilter = typeof setPillStatusFilter !== 'undefined' ? setPillStatusFilter : null;
+window.setPillRadarRep = typeof setPillRadarRep !== 'undefined' ? setPillRadarRep : null;
+window.triggerSelfHealingAudit = typeof triggerSelfHealingAudit !== 'undefined' ? triggerSelfHealingAudit : null;
+window.recalcExpress = typeof recalcExpress !== 'undefined' ? recalcExpress : null;
+window.drillDownSkill = typeof drillDownSkill !== 'undefined' ? drillDownSkill : null;
+window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
+window.filterCallsTable = typeof filterCallsTable !== 'undefined' ? filterCallsTable : null;
+window.logout = typeof logout !== 'undefined' ? logout : null;
+window.toggleSidebar = typeof toggleSidebar !== 'undefined' ? toggleSidebar : null;
+window.openCommandPalette = typeof openCommandPalette !== 'undefined' ? openCommandPalette : null;
+window.closeCommandPalette = typeof closeCommandPalette !== 'undefined' ? closeCommandPalette : null;
+window.openOnePagerModal = typeof openOnePagerModal !== 'undefined' ? openOnePagerModal : null;
+window.closeOnePagerModal = typeof closeOnePagerModal !== 'undefined' ? closeOnePagerModal : null;
+window.triggerSyncSimulation = typeof triggerSyncSimulation !== 'undefined' ? triggerSyncSimulation : null;
+
