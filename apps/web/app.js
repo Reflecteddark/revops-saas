@@ -387,6 +387,19 @@ let CALLS_DATA = [
       document.body.style.overflow = 'hidden';
     }
 
+    function isAdminAuthorized() {
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocal) return true;
+      try {
+        const rawSession = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+        if (!rawSession) return false;
+        const session = JSON.parse(rawSession);
+        return Boolean(session && session.authenticated && (session.login === 'admin' || (session.role && session.role.toLowerCase().includes('admin'))));
+      } catch (e) {
+        return false;
+      }
+    }
+
     function applyAuthenticatedSession(session) {
       const overlay = document.getElementById('authOverlay');
       if (overlay) overlay.classList.add('authenticated');
@@ -394,6 +407,15 @@ let CALLS_DATA = [
       if (session && session.name) {
         const nameEl = document.getElementById('loggedUserName');
         if (nameEl) nameEl.textContent = session.name;
+      }
+
+      // Security & Privacy Gate: 10. Админ-кабинет
+      // Клиент никогда не видит админку. Она отображается ТОЛЬКО:
+      // 1) На локальном ПК разработчика (localhost / 127.0.0.1)
+      // 2) ИЛИ при авторизации под учетной записью 'admin'
+      const sbAdmin = document.getElementById('sb-admin');
+      if (sbAdmin) {
+        sbAdmin.style.display = isAdminAuthorized() ? 'flex' : 'none';
       }
     }
 
@@ -604,6 +626,18 @@ let CALLS_DATA = [
     }
 
     async function switchTab(tabId) {
+      if (tabId === 'admin' && !isAdminAuthorized()) {
+        showToast('Доступ ограничен', 'Раздел управления доступен только Администратору на локальном контуре.');
+        try {
+          const url = new URL(window.location.href);
+          if (url.searchParams.get('tab') === 'admin') {
+            url.searchParams.delete('tab');
+            window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+          }
+        } catch (e) {}
+        return switchTab('pulse');
+      }
+
       const apply = () => {
         ALL_TABS.forEach(t => {
           const btn = document.getElementById('tab-' + t) || document.getElementById('sb-' + t);
@@ -2261,7 +2295,11 @@ let CALLS_DATA = [
         const urlParams = new URLSearchParams(window.location.search);
         const targetTab = window.__INITIAL_TAB__ || urlParams.get('tab');
         if (targetTab && ALL_TABS.includes(targetTab)) {
-          switchTab(targetTab);
+          if (targetTab === 'admin' && !isAdminAuthorized()) {
+            switchTab('pulse');
+          } else {
+            switchTab(targetTab);
+          }
         }
       } catch (e) {}
     });
@@ -2466,6 +2504,9 @@ let CALLS_DATA = [
       const q = (query || '').trim().toLowerCase();
 
       filteredCmdItems = ALL_CMD_ITEMS.filter(item => {
+        if (item.label.includes('Админ-кабинет') && !isAdminAuthorized()) {
+          return false;
+        }
         if (!q) return true;
         return item.label.toLowerCase().includes(q) || item.type.toLowerCase().includes(q);
       });

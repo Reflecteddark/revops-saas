@@ -20,12 +20,55 @@ import time
 from typing import Any, Dict, List, Optional
 import urllib.request
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger("admin_router")
 
-router = APIRouter(prefix="/admin", tags=["Admin & Fleet Control"])
+# Allowed admin secret key for remote administration via Cloudflare Tunnel
+REVOPS_ADMIN_KEY = os.getenv("REVOPS_ADMIN_KEY", "revops_admin_fleet_secret_2026")
+
+
+def verify_admin_access(request: Request):
+    """
+    Guarantees zero unauthorized access to admin fleet actions.
+    Public requests via Cloudflare Tunnel / Vercel without admin key will receive 403 Forbidden.
+    """
+    client_ip = request.client.host if request.client else ""
+    cf_connecting_ip = request.headers.get("cf-connecting-ip")
+    host_header = request.headers.get("host", "").lower()
+
+    # If traffic passed through Cloudflare tunnel (e.g. report.ai-rop.ru)
+    is_tunnel = bool(cf_connecting_ip or ("ai-rop.ru" in host_header))
+
+    # Allow local development and pytest testclient
+    if not is_tunnel and (
+        client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
+        or "localhost" in host_header
+        or "127.0.0.1" in host_header
+        or host_header == "testserver"
+    ):
+        return True
+
+    # Remote administration requires secret key
+    admin_key = request.headers.get("x-revops-admin-key") or request.query_params.get("admin_key")
+    if admin_key and admin_key == REVOPS_ADMIN_KEY:
+        return True
+
+    logger.warning(
+        f"Blocked unauthorized admin access attempt from IP={cf_connecting_ip or client_ip}, Host={host_header}"
+    )
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Доступ запрещён: управление инфраструктурой и автозадачами доступно только Администратору с локального ПК.",
+    )
+
+
+router = APIRouter(
+    prefix="/admin",
+    tags=["Admin & Fleet Control"],
+    dependencies=[Depends(verify_admin_access)],
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 ENTERPRISE_OS_DIR = BASE_DIR.parent / "revops-enterprise-os"

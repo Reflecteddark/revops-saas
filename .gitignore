@@ -4,6 +4,7 @@
 *.db
 *.sqlite3
 *.log
+-w
 
 # Python
 __pycache__/

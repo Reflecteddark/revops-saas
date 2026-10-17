@@ -53,3 +53,28 @@ def test_admin_console_clear():
     logs = logs_resp.json()["logs"]
     assert len(logs) == 1
     assert "Консоль очищена" in logs[0]["msg"]
+
+
+def test_unauthorized_remote_admin_access_rejected():
+    """Verifies that public requests coming from tunnel or public host without key are blocked with 403."""
+    resp = client.get(
+        "/api/v1/admin/status",
+        headers={"host": "report.ai-rop.ru", "cf-connecting-ip": "194.87.12.34"}
+    )
+    assert resp.status_code == 403
+    assert "Доступ запрещён" in resp.json()["detail"]
+
+
+def test_authorized_remote_admin_access_with_key():
+    """Verifies that remote requests with correct X-RevOps-Admin-Key succeed."""
+    resp = client.get(
+        "/api/v1/admin/status",
+        headers={
+            "host": "report.ai-rop.ru",
+            "cf-connecting-ip": "194.87.12.34",
+            "x-revops-admin-key": "revops_admin_fleet_secret_2026"
+        }
+    )
+    assert resp.status_code == 200
+    assert "fleet_status" in resp.json()
+
