@@ -2228,7 +2228,7 @@ const CALLS_DATA = [
         cmdInput.addEventListener('keydown', handleCmdPaletteKeydown);
       }
 
-      initCustomCursor();
+      // initCustomCursor();
       tickLiveStatus();
       updateChartTimestamps();
     });

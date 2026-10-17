@@ -2900,37 +2900,6 @@
       from { opacity: 0; transform: scale(0.99); }
     }
 
-    /* 2026 Custom Cursor (Linear / Framer Micro-Interaction) */
-    @media (hover: hover) and (pointer: fine) {
-      body, body * {
-        cursor: none !important;
-      }
-      .custom-cursor {
-        position: fixed;
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.9);
-        pointer-events: none;
-        z-index: 999999;
-        mix-blend-mode: difference;
-        transition: width 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-                    height 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-                    background 0.18s ease;
-        transform: translate(-50%, -50%);
-      }
-      .custom-cursor.grow {
-        width: 28px;
-        height: 28px;
-        background: rgba(255, 255, 255, 0.18);
-      }
-      .custom-cursor.text {
-        width: 2px;
-        height: 18px;
-        border-radius: 1px;
-        background: rgba(255, 255, 255, 0.85);
-      }
-    }
 
     /* 2026 AI-Native Affordance (Ask-pill on hover) */
     .bento-card, .develop-card, .develop-editorial-kpis {
