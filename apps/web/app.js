@@ -1405,6 +1405,236 @@ const CALLS_DATA = [
           mcChartInstance.update('none');
         } catch (e) {}
       }
+
+      // 5. Develop Dissection Chart
+      if (typeof developDissectionChartInstance !== 'undefined' && developDissectionChartInstance) {
+        try {
+          if (developDissectionChartInstance.options.scales?.y) {
+            developDissectionChartInstance.options.scales.y.grid.color = gridColor;
+            developDissectionChartInstance.options.scales.y.ticks.color = isLight ? '#808191' : '#7c8099';
+          }
+          if (developDissectionChartInstance.options.scales?.x) {
+            developDissectionChartInstance.options.scales.x.ticks.color = isLight ? '#808191' : '#7c8099';
+          }
+          if (developDissectionChartInstance.options.plugins?.tooltip) {
+            developDissectionChartInstance.options.plugins.tooltip.backgroundColor = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(17, 19, 29, 0.95)';
+            developDissectionChartInstance.options.plugins.tooltip.titleColor = isLight ? '#11142d' : '#ffffff';
+            developDissectionChartInstance.options.plugins.tooltip.bodyColor = isLight ? '#4b5563' : '#cbd5e1';
+            developDissectionChartInstance.options.plugins.tooltip.borderColor = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)';
+          }
+          developDissectionChartInstance.update('none');
+        } catch (e) {}
+      }
+
+      // 6. Develop Spline Chart
+      if (typeof developSplineChartInstance !== 'undefined' && developSplineChartInstance) {
+        try {
+          if (developSplineChartInstance.options.scales?.y) {
+            developSplineChartInstance.options.scales.y.grid.color = gridColor;
+            developSplineChartInstance.options.scales.y.ticks.color = isLight ? '#808191' : '#7c8099';
+          }
+          if (developSplineChartInstance.options.scales?.x) {
+            developSplineChartInstance.options.scales.x.ticks.color = isLight ? '#808191' : '#7c8099';
+          }
+          developSplineChartInstance.update('none');
+        } catch (e) {}
+      }
+    }
+
+    // ==========================================================================
+    // DEVELOP BENTO CHARTS (DISSECTION, DONUT CATEGORIES, SPLINE TREND)
+    // ==========================================================================
+    let developDissectionChartInstance = null;
+    let developDonutChartInstance = null;
+    let developSplineChartInstance = null;
+
+    function initDevelopDissectionChart() {
+      const ctx = document.getElementById('developDissectionChart');
+      if (!ctx) return;
+      const isLight = getThemeMode() === 'light';
+      const gridColor = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
+      const tickColor = isLight ? '#808191' : '#7c8099';
+
+      developDissectionChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [
+            {
+              label: 'Выручка',
+              data: [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
+              backgroundColor: '#6c5dd3',
+              borderRadius: 6,
+              borderSkipped: false,
+              barPercentage: 0.55,
+              categoryPercentage: 0.7
+            },
+            {
+              label: 'План',
+              data: [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830],
+              backgroundColor: '#f36594',
+              borderRadius: 6,
+              borderSkipped: false,
+              barPercentage: 0.55,
+              categoryPercentage: 0.7
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(17, 19, 29, 0.95)',
+              titleColor: isLight ? '#11142d' : '#ffffff',
+              bodyColor: isLight ? '#4b5563' : '#cbd5e1',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: (c) => ` ${c.dataset.label}: ${c.raw}k ₽`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: tickColor, font: { size: 11, family: 'Inter' } }
+            },
+            y: {
+              grid: { color: gridColor },
+              ticks: {
+                color: tickColor,
+                font: { size: 11, family: 'Inter' },
+                callback: (v) => v + 'k'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function initDevelopDonutChart() {
+      const ctx = document.getElementById('developDonutChart');
+      if (!ctx) return;
+      developDonutChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Эталонные звонки', 'Встреча назначена', 'Следующий шаг взят', 'Риск срыва сделки', 'Fake Yes сливы'],
+          datasets: [
+            {
+              data: [34, 25, 17, 12, 6],
+              backgroundColor: ['#6c5dd3', '#f36594', '#00d4ff', '#ffb55b', '#fb7185'],
+              borderWidth: 0,
+              hoverOffset: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '74%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (c) => ` ${c.label}: ${c.raw}%`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function initDevelopSplineChart() {
+      const ctx = document.getElementById('developSplineChart');
+      if (!ctx) return;
+      const isLight = getThemeMode() === 'light';
+      const c2d = ctx.getContext('2d');
+      let grad1 = 'rgba(108, 93, 211, 0.15)';
+      let grad2 = 'rgba(243, 101, 148, 0.12)';
+      if (c2d) {
+        const h = ctx.clientHeight || 180;
+        const g1 = c2d.createLinearGradient(0, 0, 0, h);
+        g1.addColorStop(0, 'rgba(108, 93, 211, 0.38)');
+        g1.addColorStop(1, 'rgba(108, 93, 211, 0.00)');
+        grad1 = g1;
+
+        const g2 = c2d.createLinearGradient(0, 0, 0, h);
+        g2.addColorStop(0, 'rgba(243, 101, 148, 0.32)');
+        g2.addColorStop(1, 'rgba(243, 101, 148, 0.00)');
+        grad2 = g2;
+      }
+
+      const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.04)';
+      const tickColor = isLight ? '#808191' : '#7c8099';
+
+      developSplineChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [
+            {
+              label: 'Тренд',
+              data: [310, 420, 390, 520, 460, 590, 540],
+              borderColor: '#6c5dd3',
+              backgroundColor: grad1,
+              borderWidth: 2.8,
+              tension: 0.45,
+              fill: true,
+              pointRadius: 0,
+              pointHoverRadius: 6
+            },
+            {
+              label: 'SSOT',
+              data: [240, 310, 460, 380, 540, 470, 610],
+              borderColor: '#f36594',
+              backgroundColor: grad2,
+              borderWidth: 2.8,
+              tension: 0.45,
+              fill: true,
+              pointRadius: [0, 0, 0, 0, 5, 0, 0],
+              pointBackgroundColor: '#f36594',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointHoverRadius: 7
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(17, 19, 29, 0.95)',
+              titleColor: isLight ? '#11142d' : '#ffffff',
+              bodyColor: isLight ? '#4b5563' : '#cbd5e1',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: (c) => ` ${c.dataset.label}: ${c.raw}k ₽`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: tickColor, font: { size: 10, family: 'Inter' } }
+            },
+            y: {
+              grid: { color: gridColor },
+              ticks: {
+                color: tickColor,
+                font: { size: 10, family: 'Inter' },
+                callback: (v) => v + 'k'
+              }
+            }
+          }
+        }
+      });
     }
 
     window.getThemeMode = getThemeMode;
@@ -1412,6 +1642,9 @@ const CALLS_DATA = [
     window.toggleThemeMode = toggleThemeMode;
     window.updateThemeToggleUI = updateThemeToggleUI;
     window.updateAllChartsTheme = updateAllChartsTheme;
+    window.initDevelopDissectionChart = initDevelopDissectionChart;
+    window.initDevelopDonutChart = initDevelopDonutChart;
+    window.initDevelopSplineChart = initDevelopSplineChart;
 
     // ==========================================================================
     // TOAST NOTIFICATION
@@ -2012,6 +2245,11 @@ const CALLS_DATA = [
       initRepPerformanceChart();
       initSpeechRadarChart();
 
+      // Develop Bento Tier-1 Charts
+      initDevelopDissectionChart();
+      initDevelopDonutChart();
+      initDevelopSplineChart();
+
       // V20.2 Tier-1 Additions
       initSpotlight();
       initWaveformScrubbing();
@@ -2021,7 +2259,7 @@ const CALLS_DATA = [
         setAccentTheme(savedTheme);
       }
 
-      const savedMode = localStorage.getItem('revops_theme_mode') || 'dark';
+      const savedMode = localStorage.getItem('revops_theme_mode') || 'light';
       if (typeof setThemeMode === 'function') {
         setThemeMode(savedMode);
       }

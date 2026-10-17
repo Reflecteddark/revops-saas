@@ -18,7 +18,11 @@
   <script>
     (function() {
       try {
-        var mode = localStorage.getItem('revops_theme_mode') || 'dark';
+        var mode = localStorage.getItem('revops_theme_mode');
+        if (!mode) {
+          mode = 'light';
+          localStorage.setItem('revops_theme_mode', 'light');
+        }
         if (mode === 'light') {
           document.documentElement.setAttribute('data-theme', 'light');
         } else {
@@ -2724,6 +2728,673 @@
       border-color: rgba(0, 0, 0, 0.06) !important;
     }
 
+    /* ==========================================================================
+       DEVELOP BENCHMARK BENTO DESIGN SYSTEM (KRISTI KAMLYLOVA TIER-1 FINTECH)
+       ========================================================================== */
+    html[data-theme="light"] body {
+      background-color: #f4f5f9 !important;
+      color: #11142d !important;
+    }
+
+    html[data-theme="light"] .ambient-bg {
+      display: none !important;
+    }
+
+    .develop-topbar {
+      height: 72px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-topbar);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    html[data-theme="light"] .develop-topbar {
+      background: rgba(244, 245, 249, 0.95) !important;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .develop-greeting-title {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.03em;
+      margin: 0;
+    }
+
+    html[data-theme="light"] .develop-greeting-title {
+      color: #11142d !important;
+    }
+
+    .develop-search-pill {
+      position: relative;
+      width: 240px;
+    }
+
+    .develop-search-pill input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 99px;
+      padding: 7px 36px 7px 16px;
+      font-size: 0.78rem;
+      color: var(--text-primary);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    html[data-theme="light"] .develop-search-pill input {
+      background: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.06) !important;
+      color: #11142d !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+    }
+
+    .develop-search-pill input:focus {
+      border-color: #6c5dd3 !important;
+      box-shadow: 0 0 0 3px rgba(108, 93, 211, 0.15) !important;
+    }
+
+    .develop-search-pill svg {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #808191;
+      pointer-events: none;
+    }
+
+    .develop-user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 10px 4px 4px;
+      border-radius: 99px;
+      transition: background 0.15s ease;
+    }
+
+    .develop-user-profile:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    html[data-theme="light"] .develop-user-profile:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    .develop-user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6c5dd3 0%, #f36594 100%);
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(108, 93, 211, 0.35);
+    }
+
+    .develop-user-name {
+      font-size: 0.80rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    html[data-theme="light"] .develop-user-name {
+      color: #11142d !important;
+    }
+
+    /* Bento Grid */
+    .develop-grid {
+      display: grid;
+      grid-template-columns: 1.7fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1200px) {
+      .develop-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .develop-left-col,
+    .develop-right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .develop-card {
+      background: #181b2a;
+      border-radius: 20px;
+      padding: 22px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+      position: relative;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    }
+
+    html[data-theme="light"] .develop-card {
+      background: #ffffff !important;
+      border: 1px solid rgba(0, 0, 0, 0.04) !important;
+      box-shadow: 0 4px 24px -2px rgba(20, 25, 45, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    }
+
+    .develop-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -4px rgba(20, 25, 45, 0.10);
+    }
+
+    .develop-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .develop-card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    html[data-theme="light"] .develop-card-title {
+      color: #11142d !important;
+    }
+
+    .develop-dropdown {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #808191;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px 10px;
+      border-radius: 99px;
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+    }
+
+    html[data-theme="light"] .develop-dropdown {
+      background: #f4f5f9 !important;
+      border-color: rgba(0, 0, 0, 0.04) !important;
+      color: #808191 !important;
+    }
+
+    .develop-kpi-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .develop-kpi-pair {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .develop-kpi-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      position: relative;
+    }
+
+    .develop-kpi-num {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    html[data-theme="light"] .develop-kpi-num {
+      color: #11142d !important;
+    }
+
+    .develop-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.70rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 99px;
+    }
+
+    .pill-pos {
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+    }
+
+    .pill-neg {
+      background: rgba(244, 63, 94, 0.12);
+      color: #f43f5e;
+    }
+
+    .pill-sub {
+      font-size: 0.66rem;
+      font-weight: 500;
+      color: #808191;
+      margin-left: 2px;
+    }
+
+    .develop-sparkline {
+      width: 110px;
+      height: 42px;
+      flex-shrink: 0;
+    }
+
+    .develop-title-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .develop-legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: #808191;
+    }
+
+    .legend-circle {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot-purple { background: #6c5dd3; }
+    .dot-pink { background: #f36594; }
+
+    .develop-sub-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .develop-sub-pair {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .develop-tx-list {
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .develop-tx-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .develop-tx-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .develop-tx-icon svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .tx-icon-purple { background: rgba(108, 93, 211, 0.12); color: #6c5dd3; }
+    .tx-icon-pink { background: rgba(243, 101, 148, 0.12); color: #f36594; }
+    .tx-icon-cyan { background: rgba(0, 212, 255, 0.12); color: #00d4ff; }
+    .tx-icon-amber { background: rgba(251, 191, 36, 0.12); color: #fbbf24; }
+
+    .develop-tx-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .develop-tx-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    html[data-theme="light"] .develop-tx-name {
+      color: #11142d !important;
+    }
+
+    .develop-tx-time {
+      font-size: 0.68rem;
+      color: #808191;
+      margin-top: 2px;
+    }
+
+    .score-badge {
+      font-size: 0.64rem;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .score-won { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .score-info { background: rgba(0, 212, 255, 0.15); color: #0284c7; }
+    .score-lost { background: rgba(244, 63, 94, 0.15); color: #f43f5e; }
+
+    .develop-tx-val {
+      font-size: 0.80rem;
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .val-won { color: #10b981; }
+    .val-lost { color: #808191; }
+
+    .develop-inv-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .develop-inv-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .develop-inv-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+    }
+
+    .develop-inv-name {
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    html[data-theme="light"] .develop-inv-name {
+      color: #11142d !important;
+    }
+
+    .develop-inv-val {
+      font-weight: 700;
+      color: #808191;
+    }
+
+    .develop-inv-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    html[data-theme="light"] .develop-inv-track {
+      background: #f1f3f9 !important;
+    }
+
+    .develop-inv-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    .develop-bank-card {
+      background: linear-gradient(135deg, #2a2d3e 0%, #151828 100%);
+      border-radius: 16px;
+      padding: 20px 22px;
+      color: #ffffff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    html[data-theme="light"] .develop-bank-card {
+      background: linear-gradient(135deg, #222638 0%, #121422 100%) !important;
+      box-shadow: 0 10px 28px rgba(18, 20, 34, 0.18) !important;
+    }
+
+    .bank-card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .bank-card-chip-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .bank-card-network {
+      font-size: 0.85rem;
+      font-weight: 800;
+      font-style: italic;
+      letter-spacing: 0.05em;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .bank-chip-svg {
+      margin-bottom: 12px;
+    }
+
+    .bank-card-bal-lbl {
+      font-size: 0.68rem;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .bank-card-balance {
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      margin: 2px 0 14px;
+    }
+
+    .bank-card-bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.06em;
+    }
+
+    .bank-card-exp {
+      font-size: 0.68rem;
+      background: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 700;
+    }
+
+    .develop-subtle-link {
+      font-size: 0.74rem;
+      color: #6c5dd3;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .develop-donut-container {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .donut-chart-box {
+      width: 104px;
+      height: 104px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .donut-center-badge {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .donut-center-num {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    html[data-theme="light"] .donut-center-num {
+      color: #11142d !important;
+    }
+
+    .donut-center-sub {
+      font-size: 0.60rem;
+      color: #808191;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .donut-legend-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .donut-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.70rem;
+      color: #808191;
+    }
+
+    .legend-color-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .develop-divider {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      margin: 16px 0 14px;
+    }
+
+    html[data-theme="light"] .develop-divider {
+      border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .spending-rings-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .spending-ring-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .spending-ring-svg {
+      width: 38px;
+      height: 38px;
+      position: relative;
+    }
+
+    .spending-ring-svg svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .ring-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 3.2;
+    }
+
+    html[data-theme="light"] .ring-track {
+      stroke: #e2e8f0 !important;
+    }
+
+    .ring-fill {
+      fill: none;
+      stroke-width: 3.2;
+      stroke-linecap: round;
+    }
+
+    .ring-purple { stroke: #6c5dd3; }
+    .ring-pink { stroke: #f36594; }
+    .ring-cyan { stroke: #00d4ff; }
+    .ring-green { stroke: #34d399; }
+    .ring-violet { stroke: #a78bfa; }
+
+    .spending-ring-val {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    html[data-theme="light"] .spending-ring-val {
+      color: #11142d !important;
+    }
+
+    .spending-ring-title {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #808191;
+    }
+
+    .develop-floating-tooltip {
+      position: absolute;
+      top: 36%;
+      left: 68%;
+      transform: translate(-50%, -50%);
+      background: #6c5dd3;
+      color: #ffffff;
+      font-size: 0.70rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 99px;
+      box-shadow: 0 4px 14px rgba(108, 93, 211, 0.45);
+      pointer-events: none;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -2815,22 +3486,6 @@
         <button class="mp-sidebar-toggle" onclick="toggleSidebar()" title="Свернуть / Развернуть меню">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
         </button>
-      </div>
-
-      <!-- AI-Supervisor Promo Banner (MPSTATS-Style) -->
-      <div class="mp-ai-card">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="mp-nav-icon" style="background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #34d399;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
-          </span>
-          <div style="line-height: 1.2;">
-            <div style="font-size: 0.74rem; font-weight: 800; color: #fff;">Gemini 3.5 Flash</div>
-            <div style="font-size: 0.64rem; color: #34d399;"><span class="status-dot dot-won"></span> ИИ-Супервайзер 24/7</div>
-          </div>
-        </div>
-        <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 6px;">
-          100% аудит звонков &bull; Strict JSON &bull; 13 B2B-стандартов
-        </div>
       </div>
 
       <!-- Quick Tool Search in Sidebar -->
@@ -2928,116 +3583,47 @@
     <!-- ======================================================== -->
     <div class="mp-main-container">
       
-      <header class="mp-topbar">
-        <div style="display: flex; align-items: center; gap: 12px;">
+      <!-- Clean Develop Fintech Topbar -->
+      <header class="develop-topbar">
+        <div style="display: flex; align-items: center; gap: 14px;">
           <!-- Mobile Sidebar Toggle -->
           <button class="btn btn-ghost" onclick="toggleSidebar()" style="display: inline-flex;" title="Меню">
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
-
-          <!-- MPSTATS Tenant / Connection Selector (like Сизмедглобал New ▾) -->
-          <div class="mp-tenant-selector">
-            <span style="font-size: 0.85rem;">🏢</span>
-            <div>
-              <div style="font-size: 0.64rem; color: var(--text-muted); line-height: 1;">Тенант / Подключение</div>
-              <div style="font-size: 0.78rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 4px;">
-                <span>Самозанятый (TNT-001)</span>
-                <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-              </div>
-            </div>
-            <span class="badge-won" style="font-size: 0.62rem; margin-left: 4px;">🟢 Dual-CRM Active</span>
-          </div>
-
-          <!-- MPSTATS Period Selector (like in MPSTATS 1222.html) -->
-          <div class="mp-period-selector" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.74rem;">
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            <span style="color: #fff; font-weight: 600;">16.09.2026 - 16.10.2026 (30 дней)</span>
-            <span style="color: var(--text-muted); font-size: 0.68rem; margin-left: 4px;">Сравнить с прошлым:</span>
-            <span class="badge-won" style="font-size: 0.60rem; padding: 1px 5px; cursor: pointer;" title="Сравнение периодов активно">ВКЛ</span>
-          </div>
+          <h1 class="develop-greeting-title">Добрый день, Дмитрий!</h1>
         </div>
 
-        <!-- Top Right Actions -->
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <!-- Global Command Palette Trigger (Ctrl+K / ⌘K) -->
-          <button class="btn btn-ghost cmd-k-trigger" onclick="openCommandPalette()" style="border-color: rgba(255,255,255,0.14); color: var(--text-secondary); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 0.74rem;" title="Быстрый поиск и команды (Ctrl+K / ⌘K)">
-            <span>🔍</span>
-            <span>Поиск и действия...</span>
-            <kbd style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); border-radius: 4px; padding: 1px 5px; font-size: 0.65rem; color: #fff; font-family: inherit;">⌘K</kbd>
-          </button>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <!-- Search Pill -->
+          <div class="develop-search-pill">
+            <input type="text" id="globalDevelopSearch" placeholder="Поиск сделок..." onkeydown="if(event.key==='Enter') openCommandPalette()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
 
           <!-- Develop Theme Mode Toggle Pill (Sun / Moon) -->
-          <div class="theme-mode-toggle" onclick="toggleThemeMode()" title="Переключить тему (Develop Light / Dark)" aria-label="Toggle theme">
+          <div class="theme-mode-toggle" onclick="toggleThemeMode()" title="Переключить тему (Светлая / Тёмная)" aria-label="Toggle theme">
             <div class="theme-mode-icons">
               <span>🌙</span>
               <span>☀️</span>
             </div>
             <div class="theme-mode-thumb" id="themeTopThumb">
-              <span id="themeTopThumbIcon">🌙</span>
+              <span id="themeTopThumbIcon">☀️</span>
             </div>
           </div>
 
-          <!-- SnowUI Accent Theme Picker -->
-          <div class="accent-picker" title="Выбор акцентной темы SnowUI">
-            <button class="accent-dot active" data-theme="cyan" onclick="setAccentTheme('cyan')" title="SnowUI Cyan" style="background: #33d1ff;"></button>
-            <button class="accent-dot" data-theme="purple" onclick="setAccentTheme('purple')" title="SnowUI Purple" style="background: #b899eb;"></button>
-            <button class="accent-dot" data-theme="emerald" onclick="setAccentTheme('emerald')" title="SnowUI Mint" style="background: #6be6d3;"></button>
-            <button class="accent-dot" data-theme="amber" onclick="setAccentTheme('amber')" title="SnowUI Amber" style="background: #ffb55b;"></button>
-          </div>
-
-          <button class="btn btn-ghost" onclick="openOnePagerModal()" style="border-color: rgba(115,82,255,0.4); color: #c4b5fd;">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            <span>One-Pager (PDF)</span>
-          </button>
-
-          <button id="btnSyncCRM" class="btn btn-primary" onclick="triggerSyncSimulation()" title="Синхронизировать SSOT с amoCRM & Bitrix24">
+          <!-- Subtle Sync Button -->
+          <button id="btnSyncCRM" class="btn btn-ghost" onclick="triggerSyncSimulation()" title="Синхронизировать SSOT с amoCRM & Bitrix24" style="padding: 6px 12px; border-radius: 99px; font-size: 0.74rem;">
             <svg id="syncIconSvg" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            <span id="syncBtnText">Синхронизировать</span>
+            <span id="syncBtnText" style="margin-left: 4px;">Синхронизация</span>
           </button>
 
-          <!-- Profile Widget -->
-          <div class="user-profile-widget" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #7352ff, #00d4ff); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: #fff;">ДФ</div>
-            <div style="text-align: left; line-height: 1.1;">
-              <div id="loggedUserName" style="font-size: 0.72rem; font-weight: 700; color: #fff;">Дмитрий Федотов</div>
-              <div style="font-size: 0.64rem; color: #34d399;">● РОП (TNT-001)</div>
-            </div>
-            <button class="btn btn-ghost" style="padding: 3px 6px; margin-left: 4px; font-size: 0.68rem; color: #fb7185; border-color: rgba(244,63,94,0.3);" onclick="logout()" title="Выйти из кабинета">
-              <span>Выйти</span>
-            </button>
+          <!-- User Profile -->
+          <div class="develop-user-profile" onclick="switchTab('settings')" style="cursor: pointer;" title="Профиль РОПа">
+            <div class="develop-user-avatar">ДФ</div>
+            <span class="develop-user-name" id="loggedUserName">Дмитрий Федотов</span>
           </div>
         </div>
       </header>
-
-      <!-- Develop Fintech Tier-1 Subheader & Greeting Toolbar -->
-      <div class="mp-subheader" id="mpSubheader">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 12px;">
-          <div>
-            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-              <span>Добрый день, Дмитрий!</span>
-              <span class="tenant-badge" style="background: rgba(108, 93, 211, 0.12); color: var(--brand); border-color: rgba(108, 93, 211, 0.3);">RevOps OS V20.0</span>
-            </h2>
-            <div style="font-size: 0.76rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-              <span>Автопилот выручки, сквозной аудит звонков и радар рисков сделок</span>
-              <span style="color: var(--border-subtle);">&bull;</span>
-              <span id="currentViewBreadcrumb" style="color: var(--brand); font-weight: 700;">1. Пульс выручки</span>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span class="badge-won" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.70rem;">
-              <span class="pulse-dot" style="background: #10b981; width: 6px; height: 6px;"></span>
-              <span>amoCRM + Битрикс24 Live Sync (16.10.2026, 21:50)</span>
-            </span>
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.72rem; color: var(--text-muted); background: var(--bg-card); padding: 4px 12px; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle);">
-              <span>База: <strong style="color: var(--text-primary);">10 звонков</strong></span>
-              <span>&bull;</span>
-              <span>Пайплайн: <strong style="color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace;">5 000 000 ₽</strong></span>
-              <span>&bull;</span>
-              <span>Next Step: <strong style="color: var(--accent-emerald);">70.0%</strong></span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- MPSTATS Content Area -->
       <div class="mp-content-area">
@@ -3048,520 +3634,339 @@
     <!-- ======================================================== -->
     <div id="view-pulse" class="tab-view active">
 
-      <!-- Period Selector & Status -->
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Период среза:</span>
-          <button id="btnPeriodToday" class="btn btn-ghost" style="padding: 5px 12px; font-size: 0.74rem;" onclick="setPulsePeriod('today')">Сегодня</button>
-          <button id="btnPeriod7d" class="btn btn-ghost" style="padding: 5px 12px; font-size: 0.74rem;" onclick="setPulsePeriod('7d')">Последние 7 дней</button>
-          <button id="btnPeriodMonth" class="btn btn-primary" style="padding: 5px 12px; font-size: 0.74rem;" onclick="setPulsePeriod('month')">Октябрь 2026 (Месяц)</button>
-        </div>
-        <div id="periodIndicatorBadge" class="badge-info" style="display: flex; align-items: center; gap: 6px;">
-          <span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; display: inline-block;"></span>
-          <span id="periodSyncText">Синхронизировано: amoCRM + Битрикс24 (16.10.2026, 21:50)</span>
-        </div>
-      </div>
-      <!-- Banner Отставание от плана -->
-      <div style="padding: 14px 18px; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.1rem;">🔴</span>
-          <div style="font-size: 0.82rem; font-weight: 700; color: #fca5a5;">
-            ВНИМАНИЕ: ОТСТАВАНИЕ ОТ ПЛАНА &bull; ВЫПОЛНЕНО 10.0% (ДЕФИЦИТ: 4 500 000 ₽)
-          </div>
-        </div>
-        <div style="font-size: 0.76rem; color: var(--text-muted);">
-          План месяца: 5 000 000 ₽ &bull; Факт Closed-Won: 500 000 ₽ &bull; Остаток месяца: 15 дней
-        </div>
-      </div>
-
-      <!-- COMPONENT 1: Activity Rings (Apple Watch / Dribbble Dark) & Target Discipline -->
-      <div class="activity-rings-card">
-        <div class="rings-svg-container">
-          <svg viewBox="0 0 160 160" width="156" height="156" style="transform: rotate(-90deg);">
-            <defs>
-              <linearGradient id="ringGradWon" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#10b981"/>
-                <stop offset="100%" stop-color="#34d399"/>
-              </linearGradient>
-              <linearGradient id="ringGradStep" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#00d4ff"/>
-                <stop offset="100%" stop-color="#38bdf8"/>
-              </linearGradient>
-              <linearGradient id="ringGradSpeech" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#7352ff"/>
-                <stop offset="100%" stop-color="#a78bfa"/>
-              </linearGradient>
-              <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="2.5" result="blur"/>
-                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-              </filter>
-            </defs>
-            <!-- Background Tracks -->
-            <circle cx="80" cy="80" r="64" fill="none" stroke="rgba(16, 185, 129, 0.12)" stroke-width="9"/>
-            <circle cx="80" cy="80" r="48" fill="none" stroke="rgba(0, 212, 255, 0.12)" stroke-width="9"/>
-            <circle cx="80" cy="80" r="32" fill="none" stroke="rgba(115, 82, 255, 0.12)" stroke-width="9"/>
-
-            <!-- Active Glowing Progress Rings -->
-            <!-- Outer: Closed-Won Fact (10.0% => offset = 402.12 * (1 - 0.10) = 361.91) -->
-            <circle cx="80" cy="80" r="64" fill="none" stroke="url(#ringGradWon)" stroke-width="9"
-                    stroke-dasharray="402.12" stroke-dashoffset="361.91" stroke-linecap="round" filter="url(#ringGlow)"/>
-
-            <!-- Middle: Next Step Discipline (70.0% => offset = 301.59 * (1 - 0.70) = 90.48) -->
-            <circle cx="80" cy="80" r="48" fill="none" stroke="url(#ringGradStep)" stroke-width="9"
-                    stroke-dasharray="301.59" stroke-dashoffset="90.48" stroke-linecap="round" filter="url(#ringGlow)"/>
-
-            <!-- Inner: Speech Quality Index (70.0% => offset = 201.06 * (1 - 0.70) = 60.32) -->
-            <circle cx="80" cy="80" r="32" fill="none" stroke="url(#ringGradSpeech)" stroke-width="9"
-                    stroke-dasharray="201.06" stroke-dashoffset="60.32" stroke-linecap="round" filter="url(#ringGlow)"/>
-          </svg>
-          <div class="rings-center-metric">
-            <span class="rings-center-val">70%</span>
-            <span class="rings-center-sub">CORE REVOPS</span>
-          </div>
-        </div>
-
-        <div class="rings-breakdown">
-          <!-- Col 1: Fact Won -->
-          <div class="ring-legend-col">
-            <div class="ring-legend-title">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; box-shadow: 0 0 8px #10b981;"></span>
-              <span>1. План выручки (Won)</span>
-            </div>
-            <div style="display: flex; align-items: baseline; justify-content: space-between;">
-              <span class="ring-legend-val" style="color: #34d399;">10.0%</span>
-              <span class="delta-badge delta-pos"><span class="delta-dot"></span>▲ +500 000 ₽</span>
-            </div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Факт закрыто: 500k ₽ из 5.0M ₽ (дефицит 4.5M ₽)</div>
-            <div class="ring-progress-track">
-              <div class="ring-progress-fill" style="width: 10%; background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 8px rgba(16,185,129,0.5);"></div>
-            </div>
-          </div>
-
-          <!-- Col 2: Next Step -->
-          <div class="ring-legend-col">
-            <div class="ring-legend-title">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #00d4ff; display: inline-block; box-shadow: 0 0 8px #00d4ff;"></span>
-              <span>2. Дисциплина Next Step</span>
-            </div>
-            <div style="display: flex; align-items: baseline; justify-content: space-between;">
-              <span class="ring-legend-val" style="color: #38bdf8;">70.0%</span>
-              <span class="delta-badge delta-cyan"><span class="delta-dot"></span>7 из 10 сделок</span>
-            </div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">3 звонка отпущены без даты (риск утечки 1.5M ₽)</div>
-            <div class="ring-progress-track">
-              <div class="ring-progress-fill" style="width: 70%; background: linear-gradient(90deg, #00d4ff, #38bdf8); box-shadow: 0 0 8px rgba(0,212,255,0.5);"></div>
-            </div>
-          </div>
-
-          <!-- Col 3: Speech Quality -->
-          <div class="ring-legend-col">
-            <div class="ring-legend-title">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #7352ff; display: inline-block; box-shadow: 0 0 8px #7352ff;"></span>
-              <span>3. Индекс речи Gemini</span>
-            </div>
-            <div style="display: flex; align-items: baseline; justify-content: space-between;">
-              <span class="ring-legend-val" style="color: #c4b5fd;">9.1 / 13</span>
-              <span class="delta-badge delta-purple"><span class="delta-dot"></span>▲ 70% ЭТАЛОН</span>
-            </div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">13 критериев B2B: норматив &ge; 9.0 (4 эталона, 4 слива)</div>
-            <div class="ring-progress-track">
-              <div class="ring-progress-fill" style="width: 70%; background: linear-gradient(90deg, #7352ff, #a78bfa); box-shadow: 0 0 8px rgba(115,82,255,0.5);"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      
-      <!-- Autonomous Trio AI Crew Widget (V20.2) -->
-      <div class="bento-card" style="margin-bottom: 22px;">
-        <div class="bento-card-header">
-          <div style="display: flex; align-items: center;">
-            <span class="title-icon" style="color: var(--accent-purple);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
-            </span>
-            <span class="bento-card-title">Экосистема RevOps AI Crew — Автономный ИИ-Экипаж V20.2</span>
-          </div>
-          <span class="badge-won"><span class="status-dot dot-won"></span> LIVE &bull; 24/7 AUTONOMOUS</span>
-        </div>
-
-        <div class="ai-crew-container">
-          <!-- Agent 1 -->
-          <div class="ai-agent-card">
-            <div class="ai-agent-card-header">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="title-icon" style="color: var(--accent-cyan); width: 22px; height: 22px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-                </span>
-                <div>
-                  <div style="font-size: 0.82rem; font-weight: 700; color: #fff;">Agent 1: DevOps & QA Healer</div>
-                  <div style="font-size: 0.68rem; color: var(--text-muted);">Self-Healing Daemon L1/L2</div>
-                </div>
-              </div>
-              <span class="badge-won ai-agent-badge"><span class="status-dot dot-won"></span> LIVE</span>
-            </div>
-            <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px;">
-              Фоновый сторожевой демон. Контроль портов 8000 (FastAPI) и 5678 (n8n), автовосстановление сервисов и диагностика uvicorn.
-            </div>
-            <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: var(--accent-cyan);">
-              <div>• Процесс: <strong>PID 19592</strong></div>
-              <div>• Uptime: <strong>99.98%</strong> • Latency: <strong>14ms</strong></div>
-            </div>
-          </div>
-
-          <!-- Agent 2 -->
-          <div class="ai-agent-card">
-            <div class="ai-agent-card-header">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="title-icon" style="color: var(--accent-emerald); width: 22px; height: 22px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 19v4m-4 0h8"/></svg>
-                </span>
-                <div>
-                  <div style="font-size: 0.82rem; font-weight: 700; color: #fff;">Agent 2: Chief Commercial Officer</div>
-                  <div style="font-size: 0.68rem; color: var(--text-muted);">Gemini 2.5 Flash B2B Auditor</div>
-                </div>
-              </div>
-              <span class="badge-info ai-agent-badge"><span class="status-dot dot-cyan"></span> ACTIVE</span>
-            </div>
-            <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px;">
-              Аудит 100% звонков по 13 критериям, перехват саботажа регламентов, локализация Fake Yes и синтез спасательных скриптов.
-            </div>
-            <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #34d399;">
-              <div>• Средний балл: <strong>9.1 / 13</strong> (70.0%)</div>
-              <div>• Next Step: <strong>70.0%</strong> • Рекорд: Надежда 12/13</div>
-            </div>
-          </div>
-
-          <!-- Agent 3 -->
-          <div class="ai-agent-card">
-            <div class="ai-agent-card-header">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="title-icon" style="color: var(--accent-amber); width: 22px; height: 22px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </span>
-                <div>
-                  <div style="font-size: 0.82rem; font-weight: 700; color: #fff;">Agent 3: Workflow & Sync Guardian</div>
-                  <div style="font-size: 0.68rem; color: var(--text-muted);">L3 Multi-Tenant Orchestrator</div>
-                </div>
-              </div>
-              <span class="badge-warn ai-agent-badge"><span class="status-dot dot-amber"></span> SYNCED</span>
-            </div>
-            <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px;">
-              Двусторонний мост amoCRM v4 + Bitrix24 REST. Сверка raw_calls и raw_deals с единым финансовым источником правды SSOT.
-            </div>
-            <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #fbbf24;">
-              <div>• Сделок в CRM: <strong>10 = 10</strong> (100% Delivery)</div>
-              <div>• SSOT Касса: <strong>5 000 000 ₽</strong> • Дрифт: <strong>0.00 ₽</strong></div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-subtle); flex-wrap: wrap;">
-          <div style="font-size: 0.74rem; color: var(--text-muted);">
-            Автоматическое исправление сбоев, перезапуск потоков и синхронизация финансового контура без участия человека.
-          </div>
-          <button id="btnSelfHealingAuditPulse" class="btn btn-primary" onclick="triggerSelfHealingAudit()" style="padding: 7px 16px; font-size: 0.76rem;">
-            <span>⚡ Запустить Self-Healing аудит</span>
-          </button>
-        </div>
-
-        <div id="aiCrewLogPulse" class="ai-crew-log" style="display: none;"></div>
-      </div>
-
-      <!-- 4 Top Bento KPI Cards (Linear Dark Edition with Sparklines) -->
-      <div class="grid-4">
-        <!-- Card 1: Target Plan -->
-        <div class="bento-card card-mesh-glow mesh-glow-purple">
-          <div class="bento-card-header">
-            <span class="bento-card-title">План месяца (Точка Б)</span>
-            <span class="delta-badge delta-cyan"><span class="delta-dot"></span>🎯 5.0M ₽ НОРМАТИВ</span>
-          </div>
-          <div id="metricPlanVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">5 000 000 ₽</div>
-          <div class="sparkline-wrap">
-            <div class="metric-sub" style="margin-top: 0;">Целевой таргет компании Самозанятый</div>
-            <svg class="sparkline-svg" viewBox="0 0 110 32">
-              <defs>
-                <linearGradient id="gradPlan" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
-                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path d="M 0,26 L 18,24 L 36,20 L 54,16 L 72,12 L 90,8 L 110,4 L 110,32 L 0,32 Z" fill="url(#gradPlan)"/>
-              <path d="M 0,26 L 18,24 L 36,20 L 54,16 L 72,12 L 90,8 L 110,4" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
-            </svg>
-          </div>
-        </div>
-
-        <!-- Card 2: Actual Closed-Won -->
-        <div class="bento-card">
-          <div class="bento-card-header">
-            <span class="bento-card-title">Факт закрытой выручки</span>
-            <span id="metricFactBadge" class="delta-badge delta-pos"><span class="delta-dot"></span>▲ +10.0% ВЫПОЛНЕНО</span>
-          </div>
-          <div id="metricFactVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">500 000 ₽</div>
-          <div class="sparkline-wrap">
-            <div class="metric-sub" style="margin-top: 0;">Сделка stage_id = 6 (B24 Кейс 10, УЗИП)</div>
-            <svg class="sparkline-svg" viewBox="0 0 110 32">
-              <defs>
-                <linearGradient id="gradFact" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.4"/>
-                  <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path d="M 0,30 L 25,30 L 50,30 L 75,30 L 90,12 L 110,8 L 110,32 L 0,32 Z" fill="url(#gradFact)"/>
-              <path d="M 0,30 L 25,30 L 50,30 L 75,30 L 90,12 L 110,8" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round"/>
-            </svg>
-          </div>
-        </div>
-
-        <!-- Card 3: SSOT Forecast -->
-        <div class="bento-card card-mesh-glow mesh-glow-amber">
-          <div class="bento-card-header">
-            <span class="bento-card-title">Взвешенный SSOT прогноз</span>
-            <span class="delta-badge delta-warn"><span class="delta-dot"></span>▼ -52.5% РИСК SSOT</span>
-          </div>
-          <div id="metricSsotVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">2 375 000 ₽</div>
-          <div class="sparkline-wrap">
-            <div class="metric-sub" style="margin-top: 0;">Мат. ожидание кассы с учетом вероятностей</div>
-            <svg class="sparkline-svg" viewBox="0 0 110 32">
-              <defs>
-                <linearGradient id="gradSsot" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.4"/>
-                  <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path d="M 0,22 L 20,24 L 40,18 L 60,20 L 80,14 L 110,12 L 110,32 L 0,32 Z" fill="url(#gradSsot)"/>
-              <path d="M 0,22 L 20,24 L 40,18 L 60,20 L 80,14 L 110,12" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round"/>
-            </svg>
-          </div>
-        </div>
-
-        <!-- Card 4: Active Pipeline -->
-        <div class="bento-card card-mesh-glow mesh-glow-cyan">
-          <div class="bento-card-header">
-            <span class="bento-card-title">Активный пайплайн воронки</span>
-            <span class="delta-badge delta-purple"><span class="delta-dot"></span>● 9 СДЕЛОК В РАБОТЕ</span>
-          </div>
-          <div id="metricPipeVal" class="metric-value" style="font-size: 1.85rem; font-weight: 800; color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em;">4 500 000 ₽</div>
-          <div class="sparkline-wrap">
-            <div class="metric-sub" style="margin-top: 0;">В работе на этапах 1..5 воронки CRM</div>
-            <svg class="sparkline-svg" viewBox="0 0 110 32">
-              <defs>
-                <linearGradient id="gradPipe" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.4"/>
-                  <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path d="M 0,16 L 20,12 L 40,18 L 60,10 L 80,14 L 110,6 L 110,32 L 0,32 Z" fill="url(#gradPipe)"/>
-              <path d="M 0,16 L 20,12 L 40,18 L 60,10 L 80,14 L 110,6" fill="none" stroke="#00d4ff" stroke-width="2.2" stroke-linecap="round"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- COMPONENT: Главный интерактивный график выручки и симулятор кассы (Chart.js Linear Dark) -->
-      <div class="bento-card" style="margin-bottom: 22px;">
-        <div class="bento-card-header" style="flex-wrap: wrap; gap: 12px;">
-          <div>
-            <div style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">
-              📈 ИНТЕРАКТИВНЫЙ РЕГУЛЯТОР ТРЕКИНГА ВЫРУЧКИ
-            </div>
-            <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">
-              Динамика выручки, Pacing плана 5.0M ₽ и SSOT прогноз
-            </h2>
-          </div>
+      <!-- Bento Grid (Kristi Kamlylova Develop Benchmark) -->
+      <div class="develop-grid">
+        
+        <!-- ================= LEFT COLUMN (63%) ================= -->
+        <div class="develop-left-col">
           
-          <!-- Mode Buttons & Series Toggles -->
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <div style="display: flex; background: rgba(255,255,255,0.04); padding: 3px; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle);">
-              <button id="btnChartModeCum" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem; border-radius: var(--radius-pill); background: rgba(115,82,255,0.3); color: #fff;" onclick="setRevenueChartMode('cum')">Накопительный (Pacing)</button>
-              <button id="btnChartModeDaily" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem; border-radius: var(--radius-pill);" onclick="setRevenueChartMode('daily')">По дням (Daily)</button>
+          <!-- Row 1: 2 KPI Cards -->
+          <div class="develop-kpi-pair">
+            <!-- Card 1: Total balance / Факт закрыто -->
+            <div class="develop-card">
+              <div class="develop-card-header">
+                <span class="develop-card-title">Факт закрыто</span>
+                <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+              </div>
+              <div class="develop-kpi-row">
+                <div>
+                  <div class="develop-kpi-num" id="metricFactVal">500 000 ₽</div>
+                  <div class="develop-pill pill-pos">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
+                    <span id="metricFactBadge">+10.0%</span>
+                    <span class="pill-sub">к плану</span>
+                  </div>
+                </div>
+                <!-- Sparkline spline SVG wave -->
+                <svg class="develop-sparkline" viewBox="0 0 120 40">
+                  <defs>
+                    <linearGradient id="splineFactWon" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#6c5dd3" stop-opacity="0.35"/>
+                      <stop offset="100%" stop-color="#6c5dd3" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M 0,35 Q 20,32 35,28 T 70,18 T 100,8 T 120,4 L 120,40 L 0,40 Z" fill="url(#splineFactWon)"/>
+                  <path d="M 0,35 Q 20,32 35,28 T 70,18 T 100,8 T 120,4" fill="none" stroke="#6c5dd3" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
             </div>
-            <button id="toggleSeriesWon" class="delta-badge delta-pos" style="cursor: pointer;" onclick="toggleChartSeries(0)">
-              <span class="delta-dot"></span>Факт Won: 500k ₽
-            </button>
-            <button id="toggleSeriesPlan" class="delta-badge delta-cyan" style="cursor: pointer;" onclick="toggleChartSeries(1)">
-              <span class="delta-dot"></span>План: 5.0M ₽
-            </button>
-            <button id="toggleSeriesSsot" class="delta-badge delta-warn" style="cursor: pointer;" onclick="toggleChartSeries(2)">
-              <span class="delta-dot"></span>SSOT: 2.375M ₽
-            </button>
+
+            <!-- Card 2: Total expenses / План таргета -->
+            <div class="develop-card">
+              <div class="develop-card-header">
+                <span class="develop-card-title">План месяца</span>
+                <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+              </div>
+              <div class="develop-kpi-row">
+                <div>
+                  <div class="develop-kpi-num" id="metricPlanVal">5 000 000 ₽</div>
+                  <div class="develop-pill pill-neg">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+                    <span>-4.5M ₽</span>
+                    <span class="pill-sub">дефицит плана</span>
+                  </div>
+                </div>
+                <svg class="develop-sparkline" viewBox="0 0 120 40">
+                  <defs>
+                    <linearGradient id="splineTarget" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#f36594" stop-opacity="0.35"/>
+                      <stop offset="100%" stop-color="#f36594" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M 0,15 Q 30,8 55,20 T 90,12 T 120,25 L 120,40 L 0,40 Z" fill="url(#splineTarget)"/>
+                  <path d="M 0,15 Q 30,8 55,20 T 90,12 T 120,25" fill="none" stroke="#f36594" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
+
+          <!-- Row 2: Dissection (Bar Chart) -->
+          <div class="develop-card">
+            <div class="develop-card-header">
+              <div class="develop-title-group">
+                <span class="develop-card-title">Динамика выручки и активности</span>
+                <div class="develop-legend">
+                  <span class="legend-circle dot-purple"></span><span>Выручка</span>
+                  <span class="legend-circle dot-pink" style="margin-left: 12px;"></span><span>План</span>
+                </div>
+              </div>
+              <span class="develop-dropdown">По месяцам <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+            <div style="height: 230px; position: relative; width: 100%;">
+              <canvas id="developDissectionChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Row 3: 2 Sub-Cards: Transactions & Investments -->
+          <div class="develop-sub-pair">
+            <!-- Left: Transactions (Аудит звонков) -->
+            <div class="develop-card">
+              <div class="develop-card-header">
+                <span class="develop-card-title">Последние звонки</span>
+                <span class="develop-dropdown" onclick="switchTab('audit')">Все (10) <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+              </div>
+              <div class="develop-tx-list">
+                <div class="develop-tx-item" onclick="openCallModal('amo_200424_88')" style="cursor: pointer;">
+                  <div class="develop-tx-icon tx-icon-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                  </div>
+                  <div class="develop-tx-details">
+                    <div class="develop-tx-name">Надежда &bull; <span class="score-badge score-won">12/13 Эталон</span></div>
+                    <div class="develop-tx-time">Сегодня, 15:45 &bull; ООО «ПромСнаб»</div>
+                  </div>
+                  <div class="develop-tx-val val-won">+150 000 ₽</div>
+                </div>
+
+                <div class="develop-tx-item" onclick="openCallModal('b24_activity_91')" style="cursor: pointer;">
+                  <div class="develop-tx-icon tx-icon-pink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  </div>
+                  <div class="develop-tx-details">
+                    <div class="develop-tx-name">Артем &bull; <span class="score-badge score-info">9/13 Встреча</span></div>
+                    <div class="develop-tx-time">Сегодня, 14:10 &bull; АО «ТехноПарк»</div>
+                  </div>
+                  <div class="develop-tx-val val-won">+350 000 ₽</div>
+                </div>
+
+                <div class="develop-tx-item" onclick="openCallModal('amo_200424_89')" style="cursor: pointer;">
+                  <div class="develop-tx-icon tx-icon-cyan">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                  </div>
+                  <div class="develop-tx-details">
+                    <div class="develop-tx-name">Кирилл &bull; <span class="score-badge score-lost">8/13 Слив</span></div>
+                    <div class="develop-tx-time">Сегодня, 12:00 &bull; ИП Смирнов</div>
+                  </div>
+                  <div class="develop-tx-val val-lost">0 ₽</div>
+                </div>
+
+                <div class="develop-tx-item" onclick="openCallModal('b24_activity_96')" style="cursor: pointer;">
+                  <div class="develop-tx-icon tx-icon-amber">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </div>
+                  <div class="develop-tx-details">
+                    <div class="develop-tx-name">Заряна &bull; <span class="score-badge score-won">10/13 Договор</span></div>
+                    <div class="develop-tx-time">Сегодня, 10:15 &bull; УЗИП Системс</div>
+                  </div>
+                  <div class="develop-tx-val val-won">+500 000 ₽</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Investments (Воронка продаж SSOT) -->
+            <div class="develop-card">
+              <div class="develop-card-header">
+                <span class="develop-card-title">Воронка продаж SSOT</span>
+                <span class="develop-dropdown" onclick="switchTab('rop')">Октябрь <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+              </div>
+              <div class="develop-inv-list">
+                <div class="develop-inv-item">
+                  <div class="develop-inv-top">
+                    <span class="develop-inv-name">1. Квалификация</span>
+                    <span class="develop-inv-val">4 500 000 ₽</span>
+                  </div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 90%; background: #6c5dd3;"></div></div>
+                </div>
+                <div class="develop-inv-item">
+                  <div class="develop-inv-top">
+                    <span class="develop-inv-name">2. Встреча проведена / Zoom</span>
+                    <span class="develop-inv-val">2 800 000 ₽</span>
+                  </div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 62%; background: #8b5cf6;"></div></div>
+                </div>
+                <div class="develop-inv-item">
+                  <div class="develop-inv-top">
+                    <span class="develop-inv-name">3. Коммерческое предложение</span>
+                    <span class="develop-inv-val">1 500 000 ₽</span>
+                  </div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 40%; background: #00d4ff;"></div></div>
+                </div>
+                <div class="develop-inv-item">
+                  <div class="develop-inv-top">
+                    <span class="develop-inv-name">4. Согласование договора</span>
+                    <span class="develop-inv-val">850 000 ₽</span>
+                  </div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 25%; background: #f36594;"></div></div>
+                </div>
+                <div class="develop-inv-item">
+                  <div class="develop-inv-top">
+                    <span class="develop-inv-name">5. Оплата (Closed-Won)</span>
+                    <span class="develop-inv-val">500 000 ₽</span>
+                  </div>
+                  <div class="develop-inv-track"><div class="develop-inv-fill" style="width: 15%; background: #34d399;"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Real-time Stress-Test Interactive Slider -->
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-top: 10px; margin-bottom: 14px; flex-wrap: wrap;">
-          <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 280px;">
-            <span style="font-size: 0.74rem; font-weight: 700; color: #fbbf24; white-space: nowrap;">⚡ Симулятор конверсии воронки ОП:</span>
-            <input type="range" id="sliderConversion" min="50" max="150" value="100" step="5" style="flex: 1; accent-color: #fbbf24; cursor: pointer;" oninput="updateRevenueSimulation(this.value)">
-            <span id="lblConversionVal" style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 800; color: #fff; min-width: 48px;">100%</span>
+        <!-- ================= RIGHT COLUMN (37%) ================= -->
+        <div class="develop-right-col">
+          
+          <!-- Card 1: Active cards (Credit Card mockup for SSOT) -->
+          <div class="develop-card">
+            <div class="develop-card-header" style="margin-bottom: 12px;">
+              <span class="develop-card-title">Статус интеграций</span>
+              <a href="javascript:void(0)" onclick="switchTab('settings')" class="develop-subtle-link">Все шлюзы ↗</a>
+            </div>
+            <div class="develop-bank-card">
+              <div class="bank-card-top-row">
+                <span class="bank-card-chip-title">amoCRM & Bitrix24 SSOT</span>
+                <span class="bank-card-network">VISA</span>
+              </div>
+              <div class="bank-chip-svg">
+                <svg width="34" height="26" viewBox="0 0 34 26" fill="none"><rect width="34" height="26" rx="4" fill="#E6C665"/><path d="M0 13h34M12 0v26M22 0v26" stroke="#B8972E" stroke-width="1.2"/></svg>
+              </div>
+              <div class="bank-card-bal-lbl">Взвешенный прогноз SSOT</div>
+              <div class="bank-card-balance" id="metricSsotVal">2 375 000 ₽</div>
+              <div class="bank-card-bottom-row">
+                <span class="bank-card-num">3120 •••• •••• 4578</span>
+                <span class="bank-card-exp">LIVE SYNC</span>
+              </div>
+            </div>
           </div>
+
+          <!-- Card 2: Categories Donut & Spending Rings -->
+          <div class="develop-card">
+            <div class="develop-card-header">
+              <span class="develop-card-title">Категории звонков</span>
+              <span class="develop-dropdown">Октябрь <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+            <div class="develop-donut-container">
+              <div class="donut-chart-box">
+                <canvas id="developDonutChart"></canvas>
+                <div class="donut-center-badge">
+                  <span class="donut-center-num">70%</span>
+                  <span class="donut-center-sub">Core</span>
+                </div>
+              </div>
+              <div class="donut-legend-list">
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #6c5dd3;"></span><span>Эталонные звонки (34%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f36594;"></span><span>Встреча назначена (25%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #00d4ff;"></span><span>Следующий шаг (17%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #ffb55b;"></span><span>Риск срыва сделки (12%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #fb7185;"></span><span>Fake Yes сливы (6%)</span></div>
+              </div>
+            </div>
+
+            <div class="develop-divider"></div>
+
+            <div class="develop-card-header" style="margin-bottom: 10px;">
+              <span class="develop-card-title" style="font-size: 0.82rem;">Нормативы конверсии</span>
+              <span class="develop-dropdown">13 критериев <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+
+            <div class="spending-rings-flex">
+              <div class="spending-ring-box">
+                <div class="spending-ring-svg">
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-purple" stroke-dasharray="57, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val">57%</span>
+                </div>
+                <span class="spending-ring-title">Эталон</span>
+              </div>
+
+              <div class="spending-ring-box">
+                <div class="spending-ring-svg">
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-pink" stroke-dasharray="76, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val">76%</span>
+                </div>
+                <span class="spending-ring-title">Next Step</span>
+              </div>
+
+              <div class="spending-ring-box">
+                <div class="spending-ring-svg">
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-cyan" stroke-dasharray="21, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val">21%</span>
+                </div>
+                <span class="spending-ring-title">Договор</span>
+              </div>
+
+              <div class="spending-ring-box">
+                <div class="spending-ring-svg">
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-green" stroke-dasharray="34, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val">34%</span>
+                </div>
+                <span class="spending-ring-title">Оплата</span>
+              </div>
+
+              <div class="spending-ring-box">
+                <div class="spending-ring-svg">
+                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-violet" stroke-dasharray="10, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="spending-ring-val">10%</span>
+                </div>
+                <span class="spending-ring-title">План</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Income & Expenses (Wave Chart) -->
+          <div class="develop-card">
+            <div class="develop-card-header">
+              <span class="develop-card-title">Прогноз и тренд выручки</span>
+              <div class="develop-legend">
+                <span class="legend-circle dot-purple"></span><span>Тренд</span>
+                <span class="legend-circle dot-pink" style="margin-left: 8px;"></span><span>SSOT</span>
+              </div>
+            </div>
+            <div style="height: 180px; position: relative; width: 100%;">
+              <canvas id="developSplineChart"></canvas>
+              <div class="develop-floating-tooltip">
+                <span>2.37M ₽ SSOT</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Compact Autonomous Trio AI Crew Footer Bar -->
+      <div class="develop-card" style="margin-top: 24px; padding: 16px 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="font-size: 0.74rem; color: var(--text-muted);">
-              Прогноз кассы: <strong id="lblSimProjectedCash" style="font-family: 'JetBrains Mono', monospace; color: #34d399; font-size: 0.95rem;">2 375 000 ₽</strong>
+            <div class="develop-tx-icon tx-icon-purple" style="width: 32px; height: 32px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
             </div>
-            <button class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem;" onclick="resetRevenueSimulation()">Сброс</button>
-          </div>
-        </div>
-
-        <!-- Canvas -->
-        <div style="position: relative; height: 290px; width: 100%;">
-          <canvas id="revenuePacingChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Детальная воронка и SLA нормативы -->
-      <div class="bento-card" style="margin-bottom: 22px;">
-        <div class="bento-card-header">
-          <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Детальная воронка продаж, регламенты SLA и откаты</span>
-          <span class="badge-won">🟢 100% В НОРМЕ SLA</span>
-        </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Этап воронки CRM</th>
-                <th>Сделок (Факт)</th>
-                <th>Сумма этапа, ₽</th>
-                <th>Норматив SLA</th>
-                <th>Факт SLA</th>
-                <th>Статус SLA</th>
-                <th>Конверсия (Win %)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>1. Первичный контакт</strong></td>
-                <td>2 шт</td>
-                <td>1 000 000 ₽</td>
-                <td>24 ч</td>
-                <td>0.0 ч</td>
-                <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>10.0%</td>
-              </tr>
-              <tr>
-                <td><strong>2. Переговоры</strong></td>
-                <td>2 шт</td>
-                <td>1 000 000 ₽</td>
-                <td>48 ч</td>
-                <td>0.0 ч</td>
-                <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>35.0%</td>
-              </tr>
-              <tr>
-                <td><strong>3. Принимают решение</strong></td>
-                <td>2 шт</td>
-                <td>1 000 000 ₽</td>
-                <td>72 ч</td>
-                <td>0.0 ч</td>
-                <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>60.0%</td>
-              </tr>
-              <tr>
-                <td><strong>4. Согласование договора</strong></td>
-                <td>2 шт</td>
-                <td>1 000 000 ₽</td>
-                <td>48 ч</td>
-                <td>0.0 ч</td>
-                <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>85.0%</td>
-              </tr>
-              <tr>
-                <td><strong>5. Счёт / Оплата</strong></td>
-                <td>1 шт</td>
-                <td>500 000 ₽</td>
-                <td>72 ч</td>
-                <td>0.0 ч</td>
-                <td><span class="badge-won">🟢 В НОРМЕ</span></td>
-                <td>95.0%</td>
-              </tr>
-              <tr style="background: rgba(16, 185, 129, 0.05);">
-                <td><strong>6. Успешно реализовано</strong></td>
-                <td>1 шт</td>
-                <td>500 000 ₽</td>
-                <td>—</td>
-                <td>—</td>
-                <td><span class="badge-won">🟢 ФИНИШ</span></td>
-                <td>100.0%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Причины отказов (Loss Codes L1..L4) -->
-      <div class="grid-2">
-        <div class="bento-card">
-          <div class="bento-card-header">
-            <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> Анализ причин срыва (Loss Codes L1..L4)</span>
-            <span class="badge-info">РЕАКТИВАЦИЯ</span>
-          </div>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Код</th>
-                  <th>Причина отказа клиента</th>
-                  <th>Шанс возврата</th>
-                  <th>Сценарий спасения</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><span class="badge-warn">L1</span></td>
-                  <td>Дорого / нет бюджета</td>
-                  <td>50%</td>
-                  <td>Оффер Lite + рассрочка на 3 транша</td>
-                </tr>
-                <tr>
-                  <td><span class="badge-warn">L2</span></td>
-                  <td>Выбрали конкурента</td>
-                  <td>35%</td>
-                  <td>Сравнительная матрица окупаемости + РОП</td>
-                </tr>
-                <tr>
-                  <td><span class="badge-warn">L3</span></td>
-                  <td>Не формат / нет потребности</td>
-                  <td>10%</td>
-                  <td>Ежемесячный дайджест кейсов ниши</td>
-                </tr>
-                <tr>
-                  <td><span class="badge-warn">L4</span></td>
-                  <td>Потеря контакта / недозвон</td>
-                  <td>20%</td>
-                  <td>Автозвонок + WhatsApp цепочка</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="bento-card">
-          <div class="bento-card-header">
-            <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span> Дисциплина задач и CRM-контроль</span>
-            <span class="badge-won">100% В НОРМЕ</span>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px;">
-            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
-              <div style="font-size: 0.72rem; color: var(--text-muted);">Просрочено задач</div>
-              <div style="font-size: 1.3rem; font-weight: 800; color: #34d399;">0 шт</div>
-              <div style="font-size: 0.68rem; color: var(--text-secondary);">🟢 Чистый пайплайн</div>
-            </div>
-            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
-              <div style="font-size: 0.72rem; color: var(--text-muted);">Сделок без задач</div>
-              <div style="font-size: 1.3rem; font-weight: 800; color: #fbbf24;">9 шт</div>
-              <div style="font-size: 0.68rem; color: #fca5a5;">Требуется постановка Next Step</div>
+            <div>
+              <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">RevOps Autonomous AI Crew V20.2</div>
+              <div style="font-size: 0.70rem; color: #808191;">Agent 1 (DevOps Healer) &bull; Agent 2 (Gemini Auditor) &bull; Agent 3 (SSOT Sync)</div>
             </div>
           </div>
-          <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.4;">
-            Регламент РОПа: Все 9 сделок активного пайплайна должны иметь дедлайн следующего касания в течение 24 часов.
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="badge-won" style="font-size: 0.68rem; padding: 3px 8px;"><span class="status-dot dot-won"></span> LIVE &bull; 24/7 AUTONOMOUS</span>
+            <button id="btnSelfHealingAuditPulse" class="btn btn-primary" onclick="triggerSelfHealingAudit()" style="padding: 6px 14px; font-size: 0.74rem;">
+              <span>⚡ Запустить Self-Healing аудит</span>
+            </button>
           </div>
         </div>
+        <div id="aiCrewLogPulse" class="ai-crew-log" style="display: none; margin-top: 12px;"></div>
       </div>
+
+      <!-- Hidden canvas hook so existing legacy callers don't throw null -->
+      <canvas id="revenuePacingChart" style="display: none;"></canvas>
 
     </div>
 
-    <!-- ======================================================== -->
-    <!-- TAB 2: ЭКСПРЕСС 3 ЦИФРЫ (КАЛЬКУЛЯТОР УПУЩЕННОЙ ПРИБЫЛИ)   -->
     <!-- ======================================================== -->
     <div id="view-express" class="tab-view">
       
