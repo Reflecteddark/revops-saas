@@ -1086,6 +1086,16 @@ let CALLS_DATA = [
 
       });
 
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `
+          <div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.08); border-radius: 12px; margin-top: 10px;">
+            <div style="font-size: 2rem; margin-bottom: 8px;">🎙️</div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 4px;">Реестр звонков пуст (Чистое нулевое состояние)</strong>
+            <div style="font-size: 0.74rem; color: var(--text-secondary);">Ожидание поступления звонков из телефонии CRM (Битрикс24 / amoCRM) через n8n</div>
+          </div>
+        `;
+      }
+
       // Calculate team summary
       const count = filtered.length || 1;
       const avgScore = (totalScore / count).toFixed(1);
@@ -2681,14 +2691,14 @@ let CALLS_DATA = [
         const res = await fetch('/api/v1/calls/data?tenant_id=TNT-001');
         if (!res.ok) throw new Error('API status ' + res.status);
         const data = await res.json();
-        if (data && Array.isArray(data.calls) && data.calls.length > 0) {
+        if (data && Array.isArray(data.calls)) {
           CALLS_DATA = data.calls;
           refreshAllDashboardViews();
           lastSyncTime = Date.now();
           tickLiveStatus();
           updateChartTimestamps();
           if (showFeedback && typeof showToast === 'function') {
-            showToast('Google Таблица', `Синхронизировано ${data.calls.length} звонков из raw_calls`);
+            showToast('Google Таблица', data.calls.length > 0 ? `Синхронизировано ${data.calls.length} звонков из raw_calls` : 'Таблица raw_calls очищена (0 звонков)');
           }
           return true;
         }
