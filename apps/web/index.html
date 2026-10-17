@@ -683,7 +683,7 @@
       position: fixed;
       inset: 0;
       z-index: 100000;
-      background: radial-gradient(circle at 50% 25%, rgba(115, 82, 255, 0.16), transparent 60%), #06070a;
+      background: #050508;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -699,13 +699,13 @@
     .auth-card {
       width: 440px;
       max-width: 100%;
-      background: rgba(14, 18, 28, 0.92);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: #0a0a10;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 20px;
-      padding: 36px 32px;
-      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), 0 0 50px rgba(115, 82, 255, 0.22);
+      padding: 40px 36px;
+      box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8);
       animation: authCardEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       text-align: center;
@@ -727,12 +727,12 @@
       height: 60px;
       margin: 0 auto 16px;
       border-radius: 16px;
-      background: linear-gradient(135deg, rgba(115, 82, 255, 0.25), rgba(0, 212, 255, 0.25));
-      border: 1px solid rgba(115, 82, 255, 0.45);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 25px rgba(115, 82, 255, 0.35);
+      box-shadow: none;
     }
     .auth-form-group {
       margin-bottom: 16px;
@@ -1046,9 +1046,9 @@
 
     .mp-nav-item.active {
       color: #fff;
-      background: rgba(115, 82, 255, 0.22);
-      border-color: rgba(115, 82, 255, 0.45);
-      box-shadow: 0 0 14px rgba(115, 82, 255, 0.2);
+      background: rgba(115, 82, 255, 0.15);
+      border-color: rgba(115, 82, 255, 0.35);
+      box-shadow: none;
     }
 
     .mp-nav-icon {
@@ -1538,15 +1538,15 @@
       border-color: rgba(255, 255, 255, 0.2);
     }
     .podium-card.rank-1 {
-      background: linear-gradient(180deg, rgba(245, 158, 11, 0.1) 0%, rgba(14, 18, 28, 0.95) 100%);
-      border: 1px solid rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.05);
+      border: 1px solid rgba(245, 158, 11, 0.25);
       border-top: 2px solid #f59e0b;
-      box-shadow: 0 14px 40px -10px rgba(245, 158, 11, 0.28);
+      box-shadow: none;
       transform: translateY(-8px);
     }
     .podium-card.rank-1:hover {
       transform: translateY(-12px);
-      box-shadow: 0 18px 50px -8px rgba(245, 158, 11, 0.38);
+      box-shadow: none;
     }
     .podium-card.rank-2 {
       border-top: 2px solid #94a3b8;
@@ -2149,9 +2149,9 @@
     }
     .mp-nav-item.active .mp-nav-icon {
       color: #fff;
-      background: linear-gradient(135deg, rgba(115, 82, 255, 0.35) 0%, rgba(99, 102, 241, 0.25) 100%);
-      border-color: rgba(115, 82, 255, 0.55);
-      box-shadow: 0 0 14px rgba(115, 82, 255, 0.35);
+      background: rgba(115, 82, 255, 0.2);
+      border-color: rgba(115, 82, 255, 0.35);
+      box-shadow: none;
     }
 
     /* Card Title Vector Icon Container */
@@ -2490,10 +2490,10 @@
     }
 
     html[data-theme="light"] .mp-nav-item.active {
-      background: linear-gradient(135deg, #6c5dd3 0%, #8b5cf6 100%) !important;
-      color: #ffffff !important;
-      box-shadow: 0 6px 18px rgba(108, 93, 211, 0.35) !important;
-      border-color: transparent !important;
+      background: rgba(108, 93, 211, 0.12) !important;
+      color: #6c5dd3 !important;
+      box-shadow: none !important;
+      border-color: rgba(108, 93, 211, 0.25) !important;
     }
 
     html[data-theme="light"] .mp-topbar {
@@ -3616,7 +3616,7 @@
       <div style="font-size: 0.7rem; font-weight: 700; color: #a78bfa; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px;">
         Закрытый контур &bull; Тенант TNT-001
       </div>
-      <h2 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 8px;">
+      <h2 style="font-size: 2rem; font-family: 'Inter Tight', sans-serif; font-weight: 600; letter-spacing: -0.03em; color: #fff; margin-bottom: 8px;">
         Вход в RevOps OS
       </h2>
       <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.4;">
@@ -3768,11 +3768,11 @@
         </a>
         <div class="theme-mode-toggle" onclick="toggleThemeMode()" title="Переключить тему (Develop Light / Dark)" aria-label="Toggle theme" style="transform: scale(0.85); transform-origin: right center;">
           <div class="theme-mode-icons">
-            <span>🌙</span>
-            <span>☀️</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+            <span style="display: inline-flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
           </div>
           <div class="theme-mode-thumb" id="themeSideThumb">
-            <span id="themeSideThumbIcon">🌙</span>
+            <span id="themeSideThumbIcon" style="display: inline-flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
           </div>
         </div>
       </div>
@@ -3809,11 +3809,11 @@
           <!-- Develop Theme Mode Toggle Pill (Sun / Moon) -->
           <div class="theme-mode-toggle" onclick="toggleThemeMode()" title="Переключить тему (Светлая / Тёмная)" aria-label="Toggle theme">
             <div class="theme-mode-icons">
-              <span>🌙</span>
-              <span>☀️</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+              <span style="display: inline-flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
             </div>
             <div class="theme-mode-thumb" id="themeTopThumb">
-              <span id="themeTopThumbIcon">☀️</span>
+              <span id="themeTopThumbIcon" style="display: inline-flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
             </div>
           </div>
 
@@ -4144,27 +4144,14 @@
 
       </div>
 
-      <!-- Compact Autonomous Trio AI Crew Footer Bar -->
-      <div class="develop-card" style="margin-top: 24px; padding: 16px 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="develop-tx-icon tx-icon-purple" style="width: 32px; height: 32px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
-            </div>
-            <div>
-              <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">RevOps Autonomous AI Crew V20.2</div>
-              <div style="font-size: 0.70rem; color: #808191;">Agent 1 (DevOps Healer) &bull; Agent 2 (Gemini Auditor) &bull; Agent 3 (SSOT Sync)</div>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="badge-won" style="font-size: 0.68rem; padding: 3px 8px;">LIVE &bull; 24/7 AUTONOMOUS</span>
-            <button id="btnSelfHealingAuditPulse" class="btn btn-primary" onclick="triggerSelfHealingAudit()" style="padding: 6px 14px; font-size: 0.74rem;">
-              <span>Запустить Self-Healing аудит</span>
-            </button>
-          </div>
-        </div>
-        <div id="aiCrewLogPulse" class="ai-crew-log" style="display: none; margin-top: 12px;"></div>
-      </div>
+      <!-- Compact Autonomous Trio AI Crew Link -->
+      <a href="javascript:void(0)" onclick="switchTab('settings')"
+         style="display: inline-flex; align-items: center; gap: 8px;
+                font-size: 0.72rem; color: var(--text-muted);
+                margin-top: 24px; text-decoration: none;">
+        <span class="status-dot dot-won" style="width: 5px; height: 5px;"></span>
+        AI Crew работает · 3 агента онлайн · все системы штатно
+      </a>
 
 
 
@@ -4257,58 +4244,99 @@
           <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></span> Расшифровка финансовых утечек по 4 узким местам</span>
           <span class="badge-warn">БЫСТРЫЙ ВОЗВРАТ: 119 000 ₽ В МЕСЯЦ 1</span>
         </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>№</th>
-                <th>Узкое место воронки продаж</th>
-                <th>Отраслевой бенчмарк потерь</th>
-                <th>Упущенная прибыль, ₽/мес</th>
-                <th>Причина утечки</th>
-                <th>Как закрываем за 14 дней</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td><strong>Слив лидов на звонках (нет Next Step)</strong></td>
-                <td>28% выручки теряется из-за ошибок менеджеров на звонках</td>
-                <td><span style="color: #fb7185; font-weight: 700;">140 000 ₽</span></td>
-                <td>Менеджеры консультируют, но не закрывают на дату</td>
-                <td>ИИ-аудит 100% звонков + чек-лист Next Step</td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td><strong>Зависание сделок на этапе КП > 48ч</strong></td>
-                <td>18% выручки теряется из-за просрочки follow-up</td>
-                <td><span style="color: #fb7185; font-weight: 700;">90 000 ₽</span></td>
-                <td>Клиент остывает, пока менеджер ждет звонка</td>
-                <td>Авторадар SLA 48ч + эскалация РОПу на 3-й день</td>
-              </tr>
-              <tr>
-                <td>3</td>
-                <td><strong>Брошенные отказники без дожима (L1-L4)</strong></td>
-                <td>12% — потенциал реактивации списанных отказников CRM</td>
-                <td><span style="color: #fb7185; font-weight: 700;">60 000 ₽</span></td>
-                <td>Сделки списаны в архив без реактивации</td>
-                <td>AI Recovery Engine: автодожим в WhatsApp/TG</td>
-              </tr>
-              <tr>
-                <td>4</td>
-                <td><strong>Зависшая дебиторка и задержка оплат</strong></td>
-                <td>10% выставленных счетов зависают на согласовании (DSO)</td>
-                <td><span style="color: #fb7185; font-weight: 700;">50 000 ₽</span></td>
-                <td>Нет платежного календаря и контроля сроков</td>
-                <td>Платежный календарь DSO + автонапоминания</td>
-              </tr>
-              <tr style="background: rgba(115,82,255,0.1); font-weight: 700;">
-                <td colspan="3">ИТОГО УПУЩЕННОЙ ПРИБЫЛИ В МЕСЯЦ:</td>
-                <td style="color: #fb7185; font-size: 0.95rem;">340 000 ₽</td>
-                <td colspan="2">ПОТЕНЦИАЛ БЫСТРОГО ВОЗВРАТА: 119 000 ₽ В ПЕРВЫЙ МЕСЯЦ</td>
-              </tr>
-            </tbody>
-          </table>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+          <!-- Row 1 -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+              <div>
+                <strong style="font-size: 0.88rem; color: #fff;">1. Слив лидов на звонках (нет Next Step)</strong>
+                <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-left: 8px;">• Менеджеры консультируют, но не закрывают на дату</span>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #fb7185;">140 000 ₽/мес</span>
+                <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-left: 6px;">(28%)</span>
+              </div>
+            </div>
+            <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+              <div style="width: 28%; height: 100%; background: #fb7185; border-radius: 999px;"></div>
+            </div>
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.6); display: flex; justify-content: space-between;">
+              <span>Решение за 14 дней: ИИ-аудит 100% звонков + чек-лист Next Step</span>
+              <span style="color: #34d399;">Возврат: ~49 000 ₽</span>
+            </div>
+          </div>
+
+          <!-- Row 2 -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+              <div>
+                <strong style="font-size: 0.88rem; color: #fff;">2. Зависание сделок на этапе КП > 48ч</strong>
+                <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-left: 8px;">• Клиент остывает, пока менеджер ждет звонка</span>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #fb7185;">90 000 ₽/мес</span>
+                <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-left: 6px;">(18%)</span>
+              </div>
+            </div>
+            <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+              <div style="width: 18%; height: 100%; background: #fb7185; border-radius: 999px;"></div>
+            </div>
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.6); display: flex; justify-content: space-between;">
+              <span>Решение за 14 дней: Авторадар SLA 48ч + эскалация РОПу на 3-й день</span>
+              <span style="color: #34d399;">Возврат: ~31 500 ₽</span>
+            </div>
+          </div>
+
+          <!-- Row 3 -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+              <div>
+                <strong style="font-size: 0.88rem; color: #fff;">3. Брошенные отказники без дожима (L1-L4)</strong>
+                <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-left: 8px;">• Сделки списаны в архив без реактивации</span>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #fbbf24;">60 000 ₽/мес</span>
+                <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-left: 6px;">(12%)</span>
+              </div>
+            </div>
+            <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+              <div style="width: 12%; height: 100%; background: #fbbf24; border-radius: 999px;"></div>
+            </div>
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.6); display: flex; justify-content: space-between;">
+              <span>Решение за 14 дней: AI Recovery Engine: автодожим в WhatsApp/TG</span>
+              <span style="color: #34d399;">Возврат: ~21 000 ₽</span>
+            </div>
+          </div>
+
+          <!-- Row 4 -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+              <div>
+                <strong style="font-size: 0.88rem; color: #fff;">4. Зависшая дебиторка и задержка оплат</strong>
+                <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-left: 8px;">• Нет платежного календаря и контроля сроков</span>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #fbbf24;">50 000 ₽/мес</span>
+                <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-left: 6px;">(10%)</span>
+              </div>
+            </div>
+            <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+              <div style="width: 10%; height: 100%; background: #fbbf24; border-radius: 999px;"></div>
+            </div>
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.6); display: flex; justify-content: space-between;">
+              <span>Решение за 14 дней: Платежный календарь DSO + автонапоминания</span>
+              <span style="color: #34d399;">Возврат: ~17 500 ₽</span>
+            </div>
+          </div>
+
+          <!-- Summary Footnote -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: rgba(115,82,255,0.08); border: 1px solid rgba(115,82,255,0.2); border-radius: 10px;">
+            <span style="font-size: 0.78rem; font-weight: 700; color: #fff; text-transform: uppercase;">Итого упущенной прибыли в месяц:</span>
+            <div style="text-align: right;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; font-weight: 800; color: #fb7185; margin-right: 12px;">340 000 ₽</span>
+              <span class="badge-won" style="font-size: 0.68rem;">Потенциал быстрого возврата: 119 000 ₽/мес</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -5014,7 +5042,7 @@
             <div class="funnel-step-bar" style="width: 47.5%; background: linear-gradient(90deg, #10b981, #059669); opacity: 0.35;"></div>
             <div class="funnel-step-content">
               <div class="step-left">
-                <div class="step-num-badge" style="background: #10b981; border-color: #34d399; color: #fff;">✓</div>
+                <div class="step-num-badge" style="background: #10b981; border-color: #34d399; color: #fff; display: flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
                 <div>
                   <div class="step-title-text" style="color: #34d399; font-weight: 800;">Твёрдый взвешенный прогноз кассы (SSOT Safe Cash)</div>
                   <div class="step-desc-text">Математическое ожидание выручки с учетом вероятностей и фильтра зомби</div>
@@ -6119,7 +6147,7 @@
             Менеджер: Светлана &bull; Чек: 500 000 ₽ &bull; Длительность: 1:57
           </div>
         </div>
-        <button onclick="closeCallModal()" class="btn btn-ghost" style="padding: 6px 10px; border-radius: 50%;">✕</button>
+        <button onclick="closeCallModal()" class="btn btn-ghost" style="padding: 6px 10px; border-radius: 50%; font-size: 1.1rem; line-height: 1;">&times;</button>
       </div>
 
       <!-- Linear-grade Interactive Audio Waveform Spectrograph -->
@@ -6254,7 +6282,7 @@
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
             <span>Печать / Сохранить в PDF</span>
           </button>
-          <button onclick="closeOnePagerModal()" class="btn btn-ghost" style="padding: 8px 12px; border-radius: 50%;">✕</button>
+          <button onclick="closeOnePagerModal()" class="btn btn-ghost" style="padding: 8px 12px; border-radius: 50%; font-size: 1.1rem; line-height: 1;">&times;</button>
         </div>
       </div>
 

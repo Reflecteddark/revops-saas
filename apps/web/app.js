@@ -10,7 +10,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 7,
         status: "risk",
-        status_label: "🔴 СЛИВ (НЕТ NEXT STEP)",
+        status_label: "СЛИВ (НЕТ NEXT STEP)",
         risk_amount: "500 000 ₽",
         next_step: 0,
         cr: [0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1],
@@ -39,7 +39,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 12,
         status: "won",
-        status_label: "🟢 ЭТАЛОН",
+        status_label: "ЭТАЛОН",
         risk_amount: "0 ₽",
         next_step: 1,
         cr: [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
@@ -66,7 +66,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 8,
         status: "risk",
-        status_label: "🔴 СЛИВ (НЕТ NEXT STEP)",
+        status_label: "СЛИВ (НЕТ NEXT STEP)",
         risk_amount: "500 000 ₽",
         next_step: 0,
         cr: [0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1],
@@ -90,7 +90,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 4,
         status: "risk",
-        status_label: "🔴 СЛИВ (НЕТ NEXT STEP)",
+        status_label: "СЛИВ (НЕТ NEXT STEP)",
         risk_amount: "500 000 ₽",
         next_step: 0,
         cr: [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
@@ -114,7 +114,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 8,
         status: "norm",
-        status_label: "🟡 НОРМА",
+        status_label: "НОРМА",
         risk_amount: "0 ₽",
         next_step: 1,
         cr: [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
@@ -136,7 +136,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 9,
         status: "norm",
-        status_label: "🟡 НОРМА",
+        status_label: "НОРМА",
         risk_amount: "0 ₽",
         next_step: 1,
         cr: [1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
@@ -157,7 +157,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 11,
         status: "won",
-        status_label: "🟢 ЭТАЛОН",
+        status_label: "ЭТАЛОН",
         risk_amount: "0 ₽",
         next_step: 1,
         cr: [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
@@ -179,7 +179,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 11,
         status: "won",
-        status_label: "🟢 ЭТАЛОН",
+        status_label: "ЭТАЛОН",
         risk_amount: "0 ₽",
         next_step: 1,
         cr: [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
@@ -201,7 +201,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 11,
         status: "won",
-        status_label: "🟢 ЭТАЛОН",
+        status_label: "ЭТАЛОН",
         risk_amount: "0 ₽",
         next_step: 1,
         cr: [1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1],
@@ -223,7 +223,7 @@ const CALLS_DATA = [
         amount: "500 000 ₽",
         score: 10,
         status: "norm",
-        status_label: "🟡 НОРМА",
+        status_label: "НОРМА",
         risk_amount: "0 ₽",
         next_step: 1,
         cr: [1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
@@ -692,7 +692,7 @@ const CALLS_DATA = [
 
       const nextStepColor = call.next_step === 1 ? '#34d399' : '#fb7185';
       const nextStepBg = call.next_step === 1 ? 'rgba(52,211,153,0.08)' : 'rgba(251,113,133,0.08)';
-      const nextStepText = call.next_step === 1 ? '✓ Слот встречи зафиксирован' : '✕ Слив: точный день и время не зафиксированы';
+      const nextStepText = call.next_step === 1 ? 'Слот встречи зафиксирован' : 'Слив: точный день и время не зафиксированы';
 
       expandCard.innerHTML = `
         <div class="inline-expand-drawer">
@@ -714,12 +714,12 @@ const CALLS_DATA = [
 
             <div style="display: flex; align-items: center; gap: 8px;">
               <button class="btn btn-emerald" onclick="copyRescueScriptByCallId('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px; background: #059669; border-color: #10b981;">
-                <span>💬 Скопировать в WhatsApp</span>
+                <span>Скопировать в WhatsApp</span>
               </button>
               <button class="btn btn-primary" onclick="openCallModal('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px;">
                 <span>Полный экран &nearr;</span>
               </button>
-              <button class="btn btn-ghost" onclick="toggleInlineCallDetails('${call.id}', event)" style="padding: 6px 10px; font-size: 0.72rem;">✕ Свернуть</button>
+              <button class="btn btn-ghost" onclick="toggleInlineCallDetails('${call.id}', event)" style="padding: 6px 10px; font-size: 0.72rem;">&times; Свернуть</button>
             </div>
           </div>
 
@@ -777,13 +777,13 @@ const CALLS_DATA = [
                 <strong style="font-size: 0.78rem; color: #fff; text-transform: uppercase; letter-spacing: 0.04em;">AI Playbook Diff (Факт vs Эталон RevOps)</strong>
               </div>
               <button class="btn btn-emerald" onclick="copyPlaybookScript('${call.id}')" style="font-size: 0.70rem; padding: 4px 10px; background: #059669; border-color: #10b981;">
-                <span>📋 Скопировать скрипт дожима для РОПа</span>
+                <span>Скопировать скрипт дожима для РОПа</span>
               </button>
             </div>
             <div class="playbook-diff-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="diff-col-defect" style="padding: 10px; background: rgba(251,113,133,0.05); border: 1px solid rgba(251,113,133,0.2); border-radius: 6px;">
                 <div style="font-size: 0.68rem; font-weight: 700; color: #fb7185; text-transform: uppercase; margin-bottom: 5px;">
-                  ✕ Реплика менеджера (Дефект скрипта):
+                  Реплика менеджера (Дефект скрипта):
                 </div>
                 <div style="font-size: 0.76rem; color: #fca5a5; font-style: italic; line-height: 1.45;">
                   ${PLAYBOOK_DIFFS[call.id]?.defectQuote || '«Отправлю вам материалы на почту, если что перезвоните...»'}
@@ -791,7 +791,7 @@ const CALLS_DATA = [
               </div>
               <div class="diff-col-recommend" style="padding: 10px; background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.2); border-radius: 6px;">
                 <div style="font-size: 0.68rem; font-weight: 700; color: #34d399; text-transform: uppercase; margin-bottom: 5px;">
-                  ✓ AI-Рекомендация (Эталон B2B RevOps):
+                  AI-Рекомендация (Эталон B2B RevOps):
                 </div>
                 <div style="font-size: 0.76rem; color: #6ee7b7; font-weight: 500; line-height: 1.45;">
                   ${PLAYBOOK_DIFFS[call.id]?.recommendScript || '«Чтобы не терять время, давайте во вторник в 12:00 на 15 минут в Zoom зафиксируем расчет окупаемости.»'}
@@ -885,7 +885,7 @@ const CALLS_DATA = [
           const end = Math.min(call.transcript.length, idx + q.length + 50);
           const rawSnippet = call.transcript.substring(start, end);
           const highlighted = rawSnippet.replace(new RegExp(`(${q})`, 'gi'), '<mark class="search-highlight">$1</mark>');
-          searchSnippet = `<div style="font-size: 0.70rem; color: #c4b5fd; margin-top: 4px;">💬 "...${highlighted}..."</div>`;
+          searchSnippet = `<div style="font-size: 0.70rem; color: #c4b5fd; margin-top: 4px;">"...${highlighted}..."</div>`;
         }
 
         // 13 criteria heatmap dots
@@ -893,7 +893,7 @@ const CALLS_DATA = [
         call.cr.forEach((val, idx) => {
           const pass = (val === 1);
           const cls = pass ? 'pass' : 'fail';
-          const tip = `${pass ? '✓ Выполнено' : '✕ Дефект'}: ${CRITERIA_NAMES[idx]}`;
+          const tip = `${pass ? 'Выполнено' : 'Дефект'}: ${CRITERIA_NAMES[idx]}`;
           crDots += `<div class="heat-dot ${cls}" title="${tip}"></div>`;
         });
 
@@ -921,7 +921,7 @@ const CALLS_DATA = [
                 <span class="call-dot"></span>
                 <span style="font-family: 'JetBrains Mono', monospace; color: #34d399; font-weight: 700;">${call.amount}</span>
                 <span class="call-dot"></span>
-                <span>⏱ ${call.duration}</span>
+                <span>${call.duration}</span>
                 <span class="call-dot"></span>
                 <span>${call.client}</span>
               </div>
@@ -974,7 +974,7 @@ const CALLS_DATA = [
       if (sel) {
         sel.value = status;
         filterCallsTable();
-        const labelMap = { won: '🟢 Эталон', norm: '🟡 Норма', risk: '🔴 Слив' };
+        const labelMap = { won: 'Эталон', norm: 'Норма', risk: 'Слив' };
         showToast('Фильтр применён', 'Отображены звонки категории: ' + (labelMap[status] || status));
       }
     }
@@ -1011,13 +1011,13 @@ const CALLS_DATA = [
           tlStep.style.background = 'rgba(16, 185, 129, 0.08)';
           tlStep.style.borderLeftColor = '#10b981';
           tlTime.style.color = '#34d399';
-          tlStatus.textContent = '✓ Слот встречи зафиксирован';
+          tlStatus.textContent = 'Слот встречи зафиксирован';
           tlStatus.style.color = '#34d399';
         } else {
           tlStep.style.background = 'rgba(244, 63, 94, 0.08)';
           tlStep.style.borderLeftColor = '#f43f5e';
           tlTime.style.color = '#fca5a5';
-          tlStatus.textContent = '✕ Слив: нет точного времени';
+          tlStatus.textContent = 'Слив: нет точного времени';
           tlStatus.style.color = '#fca5a5';
         }
       }
@@ -1034,11 +1034,11 @@ const CALLS_DATA = [
         if (val === 1) {
           span.style.background = 'rgba(16, 185, 129, 0.2)';
           span.style.color = '#34d399';
-          span.textContent = `✓ ${CRITERIA_NAMES[idx]}`;
+          span.textContent = CRITERIA_NAMES[idx];
         } else {
           span.style.background = 'rgba(244, 63, 94, 0.2)';
           span.style.color = '#fb7185';
-          span.textContent = `✕ ${CRITERIA_NAMES[idx]}`;
+          span.textContent = CRITERIA_NAMES[idx];
         }
         pillsWrap.appendChild(span);
       });
@@ -1053,11 +1053,11 @@ const CALLS_DATA = [
       if (stepPin) {
         if (call.next_step === 1) {
           stepPin.className = 'wave-pin wave-pin-green';
-          stepPin.innerHTML = '<span>✅ Next Step зафиксирован</span>';
+          stepPin.innerHTML = '<span>Next Step зафиксирован</span>';
           stepPin.onclick = () => showToast('Next Step зафиксирован', 'Менеджер четко зафиксировал дату и время следующего контакта.');
         } else {
           stepPin.className = 'wave-pin wave-pin-red';
-          stepPin.innerHTML = '<span>🚨 Слив Next Step</span>';
+          stepPin.innerHTML = '<span>Слив Next Step</span>';
           stepPin.onclick = () => showToast('Слив Next Step', 'Дата и время следующего контакта не согласованы.');
         }
       }
@@ -1097,7 +1097,7 @@ const CALLS_DATA = [
 
       if (!isPlayingAudio) {
         isPlayingAudio = true;
-        btn.innerHTML = '<span>⏸ Пауза</span>';
+        btn.innerHTML = '<span>Пауза</span>';
         btn.style.background = '#4f2ae8';
         showToast('Аудиоплеер Linear AI', 'Воспроизведение аудиозаписи звонка со спектрограммой...');
         
@@ -1220,7 +1220,7 @@ const CALLS_DATA = [
       } else {
         animateCounter(document.getElementById('metricPlanVal'), 5000000);
         animateCounter(document.getElementById('metricFactVal'), 500000);
-        document.getElementById('metricFactBadge').textContent = '🟢 10.0% ВЫПОЛНЕНО';
+        document.getElementById('metricFactBadge').textContent = '10.0% ВЫПОЛНЕНО';
         animateCounter(document.getElementById('metricSsotVal'), 2375000);
         animateCounter(document.getElementById('metricPipeVal'), 4500000);
         if (syncText) syncText.textContent = 'Синхронизировано: amoCRM + Битрикс24 (16.10.2026, 21:50)';
@@ -1422,8 +1422,10 @@ const CALLS_DATA = [
       const isLight = mode === 'light';
       const topIcon = document.getElementById('themeTopThumbIcon');
       const sideIcon = document.getElementById('themeSideThumbIcon');
-      if (topIcon) topIcon.textContent = isLight ? '☀️' : '🌙';
-      if (sideIcon) sideIcon.textContent = isLight ? '☀️' : '🌙';
+      const sunSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+      const moonSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+      if (topIcon) topIcon.innerHTML = isLight ? sunSvg : moonSvg;
+      if (sideIcon) sideIcon.innerHTML = isLight ? sunSvg : moonSvg;
     }
 
     function updateAllChartsTheme(mode) {
@@ -1565,12 +1567,16 @@ const CALLS_DATA = [
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(13, 13, 20, 0.95)',
+              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(10, 10, 16, 0.98)',
+              titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
               titleColor: isLight ? '#11142d' : '#ffffff',
               bodyColor: isLight ? '#4b5563' : '#cbd5e1',
-              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(124, 58, 237, 0.25)',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
               borderWidth: 1,
+              cornerRadius: 8,
               padding: 10,
+              displayColors: false,
               callbacks: {
                 label: (c) => ` ${c.dataset.label}: ${c.raw}k ₽`
               }
@@ -1617,6 +1623,16 @@ const CALLS_DATA = [
           plugins: {
             legend: { display: false },
             tooltip: {
+              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(10, 10, 16, 0.98)',
+              titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              titleColor: isLight ? '#11142d' : '#ffffff',
+              bodyColor: isLight ? '#4b5563' : '#cbd5e1',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
+              borderWidth: 1,
+              cornerRadius: 8,
+              padding: 10,
+              displayColors: false,
               callbacks: {
                 label: (c) => ` ${c.label}: ${c.raw}%`
               }
@@ -1659,25 +1675,22 @@ const CALLS_DATA = [
               data: [310, 420, 390, 520, 460, 590, 540],
               borderColor: '#7c3aed',
               backgroundColor: grad1,
-              borderWidth: 2.8,
-              tension: 0.45,
-              fill: true,
+              borderWidth: 1.75,
+              tension: 0.35,
+              fill: false,
               pointRadius: 0,
-              pointHoverRadius: 6
+              pointHoverRadius: 4
             },
             {
               label: 'SSOT',
               data: [240, 310, 460, 380, 540, 470, 610],
               borderColor: '#f36594',
               backgroundColor: grad2,
-              borderWidth: 2.8,
-              tension: 0.45,
-              fill: true,
-              pointRadius: [0, 0, 0, 0, 5, 0, 0],
-              pointBackgroundColor: '#f36594',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointHoverRadius: 7
+              borderWidth: 1.75,
+              tension: 0.35,
+              fill: false,
+              pointRadius: 0,
+              pointHoverRadius: 4
             }
           ]
         },
@@ -1687,12 +1700,16 @@ const CALLS_DATA = [
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(17, 19, 29, 0.95)',
+              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(10, 10, 16, 0.98)',
+              titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
               titleColor: isLight ? '#11142d' : '#ffffff',
               bodyColor: isLight ? '#4b5563' : '#cbd5e1',
-              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
               borderWidth: 1,
+              cornerRadius: 8,
               padding: 10,
+              displayColors: false,
               callbacks: {
                 label: (c) => ` ${c.dataset.label}: ${c.raw}k ₽`
               }
@@ -1795,7 +1812,22 @@ const CALLS_DATA = [
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(10, 10, 16, 0.98)',
+              titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              titleColor: '#ffffff',
+              bodyColor: '#cbd5e1',
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+              borderWidth: 1,
+              cornerRadius: 8,
+              padding: 10,
+              displayColors: false,
+              callbacks: {
+                label: (c) => ` ${c.dataset.label}: ${c.raw}`
+              }
+            }
           },
           scales: {
             x: {
@@ -1923,12 +1955,16 @@ const CALLS_DATA = [
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: 'rgba(14, 18, 28, 0.95)',
+              backgroundColor: 'rgba(10, 10, 16, 0.98)',
+              titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
               titleColor: '#fff',
               bodyColor: '#cbd5e1',
-              borderColor: 'rgba(255, 255, 255, 0.12)',
+              borderColor: 'rgba(255, 255, 255, 0.08)',
               borderWidth: 1,
+              cornerRadius: 8,
               padding: 10,
+              displayColors: false,
               callbacks: {
                 label: function(context) {
                   const val = context.parsed.y;
@@ -2040,12 +2076,12 @@ const CALLS_DATA = [
               data: getDynamicRadarData('all'),
               borderColor: '#b899eb',
               backgroundColor: 'rgba(184, 153, 235, 0.22)',
-              borderWidth: 2.5,
+              borderWidth: 1.75,
               pointBackgroundColor: '#33d1ff',
               pointBorderColor: '#ffffff',
-              pointBorderWidth: 2,
-              pointRadius: 4.5,
-              pointHoverRadius: 7,
+              pointBorderWidth: 1.5,
+              pointRadius: 3,
+              pointHoverRadius: 5,
               fill: true
             }
           ]
@@ -2059,9 +2095,16 @@ const CALLS_DATA = [
               labels: { color: '#cbd5e1', font: { size: 11 } }
             },
             tooltip: {
-              backgroundColor: 'rgba(14, 18, 28, 0.95)',
+              backgroundColor: 'rgba(10, 10, 16, 0.98)',
+              titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
               titleColor: '#fff',
               bodyColor: '#cbd5e1',
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+              borderWidth: 1,
+              cornerRadius: 8,
+              padding: 10,
+              displayColors: false,
               callbacks: {
                 label: function(ctx) {
                   return ` ${ctx.dataset.label}: ${ctx.parsed.r}%`;
@@ -2172,41 +2215,41 @@ const CALLS_DATA = [
 
     const ALL_CMD_ITEMS = [
       // Tabs Navigation
-      { type: 'Раздел', icon: '⚡', label: '1. Пульс выручки', action: () => switchTab('pulse') },
-      { type: 'Раздел', icon: '⚡', label: '2. Экспресс-аудит звонков', action: () => switchTab('express') },
-      { type: 'Раздел', icon: '🏆', label: '3. Пьедестал РОПа & Рейтинг', action: () => switchTab('rop') },
-      { type: 'Раздел', icon: '🎙️', label: '4. ИИ-Аудит звонков & Тепловая карта', action: () => switchTab('audit') },
-      { type: 'Раздел', icon: '🌊', label: '5. Диагностика утечек выручки', action: () => switchTab('leaks') },
-      { type: 'Раздел', icon: '📊', label: '6. Влияние на выручку & Детектор Fake Yes', action: () => switchTab('impact') },
-      { type: 'Раздел', icon: '🎲', label: '7. Monte Carlo 3.0 симуляция', action: () => switchTab('montecarlo') },
-      { type: 'Раздел', icon: '👥', label: '8. Навыки & Динамический Payroll', action: () => switchTab('skills') },
-      { type: 'Раздел', icon: '⚙️', label: '9. Настройки & E2E Контур', action: () => switchTab('settings') },
+      { type: 'Раздел', icon: '→', label: '1. Пульс выручки', action: () => switchTab('pulse') },
+      { type: 'Раздел', icon: '→', label: '2. Экспресс-аудит звонков', action: () => switchTab('express') },
+      { type: 'Раздел', icon: '→', label: '3. Пьедестал РОПа & Рейтинг', action: () => switchTab('rop') },
+      { type: 'Раздел', icon: '→', label: '4. ИИ-Аудит звонков & Тепловая карта', action: () => switchTab('audit') },
+      { type: 'Раздел', icon: '→', label: '5. Диагностика утечек выручки', action: () => switchTab('leaks') },
+      { type: 'Раздел', icon: '→', label: '6. Влияние на выручку & Детектор Fake Yes', action: () => switchTab('impact') },
+      { type: 'Раздел', icon: '→', label: '7. Monte Carlo 3.0 симуляция', action: () => switchTab('montecarlo') },
+      { type: 'Раздел', icon: '→', label: '8. Навыки & Динамический Payroll', action: () => switchTab('skills') },
+      { type: 'Раздел', icon: '→', label: '9. Настройки & E2E Контур', action: () => switchTab('settings') },
 
       // CRM Deals Drilldown
-      { type: 'Сделка', icon: '💼', label: 'B24-80: Услуги повышения лояльности (Светлана • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_78'); } },
-      { type: 'Сделка', icon: '💼', label: 'B24-82: Сопровождение гос закупок (Надежда • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_80'); } },
-      { type: 'Сделка', icon: '💼', label: 'B24-84: Продажа ортопедических матрасов (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_82'); } },
-      { type: 'Сделка', icon: '💼', label: 'B24-86: Производство кухонь (Светлана • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_84'); } },
-      { type: 'Сделка', icon: '💼', label: 'B24-88: Юридические услуги банкротства (Виктория • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_86'); } },
-      { type: 'Сделка', icon: '💼', label: 'B24-90: Поставка складского оборудования (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_88'); } },
-      { type: 'Сделка', icon: '💼', label: 'B24-92: Разработка CRM под ключ (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_90'); } },
-      { type: 'Сделка', icon: '💼', label: 'B24-94: Стройматериалы и аренда спецтехники (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_92'); } },
-      { type: 'Сделка', icon: '💼', label: 'B24-96: Оптовая торговля автозапчастями (Виктория • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_94'); } },
-      { type: 'Сделка', icon: '💼', label: 'B24-98: Обучение корпоративному английскому (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_96'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-80: Услуги повышения лояльности (Светлана • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_78'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-82: Сопровождение гос закупок (Надежда • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_80'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-84: Продажа ортопедических матрасов (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_82'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-86: Производство кухонь (Светлана • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_84'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-88: Юридические услуги банкротства (Виктория • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_86'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-90: Поставка складского оборудования (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_88'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-92: Разработка CRM под ключ (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_90'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-94: Стройматериалы и аренда спецтехники (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_92'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-96: Оптовая торговля автозапчастями (Виктория • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_94'); } },
+      { type: 'Сделка', icon: '§', label: 'B24-98: Обучение корпоративному английскому (Заряна • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_96'); } },
 
       // Reps
-      { type: 'Менеджер', icon: '👑', label: 'Заряна: РОП / Топ-перформер (5 звонков • 2 500 000 ₽)', action: () => filterRepAudit('Заряна') },
-      { type: 'Менеджер', icon: '🥈', label: 'Надежда: КАМ Enterprise / Рекорд речи 12/13 (1 звонок • 500 000 ₽)', action: () => filterRepAudit('Надежда') },
-      { type: 'Менеджер', icon: '🥉', label: 'Виктория: Квалификация / 100% Next Step (2 звонка • 1 000 000 ₽)', action: () => filterRepAudit('Виктория') },
-      { type: 'Менеджер', icon: '🚨', label: 'Светлана: P0 Риск срыва / 0% Next Step (2 звонка • 1 000 000 ₽)', action: () => filterRepAudit('Светлана') },
+      { type: 'Менеджер', icon: '@', label: 'Заряна: РОП / Топ-перформер (5 звонков • 2 500 000 ₽)', action: () => filterRepAudit('Заряна') },
+      { type: 'Менеджер', icon: '@', label: 'Надежда: КАМ Enterprise / Рекорд речи 12/13 (1 звонок • 500 000 ₽)', action: () => filterRepAudit('Надежда') },
+      { type: 'Менеджер', icon: '@', label: 'Виктория: Квалификация / 100% Next Step (2 звонка • 1 000 000 ₽)', action: () => filterRepAudit('Виктория') },
+      { type: 'Менеджер', icon: '@', label: 'Светлана: P0 Риск срыва / 0% Next Step (2 звонка • 1 000 000 ₽)', action: () => filterRepAudit('Светлана') },
 
       // Quick Actions
-      { type: 'Действие', icon: '📥', label: 'Экспорт реестра звонков в CSV', action: () => exportCallsToCSV() },
-      { type: 'Действие', icon: '📄', label: 'Открыть Executive One-Pager (PDF/Печать)', action: () => openOnePagerModal() },
-      { type: 'Действие', icon: '🔄', label: 'Синхронизировать CRM & n8n (SSOT Re-Sync)', action: () => triggerSyncSimulation() },
-      { type: 'Действие', icon: '📊', label: 'Включить ультра-плотный режим (Excel Pro 34px)', action: () => setTableDensity('excel-pro') },
-      { type: 'Действие', icon: '🛋️', label: 'Включить комфортный режим таблицы (Comfort)', action: () => setTableDensity('comfort') },
-      { type: 'Действие', icon: '🔒', label: 'Выйти из учетной записи (PIN Gate)', action: () => logout() }
+      { type: 'Действие', icon: '↵', label: 'Экспорт реестра звонков в CSV', action: () => exportCallsToCSV() },
+      { type: 'Действие', icon: '↵', label: 'Открыть Executive One-Pager (PDF/Печать)', action: () => openOnePagerModal() },
+      { type: 'Действие', icon: '↵', label: 'Синхронизировать CRM & n8n (SSOT Re-Sync)', action: () => triggerSyncSimulation() },
+      { type: 'Действие', icon: '↵', label: 'Включить ультра-плотный режим (Excel Pro 34px)', action: () => setTableDensity('excel-pro') },
+      { type: 'Действие', icon: '↵', label: 'Включить комфортный режим таблицы (Comfort)', action: () => setTableDensity('comfort') },
+      { type: 'Действие', icon: '↵', label: 'Выйти из учетной записи (PIN Gate)', action: () => logout() }
     ];
 
     function openCommandPalette() {
@@ -2355,16 +2398,16 @@ const CALLS_DATA = [
       if (btn) btn.disabled = true;
 
       // Step 1
-      showToast('Синхронизация [1/3]', '📡 Проверка вебхука n8n и amoCRM/Bitrix24 REST API...');
+      showToast('Синхронизация [1/3]', 'Проверка вебхука n8n и amoCRM/Bitrix24 REST API...');
 
       // Step 2
       setTimeout(() => {
-        showToast('Синхронизация [2/3]', '🔍 Сверка raw_deals и речевых транскриптов Gemini 3.5 Flash...');
+        showToast('Синхронизация [2/3]', 'Сверка raw_deals и речевых транскриптов Gemini 3.5 Flash...');
       }, 700);
 
       // Step 3
       setTimeout(() => {
-        showToast('Синхронизация [3/3]', '⚡ SSOT обновлен: 10 сделок, 5 000 000 ₽ синхронизировано без расхождений!');
+        showToast('Синхронизация [3/3]', 'SSOT обновлен: 10 сделок, 5 000 000 ₽ синхронизировано без расхождений!');
         if (icon) icon.style.animation = '';
         if (text) text.textContent = 'Синхронизировать';
         if (btn) btn.disabled = false;
@@ -2424,12 +2467,12 @@ function copyPlaybookScript(callId) {
   if (!diff) return;
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(diff.recommendScript).then(() => {
-      showToast('AI Playbook', '✅ Эталонный скрипт дожима скопирован в буфер обмена РОПа!');
+      showToast('AI Playbook', 'Эталонный скрипт дожима скопирован в буфер обмена РОПа!');
     }).catch(() => {
       showToast('AI Playbook', 'Скрипт готов к отправке');
     });
   } else {
-    showToast('AI Playbook', '✅ Скрипт дожима скопирован!');
+    showToast('AI Playbook', 'Скрипт дожима скопирован!');
   }
 }
 
@@ -2505,15 +2548,15 @@ function triggerSelfHealingAudit() {
 
   // Step 1
   updateLogs(`
-    <div style="color: var(--accent-cyan);">[${ts}] 🔍 L1/L2 DevOps Healer (PID 19592): Сканирование портов 8000 (FastAPI), 5678 (n8n)...</div>
+    <div style="color: var(--accent-cyan);">[${ts}] L1/L2 DevOps Healer (PID 19592): Сканирование портов 8000 (FastAPI), 5678 (n8n)...</div>
     <div style="color: #64748b; padding-left: 12px;">├─ Healthcheck HTTP 200 OK • Memory RSS 84MB • 0 zombie subroutines</div>
   `);
 
   // Step 2
   setTimeout(() => {
     updateLogs(`
-      <div style="color: var(--accent-cyan);">[${ts}] 🔍 L1/L2 DevOps Healer: OK (latency 14ms)</div>
-      <div style="color: #34d399; margin-top: 6px;">[${ts}] 🎙️ Agent 2 CCO (Gemini 2.5 Flash): Сверка 10 речевых аудитов по 13 критериям...</div>
+      <div style="color: var(--accent-cyan);">[${ts}] L1/L2 DevOps Healer: OK (latency 14ms)</div>
+      <div style="color: #34d399; margin-top: 6px;">[${ts}] Agent 2 CCO (Gemini 2.5 Flash): Сверка 10 речевых аудитов по 13 критериям...</div>
       <div style="color: #64748b; padding-left: 12px;">├─ Strict JSON schema: 10/10 валидны • Средний балл: 9.1/13 • Next Step: 70.0% • Fake Yes: 3 локализовано</div>
     `);
   }, 700);
@@ -2521,21 +2564,21 @@ function triggerSelfHealingAudit() {
   // Step 3
   setTimeout(() => {
     updateLogs(`
-      <div style="color: var(--accent-cyan);">[${ts}] 🔍 L1/L2 DevOps Healer: OK (latency 14ms)</div>
-      <div style="color: #34d399; margin-top: 4px;">[${ts}] 🎙️ Agent 2 CCO (Gemini 2.5 Flash): 10/10 Валидировано (0 дефектов)</div>
-      <div style="color: #fbbf24; margin-top: 6px;">[${ts}] 🛡️ Agent 3 Sync Guardian (L3 Orchestrator): Сверка amoCRM + Bitrix24 + raw_deals...</div>
+      <div style="color: var(--accent-cyan);">[${ts}] L1/L2 DevOps Healer: OK (latency 14ms)</div>
+      <div style="color: #34d399; margin-top: 4px;">[${ts}] Agent 2 CCO (Gemini 2.5 Flash): 10/10 Валидировано (0 дефектов)</div>
+      <div style="color: #fbbf24; margin-top: 6px;">[${ts}] Agent 3 Sync Guardian (L3 Orchestrator): Сверка amoCRM + Bitrix24 + raw_deals...</div>
       <div style="color: #64748b; padding-left: 12px;">├─ Сделок в реестре: 10 • Выручка SSOT: 5 000 000 ₽ • Won: 500 000 ₽ • Дрифт кассы: 0.00 ₽ (100% точность)</div>
-      <div style="color: #10b981; font-weight: 700; margin-top: 8px;">✅ ВЕРДИКТ: Все 3 агента экипажа синхронизированы в SSOT. Целостность контура подтверждена.</div>
+      <div style="color: #10b981; font-weight: 700; margin-top: 8px;">ВЕРДИКТ: Все 3 агента экипажа синхронизированы в SSOT. Целостность контура подтверждена.</div>
     `);
 
     [btn1, btn2].forEach(b => {
       if (b) {
         b.disabled = false;
-        b.innerHTML = '<span>⚡ Запустить Self-Healing аудит</span>';
+        b.innerHTML = '<span>Запустить Self-Healing аудит</span>';
       }
     });
 
-    showToast('RevOps AI Crew', '✅ Все 3 агента экипажа синхронизированы, 0 расхождений SSOT!');
+    showToast('RevOps AI Crew', 'Все 3 агента экипажа синхронизированы, 0 расхождений SSOT!');
     isSelfHealingActive = false;
   }, 1600);
 }
