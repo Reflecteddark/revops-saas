@@ -1289,6 +1289,131 @@ const CALLS_DATA = [
     window.setAccentTheme = setAccentTheme;
 
     // ==========================================================================
+    // DUAL-MODE THEME CONTROLLER (DEVELOP LIGHT & DARK BENCHMARK)
+    // ==========================================================================
+    function getThemeMode() {
+      return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    }
+
+    function setThemeMode(mode) {
+      const isLight = mode === 'light';
+      if (isLight) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+
+      try {
+        localStorage.setItem('revops_theme_mode', mode);
+      } catch (e) {}
+
+      updateThemeToggleUI(mode);
+      updateAllChartsTheme(mode);
+
+      if (typeof showToast === 'function') {
+        showToast('Тема оформления', isLight ? 'Активирована светлая тема (Develop Light)' : 'Активирована тёмная тема (Develop Dark)');
+      }
+    }
+
+    function toggleThemeMode() {
+      const current = getThemeMode();
+      setThemeMode(current === 'light' ? 'dark' : 'light');
+    }
+
+    function updateThemeToggleUI(mode) {
+      const isLight = mode === 'light';
+      const topIcon = document.getElementById('themeTopThumbIcon');
+      const sideIcon = document.getElementById('themeSideThumbIcon');
+      if (topIcon) topIcon.textContent = isLight ? '☀️' : '🌙';
+      if (sideIcon) sideIcon.textContent = isLight ? '☀️' : '🌙';
+    }
+
+    function updateAllChartsTheme(mode) {
+      const isLight = mode === 'light';
+      const gridColor = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
+      const tickColor = isLight ? '#64748b' : '#94a3b8';
+      const tooltipBg = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(14, 18, 28, 0.95)';
+      const tooltipTitle = isLight ? '#0f172a' : '#ffffff';
+      const tooltipBody = isLight ? '#334155' : '#cbd5e1';
+      const tooltipBorder = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)';
+
+      // 1. Revenue Pacing Chart
+      if (typeof revPacingChartInstance !== 'undefined' && revPacingChartInstance) {
+        try {
+          if (revPacingChartInstance.options.scales?.x) {
+            revPacingChartInstance.options.scales.x.ticks.color = tickColor;
+            revPacingChartInstance.options.scales.x.grid.color = gridColor;
+          }
+          if (revPacingChartInstance.options.scales?.y) {
+            revPacingChartInstance.options.scales.y.ticks.color = tickColor;
+            revPacingChartInstance.options.scales.y.grid.color = gridColor;
+          }
+          if (revPacingChartInstance.options.plugins?.tooltip) {
+            revPacingChartInstance.options.plugins.tooltip.backgroundColor = tooltipBg;
+            revPacingChartInstance.options.plugins.tooltip.titleColor = tooltipTitle;
+            revPacingChartInstance.options.plugins.tooltip.bodyColor = tooltipBody;
+            revPacingChartInstance.options.plugins.tooltip.borderColor = tooltipBorder;
+          }
+          revPacingChartInstance.update('none');
+        } catch (e) {}
+      }
+
+      // 2. Rep Performance Chart
+      if (typeof repPerfChartInstance !== 'undefined' && repPerfChartInstance) {
+        try {
+          if (repPerfChartInstance.options.scales?.x) {
+            repPerfChartInstance.options.scales.x.ticks.color = isLight ? '#111827' : '#ffffff';
+            repPerfChartInstance.options.scales.x.grid.color = gridColor;
+          }
+          if (repPerfChartInstance.options.scales?.y) {
+            repPerfChartInstance.options.scales.y.ticks.color = tickColor;
+            repPerfChartInstance.options.scales.y.grid.color = gridColor;
+          }
+          if (repPerfChartInstance.options.plugins?.tooltip) {
+            repPerfChartInstance.options.plugins.tooltip.backgroundColor = tooltipBg;
+            repPerfChartInstance.options.plugins.tooltip.titleColor = tooltipTitle;
+            repPerfChartInstance.options.plugins.tooltip.bodyColor = tooltipBody;
+            repPerfChartInstance.options.plugins.tooltip.borderColor = tooltipBorder;
+          }
+          repPerfChartInstance.update('none');
+        } catch (e) {}
+      }
+
+      // 3. Speech Radar Chart
+      if (typeof speechRadarChartInstance !== 'undefined' && speechRadarChartInstance) {
+        try {
+          if (speechRadarChartInstance.options.scales?.r) {
+            speechRadarChartInstance.options.scales.r.grid.color = gridColor;
+            speechRadarChartInstance.options.scales.r.angleLines.color = gridColor;
+            speechRadarChartInstance.options.scales.r.pointLabels.color = isLight ? '#475569' : tickColor;
+          }
+          speechRadarChartInstance.update('none');
+        } catch (e) {}
+      }
+
+      // 4. Monte Carlo Chart
+      if (typeof mcChartInstance !== 'undefined' && mcChartInstance) {
+        try {
+          if (mcChartInstance.options.scales?.x) {
+            mcChartInstance.options.scales.x.ticks.color = tickColor;
+            mcChartInstance.options.scales.x.grid.color = gridColor;
+          }
+          if (mcChartInstance.options.scales?.y) {
+            mcChartInstance.options.scales.y.ticks.color = tickColor;
+            mcChartInstance.options.scales.y.grid.color = gridColor;
+          }
+          mcChartInstance.update('none');
+        } catch (e) {}
+      }
+    }
+
+    window.getThemeMode = getThemeMode;
+    window.setThemeMode = setThemeMode;
+    window.toggleThemeMode = toggleThemeMode;
+    window.updateThemeToggleUI = updateThemeToggleUI;
+    window.updateAllChartsTheme = updateAllChartsTheme;
+
+    // ==========================================================================
     // TOAST NOTIFICATION
     // ==========================================================================
     function showToast(title, desc) {
@@ -1425,21 +1550,21 @@ const CALLS_DATA = [
       if (!ctx) return;
 
       const c2d = ctx.getContext ? ctx.getContext('2d') : null;
-      let gradWon = 'rgba(107, 230, 211, 0.14)';
-      let gradSsot = 'rgba(255, 181, 91, 0.10)';
+      let gradWon = 'rgba(108, 93, 211, 0.16)';
+      let gradSsot = 'rgba(243, 101, 148, 0.12)';
 
       if (c2d) {
         const h = ctx.clientHeight || 260;
         const g1 = c2d.createLinearGradient(0, 0, 0, h);
-        g1.addColorStop(0, 'rgba(107, 230, 211, 0.40)');
-        g1.addColorStop(0.7, 'rgba(107, 230, 211, 0.10)');
-        g1.addColorStop(1, 'rgba(107, 230, 211, 0.00)');
+        g1.addColorStop(0, 'rgba(108, 93, 211, 0.45)');
+        g1.addColorStop(0.7, 'rgba(108, 93, 211, 0.10)');
+        g1.addColorStop(1, 'rgba(108, 93, 211, 0.00)');
         gradWon = g1;
 
         const g2 = c2d.createLinearGradient(0, 0, 0, h);
-        g2.addColorStop(0, 'rgba(255, 181, 91, 0.35)');
-        g2.addColorStop(0.7, 'rgba(255, 181, 91, 0.08)');
-        g2.addColorStop(1, 'rgba(255, 181, 91, 0.00)');
+        g2.addColorStop(0, 'rgba(243, 101, 148, 0.38)');
+        g2.addColorStop(0.7, 'rgba(243, 101, 148, 0.08)');
+        g2.addColorStop(1, 'rgba(243, 101, 148, 0.00)');
         gradSsot = g2;
       }
 
@@ -1453,36 +1578,36 @@ const CALLS_DATA = [
             {
               label: 'Факт Won (500 000 ₽)',
               data: FACT_CUM_DATA,
-              borderColor: '#6be6d3',
+              borderColor: '#6c5dd3',
               backgroundColor: gradWon,
               borderWidth: 3,
               fill: true,
-              tension: 0.35,
+              tension: 0.4,
               pointRadius: [0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0],
-              pointBackgroundColor: '#6be6d3',
+              pointBackgroundColor: '#6c5dd3',
               pointBorderColor: '#fff',
               pointHoverRadius: 8
             },
             {
               label: 'План таргета (5 000 000 ₽)',
               data: PLAN_CUM_DATA,
-              borderColor: '#33d1ff',
+              borderColor: '#38bdf8',
               borderWidth: 2,
               borderDash: [5, 5],
               fill: false,
-              tension: 0.1,
+              tension: 0.2,
               pointRadius: 0
             },
             {
               label: 'SSOT Прогноз кассы',
               data: ssotData,
-              borderColor: '#ffb55b',
+              borderColor: '#f36594',
               backgroundColor: gradSsot,
               borderWidth: 2.5,
               fill: true,
-              tension: 0.35,
+              tension: 0.4,
               pointRadius: [0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 6],
-              pointBackgroundColor: '#ffb55b',
+              pointBackgroundColor: '#f36594',
               pointHoverRadius: 8
             }
           ]
@@ -1632,28 +1757,28 @@ const CALLS_DATA = [
         pipe: {
           label: 'Пайплайн в работе, ₽',
           data: pipe,
-          colors: ['#33d1ff', '#adadfb', '#b899eb', '#6be6d3'],
+          colors: ['#6c5dd3', '#f36594', '#8b5cf6', '#38bdf8'],
           unit: ' ₽',
           isCurrency: true
         },
         score: {
           label: 'Средний балл речи Gemini (/13)',
           data: score,
-          colors: ['#ffb55b', '#6be6d3', '#33d1ff', '#ff4747'],
+          colors: ['#6c5dd3', '#38bdf8', '#4ade80', '#f36594'],
           unit: ' б.',
           isCurrency: false
         },
         step: {
           label: 'Фиксация Next Step, %',
           data: nextstep,
-          colors: ['#ffb55b', '#6be6d3', '#33d1ff', '#ff4747'],
+          colors: ['#6c5dd3', '#38bdf8', '#4ade80', '#f36594'],
           unit: '%',
           isCurrency: false
         },
         risk: {
           label: 'Выручка под угрозой срыва, ₽',
           data: risk,
-          colors: ['#ffb55b', '#ff4747', '#ff4747', '#ff4747'],
+          colors: ['#fbbf24', '#f43f5e', '#f43f5e', '#f43f5e'],
           unit: ' ₽',
           isCurrency: true
         }
@@ -1894,6 +2019,11 @@ const CALLS_DATA = [
       const savedTheme = localStorage.getItem('revops_accent_theme') || 'cyan';
       if (typeof setAccentTheme === 'function') {
         setAccentTheme(savedTheme);
+      }
+
+      const savedMode = localStorage.getItem('revops_theme_mode') || 'dark';
+      if (typeof setThemeMode === 'function') {
+        setThemeMode(savedMode);
       }
 
       const cmdInput = document.getElementById('cmdPaletteInput');
