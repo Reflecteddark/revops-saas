@@ -5054,7 +5054,14 @@
           <span class="badge-won">AI WHATSAPP RESCUE</span>
         </div>
         
-        <div style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- Zero State Placeholder for Rescue Deals -->
+        <div id="ropRescueDealsEmpty" style="padding: 32px 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.08); border-radius: 10px;">
+          <div style="font-size: 1.8rem; margin-bottom: 6px; opacity: 0.5;">🛡️</div>
+          <strong style="color: #fff; font-size: 0.9rem; display: block; margin-bottom: 4px;">Сделок в зоне риска не обнаружено (Чистый лист)</strong>
+          <span>Ожидание звонков менеджеров для автоматического выявления срывов Next Step</span>
+        </div>
+
+        <div id="ropRescueDealsCards" style="display: none; flex-direction: column; gap: 14px;">
           
           <!-- Deal 1 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
@@ -5196,36 +5203,36 @@
         <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Всего звонков в аудите</span>
-            <span class="badge-won">100% ПОКРЫТИЕ</span>
+            <span class="badge-won" id="auditMetricCallsBadge">0% ПОКРЫТИЕ</span>
           </div>
-          <div class="metric-value">10 шт</div>
-          <div class="metric-sub">5 000 000 ₽ сумма подтвержденных сделок</div>
+          <div class="metric-value" id="auditMetricCalls">0 шт</div>
+          <div class="metric-sub" id="auditMetricCallsSub">0 ₽ сумма подтвержденных сделок</div>
         </div>
 
         <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Средний балл качества</span>
-            <span class="badge-won">70.0% ЭФФЕКТИВНОСТЬ</span>
+            <span class="badge-won" id="auditMetricScoreBadge">0.0% ЭФФЕКТИВНОСТЬ</span>
           </div>
-          <div class="metric-value" style="color: var(--accent-cyan);">9.1 / 13</div>
+          <div class="metric-value" id="auditMetricScore" style="color: var(--accent-cyan);">0.0 / 13</div>
           <div class="metric-sub">Отраслевая норма B2B: &ge; 9.0 баллов</div>
         </div>
 
         <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Фиксация Next Step</span>
-            <span class="badge-warn">70.0% В НОРМЕ</span>
+            <span class="badge-warn" id="auditMetricNextStepBadge">0.0% В НОРМЕ</span>
           </div>
-          <div class="metric-value" style="color: #fbbf24;">7 из 10</div>
-          <div class="metric-sub">3 звонка отпущены без конкретной даты/времени</div>
+          <div class="metric-value" id="auditMetricNextStep" style="color: #fbbf24;">0 из 0</div>
+          <div class="metric-sub" id="auditMetricNextStepSub">0 звонков отпущены без конкретной даты/времени</div>
         </div>
 
         <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Выручка под угрозой</span>
-            <span class="badge-lost">4 ДИАЛОГА С БРАКОМ</span>
+            <span class="badge-lost" id="auditMetricRiskBadge">0 ДИАЛОГОВ С БРАКОМ</span>
           </div>
-          <div class="metric-value" style="color: #fb7185;">1 500 000 ₽</div>
+          <div class="metric-value" id="auditMetricRisk" style="color: #fb7185;">0 ₽</div>
           <div class="metric-sub">Критический брак речи (&lt;9 баллов)</div>
         </div>
       </div>
@@ -5238,24 +5245,24 @@
             <div class="meter-title">
               <span>Баланс речевой доминанты (Talk-to-Listen)</span>
             </div>
-            <span class="delta-badge delta-pos"><span class="delta-dot"></span>ИДЕАЛЬНЫЙ БАЛАНС</span>
+            <span class="delta-badge delta-pos"><span class="delta-dot"></span>0% / 0%</span>
           </div>
 
           <div class="segmented-bar">
-            <!-- Manager Talk: 42% -->
-            <div class="segment-fill" style="width: 42%; background: linear-gradient(90deg, #7352ff, #8b5cf6); box-shadow: 0 0 10px rgba(115,82,255,0.4);" title="Речь менеджера: 42%"></div>
-            <!-- Client Talk: 58% -->
-            <div class="segment-fill" style="width: 58%; background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 10px rgba(16,185,129,0.4);" title="Речь клиента: 58%"></div>
+            <!-- Manager Talk: 0% -->
+            <div id="tlMeterManagerBar" class="segment-fill" style="width: 0%; background: linear-gradient(90deg, #7352ff, #8b5cf6);" title="Речь менеджера: 0%"></div>
+            <!-- Client Talk: 0% -->
+            <div id="tlMeterClientBar" class="segment-fill" style="width: 0%; background: linear-gradient(90deg, #10b981, #34d399);" title="Речь клиента: 0%"></div>
           </div>
 
           <div class="meter-legend">
             <div class="legend-item">
               <span class="legend-swatch" style="background: #8b5cf6;"></span>
-              <span>Менеджер: <strong style="color: #fff;">42%</strong> (Вопросы и ведение)</span>
+              <span>Менеджер: <strong id="tlMeterManagerText" style="color: #fff;">0%</strong> (Вопросы и ведение)</span>
             </div>
             <div class="legend-item">
               <span class="legend-swatch" style="background: #10b981;"></span>
-              <span>Клиент: <strong style="color: #fff;">58%</strong> (Ответы и боли)</span>
+              <span>Клиент: <strong id="tlMeterClientText" style="color: #fff;">0%</strong> (Ответы и боли)</span>
             </div>
             <span style="color: var(--text-muted); font-size: 0.68rem;">Норма B2B: 40-45% / 55-60%</span>
           </div>
@@ -5265,32 +5272,29 @@
         <div class="meter-card">
           <div class="meter-header">
             <div class="meter-title">
-              <span>Спектр качества звонков (10 диалогов)</span>
+              <span id="qualitySpecTitle">Спектр качества звонков (0 диалогов)</span>
             </div>
-            <span class="delta-badge delta-cyan"><span class="delta-dot"></span>Gemini Score 9.1</span>
+            <span class="delta-badge delta-cyan" id="qualitySpecScoreBadge"><span class="delta-dot"></span>Gemini Score 0.0</span>
           </div>
 
           <div class="segmented-bar">
-            <!-- Won/Gold: 40% (4 calls: b24_80, 90, 92, 94) -->
-            <div class="segment-fill" onclick="setAuditStatusFilter('won')" style="width: 40%; background: linear-gradient(90deg, #10b981, #34d399);" title="Эталон (11-13 баллов): 4 звонка (40%)"></div>
-            <!-- Norm/Yellow: 30% (3 calls: b24_86, 88, 96) -->
-            <div class="segment-fill" onclick="setAuditStatusFilter('norm')" style="width: 30%; background: linear-gradient(90deg, #fbbf24, #f59e0b);" title="Норма (8-10 баллов): 3 звонка (30%)"></div>
-            <!-- Lost/Red: 30% (3 calls: b24_78, 82, 84) -->
-            <div class="segment-fill" onclick="setAuditStatusFilter('risk')" style="width: 30%; background: linear-gradient(90deg, #f43f5e, #fb7185);" title="Слив / Риск (<8 баллов): 3 звонка (30%)"></div>
+            <div id="qualitySpecWonBar" class="segment-fill" onclick="setAuditStatusFilter('won')" style="width: 0%; background: linear-gradient(90deg, #10b981, #34d399);" title="Эталон (11-13 баллов): 0 звонков"></div>
+            <div id="qualitySpecNormBar" class="segment-fill" onclick="setAuditStatusFilter('norm')" style="width: 0%; background: linear-gradient(90deg, #fbbf24, #f59e0b);" title="Норма (8-10 баллов): 0 звонков"></div>
+            <div id="qualitySpecRiskBar" class="segment-fill" onclick="setAuditStatusFilter('risk')" style="width: 0%; background: linear-gradient(90deg, #f43f5e, #fb7185);" title="Слив / Риск (<8 баллов): 0 звонков"></div>
           </div>
 
           <div class="meter-legend">
             <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('won')" title="Фильтровать эталонные звонки">
               <span class="legend-swatch" style="background: #10b981;"></span>
-              <span>Эталон: <strong style="color: #34d399;">4 (40%)</strong></span>
+              <span>Эталон: <strong id="qualitySpecWonText" style="color: #34d399;">0 (0%)</strong></span>
             </div>
             <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('norm')" title="Фильтровать норму">
               <span class="legend-swatch" style="background: #fbbf24;"></span>
-              <span>Норма: <strong style="color: #fbbf24;">3 (30%)</strong></span>
+              <span>Норма: <strong id="qualitySpecNormText" style="color: #fbbf24;">0 (0%)</strong></span>
             </div>
             <div class="legend-item" style="cursor: pointer;" onclick="setAuditStatusFilter('risk')" title="Фильтровать риски">
               <span class="legend-swatch" style="background: #f43f5e;"></span>
-              <span>Слив / Риск: <strong style="color: #fb7185;">3 (30%)</strong></span>
+              <span>Слив / Риск: <strong id="qualitySpecRiskText" style="color: #fb7185;">0 (0%)</strong></span>
             </div>
             <span style="color: var(--text-muted); font-size: 0.68rem;">Кликните сегмент для фильтра</span>
           </div>
@@ -5313,22 +5317,14 @@
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             <!-- Hidden select for 100% programmatic & test compatibility -->
             <select id="radarRepSelector" onchange="updateRadarChart(this.value)" style="display: none;">
-              <option value="all">Команда в целом (10 звонков, 9.1/13)</option>
-              <option value="Заряна">Заряна (9.8/13 • 5 звонков)</option>
-              <option value="Надежда">Надежда (12.0/13 • Рекорд)</option>
-              <option value="Виктория">Виктория (9.5/13 • Норма)</option>
-              <option value="Светлана">Светлана (5.5/13 • P0 Зона риска)</option>
+              <option value="all">Команда в целом (0 звонков, 0.0/13)</option>
             </select>
 
             <!-- Segmented Pills for Radar Rep -->
             <div class="segmented-pills-bar" id="pillRadarRepGroup">
               <span class="pills-label">Срез:</span>
-              <div class="segmented-pills-group">
-                <button type="button" class="pill-btn active" data-radar="all" onclick="setPillRadarRep('all')">Все (9.1)</button>
-                <button type="button" class="pill-btn" data-radar="Заряна" onclick="setPillRadarRep('Заряна')"><span class="rep-avatar-xs rep-z">З</span> Заряна (9.8)</button>
-                <button type="button" class="pill-btn" data-radar="Надежда" onclick="setPillRadarRep('Надежда')"><span class="rep-avatar-xs rep-n">Н</span> Надежда (12.0)</button>
-                <button type="button" class="pill-btn" data-radar="Виктория" onclick="setPillRadarRep('Виктория')"><span class="rep-avatar-xs rep-v">В</span> Виктория (9.5)</button>
-                <button type="button" class="pill-btn" data-radar="Светлана" onclick="setPillRadarRep('Светлана')"><span class="rep-avatar-xs rep-s">С</span> Светлана (5.5)</button>
+              <div class="segmented-pills-group" id="radarRepPillsContainer">
+                <button type="button" class="pill-btn active" data-radar="all" onclick="setPillRadarRep('all')">Все (0)</button>
               </div>
             </div>
           </div>
@@ -5458,22 +5454,22 @@
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 18px; background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-top: 10px;">
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: var(--text-muted);">Факт выручки (As-Is)</div>
-            <div style="font-size: 1.3rem; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace;">500 000 ₽</div>
+            <div id="lossBridgeFact" style="font-size: 1.3rem; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace;">0 ₽</div>
           </div>
           <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">+</div>
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: var(--text-muted);">Взвешенный SSOT пайплайн</div>
-            <div style="font-size: 1.3rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace;">2 375 000 ₽</div>
+            <div id="lossBridgeSsot" style="font-size: 1.3rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace;">0 ₽</div>
           </div>
           <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">+</div>
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: var(--text-muted);">Возврат 30% утечек ОП</div>
-            <div style="font-size: 1.3rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace;">+675 000 ₽</div>
+            <div id="lossBridgeLeaks" style="font-size: 1.3rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace;">+0 ₽</div>
           </div>
           <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">→</div>
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: #a78bfa; font-weight: 700;">ИТОГО КАССА TO-BE</div>
-            <div style="font-size: 1.5rem; font-weight: 800; color: #a78bfa; font-family: 'JetBrains Mono', monospace;">3 550 000 ₽</div>
+            <div id="lossBridgeTotal" style="font-size: 1.5rem; font-weight: 800; color: #a78bfa; font-family: 'JetBrains Mono', monospace;">0 ₽</div>
           </div>
         </div>
       </div>
@@ -5936,37 +5932,37 @@
                 <th>Множитель конверсии</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="aiImpactMatrixBody">
               <tr>
                 <td><span class="badge-lost">Зона риска (Низкий балл)</span></td>
                 <td>0 - 6 баллов</td>
-                <td>1 звонок</td>
-                <td>4.0%</td>
-                <td>500 000 ₽</td>
-                <td>1.0x (Базовый слив)</td>
+                <td>0 звонков</td>
+                <td>0.0%</td>
+                <td>0 ₽</td>
+                <td>—</td>
               </tr>
               <tr>
                 <td><span class="badge-warn">Рабочая норма (Средний)</span></td>
                 <td>7 - 10 баллов</td>
-                <td>5 звонков</td>
-                <td>22.0%</td>
+                <td>0 звонков</td>
+                <td>0.0%</td>
                 <td>0 ₽</td>
-                <td>3.2x рост</td>
+                <td>—</td>
               </tr>
-              <tr style="background: rgba(16,185,129,0.08);">
+              <tr>
                 <td><span class="badge-won">Эталонные переговоры (Высокий)</span></td>
                 <td>11 - 13 баллов</td>
-                <td>4 звонка</td>
-                <td>68.0%</td>
+                <td>0 звонков</td>
+                <td>0.0%</td>
                 <td>0 ₽</td>
-                <td><strong style="color: #34d399; font-size: 0.95rem;">4.8x МАКСИМУМ</strong></td>
+                <td>—</td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <div style="padding: 14px 18px; background: rgba(115,82,255,0.1); border: 1px solid rgba(115,82,255,0.3); border-radius: var(--radius-md); font-size: 0.8rem; color: #c4b5fd;">
-          <strong>Инсайт для собственника:</strong> Сделки с оценкой ИИ 11–13 баллов закрываются в <strong>4.8 раза чаще</strong>, чем в зоне риска (0–6 баллов)! При балле &le;6 вероятность победы ниже 5%.
+          <strong>Инсайт для собственника:</strong> Сделки с оценкой ИИ 11–13 баллов закрываются в <strong>4.8 раза чаще</strong>, чем в зоне риска (0–6 баллов)! Ожидание поступления первых звонков из CRM.
         </div>
       </div>
 
@@ -5974,7 +5970,7 @@
       <div class="bento-card">
         <div class="bento-card-header">
           <span class="bento-card-title"><span class="title-icon" style="color: #fb7185;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> Детектор «Ложного согласия» (Fake Yes Detector — cr8=0 на этапах 4-5)</span>
-          <span class="badge-lost">3 АЛЕРТА</span>
+          <span class="badge-won" id="fakeYesBadge">0 АЛЕРТОВ</span>
         </div>
         <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px;">
           Сделки, где клиент вежливо отделался фразой «скиньте на почту / я подумаю», а менеджер ошибочно перевел сделку на этап согласования/счета:
@@ -5993,36 +5989,11 @@
                 <th>Срочное действие РОПа</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td><strong>B24-80</strong></td>
-                <td>B24 Кейс 01: Услуги лояльности клиентов</td>
-                <td>500 000 ₽</td>
-                <td>Первичный контакт</td>
-                <td><strong style="color: #fff;">Светлана</strong></td>
-                <td><span class="badge-warn">7 / 13</span></td>
-                <td><span class="badge-lost">Слив на почту (cr1=0, cr4=0)</span></td>
-                <td>Срочный перезвон РОПа: квалифицировать боль и ЛПР</td>
-              </tr>
-              <tr>
-                <td><strong>B24-84</strong></td>
-                <td>B24 Кейс 03: Продажа ортопедических матрасов</td>
-                <td>500 000 ₽</td>
-                <td>Переговоры</td>
-                <td><strong style="color: #fff;">Заряна</strong></td>
-                <td><span class="badge-warn">8 / 13</span></td>
-                <td><span class="badge-lost">Плавающий слот (cr1=0, cr3=0)</span></td>
-                <td>РОП: согласовать точное время встречи и статус ЛПР</td>
-              </tr>
-              <tr>
-                <td><strong>B24-86</strong></td>
-                <td>B24 Кейс 04: Производство кухонь на заказ</td>
-                <td>500 000 ₽</td>
-                <td>Первичный контакт</td>
-                <td><strong style="color: #fff;">Светлана</strong></td>
-                <td><span class="badge-lost">4 / 13</span></td>
-                <td><span class="badge-lost">Слив КП на почту (cr1=0, cr8=0)</span></td>
-                <td>Срочно подключить РОПа к повторному звонку</td>
+            <tbody id="fakeYesTableBody">
+              <tr id="fakeYesEmptyRow">
+                <td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.85rem;">
+                  Алертов ложного согласия не обнаружено (Чистый лист) • Звонки чисты
+                </td>
               </tr>
             </tbody>
           </table>
@@ -6129,7 +6100,7 @@
       <div class="bento-card" style="margin-bottom: 22px;">
         <div class="bento-card-header">
           <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> Тепловая карта навыков менеджеров (Skill Heatmap cr1..cr13)</span>
-          <span class="badge-won">ТОП-ПЕРЕГОВОРЩИК: НАДЕЖДА (100% #CLOSER)</span>
+          <span class="badge-won" id="topNegotiatorBadge">НЕТ ДАННЫХ</span>
         </div>
         <div id="skillsHeatmapContainer" class="skills-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
@@ -6139,7 +6110,7 @@
       <div class="bento-card">
         <div class="bento-card-header">
           <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span> Расчетная ведомость премий и динамический Payroll (Привязка к речи)</span>
-          <span class="badge-warn">ОБЩИЙ ФОТ: 394 000 ₽</span>
+          <span class="badge-warn" id="payrollFotBadge">ОБЩИЙ ФОТ: 0 ₽</span>
         </div>
         <div class="table-container" style="margin-bottom: 14px;">
           <table>
@@ -6154,42 +6125,11 @@
                 <th>Статус начисления / Корректировка</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td><strong>Заряна</strong></td>
-                <td>РОП / Team Lead</td>
-                <td>150 000 ₽</td>
-                <td>3.0%</td>
-                <td><span class="badge-won">1.05 (+5%)</span></td>
-                <td><strong style="font-family: 'JetBrains Mono', monospace;">150 000 ₽</strong></td>
-                <td><span class="badge-won">Бонус за личные закрытия + надбавка речи (+5%)</span></td>
-              </tr>
-              <tr>
-                <td><strong>Надежда</strong></td>
-                <td>КАМ (Enterprise)</td>
-                <td>100 000 ₽</td>
-                <td>5.0%</td>
-                <td><span class="badge-won">1.15 (+15%)</span></td>
-                <td><strong style="font-family: 'JetBrains Mono', monospace;">115 000 ₽</strong></td>
-                <td><span class="badge-won">Максимальный бонус за эталон речи (12.0/13)</span></td>
-              </tr>
-              <tr>
-                <td><strong>Виктория</strong></td>
-                <td>SDR (Квалификация)</td>
-                <td>70 000 ₽</td>
-                <td>0.0%</td>
-                <td><span class="badge-won">1.10 (+10%)</span></td>
-                <td><strong style="font-family: 'JetBrains Mono', monospace;">77 000 ₽</strong></td>
-                <td><span class="badge-won">Премия за квалификацию + надбавка речи (+10%)</span></td>
-              </tr>
-              <tr>
-                <td><strong>Светлана</strong></td>
-                <td>Менеджер по продажам</td>
-                <td>60 000 ₽</td>
-                <td>4.0%</td>
-                <td><span class="badge-lost">0.70 (-30%)</span></td>
-                <td><strong style="font-family: 'JetBrains Mono', monospace; color: #fb7185;">52 000 ₽</strong></td>
-                <td><span class="badge-lost">ДЕПРЕМИРОВАНИЕ (-30% бонуса за срыв Next Step)</span></td>
+            <tbody id="payrollTableBody">
+              <tr id="payrollEmptyRow">
+                <td colspan="7" style="text-align: center; padding: 28px; color: var(--text-muted); font-size: 0.85rem;">
+                  Нет сотрудников для начисления (Чистый лист) • Ожидание поступления звонков из CRM
+                </td>
               </tr>
             </tbody>
           </table>
@@ -6261,8 +6201,8 @@
               Аудит 100% звонков по 13 критериям, перехват саботажа регламентов, локализация Fake Yes и синтез спасательных скриптов.
             </div>
             <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #34d399;">
-              <div>• Средний балл: <strong>9.1 / 13</strong> (70.0%)</div>
-              <div>• Next Step: <strong>70.0%</strong> • Рекорд: Надежда 12/13</div>
+              <div id="settingsAgent2Score">• Средний балл: <strong>0.0 / 13</strong> (0.0%)</div>
+              <div id="settingsAgent2NextStep">• Next Step: <strong>0.0%</strong> • Ожидание звонков</div>
             </div>
           </div>
 
@@ -6278,14 +6218,14 @@
                   <div style="font-size: 0.68rem; color: var(--text-muted);">L3 Multi-Tenant Orchestrator</div>
                 </div>
               </div>
-              <span class="badge-warn ai-agent-badge"><span class="status-dot dot-amber"></span> SYNCED</span>
+              <span class="badge-warn ai-agent-badge"><span class="status-dot dot-amber"></span> DORMANT</span>
             </div>
             <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px;">
               Двусторонний мост amoCRM v4 + Bitrix24 REST. Сверка raw_calls и raw_deals с единым финансовым источником правды SSOT.
             </div>
             <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #fbbf24;">
-              <div>• Сделок в CRM: <strong>10 = 10</strong> (100% Delivery)</div>
-              <div>• SSOT Касса: <strong>5 000 000 ₽</strong> • Дрифт: <strong>0.00 ₽</strong></div>
+              <div id="settingsAgent3Deals">• Сделок в CRM: <strong>0 = 0</strong> (Чистый лист)</div>
+              <div id="settingsAgent3Ssot">• SSOT Касса: <strong>0 ₽</strong> • Дрифт: <strong>0.00 ₽</strong></div>
             </div>
           </div>
         </div>

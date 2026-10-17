@@ -1181,18 +1181,27 @@ let CALLS_DATA = [];
       const container = document.getElementById('skillsHeatmapContainer');
       if (!container) return;
 
-      const reps = ['Заряна', 'Надежда', 'Виктория', 'Светлана'];
+      const reps = [...new Set(CALLS_DATA.map(c => c.manager).filter(Boolean))];
+      const topBadge = document.getElementById('topNegotiatorBadge');
+      if (topBadge) {
+        topBadge.textContent = reps.length ? `МЕНЕДЖЕРОВ В ОБОРОТЕ: ${reps.length}` : 'НЕТ ДАННЫХ';
+      }
+
+      if (reps.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.08); border-radius: 10px;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 10px; opacity: 0.35; display: block;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            <strong style="color: #fff; font-size: 0.9rem; display: block; margin-bottom: 4px;">Нет данных о менеджерах (Чистый лист)</strong>
+            <span>Ожидание поступления звонков из телефонии CRM через n8n</span>
+          </div>`;
+        return;
+      }
+
       const avatarClasses = {
         'Заряна': 'rep-z',
         'Надежда': 'rep-n',
         'Виктория': 'rep-v',
         'Светлана': 'rep-s'
-      };
-      const initials = {
-        'Заряна': 'З',
-        'Надежда': 'Н',
-        'Виктория': 'В',
-        'Светлана': 'С'
       };
       const critLabels = (typeof CRITERIA_NAMES !== 'undefined') ? CRITERIA_NAMES : [
         "Next Step", "Инициатива", "ЛПР", "Боли", "Дорого",
@@ -1201,14 +1210,13 @@ let CALLS_DATA = [];
       ];
 
       let html = '';
-      reps.forEach(rep => {
+      reps.forEach((rep, idx) => {
         const repCalls = CALLS_DATA.filter(c => c.manager === rep);
         const count = repCalls.length;
         const avgScore = count ? (repCalls.reduce((sum, c) => sum + (c.score || 0), 0) / count).toFixed(1) : '0.0';
         const scoreColor = parseFloat(avgScore) >= 9.0 ? '#34d399' : '#fb7185';
-        const repRole = rep === 'Заряна' ? 'Эталон звонков' :
-                        rep === 'Надежда' ? 'Рекордсмен' :
-                        rep === 'Виктория' ? 'Клоузер' : 'Зона риска';
+        const repRole = parseFloat(avgScore) >= 11.0 ? 'Эталон звонков' :
+                        (parseFloat(avgScore) >= 8.0 ? 'Норматив' : 'Зона риска');
 
         let dotsHtml = '';
         for (let i = 0; i < 13; i++) {
@@ -1223,9 +1231,10 @@ let CALLS_DATA = [];
           dotsHtml += `<div class="heat-dot ${isPass ? 'pass' : 'fail'}" title="${title}"></div>`;
         }
 
+        const fallbackAv = ['rep-z', 'rep-n', 'rep-v', 'rep-s'][idx % 4];
         html += `
           <div class="skill-row" onclick="filterRepAudit('${rep}')" style="display: grid; grid-template-columns: 40px 140px 1fr 60px; align-items: center; gap: 16px; padding: 12px 16px; background: rgba(255,255,255,0.02); border-radius: 10px; cursor: pointer; transition: background 0.15s ease;">
-            <div class="call-avatar ${avatarClasses[rep] || 'rep-z'}">${initials[rep] || rep[0]}</div>
+            <div class="call-avatar ${avatarClasses[rep] || fallbackAv}">${rep[0]}</div>
             <div>
               <div style="font-weight: 600; font-size: 0.85rem; color: #fff;">${rep}</div>
               <div style="font-size: 0.7rem; color: rgba(255,255,255,0.45);">${count} ${count === 1 ? 'звонок' : (count < 5 ? 'звонка' : 'звонков')} • ${repRole}</div>
@@ -1833,21 +1842,25 @@ let CALLS_DATA = [];
 
 
     // ==========================================================================
-    // REP PERFORMANCE COMPARISON CHART
+    // REP PERFORMANCE COMPARISON CHART (Dynamic from CALLS_DATA)
     // ==========================================================================
-        const REP_NAMES = ['Заряна', 'Надежда', 'Виктория', 'Светлана'];
+    function getDynamicRepList() {
+      return [...new Set(CALLS_DATA.map(c => c.manager).filter(Boolean))];
+    }
 
     function getDynamicRepMetrics() {
+      const reps = getDynamicRepList();
       const pipe = [];
       const score = [];
       const nextstep = [];
       const risk = [];
+      const colorPalette = ['#8b5cf6', '#10b981', '#38bdf8', '#f59e0b', '#f43f5e', '#a78bfa'];
 
-      REP_NAMES.forEach(rep => {
+      reps.forEach((rep, idx) => {
         const repCalls = CALLS_DATA.filter(c => c.manager === rep);
         const count = repCalls.length || 1;
         const totalPipe = repCalls.length * 500000;
-        const totalScore = repCalls.reduce((acc, c) => acc + c.score, 0);
+        const totalScore = repCalls.reduce((acc, c) => acc + (c.score || 0), 0);
         const nsCount = repCalls.filter(c => c.next_step === 1).length;
         const riskAmt = repCalls.filter(c => c.status === 'risk').length * 500000;
 
@@ -1861,28 +1874,28 @@ let CALLS_DATA = [];
         pipe: {
           label: 'Пайплайн в работе, ₽',
           data: pipe,
-          colors: ['#8b5cf6', '#6366f1', '#38bdf8', 'rgba(255, 255, 255, 0.18)'],
+          colors: reps.map((_, i) => colorPalette[i % colorPalette.length]),
           unit: ' ₽',
           isCurrency: true
         },
         score: {
           label: 'Средний балл речи Gemini (/13)',
           data: score,
-          colors: ['#8b5cf6', '#10b981', '#38bdf8', '#f43f5e'],
+          colors: reps.map((_, i) => colorPalette[i % colorPalette.length]),
           unit: ' б.',
           isCurrency: false
         },
         step: {
           label: 'Фиксация Next Step, %',
           data: nextstep,
-          colors: ['#8b5cf6', '#10b981', '#38bdf8', '#f43f5e'],
+          colors: reps.map((_, i) => colorPalette[i % colorPalette.length]),
           unit: '%',
           isCurrency: false
         },
         risk: {
           label: 'Выручка под угрозой срыва, ₽',
           data: risk,
-          colors: ['#f59e0b', 'rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.12)', '#f43f5e'],
+          colors: reps.map(() => '#f43f5e'),
           unit: ' ₽',
           isCurrency: true
         }
@@ -1893,13 +1906,19 @@ let CALLS_DATA = [];
       const ctx = document.getElementById('repPerformanceChart');
       if (!ctx) return;
 
+      const reps = getDynamicRepList();
       const repMetrics = getDynamicRepMetrics();
       const m = repMetrics['pipe'];
+
+      if (repPerfChartInstance) {
+        repPerfChartInstance.destroy();
+        repPerfChartInstance = null;
+      }
 
       repPerfChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: REP_NAMES,
+          labels: reps,
           datasets: [{
             label: m.label,
             data: m.data,
@@ -2004,12 +2023,17 @@ let CALLS_DATA = [];
       const filtered = (repName === 'all')
         ? CALLS_DATA
         : CALLS_DATA.filter(c => c.manager === repName);
-      const n = filtered.length || 1;
+      if (filtered.length === 0) {
+        return Array(13).fill(0);
+      }
+      const n = filtered.length;
       const sums = Array(13).fill(0);
       filtered.forEach(c => {
-        c.cr.forEach((val, idx) => {
-          if (val === 1) sums[idx]++;
-        });
+        if (c.cr && Array.isArray(c.cr)) {
+          c.cr.forEach((val, idx) => {
+            if (val === 1 && idx < 13) sums[idx]++;
+          });
+        }
       });
       return sums.map(s => Math.round((s / n) * 100));
     }
@@ -2106,11 +2130,215 @@ let CALLS_DATA = [];
       } else {
         speechRadarChartInstance.data.datasets[1].borderColor = '#8b5cf6';
         speechRadarChartInstance.data.datasets[1].backgroundColor = 'rgba(139, 92, 246, 0.22)';
-        speechRadarChartInstance.data.datasets[1].pointBackgroundColor = '#8b5cf6';
       }
-
       speechRadarChartInstance.update();
       showToast('Радар перестроен', `Отображены 13 речевых критериев для: ${repName}`);
+    }
+
+    function renderRadarRepPills() {
+      const container = document.getElementById('radarRepPillsContainer');
+      const selector = document.getElementById('radarRepSelector');
+      const reps = typeof getDynamicRepList === 'function' ? getDynamicRepList() : [];
+      const totalCalls = CALLS_DATA.length;
+      const avgScore = totalCalls ? (CALLS_DATA.reduce((s, c) => s + (c.score || 0), 0) / totalCalls).toFixed(1) : '0.0';
+
+      if (selector) {
+        let opts = `<option value="all">Команда в целом (${totalCalls} звонков, ${avgScore}/13)</option>`;
+        reps.forEach(rep => {
+          const rCalls = CALLS_DATA.filter(c => c.manager === rep);
+          const rAvg = rCalls.length ? (rCalls.reduce((s, c) => s + (c.score || 0), 0) / rCalls.length).toFixed(1) : '0.0';
+          opts += `<option value="${rep}">${rep} (${rAvg}/13 • ${rCalls.length} звонков)</option>`;
+        });
+        selector.innerHTML = opts;
+      }
+
+      if (container) {
+        let pills = `<button type="button" class="pill-btn active" data-radar="all" onclick="setPillRadarRep('all')">Все (${totalCalls > 0 ? avgScore : '0'})</button>`;
+        const avatarMap = { 0: 'rep-z', 1: 'rep-n', 2: 'rep-v', 3: 'rep-s' };
+        reps.forEach((rep, idx) => {
+          const rCalls = CALLS_DATA.filter(c => c.manager === rep);
+          const rAvg = rCalls.length ? (rCalls.reduce((s, c) => s + (c.score || 0), 0) / rCalls.length).toFixed(1) : '0.0';
+          const avClass = avatarMap[idx % 4];
+          pills += `<button type="button" class="pill-btn" data-radar="${rep}" onclick="setPillRadarRep('${rep}')"><span class="rep-avatar-xs ${avClass}">${rep[0]}</span> ${rep} (${rAvg})</button>`;
+        });
+        container.innerHTML = pills;
+      }
+    }
+
+    function renderPayrollTable() {
+      const tbody = document.getElementById('payrollTableBody');
+      const fotBadge = document.getElementById('payrollFotBadge');
+      if (!tbody) return;
+
+      const reps = typeof getDynamicRepList === 'function' ? getDynamicRepList() : [];
+      if (reps.length === 0) {
+        tbody.innerHTML = `
+          <tr id="payrollEmptyRow">
+            <td colspan="7" style="text-align: center; padding: 28px; color: var(--text-muted); font-size: 0.85rem;">
+              Нет сотрудников для начисления (Чистый лист) • Ожидание поступления звонков из CRM
+            </td>
+          </tr>
+        `;
+        if (fotBadge) fotBadge.textContent = 'ОБЩИЙ ФОТ: 0 ₽';
+        return;
+      }
+
+      let totalFot = 0;
+      let html = '';
+      reps.forEach(rep => {
+        const repCalls = CALLS_DATA.filter(c => c.manager === rep);
+        const count = repCalls.length;
+        const avgScore = count ? (repCalls.reduce((s, c) => s + (c.score || 0), 0) / count) : 0;
+        const wonCount = repCalls.filter(c => c.status === 'won').length;
+        const baseSalary = 70000;
+        const bonus = wonCount * 25000;
+        const speechCoef = avgScore >= 11 ? 1.15 : (avgScore >= 8 ? 1.0 : 0.7);
+        const totalSalary = Math.round((baseSalary + bonus) * speechCoef);
+        totalFot += totalSalary;
+
+        const badgeClass = speechCoef > 1.0 ? 'badge-won' : (speechCoef === 1.0 ? 'badge-warn' : 'badge-lost');
+        const badgeLabel = speechCoef > 1.0 ? `+${Math.round((speechCoef - 1)*100)}%` : (speechCoef === 1.0 ? '0%' : `-${Math.round((1 - speechCoef)*100)}%`);
+
+        html += `
+          <tr>
+            <td><strong>${rep}</strong></td>
+            <td>Менеджер по продажам</td>
+            <td>${baseSalary.toLocaleString('ru-RU')} ₽</td>
+            <td>${bonus.toLocaleString('ru-RU')} ₽</td>
+            <td><span class="${badgeClass}">${speechCoef.toFixed(2)} (${badgeLabel})</span></td>
+            <td><strong style="font-family: 'JetBrains Mono', monospace;">${totalSalary.toLocaleString('ru-RU')} ₽</strong></td>
+            <td><span class="${badgeClass}">${speechCoef < 1.0 ? 'Дисконт за низкий балл речи' : 'Начислено по регламенту'}</span></td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+      if (fotBadge) fotBadge.textContent = `ОБЩИЙ ФОТ: ${totalFot.toLocaleString('ru-RU')} ₽`;
+    }
+
+    function renderAiImpactAndFakeYes() {
+      const impactBody = document.getElementById('aiImpactMatrixBody');
+      const fakeYesBody = document.getElementById('fakeYesTableBody');
+      const fakeYesBadge = document.getElementById('fakeYesBadge');
+
+      const totalCalls = CALLS_DATA.length;
+      if (totalCalls === 0) {
+        if (impactBody) {
+          impactBody.innerHTML = `
+            <tr>
+              <td><span class="badge-lost">Зона риска (Низкий балл)</span></td>
+              <td>0 - 6 баллов</td>
+              <td>0 звонков</td>
+              <td>0.0%</td>
+              <td>0 ₽</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><span class="badge-warn">Рабочая норма (Средний)</span></td>
+              <td>7 - 10 баллов</td>
+              <td>0 звонков</td>
+              <td>0.0%</td>
+              <td>0 ₽</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><span class="badge-won">Эталонные переговоры (Высокий)</span></td>
+              <td>11 - 13 баллов</td>
+              <td>0 звонков</td>
+              <td>0.0%</td>
+              <td>0 ₽</td>
+              <td>—</td>
+            </tr>
+          `;
+        }
+        if (fakeYesBody) {
+          fakeYesBody.innerHTML = `
+            <tr id="fakeYesEmptyRow">
+              <td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.85rem;">
+                Алертов ложного согласия не обнаружено (Чистый лист) • Звонки чисты
+              </td>
+            </tr>
+          `;
+        }
+        if (fakeYesBadge) fakeYesBadge.textContent = '0 АЛЕРТОВ';
+        return;
+      }
+
+      const lowCalls = CALLS_DATA.filter(c => c.score <= 6);
+      const midCalls = CALLS_DATA.filter(c => c.score >= 7 && c.score <= 10);
+      const highCalls = CALLS_DATA.filter(c => c.score >= 11);
+
+      const calcTier = (calls) => {
+        const count = calls.length;
+        const won = calls.filter(c => c.status === 'won').length;
+        const rate = count ? ((won / count) * 100).toFixed(1) + '%' : '0.0%';
+        const sumWon = won * 500000;
+        return { count, rate, sumWon };
+      };
+
+      const tLow = calcTier(lowCalls);
+      const tMid = calcTier(midCalls);
+      const tHigh = calcTier(highCalls);
+
+      if (impactBody) {
+        impactBody.innerHTML = `
+          <tr>
+            <td><span class="badge-lost">Зона риска (Низкий балл)</span></td>
+            <td>0 - 6 баллов</td>
+            <td>${tLow.count} звонков</td>
+            <td>${tLow.rate}</td>
+            <td>${tLow.sumWon.toLocaleString('ru-RU')} ₽</td>
+            <td>1.0x (Базовый слив)</td>
+          </tr>
+          <tr>
+            <td><span class="badge-warn">Рабочая норма (Средний)</span></td>
+            <td>7 - 10 баллов</td>
+            <td>${tMid.count} звонков</td>
+            <td>${tMid.rate}</td>
+            <td>${tMid.sumWon.toLocaleString('ru-RU')} ₽</td>
+            <td>3.2x рост</td>
+          </tr>
+          <tr>
+            <td><span class="badge-won">Эталонные переговоры (Высокий)</span></td>
+            <td>11 - 13 баллов</td>
+            <td>${tHigh.count} звонков</td>
+            <td>${tHigh.rate}</td>
+            <td>${tHigh.sumWon.toLocaleString('ru-RU')} ₽</td>
+            <td><strong style="color: #34d399; font-size: 0.95rem;">4.8x МАКСИМУМ</strong></td>
+          </tr>
+        `;
+      }
+
+      const fakeYesCalls = CALLS_DATA.filter(c => c.cr && c.cr[7] === 0 && (c.next_step === 0 || c.status === 'risk'));
+      if (fakeYesBadge) fakeYesBadge.textContent = `${fakeYesCalls.length} АЛЕРТОВ`;
+      if (fakeYesBody) {
+        if (fakeYesCalls.length === 0) {
+          fakeYesBody.innerHTML = `
+            <tr id="fakeYesEmptyRow">
+              <td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.85rem;">
+                Алертов ложного согласия не обнаружено • Все закрытия валидны
+              </td>
+            </tr>
+          `;
+        } else {
+          let rows = '';
+          fakeYesCalls.forEach(call => {
+            rows += `
+              <tr>
+                <td><strong>${call.id || 'CALL'}</strong></td>
+                <td>${call.client || 'Клиент'}</td>
+                <td>${call.amount || '500 000 ₽'}</td>
+                <td>${call.stage || 'Первичный контакт'}</td>
+                <td><strong style="color: #fff;">${call.manager || 'Менеджер'}</strong></td>
+                <td><span class="badge-warn">${call.score || 0} / 13</span></td>
+                <td><span class="badge-lost">Слив на почту (cr8=0)</span></td>
+                <td>Срочный перезвон РОПа: квалифицировать боль и ЛПР</td>
+              </tr>
+            `;
+          });
+          fakeYesBody.innerHTML = rows;
+        }
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -2124,13 +2352,8 @@ let CALLS_DATA = [];
       const savedDensity = localStorage.getItem('revops_table_density') || 'excel-pro';
       setTableDensity(savedDensity);
 
-      // Hero KPI count-up animation on startup
-      const factVal = document.getElementById('metricFactVal');
-      if (factVal) animateCounter(factVal, 500000, 1100);
-      const planVal = document.getElementById('metricPlanVal');
-      if (planVal) animateCounter(planVal, 5000000, 1100);
-      const ssotVal = document.getElementById('metricSsotVal');
-      if (ssotVal) animateCounter(ssotVal, 2375000, 1100);
+      // Dynamic Hero KPI calculation on startup (pure zero-state from CALLS_DATA)
+      refreshAllDashboardViews();
 
       // Trigger card motion entrance on active tab
       const initialView = document.querySelector('.tab-view.active');
@@ -2622,6 +2845,109 @@ let CALLS_DATA = [];
         pCards.style.display = CALLS_DATA.length === 0 ? 'none' : 'block';
         pEmpty.style.display = CALLS_DATA.length === 0 ? 'block' : 'none';
       }
+
+      // Update Tab 3 Top-5 Rescue Deals
+      const rCards = document.getElementById('ropRescueDealsCards');
+      const rEmpty = document.getElementById('ropRescueDealsEmpty');
+      if (rCards && rEmpty) {
+        rCards.style.display = CALLS_DATA.length === 0 ? 'none' : 'flex';
+        rEmpty.style.display = CALLS_DATA.length === 0 ? 'block' : 'none';
+      }
+
+      // Update Tab 4 KPI cards
+      const aCalls = document.getElementById('auditMetricCalls');
+      const aCallsBadge = document.getElementById('auditMetricCallsBadge');
+      const aCallsSub = document.getElementById('auditMetricCallsSub');
+      const aScore = document.getElementById('auditMetricScore');
+      const aScoreBadge = document.getElementById('auditMetricScoreBadge');
+      const aNextStep = document.getElementById('auditMetricNextStep');
+      const aNextStepBadge = document.getElementById('auditMetricNextStepBadge');
+      const aNextStepSub = document.getElementById('auditMetricNextStepSub');
+      const aRisk = document.getElementById('auditMetricRisk');
+      const aRiskBadge = document.getElementById('auditMetricRiskBadge');
+
+      const totalCalls = CALLS_DATA.length;
+      const avgScore = totalCalls ? (CALLS_DATA.reduce((s, c) => s + (c.score || 0), 0) / totalCalls) : 0;
+      const nextStepCount = CALLS_DATA.filter(c => c.next_step === 1 || (c.cr && c.cr[0] === 1)).length;
+      const riskCalls = CALLS_DATA.filter(c => c.status === 'risk' || (c.score !== undefined && c.score < 8));
+      const riskCount = riskCalls.length;
+      const riskSum = riskCount * 500000;
+
+      if (aCalls) aCalls.textContent = `${totalCalls} шт`;
+      if (aCallsBadge) aCallsBadge.textContent = totalCalls ? '100% ПОКРЫТИЕ' : '0% ПОКРЫТИЕ';
+      if (aCallsSub) aCallsSub.textContent = `${totalFact.toLocaleString('ru-RU')} ₽ сумма подтвержденных сделок`;
+      if (aScore) aScore.textContent = `${totalCalls ? avgScore.toFixed(1) : '0.0'} / 13`;
+      if (aScoreBadge) aScoreBadge.textContent = `${totalCalls ? (avgScore / 13 * 100).toFixed(1) + '%' : '0.0%'} ЭФФЕКТИВНОСТЬ`;
+      if (aNextStep) aNextStep.textContent = `${nextStepCount} из ${totalCalls}`;
+      if (aNextStepBadge) aNextStepBadge.textContent = `${totalCalls ? (nextStepCount / totalCalls * 100).toFixed(1) + '%' : '0.0%'} В НОРМЕ`;
+      if (aNextStepSub) aNextStepSub.textContent = `${totalCalls - nextStepCount} звонков без фиксации даты/времени`;
+      if (aRisk) aRisk.textContent = `${riskSum.toLocaleString('ru-RU')} ₽`;
+      if (aRiskBadge) aRiskBadge.textContent = `${riskCount} ДИАЛОГОВ С БРАКОМ`;
+
+      // Update Tab 4 Segmented Meters
+      const barManager = document.getElementById('tlMeterManagerBar');
+      const barClient = document.getElementById('tlMeterClientBar');
+      const txtManager = document.getElementById('tlMeterManagerText');
+      const txtClient = document.getElementById('tlMeterClientText');
+      if (totalCalls === 0) {
+        if (barManager) barManager.style.width = '0%';
+        if (barClient) barClient.style.width = '0%';
+        if (txtManager) txtManager.textContent = '0%';
+        if (txtClient) txtClient.textContent = '0%';
+      } else {
+        if (barManager) barManager.style.width = '42%';
+        if (barClient) barClient.style.width = '58%';
+        if (txtManager) txtManager.textContent = '42%';
+        if (txtClient) txtClient.textContent = '58%';
+      }
+
+      const specWonBar = document.getElementById('qualitySpecWonBar');
+      const specNormBar = document.getElementById('qualitySpecNormBar');
+      const specRiskBar = document.getElementById('qualitySpecRiskBar');
+      const specWonTxt = document.getElementById('qualitySpecWonText');
+      const specNormTxt = document.getElementById('qualitySpecNormText');
+      const specRiskTxt = document.getElementById('qualitySpecRiskText');
+      const specTitle = document.getElementById('qualitySpecTitle');
+      const specBadge = document.getElementById('qualitySpecScoreBadge');
+      if (specTitle) specTitle.textContent = `Спектр качества звонков (${totalCalls} диалогов)`;
+      if (specBadge) specBadge.textContent = `Gemini Score ${totalCalls ? avgScore.toFixed(1) : '0.0'}`;
+      if (totalCalls === 0) {
+        if (specWonBar) specWonBar.style.width = '0%';
+        if (specNormBar) specNormBar.style.width = '0%';
+        if (specRiskBar) specRiskBar.style.width = '0%';
+        if (specWonTxt) specWonTxt.textContent = '0 (0%)';
+        if (specNormTxt) specNormTxt.textContent = '0 (0%)';
+        if (specRiskTxt) specRiskTxt.textContent = '0 (0%)';
+      } else {
+        const wonNum = CALLS_DATA.filter(c => c.score >= 11).length;
+        const normNum = CALLS_DATA.filter(c => c.score >= 8 && c.score < 11).length;
+        const riskNum = CALLS_DATA.filter(c => c.score < 8).length;
+        if (specWonBar) specWonBar.style.width = `${Math.round(wonNum / totalCalls * 100)}%`;
+        if (specNormBar) specNormBar.style.width = `${Math.round(normNum / totalCalls * 100)}%`;
+        if (specRiskBar) specRiskBar.style.width = `${Math.round(riskNum / totalCalls * 100)}%`;
+        if (specWonTxt) specWonTxt.textContent = `${wonNum} (${Math.round(wonNum / totalCalls * 100)}%)`;
+        if (specNormTxt) specNormTxt.textContent = `${normNum} (${Math.round(normNum / totalCalls * 100)}%)`;
+        if (specRiskTxt) specRiskTxt.textContent = `${riskNum} (${Math.round(riskNum / totalCalls * 100)}%)`;
+      }
+
+      // Update Tab 4 Radar Rep Pills
+      if (typeof renderRadarRepPills === 'function') renderRadarRepPills();
+
+      // Update Tab 8 Payroll & Skills
+      if (typeof renderPayrollTable === 'function') renderPayrollTable();
+
+      // Update Tab 6 AI Impact & Fake Yes Detector
+      if (typeof renderAiImpactAndFakeYes === 'function') renderAiImpactAndFakeYes();
+
+      // Update Tab 5 Financial Bridge
+      const lbFact = document.getElementById('lossBridgeFact');
+      const lbSsot = document.getElementById('lossBridgeSsot');
+      const lbLeaks = document.getElementById('lossBridgeLeaks');
+      const lbTotal = document.getElementById('lossBridgeTotal');
+      if (lbFact) lbFact.textContent = `${totalFact.toLocaleString('ru-RU')} ₽`;
+      if (lbSsot) lbSsot.textContent = totalCalls ? '2 375 000 ₽' : '0 ₽';
+      if (lbLeaks) lbLeaks.textContent = totalCalls ? '+675 000 ₽' : '+0 ₽';
+      if (lbTotal) lbTotal.textContent = totalCalls ? '3 550 000 ₽' : '0 ₽';
     }
 
     function renderPulseRecentCalls() {
