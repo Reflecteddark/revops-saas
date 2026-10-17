@@ -57,9 +57,7 @@
       --bg-card-hover: #141420;
       --bg-card-featured: rgba(24, 18, 42, 0.90);
       --bg-glass: rgba(124, 58, 237, 0.05);
-      --linear-bg-card: linear-gradient(180deg, #101018 0%, #0b0b12 100%);
-      --linear-border-top: rgba(124, 58, 237, 0.35);
-      --linear-border-subtle: rgba(124, 58, 237, 0.18);
+
       
       /* Inset & Subtle Borders with Violet Touch */
       --border-subtle: rgba(124, 58, 237, 0.16);
@@ -97,8 +95,6 @@
       --radius-pill: 9999px;
 
       /* Develop Elevation & Shadows */
-      --shadow-glass-1: 0 8px 24px -4px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.4);
-      --shadow-glass-2: 0 16px 36px -6px rgba(0, 0, 0, 0.85), 0 0 24px -3px rgba(124, 58, 237, 0.25);
       --shadow-focus: 0 0 0 4px rgba(124, 58, 237, 0.25);
       --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -122,9 +118,7 @@
       --bg-card-hover: #ffffff;
       --bg-card-featured: #f5f3ff;
       --bg-glass: rgba(0, 0, 0, 0.02);
-      --linear-bg-card: #ffffff;
-      --linear-border-top: rgba(0, 0, 0, 0.06);
-      --linear-border-subtle: rgba(0, 0, 0, 0.06);
+
       
       --border-subtle: rgba(0, 0, 0, 0.06);
       --border-subtle-hover: rgba(108, 93, 211, 0.35);
@@ -150,8 +144,6 @@
       --text-muted: #9ca3af;
       --text-dim: #cbd5e1;
 
-      --shadow-glass-1: 0 4px 20px -2px rgba(20, 25, 45, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
-      --shadow-glass-2: 0 12px 30px -4px rgba(20, 25, 45, 0.12), 0 2px 8px rgba(108, 93, 211, 0.12);
       --shadow-focus: 0 0 0 4px rgba(108, 93, 211, 0.15);
     }
 
@@ -375,25 +367,49 @@
       color: #fff;
     }
 
-    /* Bento Cards (SnowUI Surface & Glass Depth) */
-    .bento-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: 22px;
+    /* ЕДИНЫЙ КЛАСС КАРТОЧКИ — заменяет .develop-card и .bento-card */
+    .bento-card,
+    .develop-card {
+      background: #0a0a10;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 22px 24px;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       position: relative;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  border-color 0.15s ease;
       overflow: hidden;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: var(--shadow-glass-1);
-      transition: all 0.25s var(--ease-spring);
     }
 
-    .bento-card:hover {
-      border-color: var(--border-subtle-hover);
-      background: var(--bg-card-hover);
-      box-shadow: var(--shadow-glass-2);
-      transform: translateY(-1px);
+    .bento-card:hover,
+    .develop-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(124, 58, 237, 0.25);
+      box-shadow: none;
+    }
+
+    /* Единственная «избранная» карточка со свечением */
+    .bento-card.card-featured,
+    .develop-card.card-featured {
+      border-color: rgba(124, 58, 237, 0.35);
+      box-shadow: 0 30px 80px -20px rgba(124, 58, 237, 0.28),
+                  inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+    }
+
+    /* Light theme */
+    html[data-theme="light"] .bento-card,
+    html[data-theme="light"] .develop-card {
+      background: #ffffff;
+      border-color: rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 20px -2px rgba(20, 25, 45, 0.06);
+    }
+
+    html[data-theme="light"] .bento-card:hover,
+    html[data-theme="light"] .develop-card:hover {
+      border-color: rgba(108, 93, 211, 0.35);
+      box-shadow: 0 12px 30px -4px rgba(20, 25, 45, 0.12);
     }
 
     /* SnowUI Accent Theme Switcher Dots */
@@ -588,10 +604,14 @@
     /* Tab view display helper */
     .tab-view {
       display: none;
-      animation: enterFadeUp 0.25s ease;
     }
     .tab-view.active {
       display: block;
+      animation: tabEnter 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes tabEnter {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     /* Auth Gate Overlay */
@@ -1092,9 +1112,6 @@
        CYBER-FINTECH LINEAR DARK ENHANCEMENTS (OPTION 1)
        ========================================================================== */
     :root {
-      --linear-bg-card: linear-gradient(180deg, rgba(18, 23, 34, 0.78) 0%, rgba(9, 12, 19, 0.92) 100%);
-      --linear-border-top: rgba(255, 255, 255, 0.18);
-      --linear-border-subtle: rgba(255, 255, 255, 0.08);
       --linear-glow-violet: 0 0 35px -5px rgba(115, 82, 255, 0.35);
       --linear-glow-cyan: 0 0 35px -5px rgba(0, 212, 255, 0.3);
     }
@@ -1108,25 +1125,7 @@
       background-size: 100% 100%, 100% 100%, 100% 100% !important;
     }
 
-    /* Upgraded Bento Cards (Linear Obsidian Glass) */
-    .bento-card {
-      background: var(--linear-bg-card) !important;
-      border: 1px solid var(--linear-border-subtle) !important;
-      border-top: 1px solid var(--linear-border-top) !important;
-      backdrop-filter: blur(20px) !important;
-      -webkit-backdrop-filter: blur(20px) !important;
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-      position: relative;
-      overflow: hidden;
-    }
 
-    .bento-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(115, 82, 255, 0.35) !important;
-      border-top: 1px solid rgba(115, 82, 255, 0.55) !important;
-      box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.85), 0 0 25px -5px rgba(115, 82, 255, 0.22) !important;
-    }
 
     /* Glowing Pulse Dot */
     .pulse-dot {
@@ -1345,13 +1344,10 @@
       align-items: center;
       gap: 24px;
       padding: 22px 26px;
-      background: var(--linear-bg-card);
-      border: 1px solid var(--linear-border-subtle);
-      border-top: 1px solid var(--linear-border-top);
-      border-radius: var(--radius-lg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+      background: #0a0a10;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      box-shadow: none;
       margin-bottom: 22px;
       position: relative;
       overflow: hidden;
@@ -1448,13 +1444,12 @@
 
     /* 2. Пьедестал РОПа / Rep Leaderboard Podium */
     .rop-pedestal-card {
-      background: var(--linear-bg-card);
-      border: 1px solid var(--linear-border-subtle);
-      border-top: 1px solid var(--linear-border-top);
-      border-radius: var(--radius-lg);
+      background: #0a0a10;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
       padding: 22px 24px;
       margin-bottom: 22px;
-      box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.65);
+      box-shadow: none;
     }
     .podium-grid {
       display: grid;
@@ -1594,13 +1589,12 @@
 
     /* 3. Funnel Loss Stepper */
     .loss-funnel-card {
-      background: var(--linear-bg-card);
-      border: 1px solid var(--linear-border-subtle);
-      border-top: 1px solid var(--linear-border-top);
-      border-radius: var(--radius-lg);
+      background: #0a0a10;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
       padding: 22px 24px;
       margin-bottom: 22px;
-      box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.65);
+      box-shadow: none;
     }
     .stepper-container {
       display: flex;
@@ -1694,12 +1688,11 @@
       margin-bottom: 20px;
     }
     .meter-card {
-      background: var(--linear-bg-card);
-      border: 1px solid var(--linear-border-subtle);
-      border-top: 1px solid var(--linear-border-top);
-      border-radius: var(--radius-lg);
+      background: #0a0a10;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
       padding: 18px 20px;
-      box-shadow: 0 10px 25px -8px rgba(0, 0, 0, 0.6);
+      box-shadow: none;
     }
     .meter-header {
       display: flex;
@@ -1866,45 +1859,9 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Smooth Tab Transitions */
-    .tab-view {
-      display: none;
-      opacity: 0;
-      transform: translateY(6px);
-      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .tab-view.active {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
-    }
 
-    /* Mouse-Tracking Radial Spotlight on .bento-card */
-    .bento-card {
-      position: relative;
-      overflow: hidden;
-    }
-    .bento-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      border-radius: inherit;
-      background: radial-gradient(550px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(115, 82, 255, 0.12), transparent 45%);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 1;
-    }
-    .bento-card:hover::before {
-      opacity: 1;
-    }
-    .bento-card > * {
-      position: relative;
-      z-index: 2;
-    }
+
+
 
     /* Mobile Sidebar Drawer & Backdrop */
     .sidebar-backdrop {
@@ -2068,87 +2025,7 @@
        DRIBBBLE TIER-1 SAAS AESTHETIC — LINEAR / FEY / ATTIO / RAYCAST
        ========================================================================== */
 
-    /* Film Grain Noise Overlay (Disabled for Pure Solid Black Aesthetic) */
-    .film-grain-overlay {
-      display: none !important;
-    }
 
-    /* Double-Bezel Obsidian Glass for Bento Cards */
-    .bento-card {
-      position: relative;
-      background: linear-gradient(165deg, rgba(20, 25, 38, 0.76) 0%, rgba(10, 13, 20, 0.90) 100%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.08) !important;
-      box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75),
-                  0 0 0 1px rgba(0, 0, 0, 0.9),
-                  inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
-                  inset 0 0 24px rgba(115, 82, 255, 0.03) !important;
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border-radius: var(--radius-lg);
-      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
-    }
-
-    .bento-card:hover {
-      border-color: rgba(255, 255, 255, 0.18) !important;
-      box-shadow: 0 32px 64px -14px rgba(0, 0, 0, 0.85),
-                  0 0 0 1px rgba(0, 0, 0, 0.95),
-                  inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
-                  inset 0 0 32px rgba(115, 82, 255, 0.06) !important;
-    }
-
-    /* KPI Corner Mesh Glows */
-    .card-mesh-glow {
-      position: relative;
-    }
-    .mesh-glow-purple::before {
-      content: '';
-      position: absolute;
-      top: -30px;
-      right: -30px;
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(115, 82, 255, 0.22) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-    .mesh-glow-emerald::before {
-      content: '';
-      position: absolute;
-      top: -30px;
-      right: -30px;
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-    .mesh-glow-amber::before {
-      content: '';
-      position: absolute;
-      top: -30px;
-      right: -30px;
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-    .mesh-glow-cyan::before {
-      content: '';
-      position: absolute;
-      top: -30px;
-      right: -30px;
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(0, 212, 255, 0.22) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
 
     /* Status Dots */
     .status-dot {
@@ -2491,20 +2368,7 @@
         radial-gradient(circle at 50% 80%, rgba(2, 132, 199, 0.04), transparent 60%) !important;
     }
 
-    html[data-theme="light"] .bento-card {
-      background: #ffffff !important;
-      border: 1px solid rgba(0, 0, 0, 0.06) !important;
-      border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
-      box-shadow: 0 4px 20px -2px rgba(20, 25, 45, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-    }
 
-    html[data-theme="light"] .bento-card:hover {
-      transform: translateY(-2px) !important;
-      border-color: rgba(108, 93, 211, 0.35) !important;
-      box-shadow: 0 12px 30px -4px rgba(20, 25, 45, 0.12), 0 2px 8px rgba(108, 93, 211, 0.10) !important;
-    }
 
     html[data-theme="light"] .activity-rings-card {
       background: #ffffff !important;
@@ -2589,8 +2453,7 @@
     }
 
     html[data-theme="light"] .mp-tenant-selector div div:last-child,
-    html[data-theme="light"] #loggedUserName,
-    html[data-theme="light"] #currentViewBreadcrumb {
+    html[data-theme="light"] #loggedUserName {
       color: #111827 !important;
     }
 
@@ -2861,32 +2724,7 @@
       gap: 24px;
     }
 
-    .develop-card {
-      background: #0a0a10;
-      border-radius: 20px;
-      padding: 22px 24px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      box-shadow: none;
-      position: relative;
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease;
-    }
 
-    html[data-theme="light"] .develop-card {
-      background: #ffffff !important;
-      border: 1px solid rgba(0, 0, 0, 0.04) !important;
-      box-shadow: 0 4px 24px -2px rgba(20, 25, 45, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
-    }
-
-    .develop-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.8);
-      border-color: rgba(124, 58, 237, 0.25);
-    }
-
-    .develop-card--hero {
-      border-color: rgba(124, 58, 237, 0.35) !important;
-      box-shadow: 0 30px 80px -20px rgba(124, 58, 237, 0.28), inset 0 1px 0 0 rgba(255, 255, 255, 0.12) !important;
-    }
 
     .kpi-hero {
       font-family: 'Inter', sans-serif;
@@ -2934,6 +2772,17 @@
       box-shadow: 0 0 12px #34d399;
       animation: livePulse 2s ease-in-out infinite;
     }
+
+    .kpi-secondary {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(1.9rem, 3vw, 2.6rem);
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: rgba(255, 255, 255, 0.6);
+      font-variant-numeric: tabular-nums;
+    }
+    html[data-theme="light"] .kpi-secondary { color: #4b5563; }
 
     @keyframes livePulse {
       0%, 100% { opacity: 1; transform: scale(1); }
@@ -3121,20 +2970,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .signature-revenue {
-      width: 100%;
-      height: 180px;
-      display: block;
-      overflow: visible;
-    }
-    .signature-revenue path.sig-line {
-      stroke-dasharray: 1500;
-      stroke-dashoffset: 1500;
-      animation: drawLine 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    @keyframes drawLine {
-      to { stroke-dashoffset: 0; }
-    }
+
 
     @media (max-width: 900px) {
       .call-row {
@@ -3912,7 +3748,7 @@
           <!-- Row 1: 2 KPI Cards -->
           <div class="develop-kpi-pair">
             <!-- Card 1: Total balance / Факт закрыто (Hero) -->
-            <div class="develop-card develop-card--hero">
+            <div class="develop-card card-featured">
               <div class="develop-card-header">
                 <div>
                   <div class="kpi-hero-label">Главный KPI &bull; Выручка</div>
@@ -3954,7 +3790,7 @@
               </div>
               <div class="develop-kpi-row" style="align-items: flex-start; margin-top: 8px;">
                 <div>
-                  <div class="develop-kpi-num" id="metricPlanVal" style="font-size: 2.2rem; font-weight: 600; letter-spacing: -0.04em;">5 000 000 ₽</div>
+                  <div class="kpi-secondary" id="metricPlanVal">5 000 000 ₽</div>
                   <div class="develop-pill pill-neg" style="margin-top: 14px;">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
                     <span>-4.5M ₽</span>
@@ -4001,35 +3837,35 @@
                 <span class="develop-dropdown" onclick="switchTab('audit')">Все (10) <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
               </div>
               <div class="develop-tx-list">
-                <div class="develop-tx-item" onclick="openCallModal('amo_200424_88')" style="cursor: pointer;">
+                <div class="develop-tx-item" onclick="openCallModal('b24_activity_80')" style="cursor: pointer;">
                   <div class="develop-tx-icon tx-icon-purple">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
                   </div>
                   <div class="develop-tx-details">
                     <div class="develop-tx-name">Надежда &bull; <span class="score-badge score-won">12/13 Эталон</span></div>
-                    <div class="develop-tx-time">Сегодня, 15:45 &bull; ООО «ПромСнаб»</div>
+                    <div class="develop-tx-time">Сегодня, 15:45 &bull; Геодезия и Экология</div>
                   </div>
-                  <div class="develop-tx-val val-won">+150 000 ₽</div>
+                  <div class="develop-tx-val val-won">+500 000 ₽</div>
                 </div>
 
-                <div class="develop-tx-item" onclick="openCallModal('b24_activity_91')" style="cursor: pointer;">
+                <div class="develop-tx-item" onclick="openCallModal('b24_activity_86')" style="cursor: pointer;">
                   <div class="develop-tx-icon tx-icon-pink">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   </div>
                   <div class="develop-tx-details">
-                    <div class="develop-tx-name">Артем &bull; <span class="score-badge score-info">9/13 Встреча</span></div>
-                    <div class="develop-tx-time">Сегодня, 14:10 &bull; АО «ТехноПарк»</div>
+                    <div class="develop-tx-name">Виктория &bull; <span class="score-badge score-info">8/13 Норма</span></div>
+                    <div class="develop-tx-time">Сегодня, 14:10 &bull; Частный клиент (Николай Петрович)</div>
                   </div>
-                  <div class="develop-tx-val val-won">+350 000 ₽</div>
+                  <div class="develop-tx-val val-won">+500 000 ₽</div>
                 </div>
 
-                <div class="develop-tx-item" onclick="openCallModal('amo_200424_89')" style="cursor: pointer;">
+                <div class="develop-tx-item" onclick="openCallModal('b24_activity_78')" style="cursor: pointer;">
                   <div class="develop-tx-icon tx-icon-cyan">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
                   </div>
                   <div class="develop-tx-details">
-                    <div class="develop-tx-name">Кирилл &bull; <span class="score-badge score-lost">8/13 Слив</span></div>
-                    <div class="develop-tx-time">Сегодня, 12:00 &bull; ИП Смирнов</div>
+                    <div class="develop-tx-name">Светлана &bull; <span class="score-badge score-lost">7/13 Слив</span></div>
+                    <div class="develop-tx-time">Сегодня, 12:00 &bull; Клиника стоматологии</div>
                   </div>
                   <div class="develop-tx-val val-lost">0 ₽</div>
                 </div>
@@ -4240,8 +4076,7 @@
         <div id="aiCrewLogPulse" class="ai-crew-log" style="display: none; margin-top: 12px;"></div>
       </div>
 
-      <!-- Hidden canvas hook so existing legacy callers don't throw null -->
-      <canvas id="revenuePacingChart" style="display: none;"></canvas>
+
 
     </div>
 
@@ -5110,90 +4945,272 @@
           <span class="bento-card-title"><span class="title-icon" style="color: #f43f5e;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></span> 7 Смертных грехов отдела продаж (Анатомия сбоев и их устранение)</span>
           <span class="badge-lost">ВЫЯВЛЕНО 2 250 000 ₽ ПОТЕРЬ</span>
         </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>№</th>
-                <th>Смертный грех ОП (Системный сбой)</th>
-                <th>Симптом и диагностика</th>
-                <th>База в риске</th>
-                <th>Потери / Риск, ₽</th>
-                <th>Как закрывает платформа</th>
-                <th>Ожидаемый эффект</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td><strong>«Черный ящик» CRM: иллюзорный пайплайн</strong></td>
-                <td>В CRM висит 4.5M ₽, но взвешенный объем всего 2.375M ₽. Риск зомби-сделок (15%).</td>
-                <td>4 500 000 ₽</td>
-                <td><span style="color: #fb7185; font-weight: 700;">675 000 ₽</span></td>
-                <td>Взвешенный прогноз SSOT + исключение зомби</td>
-                <td>100% точность прогноза без иллюзий</td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td><strong>«Кладбище сделок»: срыв регламентов SLA</strong></td>
-                <td>На этапе КП зависло 1 000 000 ₽. Риск срыва конверсии: 450 000 ₽.</td>
-                <td>1 000 000 ₽</td>
-                <td><span style="color: #fb7185; font-weight: 700;">450 000 ₽</span></td>
-                <td>Авторадар зависания сделок + эскалация РОПу на 3-й день</td>
-                <td>+45% к конверсии этапа КП в оплату</td>
-              </tr>
-              <tr>
-                <td>3</td>
-                <td><strong>РОП — «играющий тренер»</strong></td>
-                <td>Нагрузка между РОПом и КАМами сбалансирована.</td>
-                <td>0 ₽</td>
-                <td><span style="color: #34d399; font-weight: 700;">0 ₽</span></td>
-                <td>Матрица емкости (Capacity Planning)</td>
-                <td>Разгрузка РОПа на 60% для коучинга</td>
-              </tr>
-              <tr>
-                <td>4</td>
-                <td><strong>Менеджеры-автоответчики и слив звонков</strong></td>
-                <td>В 30% звонков не зафиксирован Next Step. Средний балл речи: 9.1/13.</td>
-                <td>4 500 000 ₽</td>
-                <td><span style="color: #fb7185; font-weight: 700;">1 125 000 ₽</span></td>
-                <td>13-факторная речевая аналитика + мотивация от речи</td>
-                <td>+30% к конверсии из первого звонка во встречу</td>
-              </tr>
-              <tr>
-                <td>5</td>
-                <td><strong>«Кладбище отказников» без реактивации</strong></td>
-                <td>База отказников отработана, ожидание новых списаний.</td>
-                <td>0 ₽</td>
-                <td><span style="color: #34d399; font-weight: 700;">0 ₽</span></td>
-                <td>AI Recovery Engine: автодожим в WhatsApp/TG</td>
-                <td>Возврат 20-30% списанной выручки</td>
-              </tr>
-              <tr>
-                <td>6</td>
-                <td><strong>Зависшая дебиторка и кассовые разрывы</strong></td>
-                <td>Просроченная задолженность отсутствует.</td>
-                <td>0 ₽</td>
-                <td><span style="color: #34d399; font-weight: 700;">0 ₽</span></td>
-                <td>Платежный календарь DSO + триггерные уведомления</td>
-                <td>Сокращение срока дебиторки с 27 до 7 дней</td>
-              </tr>
-              <tr>
-                <td>7</td>
-                <td><strong>«Ночные сливы»: входящие без ответа</strong></td>
-                <td>Ночных обращений без ответа не зафиксировано.</td>
-                <td>0 ₽</td>
-                <td><span style="color: #34d399; font-weight: 700;">0 ₽</span></td>
-                <td>Детектор ночных обращений + авто-ответ дежурному</td>
-                <td>+15% к конверсии в нерабочее время</td>
-              </tr>
-              <tr style="background: rgba(244,63,94,0.08); font-weight: 700;">
-                <td colspan="4">ИТОГО ВЫЯВЛЕННЫХ ПОТЕРЬ И РИСКОВ В МЕСЯЦ:</td>
-                <td style="color: #fb7185; font-size: 0.95rem;">2 250 000 ₽</td>
-                <td colspan="2">ПОТЕНЦИАЛ ВОЗВРАТА В КАССУ: +675 000 ₽ В МЕСЯЦ 1</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="stepper-container" style="gap: 10px;">
+          <!-- Sin 1 -->
+          <div class="funnel-step" style="flex-direction: column; align-items: stretch; cursor: pointer; padding: 14px 18px;" onclick="toggleSinDetails(1)">
+            <div class="funnel-step-content" style="cursor: pointer;">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(244,63,94,0.15); border-color: rgba(244,63,94,0.3); color: #fb7185;">1</div>
+                <div>
+                  <div class="step-title-text">«Черный ящик» CRM: иллюзорный пайплайн</div>
+                  <div class="step-desc-text">В CRM висит 4.5M ₽, но взвешенный объем всего 2.375M ₽</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-neg"><span class="delta-dot"></span>675 000 ₽ риск</span>
+                <span id="sin-arrow-1" style="font-size: 0.75rem; color: rgba(255,255,255,0.4); transition: transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="sin-details-1" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Симптом и диагностика</div>
+                  <div style="color: rgba(255,255,255,0.85);">В CRM висит 4.5M ₽, но взвешенный объем всего 2.375M ₽. Риск зомби-сделок (15%).</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">База в риске</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; color: #fbbf24;">4 500 000 ₽</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Как закрывает платформа</div>
+                  <div style="color: #a78bfa;">Взвешенный прогноз SSOT + исключение зомби</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Ожидаемый эффект</div>
+                  <div style="color: #34d399; font-weight: 600;">100% точность прогноза без иллюзий</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sin 2 -->
+          <div class="funnel-step" style="flex-direction: column; align-items: stretch; cursor: pointer; padding: 14px 18px;" onclick="toggleSinDetails(2)">
+            <div class="funnel-step-content" style="cursor: pointer;">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(244,63,94,0.15); border-color: rgba(244,63,94,0.3); color: #fb7185;">2</div>
+                <div>
+                  <div class="step-title-text">«Кладбище сделок»: срыв регламентов SLA</div>
+                  <div class="step-desc-text">На этапе КП зависло 1 000 000 ₽. Риск срыва конверсии: 450 000 ₽</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-neg"><span class="delta-dot"></span>450 000 ₽ риск</span>
+                <span id="sin-arrow-2" style="font-size: 0.75rem; color: rgba(255,255,255,0.4); transition: transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="sin-details-2" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Симптом и диагностика</div>
+                  <div style="color: rgba(255,255,255,0.85);">На этапе КП зависло 1 000 000 ₽. Риск срыва конверсии: 450 000 ₽.</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">База в риске</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; color: #fbbf24;">1 000 000 ₽</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Как закрывает платформа</div>
+                  <div style="color: #a78bfa;">Авторадар зависания сделок + эскалация РОПу на 3-й день</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Ожидаемый эффект</div>
+                  <div style="color: #34d399; font-weight: 600;">+45% к конверсии этапа КП в оплату</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sin 3 -->
+          <div class="funnel-step" style="flex-direction: column; align-items: stretch; cursor: pointer; padding: 14px 18px;" onclick="toggleSinDetails(3)">
+            <div class="funnel-step-content" style="cursor: pointer;">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.3); color: #34d399;">3</div>
+                <div>
+                  <div class="step-title-text">РОП — «играющий тренер»</div>
+                  <div class="step-desc-text">Нагрузка между РОПом и КАМами сбалансирована</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-pos"><span class="delta-dot"></span>0 ₽ норма</span>
+                <span id="sin-arrow-3" style="font-size: 0.75rem; color: rgba(255,255,255,0.4); transition: transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="sin-details-3" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Симптом и диагностика</div>
+                  <div style="color: rgba(255,255,255,0.85);">Нагрузка между РОПом и КАМами сбалансирована.</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">База в риске</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; color: #34d399;">0 ₽</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Как закрывает платформа</div>
+                  <div style="color: #a78bfa;">Матрица емкости (Capacity Planning)</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Ожидаемый эффект</div>
+                  <div style="color: #34d399; font-weight: 600;">Разгрузка РОПа на 60% для коучинга</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sin 4 -->
+          <div class="funnel-step" style="flex-direction: column; align-items: stretch; cursor: pointer; padding: 14px 18px;" onclick="toggleSinDetails(4)">
+            <div class="funnel-step-content" style="cursor: pointer;">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(244,63,94,0.15); border-color: rgba(244,63,94,0.3); color: #fb7185;">4</div>
+                <div>
+                  <div class="step-title-text">Менеджеры-автоответчики и слив звонков</div>
+                  <div class="step-desc-text">В 30% звонков не зафиксирован Next Step. Средний балл речи: 9.1/13</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-neg"><span class="delta-dot"></span>1 125 000 ₽ риск</span>
+                <span id="sin-arrow-4" style="font-size: 0.75rem; color: rgba(255,255,255,0.4); transition: transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="sin-details-4" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Симптом и диагностика</div>
+                  <div style="color: rgba(255,255,255,0.85);">В 30% звонков не зафиксирован Next Step. Средний балл речи: 9.1/13.</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">База в риске</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; color: #fbbf24;">4 500 000 ₽</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Как закрывает платформа</div>
+                  <div style="color: #a78bfa;">13-факторная речевая аналитика + мотивация от речи</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Ожидаемый эффект</div>
+                  <div style="color: #34d399; font-weight: 600;">+30% к конверсии из первого звонка во встречу</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sin 5 -->
+          <div class="funnel-step" style="flex-direction: column; align-items: stretch; cursor: pointer; padding: 14px 18px;" onclick="toggleSinDetails(5)">
+            <div class="funnel-step-content" style="cursor: pointer;">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.3); color: #34d399;">5</div>
+                <div>
+                  <div class="step-title-text">«Кладбище отказников» без реактивации</div>
+                  <div class="step-desc-text">База отказников отработана, ожидание новых списаний</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-pos"><span class="delta-dot"></span>0 ₽ норма</span>
+                <span id="sin-arrow-5" style="font-size: 0.75rem; color: rgba(255,255,255,0.4); transition: transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="sin-details-5" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Симптом и диагностика</div>
+                  <div style="color: rgba(255,255,255,0.85);">База отказников отработана, ожидание новых списаний.</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">База в риске</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; color: #34d399;">0 ₽</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Как закрывает платформа</div>
+                  <div style="color: #a78bfa;">AI Recovery Engine: автодожим в WhatsApp/TG</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Ожидаемый эффект</div>
+                  <div style="color: #34d399; font-weight: 600;">Возврат 20-30% списанной выручки</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sin 6 -->
+          <div class="funnel-step" style="flex-direction: column; align-items: stretch; cursor: pointer; padding: 14px 18px;" onclick="toggleSinDetails(6)">
+            <div class="funnel-step-content" style="cursor: pointer;">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.3); color: #34d399;">6</div>
+                <div>
+                  <div class="step-title-text">Зависшая дебиторка и кассовые разрывы</div>
+                  <div class="step-desc-text">Просроченная задолженность отсутствует</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-pos"><span class="delta-dot"></span>0 ₽ норма</span>
+                <span id="sin-arrow-6" style="font-size: 0.75rem; color: rgba(255,255,255,0.4); transition: transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="sin-details-6" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Симптом и диагностика</div>
+                  <div style="color: rgba(255,255,255,0.85);">Просроченная задолженность отсутствует.</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">База в риске</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; color: #34d399;">0 ₽</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Как закрывает платформа</div>
+                  <div style="color: #a78bfa;">Платежный календарь DSO + триггерные уведомления</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Ожидаемый эффект</div>
+                  <div style="color: #34d399; font-weight: 600;">Сокращение срока дебиторки с 27 до 7 дней</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sin 7 -->
+          <div class="funnel-step" style="flex-direction: column; align-items: stretch; cursor: pointer; padding: 14px 18px;" onclick="toggleSinDetails(7)">
+            <div class="funnel-step-content" style="cursor: pointer;">
+              <div class="step-left">
+                <div class="step-num-badge" style="background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.3); color: #34d399;">7</div>
+                <div>
+                  <div class="step-title-text">«Ночные сливы»: входящие без ответа</div>
+                  <div class="step-desc-text">Ночных обращений без ответа не зафиксировано</div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="delta-badge delta-pos"><span class="delta-dot"></span>0 ₽ норма</span>
+                <span id="sin-arrow-7" style="font-size: 0.75rem; color: rgba(255,255,255,0.4); transition: transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="sin-details-7" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Симптом и диагностика</div>
+                  <div style="color: rgba(255,255,255,0.85);">Ночных обращений без ответа не зафиксировано.</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">База в риске</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; color: #34d399;">0 ₽</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Как закрывает платформа</div>
+                  <div style="color: #a78bfa;">Детектор ночных обращений + авто-ответ дежурному</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.68rem; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-bottom: 4px;">Ожидаемый эффект</div>
+                  <div style="color: #34d399; font-weight: 600;">+15% к конверсии в нерабочее время</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Banner -->
+        <div style="margin-top: 14px; padding: 12px 18px; background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.2); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-weight: 700;">
+          <span style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">ИТОГО ВЫЯВЛЕННЫХ ПОТЕРЬ И РИСКОВ В МЕСЯЦ:</span>
+          <span style="color: #fb7185; font-size: 1.05rem; font-family: 'JetBrains Mono', monospace;">2 250 000 ₽</span>
+          <span style="font-size: 0.8rem; color: #34d399;">ПОТЕНЦИАЛ ВОЗВРАТА В КАССУ: +675 000 ₽ В МЕСЯЦ 1</span>
         </div>
       </div>
 
@@ -5448,95 +5465,9 @@
           <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> Тепловая карта навыков менеджеров (Skill Heatmap cr1..cr13)</span>
           <span class="badge-won">ТОП-ПЕРЕГОВОРЩИК: НАДЕЖДА (100% #CLOSER)</span>
         </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Менеджер</th>
-                <th>Звонков</th>
-                <th>cr1 Шаг</th>
-                <th>cr2 Иниц.</th>
-                <th>cr3 ЛПР</th>
-                <th>cr4 Боли</th>
-                <th>cr5 Дорого</th>
-                <th>cr6 Подумаю</th>
-                <th>cr7 Кейсы</th>
-                <th>cr8 Закрытие</th>
-                <th>cr11 Слушание</th>
-                <th>cr13 Маржа</th>
-                <th>Ср. балл</th>
-                <th>Кластер</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Заряна</strong></td>
-                <td>5</td>
-                <td><span class="badge-warn">80%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-warn">60%</span></td>
-                <td><span class="badge-warn">60%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-lost">0%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">80%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><strong style="color: #34d399;">9.8 / 13</strong></td>
-                <td><span class="badge-won">#TopPerformer</span></td>
-              </tr>
-              <tr>
-                <td><strong>Надежда</strong></td>
-                <td>1</td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-lost">0%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><strong style="color: #34d399;">12.0 / 13</strong></td>
-                <td><span class="badge-won">#RecordHolder</span></td>
-              </tr>
-              <tr>
-                <td><strong>Виктория</strong></td>
-                <td>2</td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-lost">0%</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><strong style="color: #34d399;">9.5 / 13</strong></td>
-                <td><span class="badge-won">#Closer</span></td>
-              </tr>
-              <tr>
-                <td><strong>Светлана</strong></td>
-                <td>2</td>
-                <td><span class="badge-lost clickable-skill" onclick="drillDownSkill('Светлана', 'cr1 Next Step')" title="Клик для разбора звонков">0% 🔍</span></td>
-                <td><span class="badge-won">100%</span></td>
-                <td><span class="badge-warn clickable-skill" onclick="drillDownSkill('Светлана', 'cr3 ЛПР')">50%</span></td>
-                <td><span class="badge-lost clickable-skill" onclick="drillDownSkill('Светлана', 'cr4 Боли')" title="Клик для разбора звонков">0% 🔍</span></td>
-                <td><span class="badge-lost clickable-skill" onclick="drillDownSkill('Светлана', 'cr5 Дорого')">0% 🔍</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-lost clickable-skill" onclick="drillDownSkill('Светлана', 'cr8 Закрытие')">0% 🔍</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><span class="badge-warn">50%</span></td>
-                <td><strong style="color: #fb7185; cursor: pointer;" onclick="drillDownSkill('Светлана', 'Все звонки')">5.5 / 13 ↗</strong></td>
-                <td><span class="badge-lost">#P0Hazard</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <div id="skillsHeatmapContainer" class="skills-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
+
 
       <!-- Движок мотивации и Payroll ОП -->
       <div class="bento-card">
@@ -5752,93 +5683,177 @@
           <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></span> Сквозной E2E-Мониторинг связующих звеньев (L-01..L-09)</span>
           <span class="badge-won">150 / 160 QA PASS (93.8%)</span>
         </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Связующее звено экосистемы</th>
-                <th>Функция и инвариант</th>
-                <th>Статус</th>
-                <th>Пинг</th>
-                <th>Детали проверки</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>L-01</strong></td>
-                <td>Публичный Веб & Шлюз</td>
-                <td>Доступность ai-rop.ru и Cloudflare HTTPS Ingress</td>
-                <td><span class="badge-won">🟢 ONLINE</span></td>
-                <td>214 ms</td>
-                <td>HTTP 200 OK, SSL Verified, CDN Edge Active</td>
-              </tr>
-              <tr>
-                <td><strong>L-02</strong></td>
-                <td>CRM-Шлюз (Dual-CRM)</td>
-                <td>amoCRM API v4 и Битрикс24 REST</td>
-                <td><span class="badge-won">🟢 ONLINE</span></td>
-                <td>875 ms</td>
-                <td>amoCRM: 'самозанятый' | B24: 32 сделки</td>
-              </tr>
-              <tr>
-                <td><strong>L-03</strong></td>
-                <td>Оркестратор Сценариев</td>
-                <td>n8n сценарий речевого аудита (38 нод)</td>
-                <td><span class="badge-warn">🟡 WARN</span></td>
-                <td>1007 ms</td>
-                <td>n8n порт 5678: РЕЗЕРВНЫЙ NATIVE РЕЖИМ</td>
-              </tr>
-              <tr>
-                <td><strong>L-04</strong></td>
-                <td>Безопасность 152-ФЗ</td>
-                <td>Криптографическая токенизация ПДн до передачи в LLM</td>
-                <td><span class="badge-won">🟢 ONLINE</span></td>
-                <td>319 ms</td>
-                <td>100% ПДн обезличено (Vault: Zero PII Leakage)</td>
-              </tr>
-              <tr>
-                <td><strong>L-05</strong></td>
-                <td>ИИ-Ядро Аудиоаналитики</td>
-                <td>Строгая валидация JSON-схемы Gemini Flash (13 критериев)</td>
-                <td><span class="badge-won">🟢 ONLINE</span></td>
-                <td>0 ms</td>
-                <td>Strict JSON, inline payload &le; 35 MB, temp=0.1</td>
-              </tr>
-              <tr>
-                <td><strong>L-06</strong></td>
-                <td>Связка Звонок &rarr; Сделка</td>
-                <td>Foreign Key целостность: отсутствие orphan-звонков</td>
-                <td><span class="badge-won">🟢 ONLINE</span></td>
-                <td>0 ms</td>
-                <td>0 orphan-звонков, 100% ссылочная целостность</td>
-              </tr>
-              <tr>
-                <td><strong>L-07</strong></td>
-                <td>Финансовый Контур</td>
-                <td>Сходимость Won-выручки и счетов (Won+Lost == Closed)</td>
-                <td><span class="badge-won">🟢 ONLINE</span></td>
-                <td>0 ms</td>
-                <td>Сходимость 500 000 ₽, 0 расхождений</td>
-              </tr>
-              <tr>
-                <td><strong>L-08</strong></td>
-                <td>Реактивность Витрин</td>
-                <td>Мгновенное вычисление здоровья бизнеса</td>
-                <td><span class="badge-won">🟢 ONLINE</span></td>
-                <td>0 ms</td>
-                <td>FinTech Slate 2026, 0 формульных ошибок</td>
-              </tr>
-              <tr>
-                <td><strong>L-09</strong></td>
-                <td>Action Loop & Боты</td>
-                <td>Доставка алертов РОПу в Telegram при браке речи</td>
-                <td><span class="badge-won">🟢 ONLINE</span></td>
-                <td>0 ms</td>
-                <td>Диспетчер готов к доставке в @RevOps_Super_Audit_Bot</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="stepper-container" style="gap: 8px;">
+          <!-- L-01 -->
+          <div class="funnel-step" style="padding: 12px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+            <div class="funnel-step-content" style="align-items: center; width: 100%;">
+              <div class="step-left" style="gap: 14px;">
+                <div class="step-num-badge" style="background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.3); color: #a78bfa; width: 44px; border-radius: 8px; font-size: 0.72rem;">L-01</div>
+                <div>
+                  <div class="step-title-text" style="display: flex; align-items: center; gap: 8px;">
+                    <span>Публичный Веб & Шлюз</span>
+                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: 'JetBrains Mono', monospace;">214 ms</span>
+                  </div>
+                  <div class="step-desc-text">Доступность ai-rop.ru и Cloudflare HTTPS Ingress &bull; <span style="font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4);">HTTP 200 OK, SSL Verified, CDN Edge Active</span></div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="badge-won">🟢 ONLINE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- L-02 -->
+          <div class="funnel-step" style="padding: 12px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+            <div class="funnel-step-content" style="align-items: center; width: 100%;">
+              <div class="step-left" style="gap: 14px;">
+                <div class="step-num-badge" style="background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.3); color: #a78bfa; width: 44px; border-radius: 8px; font-size: 0.72rem;">L-02</div>
+                <div>
+                  <div class="step-title-text" style="display: flex; align-items: center; gap: 8px;">
+                    <span>CRM-Шлюз (Dual-CRM)</span>
+                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: 'JetBrains Mono', monospace;">875 ms</span>
+                  </div>
+                  <div class="step-desc-text">amoCRM API v4 и Битрикс24 REST &bull; <span style="font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4);">amoCRM: 'самозанятый' | B24: 32 сделки</span></div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="badge-won">🟢 ONLINE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- L-03 -->
+          <div class="funnel-step" style="padding: 12px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+            <div class="funnel-step-content" style="align-items: center; width: 100%;">
+              <div class="step-left" style="gap: 14px;">
+                <div class="step-num-badge" style="background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.3); color: #fbbf24; width: 44px; border-radius: 8px; font-size: 0.72rem;">L-03</div>
+                <div>
+                  <div class="step-title-text" style="display: flex; align-items: center; gap: 8px;">
+                    <span>Оркестратор Сценариев</span>
+                    <span style="font-size: 0.72rem; color: #fbbf24; font-family: 'JetBrains Mono', monospace;">1007 ms</span>
+                  </div>
+                  <div class="step-desc-text">n8n сценарий речевого аудита (38 нод) &bull; <span style="font-family: 'JetBrains Mono', monospace; color: #fbbf24;">n8n порт 5678: РЕЗЕРВНЫЙ NATIVE РЕЖИМ</span></div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="badge-warn">🟡 WARN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- L-04 -->
+          <div class="funnel-step" style="padding: 12px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+            <div class="funnel-step-content" style="align-items: center; width: 100%;">
+              <div class="step-left" style="gap: 14px;">
+                <div class="step-num-badge" style="background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.3); color: #a78bfa; width: 44px; border-radius: 8px; font-size: 0.72rem;">L-04</div>
+                <div>
+                  <div class="step-title-text" style="display: flex; align-items: center; gap: 8px;">
+                    <span>Безопасность 152-ФЗ</span>
+                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: 'JetBrains Mono', monospace;">319 ms</span>
+                  </div>
+                  <div class="step-desc-text">Криптографическая токенизация ПДн до передачи в LLM &bull; <span style="font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4);">100% ПДн обезличено (Vault: Zero PII Leakage)</span></div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="badge-won">🟢 ONLINE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- L-05 -->
+          <div class="funnel-step" style="padding: 12px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+            <div class="funnel-step-content" style="align-items: center; width: 100%;">
+              <div class="step-left" style="gap: 14px;">
+                <div class="step-num-badge" style="background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.3); color: #a78bfa; width: 44px; border-radius: 8px; font-size: 0.72rem;">L-05</div>
+                <div>
+                  <div class="step-title-text" style="display: flex; align-items: center; gap: 8px;">
+                    <span>ИИ-Ядро Аудиоаналитики</span>
+                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: 'JetBrains Mono', monospace;">0 ms</span>
+                  </div>
+                  <div class="step-desc-text">Строгая валидация JSON-схемы Gemini Flash (13 критериев) &bull; <span style="font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4);">Strict JSON, inline payload &le; 35 MB, temp=0.1</span></div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="badge-won">🟢 ONLINE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- L-06 -->
+          <div class="funnel-step" style="padding: 12px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+            <div class="funnel-step-content" style="align-items: center; width: 100%;">
+              <div class="step-left" style="gap: 14px;">
+                <div class="step-num-badge" style="background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.3); color: #a78bfa; width: 44px; border-radius: 8px; font-size: 0.72rem;">L-06</div>
+                <div>
+                  <div class="step-title-text" style="display: flex; align-items: center; gap: 8px;">
+                    <span>Связка Звонок &rarr; Сделка</span>
+                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: 'JetBrains Mono', monospace;">0 ms</span>
+                  </div>
+                  <div class="step-desc-text">Foreign Key целостность: отсутствие orphan-звонков &bull; <span style="font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4);">0 orphan-звонков, 100% ссылочная целостность</span></div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="badge-won">🟢 ONLINE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- L-07 -->
+          <div class="funnel-step" style="padding: 12px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+            <div class="funnel-step-content" style="align-items: center; width: 100%;">
+              <div class="step-left" style="gap: 14px;">
+                <div class="step-num-badge" style="background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.3); color: #a78bfa; width: 44px; border-radius: 8px; font-size: 0.72rem;">L-07</div>
+                <div>
+                  <div class="step-title-text" style="display: flex; align-items: center; gap: 8px;">
+                    <span>Финансовый Контур</span>
+                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: 'JetBrains Mono', monospace;">0 ms</span>
+                  </div>
+                  <div class="step-desc-text">Сходимость Won-выручки и счетов (Won+Lost == Closed) &bull; <span style="font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4);">Сходимость 500 000 ₽, 0 расхождений</span></div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="badge-won">🟢 ONLINE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- L-08 -->
+          <div class="funnel-step" style="padding: 12px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+            <div class="funnel-step-content" style="align-items: center; width: 100%;">
+              <div class="step-left" style="gap: 14px;">
+                <div class="step-num-badge" style="background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.3); color: #a78bfa; width: 44px; border-radius: 8px; font-size: 0.72rem;">L-08</div>
+                <div>
+                  <div class="step-title-text" style="display: flex; align-items: center; gap: 8px;">
+                    <span>Реактивность Витрин</span>
+                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: 'JetBrains Mono', monospace;">0 ms</span>
+                  </div>
+                  <div class="step-desc-text">Мгновенное вычисление здоровья бизнеса &bull; <span style="font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4);">FinTech Slate 2026, 0 формульных ошибок</span></div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="badge-won">🟢 ONLINE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- L-09 -->
+          <div class="funnel-step" style="padding: 12px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+            <div class="funnel-step-content" style="align-items: center; width: 100%;">
+              <div class="step-left" style="gap: 14px;">
+                <div class="step-num-badge" style="background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.3); color: #a78bfa; width: 44px; border-radius: 8px; font-size: 0.72rem;">L-09</div>
+                <div>
+                  <div class="step-title-text" style="display: flex; align-items: center; gap: 8px;">
+                    <span>Action Loop & Боты</span>
+                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: 'JetBrains Mono', monospace;">0 ms</span>
+                  </div>
+                  <div class="step-desc-text">Доставка алертов РОПу в Telegram при браке речи &bull; <span style="font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4);">Диспетчер готов к доставке в @RevOps_Super_Audit_Bot</span></div>
+                </div>
+              </div>
+              <div class="step-right">
+                <span class="badge-won">🟢 ONLINE</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -5848,83 +5863,150 @@
           <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span> Модульный конструктор тарифов (Feature Flags MOD-01..MOD-09)</span>
           <span class="badge-won">СУММАРНЫЙ MRR: 183 000 ₽</span>
         </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Код</th>
-                <th>Название модуля платформы</th>
-                <th>Статус</th>
-                <th>Тариф</th>
-                <th>Плата, ₽/мес</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>MOD-01</strong></td>
-                <td>🎙️ Речевой ИИ-Супервайзер 100% звонков (Gemini 3.5 Flash)</td>
-                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
-                <td>Light</td>
-                <td>29 000 ₽</td>
-              </tr>
-              <tr>
-                <td><strong>MOD-02</strong></td>
-                <td>⚡ Мгновенные алерты в Telegram (30с со сценарием спасения)</td>
-                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
-                <td>Pro</td>
-                <td>15 000 ₽</td>
-              </tr>
-              <tr>
-                <td><strong>MOD-03</strong></td>
-                <td>🤖 Автозаполнение CRM (Executive Summary + договоренности)</td>
-                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
-                <td>Pro</td>
-                <td>19 000 ₽</td>
-              </tr>
-              <tr>
-                <td><strong>MOD-04</strong></td>
-                <td>🛡️ Пакет «Антисаботаж» и Режим «Адвокат менеджера»</td>
-                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
-                <td>Pro</td>
-                <td>15 000 ₽</td>
-              </tr>
-              <tr>
-                <td><strong>MOD-05</strong></td>
-                <td>🎯 Контроль 13 B2B-стандартов речи и жесткого Next Step</td>
-                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
-                <td>Pro</td>
-                <td>25 000 ₽</td>
-              </tr>
-              <tr>
-                <td><strong>MOD-06</strong></td>
-                <td>📊 Пульт РОПа 15 минут: утренний радар сливов и лидерборд</td>
-                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
-                <td>Pro</td>
-                <td>35 000 ₽</td>
-              </tr>
-              <tr>
-                <td><strong>MOD-07</strong></td>
-                <td>🔐 Контур безопасности 152-ФЗ и токенизация биометрии</td>
-                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
-                <td>Enterprise</td>
-                <td>25 000 ₽</td>
-              </tr>
-              <tr>
-                <td><strong>MOD-08</strong></td>
-                <td>📄 Executive OnePager генератор для Собственника и CFO</td>
-                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
-                <td>Enterprise</td>
-                <td>20 000 ₽</td>
-              </tr>
-              <tr>
-                <td><strong>MOD-09</strong></td>
-                <td>🔄 Фоновая синхронизация сделок CRM (raw_deals Auto-Sync)</td>
-                <td><span class="badge-won">ВКЛЮЧЕН</span></td>
-                <td>Enterprise</td>
-                <td>Включено</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="feature-flags-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+          <!-- MOD-01 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
+               onclick="showToast('Модуль MOD-01', '🎙️ Речевой ИИ-Супервайзер 100% звонков активен')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-01</span>
+              <span class="status-dot dot-won"></span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
+              🎙️ Речевой ИИ-Супервайзер 100% звонков (Gemini 3.5 Flash)
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
+              <span>Light</span>
+              <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">29 000 ₽/мес</strong>
+            </div>
+          </div>
+
+          <!-- MOD-02 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
+               onclick="showToast('Модуль MOD-02', '⚡ Мгновенные алерты в Telegram активны')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-02</span>
+              <span class="status-dot dot-won"></span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
+              ⚡ Мгновенные алерты в Telegram (30с со сценарием спасения)
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
+              <span>Pro</span>
+              <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">15 000 ₽/мес</strong>
+            </div>
+          </div>
+
+          <!-- MOD-03 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
+               onclick="showToast('Модуль MOD-03', '🤖 Автозаполнение CRM активно')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-03</span>
+              <span class="status-dot dot-won"></span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
+              🤖 Автозаполнение CRM (Executive Summary + договоренности)
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
+              <span>Pro</span>
+              <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">19 000 ₽/мес</strong>
+            </div>
+          </div>
+
+          <!-- MOD-04 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
+               onclick="showToast('Модуль MOD-04', '🛡️ Пакет «Антисаботаж» активен')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-04</span>
+              <span class="status-dot dot-won"></span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
+              🛡️ Пакет «Антисаботаж» и Режим «Адвокат менеджера»
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
+              <span>Pro</span>
+              <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">15 000 ₽/мес</strong>
+            </div>
+          </div>
+
+          <!-- MOD-05 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
+               onclick="showToast('Модуль MOD-05', '🎯 Контроль 13 B2B-стандартов речи активен')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-05</span>
+              <span class="status-dot dot-won"></span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
+              🎯 Контроль 13 B2B-стандартов речи и жесткого Next Step
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
+              <span>Pro</span>
+              <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">25 000 ₽/мес</strong>
+            </div>
+          </div>
+
+          <!-- MOD-06 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
+               onclick="showToast('Модуль MOD-06', '📊 Пульт РОПа 15 минут активен')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-06</span>
+              <span class="status-dot dot-won"></span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
+              📊 Пульт РОПа 15 минут: утренний радар сливов и лидерборд
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
+              <span>Pro</span>
+              <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">35 000 ₽/мес</strong>
+            </div>
+          </div>
+
+          <!-- MOD-07 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
+               onclick="showToast('Модуль MOD-07', '🔐 Контур безопасности 152-ФЗ активен')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-07</span>
+              <span class="status-dot dot-won"></span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
+              🔐 Контур безопасности 152-ФЗ и токенизация биометрии
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
+              <span>Enterprise</span>
+              <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">25 000 ₽/мес</strong>
+            </div>
+          </div>
+
+          <!-- MOD-08 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
+               onclick="showToast('Модуль MOD-08', '📄 Executive OnePager генератор активен')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-08</span>
+              <span class="status-dot dot-won"></span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
+              📄 Executive OnePager генератор для Собственника и CFO
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
+              <span>Enterprise</span>
+              <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">20 000 ₽/мес</strong>
+            </div>
+          </div>
+
+          <!-- MOD-09 -->
+          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
+               onclick="showToast('Модуль MOD-09', '🔄 Фоновая синхронизация сделок CRM активна')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-09</span>
+              <span class="status-dot dot-won"></span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
+              🔄 Фоновая синхронизация сделок CRM (raw_deals Auto-Sync)
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
+              <span>Enterprise</span>
+              <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">Включено</strong>
+            </div>
+          </div>
         </div>
       </div>
 

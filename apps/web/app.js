@@ -550,18 +550,6 @@ const CALLS_DATA = [
     const ALL_TABS = ['pulse', 'express', 'rop', 'audit', 'leaks', 'impact', 'montecarlo', 'skills', 'settings'];
 
 
-    const TAB_LABELS = {
-      pulse: '1. Пульс выручки',
-      express: '2. Экспресс-аудит',
-      rop: '3. Пьедестал РОПа',
-      audit: '4. ИИ-Аудит звонков',
-      leaks: '5. Воронка утечек',
-      impact: '6. Влияние на выручку',
-      montecarlo: '7. Monte Carlo симуляция',
-      skills: '8. Навыки & Payroll',
-      settings: '9. Настройки & Интеграции'
-    };
-
     function filterRepAudit(repName) {
       switchTab('audit');
       const sel = document.getElementById('filterManager');
@@ -615,20 +603,11 @@ const CALLS_DATA = [
         animateCardsIn(activeView);
       }
 
-      // Update Breadcrumbs
-      const bc = document.getElementById('currentViewBreadcrumb');
-      if (bc && TAB_LABELS[tabId]) {
-        bc.textContent = TAB_LABELS[tabId];
-      }
-
       // Close mobile sidebar if open
       closeMobileSidebar();
 
       if (tabId === 'montecarlo' && mcChartInstance) {
         mcChartInstance.resize();
-      }
-      if (tabId === 'pulse' && revPacingChartInstance) {
-        revPacingChartInstance.resize();
       }
       if (tabId === 'rop' && repPerfChartInstance) {
         repPerfChartInstance.resize();
@@ -845,10 +824,8 @@ const CALLS_DATA = [
       const q = (document.getElementById('transcriptSearch')?.value || '').trim().toLowerCase();
 
       const listContainer = document.getElementById('callsListContainer');
-      const tbody = document.getElementById('callsTableBody');
-      if (!listContainer && !tbody) return;
-      if (listContainer) listContainer.innerHTML = '';
-      if (tbody) tbody.innerHTML = '';
+      if (!listContainer) return;
+      listContainer.innerHTML = '';
 
       const filtered = CALLS_DATA.filter(call => {
         const matchMgr = (mgr === 'all' || call.manager === mgr);
@@ -962,19 +939,7 @@ const CALLS_DATA = [
           listContainer.appendChild(card);
         }
 
-        // Backward compatibility for table tbody if present
-        if (tbody) {
-          const tr = document.createElement('tr');
-          tr.id = `legacy-call-row-${call.id}`;
-          tr.innerHTML = `
-            <td><code>${call.id}</code></td>
-            <td>${call.deal_title}</td>
-            <td>${call.manager}</td>
-            <td>${call.amount}</td>
-            <td>${call.stage}</td>
-          `;
-          tbody.appendChild(tr);
-        }
+
       });
 
       // Calculate team summary
@@ -1271,6 +1236,88 @@ const CALLS_DATA = [
     }
 
     // ==========================================================================
+    // SKILLS HEATMAP RENDERING (V20.0 Modern Tier-1)
+    // ==========================================================================
+    function renderSkillsHeatmap() {
+      const container = document.getElementById('skillsHeatmapContainer');
+      if (!container) return;
+
+      const reps = ['Заряна', 'Надежда', 'Виктория', 'Светлана'];
+      const avatarClasses = {
+        'Заряна': 'rep-z',
+        'Надежда': 'rep-n',
+        'Виктория': 'rep-v',
+        'Светлана': 'rep-s'
+      };
+      const initials = {
+        'Заряна': 'З',
+        'Надежда': 'Н',
+        'Виктория': 'В',
+        'Светлана': 'С'
+      };
+      const critLabels = (typeof CRITERIA_NAMES !== 'undefined') ? CRITERIA_NAMES : [
+        "Next Step", "Инициатива", "ЛПР", "Боли", "Дорого",
+        "Я подумаю", "Кейсы", "Закрытие", "Приветствие",
+        "Чистота речи", "Talk/Listen", "Итог", "Маржа"
+      ];
+
+      let html = '';
+      reps.forEach(rep => {
+        const repCalls = CALLS_DATA.filter(c => c.manager === rep);
+        const count = repCalls.length;
+        const avgScore = count ? (repCalls.reduce((sum, c) => sum + (c.score || 0), 0) / count).toFixed(1) : '0.0';
+        const scoreColor = parseFloat(avgScore) >= 9.0 ? '#34d399' : '#fb7185';
+        const repRole = rep === 'Заряна' ? 'Эталон звонков' :
+                        rep === 'Надежда' ? 'Рекордсмен' :
+                        rep === 'Виктория' ? 'Клоузер' : 'Зона риска';
+
+        let dotsHtml = '';
+        for (let i = 0; i < 13; i++) {
+          let passCount = 0;
+          repCalls.forEach(c => {
+            if (c.cr && c.cr[i] === 1) passCount++;
+          });
+          const passRate = count ? passCount / count : 0;
+          const isPass = passRate >= 0.5;
+          const label = critLabels[i] || ('CR' + (i + 1));
+          const title = `${label}: ${Math.round(passRate * 100)}% (${passCount}/${count})`;
+          dotsHtml += `<div class="heat-dot ${isPass ? 'pass' : 'fail'}" title="${title}"></div>`;
+        }
+
+        html += `
+          <div class="skill-row" onclick="filterRepAudit('${rep}')" style="display: grid; grid-template-columns: 40px 140px 1fr 60px; align-items: center; gap: 16px; padding: 12px 16px; background: rgba(255,255,255,0.02); border-radius: 10px; cursor: pointer; transition: background 0.15s ease;">
+            <div class="call-avatar ${avatarClasses[rep] || 'rep-z'}">${initials[rep] || rep[0]}</div>
+            <div>
+              <div style="font-weight: 600; font-size: 0.85rem; color: #fff;">${rep}</div>
+              <div style="font-size: 0.7rem; color: rgba(255,255,255,0.45);">${count} ${count === 1 ? 'звонок' : (count < 5 ? 'звонка' : 'звонков')} • ${repRole}</div>
+            </div>
+            <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+              ${dotsHtml}
+            </div>
+            <div style="text-align: right;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; font-weight: 700; color: ${scoreColor};">${avgScore}</div>
+              <div style="font-size: 0.65rem; color: rgba(255,255,255,0.4);">из 13</div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // ==========================================================================
+    // 7 SINS ACCORDION TOGGLE (Leaks Tab)
+    // ==========================================================================
+    function toggleSinDetails(id) {
+      const el = document.getElementById('sin-details-' + id);
+      const arrow = document.getElementById('sin-arrow-' + id);
+      if (!el) return;
+      const isHidden = el.style.display === 'none' || el.style.display === '';
+      el.style.display = isHidden ? 'block' : 'none';
+      if (arrow) arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+
+    // ==========================================================================
     // WHATSAPP SCRIPT COPY
     // ==========================================================================
     function copyRescueScript(caseKey) {
@@ -1382,26 +1429,7 @@ const CALLS_DATA = [
       const tooltipBody = isLight ? '#334155' : '#cbd5e1';
       const tooltipBorder = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(124, 58, 237, 0.25)';
 
-      // 1. Revenue Pacing Chart
-      if (typeof revPacingChartInstance !== 'undefined' && revPacingChartInstance) {
-        try {
-          if (revPacingChartInstance.options.scales?.x) {
-            revPacingChartInstance.options.scales.x.ticks.color = tickColor;
-            revPacingChartInstance.options.scales.x.grid.color = gridColor;
-          }
-          if (revPacingChartInstance.options.scales?.y) {
-            revPacingChartInstance.options.scales.y.ticks.color = tickColor;
-            revPacingChartInstance.options.scales.y.grid.color = gridColor;
-          }
-          if (revPacingChartInstance.options.plugins?.tooltip) {
-            revPacingChartInstance.options.plugins.tooltip.backgroundColor = tooltipBg;
-            revPacingChartInstance.options.plugins.tooltip.titleColor = tooltipTitle;
-            revPacingChartInstance.options.plugins.tooltip.bodyColor = tooltipBody;
-            revPacingChartInstance.options.plugins.tooltip.borderColor = tooltipBorder;
-          }
-          revPacingChartInstance.update('none');
-        } catch (e) {}
-      }
+
 
       // 2. Rep Performance Chart
       if (typeof repPerfChartInstance !== 'undefined' && repPerfChartInstance) {
@@ -1800,211 +1828,10 @@ const CALLS_DATA = [
     // ==========================================================================
     // INTERACTIVE CHARTS ENGINE (CHART.JS 4.4.2 SUITE)
     // ==========================================================================
-    let revPacingChartInstance = null;
     let repPerfChartInstance = null;
     let speechRadarChartInstance = null;
 
-    let currentRevMode = 'cum'; // 'cum' or 'daily'
-    let currentConversionMultiplier = 1.0;
 
-    const PACING_LABELS = ['1 Окт', '3 Окт', '6 Окт', '9 Окт', '12 Окт', '15 Окт', '18 Окт', '21 Окт', '24 Окт', '27 Окт', '30 Окт'];
-    const PLAN_CUM_DATA = [0, 500000, 1000000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 4500000, 5000000];
-    const FACT_CUM_DATA = [0, 0, 0, 0, 0, 500000, 500000, 500000, 500000, 500000, 500000];
-
-    function calculateSsotData(multiplier) {
-      return [
-        null, null, null, null, null,
-        500000,
-        Math.round(500000 + 400000 * multiplier),
-        Math.round(500000 + 800000 * multiplier),
-        Math.round(500000 + 1200000 * multiplier),
-        Math.round(500000 + 1550000 * multiplier),
-        Math.round(500000 + 1875000 * multiplier)
-      ];
-    }
-
-    function initRevenuePacingChart() {
-      const ctx = document.getElementById('revenuePacingChart');
-      if (!ctx) return;
-
-      const c2d = ctx.getContext ? ctx.getContext('2d') : null;
-      let gradWon = 'rgba(108, 93, 211, 0.16)';
-      let gradSsot = 'rgba(243, 101, 148, 0.12)';
-
-      if (c2d) {
-        const h = ctx.clientHeight || 260;
-        const g1 = c2d.createLinearGradient(0, 0, 0, h);
-        g1.addColorStop(0, 'rgba(108, 93, 211, 0.45)');
-        g1.addColorStop(0.7, 'rgba(108, 93, 211, 0.10)');
-        g1.addColorStop(1, 'rgba(108, 93, 211, 0.00)');
-        gradWon = g1;
-
-        const g2 = c2d.createLinearGradient(0, 0, 0, h);
-        g2.addColorStop(0, 'rgba(243, 101, 148, 0.38)');
-        g2.addColorStop(0.7, 'rgba(243, 101, 148, 0.08)');
-        g2.addColorStop(1, 'rgba(243, 101, 148, 0.00)');
-        gradSsot = g2;
-      }
-
-      const ssotData = calculateSsotData(currentConversionMultiplier);
-
-      revPacingChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: PACING_LABELS,
-          datasets: [
-            {
-              label: 'Факт Won (500 000 ₽)',
-              data: FACT_CUM_DATA,
-              borderColor: '#6c5dd3',
-              backgroundColor: gradWon,
-              borderWidth: 3,
-              fill: true,
-              tension: 0.4,
-              pointRadius: [0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0],
-              pointBackgroundColor: '#6c5dd3',
-              pointBorderColor: '#fff',
-              pointHoverRadius: 8
-            },
-            {
-              label: 'План таргета (5 000 000 ₽)',
-              data: PLAN_CUM_DATA,
-              borderColor: '#38bdf8',
-              borderWidth: 2,
-              borderDash: [5, 5],
-              fill: false,
-              tension: 0.2,
-              pointRadius: 0
-            },
-            {
-              label: 'SSOT Прогноз кассы',
-              data: ssotData,
-              borderColor: '#f36594',
-              backgroundColor: gradSsot,
-              borderWidth: 2.5,
-              fill: true,
-              tension: 0.4,
-              pointRadius: [0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 6],
-              pointBackgroundColor: '#f36594',
-              pointHoverRadius: 8
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(14, 18, 28, 0.95)',
-              titleColor: '#fff',
-              bodyColor: '#cbd5e1',
-              borderColor: 'rgba(255, 255, 255, 0.12)',
-              borderWidth: 1,
-              padding: 12,
-              displayColors: true,
-              callbacks: {
-                label: function(context) {
-                  const val = context.parsed.y;
-                  if (val === null || val === undefined) return '';
-                  return ` ${context.dataset.label}: ${val.toLocaleString('ru-RU')} ₽`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(255, 255, 255, 0.04)' },
-              ticks: { color: '#94a3b8', font: { size: 11 } }
-            },
-            y: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: {
-                color: '#94a3b8',
-                font: { family: 'JetBrains Mono', size: 11 },
-                callback: function(value) {
-                  return (value / 1000000).toFixed(1) + 'M ₽';
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function setRevenueChartMode(mode) {
-      if (!revPacingChartInstance) return;
-      currentRevMode = mode;
-      
-      const btnCum = document.getElementById('btnChartModeCum');
-      const btnDaily = document.getElementById('btnChartModeDaily');
-
-      if (mode === 'cum') {
-        btnCum.style.background = 'rgba(115,82,255,0.3)';
-        btnCum.style.color = '#fff';
-        btnDaily.style.background = 'transparent';
-        btnDaily.style.color = 'var(--text-secondary)';
-
-        revPacingChartInstance.data.datasets[0].data = FACT_CUM_DATA;
-        revPacingChartInstance.data.datasets[1].data = PLAN_CUM_DATA;
-        revPacingChartInstance.data.datasets[2].data = calculateSsotData(currentConversionMultiplier);
-        revPacingChartInstance.options.scales.y.ticks.callback = function(val) {
-          return (val / 1000000).toFixed(1) + 'M ₽';
-        };
-      } else {
-        btnDaily.style.background = 'rgba(115,82,255,0.3)';
-        btnDaily.style.color = '#fff';
-        btnCum.style.background = 'transparent';
-        btnCum.style.color = 'var(--text-secondary)';
-
-        // Daily values
-        const dailyPlan = Array(11).fill(166667);
-        const dailyFact = [0, 0, 0, 0, 0, 500000, 0, 0, 0, 0, 0];
-        const dailySsot = [0, 0, 0, 0, 0, 500000, 133333, 133333, 133333, 133333, 133333];
-
-        revPacingChartInstance.data.datasets[0].data = dailyFact;
-        revPacingChartInstance.data.datasets[1].data = dailyPlan;
-        revPacingChartInstance.data.datasets[2].data = dailySsot;
-        revPacingChartInstance.options.scales.y.ticks.callback = function(val) {
-          return (val / 1000).toFixed(0) + 'k ₽';
-        };
-      }
-      revPacingChartInstance.update();
-    }
-
-    function toggleChartSeries(idx) {
-      if (!revPacingChartInstance) return;
-      const isVisible = revPacingChartInstance.isDatasetVisible(idx);
-      if (isVisible) {
-        revPacingChartInstance.hide(idx);
-      } else {
-        revPacingChartInstance.show(idx);
-      }
-    }
-
-    function updateRevenueSimulation(val) {
-      currentConversionMultiplier = val / 100;
-      document.getElementById('lblConversionVal').textContent = val + '%';
-      
-      const totalProjected = Math.round(500000 + 1875000 * currentConversionMultiplier);
-      document.getElementById('lblSimProjectedCash').textContent = totalProjected.toLocaleString('ru-RU') + ' ₽';
-
-      if (revPacingChartInstance && currentRevMode === 'cum') {
-        revPacingChartInstance.data.datasets[2].data = calculateSsotData(currentConversionMultiplier);
-        revPacingChartInstance.update('none');
-      }
-    }
-
-    function resetRevenueSimulation() {
-      const slider = document.getElementById('sliderConversion');
-      if (slider) slider.value = 100;
-      updateRevenueSimulation(100);
-      showToast('Симулятор сброшен', 'Конверсия воронки возвращена к 100% (норматив).');
-    }
 
     // ==========================================================================
     // REP PERFORMANCE COMPARISON CHART
@@ -2283,6 +2110,7 @@ const CALLS_DATA = [
         if (sb) sb.classList.add('collapsed');
       }
       initCallsTable();
+      renderSkillsHeatmap();
       const savedDensity = localStorage.getItem('revops_table_density') || 'excel-pro';
       setTableDensity(savedDensity);
 
@@ -2299,7 +2127,6 @@ const CALLS_DATA = [
       if (initialView) animateCardsIn(initialView);
 
       initMonteCarloChart();
-      initRevenuePacingChart();
       initRepPerformanceChart();
       initSpeechRadarChart();
 
@@ -2309,7 +2136,6 @@ const CALLS_DATA = [
       initDevelopSplineChart();
 
       // V20.2 Tier-1 Additions
-      initSpotlight();
       initWaveformScrubbing();
 
       const savedTheme = localStorage.getItem('revops_accent_theme') || 'purple';
@@ -2331,22 +2157,6 @@ const CALLS_DATA = [
         cmdInput.addEventListener('keydown', handleCmdPaletteKeydown);
       }
     });
-
-    // ==========================================================================
-    // MOUSE-TRACKING RADIAL SPOTLIGHT (.bento-card) - LINEAR / VERCEL STYLE
-    // ==========================================================================
-    function initSpotlight() {
-      const cards = document.querySelectorAll('.bento-card');
-      cards.forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          card.style.setProperty('--mouse-x', `${x}px`);
-          card.style.setProperty('--mouse-y', `${y}px`);
-        });
-      });
-    }
 
     // ==========================================================================
     // GLOBAL COMMAND PALETTE (Ctrl+K / Cmd+K)
@@ -2746,4 +2556,7 @@ window.closeCommandPalette = typeof closeCommandPalette !== 'undefined' ? closeC
 window.openOnePagerModal = typeof openOnePagerModal !== 'undefined' ? openOnePagerModal : null;
 window.closeOnePagerModal = typeof closeOnePagerModal !== 'undefined' ? closeOnePagerModal : null;
 window.triggerSyncSimulation = typeof triggerSyncSimulation !== 'undefined' ? triggerSyncSimulation : null;
+window.renderSkillsHeatmap = typeof renderSkillsHeatmap !== 'undefined' ? renderSkillsHeatmap : null;
+window.filterRepAudit = typeof filterRepAudit !== 'undefined' ? filterRepAudit : null;
+window.toggleSinDetails = typeof toggleSinDetails !== 'undefined' ? toggleSinDetails : null;
 
