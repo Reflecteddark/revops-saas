@@ -4108,6 +4108,65 @@
       outline: none !important;
       box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.6) !important;
     }
+
+    /* 14. АККУРАТНЫЙ БЕЙДЖ SSOT В ПРАВОМ ВЕРХНЕМ УГЛУ ГРАФИКА ТРЕНДА */
+    .develop-floating-tooltip {
+      top: 10px !important;
+      right: 12px !important;
+      left: auto !important;
+      transform: none !important;
+      background: rgba(139, 92, 246, 0.14) !important;
+      border: 1px solid rgba(139, 92, 246, 0.35) !important;
+      color: #c4b5fd !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.66rem !important;
+      box-shadow: none !important;
+    }
+
+    /* 15. КОРРЕКТНАЯ РАБОТА СВЕТЛОЙ ТЕМЫ (ПРИ НАЖАТИИ НА ТУМБЛЕР SUN/MOON) */
+    html[data-theme="light"] {
+      --bg-void: #f4f5f8 !important;
+      --bg-canvas: #ffffff !important;
+      --text-primary: #09090b !important;
+      --text-secondary: #52525b !important;
+      --text-muted: #71717a !important;
+      --border-subtle: rgba(0, 0, 0, 0.07) !important;
+    }
+    html[data-theme="light"] .mp-sidebar,
+    html[data-theme="light"] .develop-topbar {
+      background: rgba(255, 255, 255, 0.92) !important;
+      border-color: rgba(0, 0, 0, 0.07) !important;
+    }
+    html[data-theme="light"] .bento-card,
+    html[data-theme="light"] .develop-card,
+    html[data-theme="light"] .develop-editorial-kpis,
+    html[data-theme="light"] .meter-card,
+    html[data-theme="light"] .rop-pedestal-card,
+    html[data-theme="light"] .loss-funnel-card,
+    html[data-theme="light"] .ai-agent-card,
+    html[data-theme="light"] .podium-card {
+      background: #ffffff !important;
+      border: 1px solid rgba(0, 0, 0, 0.07) !important;
+      box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05) !important;
+      color: #09090b !important;
+    }
+    html[data-theme="light"] .kpi-hero {
+      background: linear-gradient(180deg, #09090b 0%, #3f3f46 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+    }
+    html[data-theme="light"] .kpi-secondary,
+    html[data-theme="light"] .develop-greeting-title {
+      color: #09090b !important;
+    }
+    html[data-theme="light"] .call-row {
+      background: #f8fafc !important;
+      border-color: rgba(0, 0, 0, 0.06) !important;
+    }
+    html[data-theme="light"] .call-title,
+    html[data-theme="light"] .score-num {
+      color: #09090b !important;
+    }
   </style>
 </head>
 <body>
@@ -4580,11 +4639,11 @@
                 </div>
               </div>
               <div class="donut-legend-list">
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #6c5dd3;"></span><span>Эталонные звонки (34%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f36594;"></span><span>Встреча назначена (25%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #00d4ff;"></span><span>Следующий шаг (17%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #ffb55b;"></span><span>Риск срыва сделки (12%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #fb7185;"></span><span>Fake Yes сливы (6%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #8b5cf6;"></span><span>Эталонные звонки (34%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #6366f1;"></span><span>Встреча назначена (25%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #38bdf8;"></span><span>Следующий шаг (17%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f59e0b;"></span><span>Риск срыва сделки (12%)</span></div>
+                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f43f5e;"></span><span>Fake Yes сливы (6%)</span></div>
               </div>
             </div>
 
@@ -6082,7 +6141,7 @@
             <label style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">
               Конверсия в закрытие (Win-Rate): <span id="lblClose" style="color: #fff; font-weight: 800;">35%</span>
             </label>
-            <input type="range" id="rngClose" min="10" max="70" value="35" oninput="updateSimulation()" style="width: 100%; accent-color: #34d399);">
+            <input type="range" id="rngClose" min="10" max="70" value="35" oninput="updateSimulation()" style="width: 100%; accent-color: #34d399;">
           </div>
         </div>
 

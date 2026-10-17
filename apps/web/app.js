@@ -1452,20 +1452,18 @@ const CALLS_DATA = [
 
     function updateAllChartsTheme(mode) {
       const isLight = mode === 'light';
-      const gridColor = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
-      const tickColor = isLight ? '#64748b' : '#a1a1aa';
-      const tooltipBg = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(13, 13, 20, 0.95)';
-      const tooltipTitle = isLight ? '#0f172a' : '#ffffff';
-      const tooltipBody = isLight ? '#334155' : '#cbd5e1';
-      const tooltipBorder = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(124, 58, 237, 0.25)';
+      const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.035)';
+      const tickColor = isLight ? '#71717a' : '#52525b';
+      const tooltipBg = isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(9, 9, 13, 0.96)';
+      const tooltipTitle = isLight ? '#09090b' : '#fafafa';
+      const tooltipBody = isLight ? '#52525b' : '#a1a1aa';
+      const tooltipBorder = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.10)';
 
-
-
-      // 2. Rep Performance Chart
+      // Rep Performance Chart
       if (typeof repPerfChartInstance !== 'undefined' && repPerfChartInstance) {
         try {
           if (repPerfChartInstance.options.scales?.x) {
-            repPerfChartInstance.options.scales.x.ticks.color = isLight ? '#111827' : '#ffffff';
+            repPerfChartInstance.options.scales.x.ticks.color = isLight ? '#09090b' : '#fafafa';
             repPerfChartInstance.options.scales.x.grid.color = gridColor;
           }
           if (repPerfChartInstance.options.scales?.y) {
@@ -1473,28 +1471,27 @@ const CALLS_DATA = [
             repPerfChartInstance.options.scales.y.grid.color = gridColor;
           }
           if (repPerfChartInstance.options.plugins?.tooltip) {
-            repPerfChartInstance.options.plugins.tooltip.backgroundColor = tooltipBg;
-            repPerfChartInstance.options.plugins.tooltip.titleColor = tooltipTitle;
-            repPerfChartInstance.options.plugins.tooltip.bodyColor = tooltipBody;
-            repPerfChartInstance.options.plugins.tooltip.borderColor = tooltipBorder;
+            Object.assign(repPerfChartInstance.options.plugins.tooltip, {
+              backgroundColor: tooltipBg, titleColor: tooltipTitle, bodyColor: tooltipBody, borderColor: tooltipBorder
+            });
           }
           repPerfChartInstance.update('none');
         } catch (e) {}
       }
 
-      // 3. Speech Radar Chart
+      // Speech Radar Chart
       if (typeof speechRadarChartInstance !== 'undefined' && speechRadarChartInstance) {
         try {
           if (speechRadarChartInstance.options.scales?.r) {
             speechRadarChartInstance.options.scales.r.grid.color = gridColor;
             speechRadarChartInstance.options.scales.r.angleLines.color = gridColor;
-            speechRadarChartInstance.options.scales.r.pointLabels.color = isLight ? '#475569' : tickColor;
+            speechRadarChartInstance.options.scales.r.pointLabels.color = isLight ? '#3f3f46' : '#a1a1aa';
           }
           speechRadarChartInstance.update('none');
         } catch (e) {}
       }
 
-      // 4. Monte Carlo Chart
+      // Monte Carlo Chart
       if (typeof mcChartInstance !== 'undefined' && mcChartInstance) {
         try {
           if (mcChartInstance.options.scales?.x) {
@@ -1509,36 +1506,41 @@ const CALLS_DATA = [
         } catch (e) {}
       }
 
-      // 5. Develop Dissection Chart
+      // Develop Dissection Chart
       if (typeof developDissectionChartInstance !== 'undefined' && developDissectionChartInstance) {
         try {
-          if (developDissectionChartInstance.options.scales?.y) {
-            developDissectionChartInstance.options.scales.y.grid.color = gridColor;
-            developDissectionChartInstance.options.scales.y.ticks.color = isLight ? '#808191' : '#7c8099';
-          }
-          if (developDissectionChartInstance.options.scales?.x) {
-            developDissectionChartInstance.options.scales.x.ticks.color = isLight ? '#808191' : '#7c8099';
-          }
-          if (developDissectionChartInstance.options.plugins?.tooltip) {
-            developDissectionChartInstance.options.plugins.tooltip.backgroundColor = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(13, 13, 20, 0.95)';
-            developDissectionChartInstance.options.plugins.tooltip.titleColor = isLight ? '#11142d' : '#ffffff';
-            developDissectionChartInstance.options.plugins.tooltip.bodyColor = isLight ? '#4b5563' : '#cbd5e1';
-            developDissectionChartInstance.options.plugins.tooltip.borderColor = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(124, 58, 237, 0.25)';
-          }
+          developDissectionChartInstance.data.datasets[1].backgroundColor = isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.10)';
+          developDissectionChartInstance.options.scales.y.grid.color = gridColor;
+          developDissectionChartInstance.options.scales.y.ticks.color = tickColor;
+          developDissectionChartInstance.options.scales.x.ticks.color = tickColor;
+          Object.assign(developDissectionChartInstance.options.plugins.tooltip, {
+            backgroundColor: tooltipBg, titleColor: tooltipTitle, bodyColor: tooltipBody, borderColor: tooltipBorder
+          });
           developDissectionChartInstance.update('none');
         } catch (e) {}
       }
 
-      // 6. Develop Spline Chart
+      // Develop Donut Chart
+      if (typeof developDonutChartInstance !== 'undefined' && developDonutChartInstance) {
+        try {
+          developDonutChartInstance.data.datasets[0].borderColor = isLight ? '#ffffff' : '#0b0b10';
+          Object.assign(developDonutChartInstance.options.plugins.tooltip, {
+            backgroundColor: tooltipBg, titleColor: tooltipTitle, bodyColor: tooltipBody, borderColor: tooltipBorder
+          });
+          developDonutChartInstance.update('none');
+        } catch (e) {}
+      }
+
+      // Develop Spline Chart
       if (typeof developSplineChartInstance !== 'undefined' && developSplineChartInstance) {
         try {
-          if (developSplineChartInstance.options.scales?.y) {
-            developSplineChartInstance.options.scales.y.grid.color = gridColor;
-            developSplineChartInstance.options.scales.y.ticks.color = isLight ? '#808191' : '#7c8099';
-          }
-          if (developSplineChartInstance.options.scales?.x) {
-            developSplineChartInstance.options.scales.x.ticks.color = isLight ? '#808191' : '#7c8099';
-          }
+          developSplineChartInstance.data.datasets[1].borderColor = isLight ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.22)';
+          developSplineChartInstance.options.scales.y.grid.color = gridColor;
+          developSplineChartInstance.options.scales.y.ticks.color = tickColor;
+          developSplineChartInstance.options.scales.x.ticks.color = tickColor;
+          Object.assign(developSplineChartInstance.options.plugins.tooltip, {
+            backgroundColor: tooltipBg, titleColor: tooltipTitle, bodyColor: tooltipBody, borderColor: tooltipBorder
+          });
           developSplineChartInstance.update('none');
         } catch (e) {}
       }
@@ -1837,15 +1839,14 @@ const CALLS_DATA = [
             data: dataValues,
             backgroundColor: function(context) {
               const idx = context.dataIndex;
-              if (idx === 2) return 'rgba(255, 71, 71, 0.85)';   // P10 SnowUI Red
-              if (idx === 4) return 'rgba(51, 209, 255, 0.90)';  // P50 SnowUI Cyan
-              if (idx === 6) return 'rgba(107, 230, 211, 0.90)'; // P90 SnowUI Mint
-              return 'rgba(184, 153, 235, 0.45)';               // SnowUI Secondary Purple
+              if (idx === 2) return 'rgba(244, 63, 94, 0.85)';   // P10 Rose
+              if (idx === 4) return 'rgba(139, 92, 246, 0.95)';  // P50 Violet Brand
+              if (idx === 6) return 'rgba(16, 185, 129, 0.88)';  // P90 Emerald
+              return 'rgba(255, 255, 255, 0.12)';                // Neutral Slate bars
             },
-            borderRadius: 8,
+            borderRadius: 6,
             borderSkipped: false,
-            borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.12)'
+            borderWidth: 0
           }]
         },
         options: {
@@ -1940,28 +1941,28 @@ const CALLS_DATA = [
         pipe: {
           label: 'Пайплайн в работе, ₽',
           data: pipe,
-          colors: ['#6c5dd3', '#f36594', '#8b5cf6', '#38bdf8'],
+          colors: ['#8b5cf6', '#6366f1', '#38bdf8', 'rgba(255, 255, 255, 0.18)'],
           unit: ' ₽',
           isCurrency: true
         },
         score: {
           label: 'Средний балл речи Gemini (/13)',
           data: score,
-          colors: ['#6c5dd3', '#38bdf8', '#4ade80', '#f36594'],
+          colors: ['#8b5cf6', '#10b981', '#38bdf8', '#f43f5e'],
           unit: ' б.',
           isCurrency: false
         },
         step: {
           label: 'Фиксация Next Step, %',
           data: nextstep,
-          colors: ['#6c5dd3', '#38bdf8', '#4ade80', '#f36594'],
+          colors: ['#8b5cf6', '#10b981', '#38bdf8', '#f43f5e'],
           unit: '%',
           isCurrency: false
         },
         risk: {
           label: 'Выручка под угрозой срыва, ₽',
           data: risk,
-          colors: ['#fbbf24', '#f43f5e', '#f43f5e', '#f43f5e'],
+          colors: ['#f59e0b', 'rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.12)', '#f43f5e'],
           unit: ' ₽',
           isCurrency: true
         }
