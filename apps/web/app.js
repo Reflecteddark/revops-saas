@@ -560,18 +560,28 @@ const CALLS_DATA = [
       showToast('Фильтр по менеджеру', `Открыт аудит звонков сотрудника: ${repName}`);
     }
 
-    function animateCounter(el, target, duration = 1100) {
+    function animateCounter(el, target, duration = 900) {
       if (!el) return;
       const start = performance.now();
       const fmt = n => n.toLocaleString('ru-RU');
+      const isInitial = !el.dataset.hasValue;
+      el.dataset.hasValue = '1';
+
       function tick(now) {
         const p = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - p, 4); // ease-out quart
+        const eased = 1 - Math.pow(1 - p, 4);
         el.textContent = fmt(Math.round(target * eased)) + ' ₽';
-        el.style.filter = `blur(${(1 - p) * 2}px)`;
-        el.style.opacity = 0.7 + 0.3 * p;
+
+        // Odometer-эффект при смене (не при первом рендере)
+        if (!isInitial) {
+          el.style.transform = `translateY(${(1 - eased) * -3}px)`;
+          el.style.filter = `blur(${(1 - eased) * 3}px)`;
+          el.style.opacity = 0.4 + 0.6 * eased;
+        }
+
         if (p < 1) requestAnimationFrame(tick);
         else {
+          el.style.transform = '';
           el.style.filter = '';
           el.style.opacity = '1';
         }
@@ -593,33 +603,45 @@ const CALLS_DATA = [
       });
     }
 
-    function switchTab(tabId) {
-      ALL_TABS.forEach(t => {
-        const btn = document.getElementById('tab-' + t) || document.getElementById('sb-' + t);
-        const view = document.getElementById('view-' + t);
-        if (btn) btn.classList.remove('active');
-        if (view) view.classList.remove('active');
-      });
+    async function switchTab(tabId) {
+      const apply = () => {
+        ALL_TABS.forEach(t => {
+          const btn = document.getElementById('tab-' + t) || document.getElementById('sb-' + t);
+          const view = document.getElementById('view-' + t);
+          if (btn) btn.classList.remove('active');
+          if (view) view.classList.remove('active');
+        });
 
-      const activeBtn = document.getElementById('tab-' + tabId) || document.getElementById('sb-' + tabId);
-      const activeView = document.getElementById('view-' + tabId);
-      if (activeBtn) activeBtn.classList.add('active');
-      if (activeView) {
-        activeView.classList.add('active');
-        animateCardsIn(activeView);
-      }
+        const activeBtn = document.getElementById('tab-' + tabId) || document.getElementById('sb-' + tabId);
+        const activeView = document.getElementById('view-' + tabId);
+        if (activeBtn) activeBtn.classList.add('active');
+        if (activeView) {
+          activeView.classList.add('active');
+          animateCardsIn(activeView);
+        }
 
-      // Close mobile sidebar if open
-      closeMobileSidebar();
+        // Close mobile sidebar if open
+        closeMobileSidebar();
 
-      if (tabId === 'montecarlo' && mcChartInstance) {
-        mcChartInstance.resize();
-      }
-      if (tabId === 'rop' && repPerfChartInstance) {
-        repPerfChartInstance.resize();
-      }
-      if (tabId === 'audit' && speechRadarChartInstance) {
-        speechRadarChartInstance.resize();
+        if (tabId === 'montecarlo' && mcChartInstance) {
+          mcChartInstance.resize();
+        }
+        if (tabId === 'rop' && repPerfChartInstance) {
+          repPerfChartInstance.resize();
+        }
+        if (tabId === 'audit' && speechRadarChartInstance) {
+          speechRadarChartInstance.resize();
+        }
+      };
+
+      if (document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        try {
+          await document.startViewTransition(apply).finished;
+        } catch (e) {
+          apply();
+        }
+      } else {
+        apply();
       }
     }
 
@@ -2205,7 +2227,119 @@ const CALLS_DATA = [
       if (cmdInput) {
         cmdInput.addEventListener('keydown', handleCmdPaletteKeydown);
       }
+
+      initCustomCursor();
+      tickLiveStatus();
+      updateChartTimestamps();
     });
+
+    // ==========================================================================
+    // 2026 LIVE DATA TICKER & CHART TIMESTAMPS
+    // ==========================================================================
+    let lastSyncTime = Date.now();
+    function tickLiveStatus() {
+      const el = document.querySelector('[data-live-status]');
+      if (!el) return;
+      const sec = Math.floor((Date.now() - lastSyncTime) / 1000);
+      const label = sec < 5 ? 'только что'
+                 : sec < 60 ? `${sec}с назад`
+                 : sec < 3600 ? `${Math.floor(sec / 60)}мин назад`
+                 : `${Math.floor(sec / 3600)}ч назад`;
+      el.textContent = `LIVE · синхр. ${label}`;
+    }
+    setInterval(tickLiveStatus, 1000);
+
+    function updateChartTimestamps() {
+      const now = new Date().toLocaleTimeString('ru-RU');
+      document.querySelectorAll('[data-chart-ts]').forEach(el => {
+        el.textContent = `обновлено ${now}`;
+      });
+    }
+
+    // ==========================================================================
+    // 2026 CUSTOM CURSOR (Linear / Framer Micro-Interaction)
+    // ==========================================================================
+    function initCustomCursor() {
+      if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+      if (document.querySelector('.custom-cursor')) return;
+
+      const cursor = document.createElement('div');
+      cursor.className = 'custom-cursor';
+      document.body.appendChild(cursor);
+
+      let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+      let cursorX = mouseX, cursorY = mouseY;
+
+      document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      function render() {
+        cursorX += (mouseX - cursorX) * 0.35;
+        cursorY += (mouseY - cursorY) * 0.35;
+        cursor.style.left = cursorX + 'px';
+        cursor.style.top = cursorY + 'px';
+        requestAnimationFrame(render);
+      }
+      render();
+
+      document.addEventListener('mouseover', (e) => {
+        const target = e.target;
+        if (!target || !target.closest) return;
+        if (target.closest('input[type="text"], input[type="password"], textarea')) {
+          cursor.classList.remove('grow');
+          cursor.classList.add('text');
+        } else if (target.closest('button, a, select, input, [onclick], .call-row, .develop-tx-item, .skill-row, .funnel-step, .card-ai-ask, .bento-card, .develop-card')) {
+          cursor.classList.remove('text');
+          cursor.classList.add('grow');
+        } else {
+          cursor.classList.remove('grow', 'text');
+        }
+      });
+    }
+
+    // ==========================================================================
+    // 2026 AI-NATIVE AFFORDANCE (Open AI Query from any card)
+    // ==========================================================================
+    function openAiAsk(question) {
+      openCommandPalette();
+      const input = document.getElementById('cmdPaletteInput');
+      if (input) {
+        input.value = 'AI: ' + question;
+      }
+      const res = document.getElementById('cmdPaletteResults');
+      if (res) {
+        let answerText = '';
+        if (question.includes('дефицит') || question.includes('4.5M')) {
+          answerText = `Дефицит плана <strong style="color:#fb7185;">4.5M ₽</strong> складывается из двух факторов: срыв Next Step на 30% звонков (1.125M ₽) и «черный ящик» CRM с зомби-сделками (0.675M ₽). Остальное — SLA просрочка КП.<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.74rem; color: rgba(255,255,255,0.5);">Рекомендация: перехватить Кейс 01 и Кейс 02 до пятницы — вернёт ~1M ₽ к кассе месяца.</div>`;
+        } else if (question.includes('угрозой') || question.includes('сделки')) {
+          answerText = `Под угрозой срыва находятся <strong>3 сделки на 1.5M ₽</strong> (B24-78 Светлана, B24-84 Светлана, B24-94 Виктория) из-за отсутствия зафиксированного слота следующего шага.<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.74rem; color: rgba(255,255,255,0.5);">Рекомендация: скопировать и отправить скрипт дожима в WhatsApp по шаблону РОПа.</div>`;
+        } else if (question.includes('Next Step') || question.includes('сливают')) {
+          answerText = `Светлана показывает <strong>0% фиксации Next Step</strong> (2 из 2 звонков без слота). Надежда и Заряна показывают 100% конверсию в дату встречи.<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.74rem; color: rgba(255,255,255,0.5);">Рекомендация: провести разбор звонка Светланы B24-78 по чек-листу.</div>`;
+        } else if (question.includes('разрыв') || question.includes('месяцам') || question.includes('план')) {
+          answerText = `Разрыв «Факт vs План» максимален в 3-м квартале. Ключевая причина — зависание счетов на согласовании (DSO > 14 дней) и дефекты квалификации ЛПР на ранних стадиях.<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.74rem; color: rgba(255,255,255,0.5);">Рекомендация: внедрить платежный календарь DSO и контроль зависших КП.</div>`;
+        } else if (question.includes('динамика') || question.includes('SSOT')) {
+          answerText = `Сходимость SSOT и тренда составляет <strong>100.0%</strong> (дрифт кассы 0.00 ₽). Разница между сделками в CRM и речевыми транскриптами отсутствует.<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.74rem; color: rgba(255,255,255,0.5);">Все 10 сделок верифицированы тройкой автономных агентов L1-L3.</div>`;
+        } else if (question.includes('симуляции') || question.includes('вероятность')) {
+          answerText = `По 10 000 стохастическим симуляциям Монте-Карло вероятность выполнения плана 5.0M ₽ составляет <strong>32.8%</strong> при текущем темпе. Медианный исход (P50) — 2.58M ₽.<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.74rem; color: rgba(255,255,255,0.5);">Рычаг: увеличение конверсии Next Step до 85% повышает P50 до 3.85M ₽.</div>`;
+        } else {
+          answerText = `Анализ контура RevOps: все 10 сделок верифицированы в SSOT. Главный фокус внимания — срыв Next Step на звонках Светланы и зависшие коммерческие предложения.<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.74rem; color: rgba(255,255,255,0.5);">Быстрый возврат: 119 000 ₽ в первые 14 дней внедрения регламентов.</div>`;
+        }
+
+        res.innerHTML = `
+          <div class="cmd-palette-group-title">AI · ответ</div>
+          <div style="padding: 14px 18px; font-size: 0.82rem; line-height: 1.6; color: rgba(255,255,255,0.85); background: rgba(124,58,237,0.06); border: 1px solid rgba(124,58,237,0.22); border-radius: 8px; margin: 8px 10px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom: 8px;">
+              <span class="status-dot dot-cyan" style="width: 5px; height: 5px; margin-right: 0;"></span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: rgba(255,255,255,0.45);">Gemini 3.5 · 0.7s</span>
+            </div>
+            ${answerText}
+          </div>
+        `;
+      }
+    }
+    window.openAiAsk = openAiAsk;
 
     // ==========================================================================
     // GLOBAL COMMAND PALETTE (Ctrl+K / Cmd+K)
@@ -2214,6 +2348,10 @@ const CALLS_DATA = [
     let filteredCmdItems = [];
 
     const ALL_CMD_ITEMS = [
+      // AI Quick Inquiries (2026 AI-Native Affordance)
+      { type: 'AI', icon: '◆', label: 'Спросить AI про текущий экран...', action: () => openAiAsk('Что требует моего внимания прямо сейчас?') },
+      { type: 'AI', icon: '◆', label: 'AI: Какие сделки под угрозой?', action: () => openAiAsk('Какие сделки под угрозой?') },
+      { type: 'AI', icon: '◆', label: 'AI: Что значит дефицит 4.5M?', action: () => openAiAsk('Что значит дефицит 4.5M?') },
       // Tabs Navigation
       { type: 'Раздел', icon: '→', label: '1. Пульс выручки', action: () => switchTab('pulse') },
       { type: 'Раздел', icon: '→', label: '2. Экспресс-аудит звонков', action: () => switchTab('express') },
@@ -2412,6 +2550,9 @@ const CALLS_DATA = [
         if (text) text.textContent = 'Синхронизировать';
         if (btn) btn.disabled = false;
         isSyncing = false;
+        lastSyncTime = Date.now();
+        tickLiveStatus();
+        updateChartTimestamps();
       }, 1500);
     }
 

@@ -6,10 +6,9 @@
   <title>RevOps Platform V20.0 — Behavioral Intelligence Edition | TNT-001</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.ico">
 
-  <!-- Typography (Tier-1 SaaS: Inter Tight, Instrument Serif, Inter, JetBrains Mono) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300..700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Chart.js 4.4.2 via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -2865,7 +2864,7 @@
       border-radius: 50%;
       background: #34d399;
       box-shadow: 0 0 12px #34d399;
-      animation: livePulse 2s ease-in-out infinite;
+      animation: livePulse 4.5s ease-in-out infinite;
     }
 
     .kpi-secondary {
@@ -2882,6 +2881,116 @@
     @keyframes livePulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.75; transform: scale(0.9); }
+    }
+
+    /* 2026 Native View Transitions API */
+    @view-transition {
+      navigation: auto;
+    }
+    ::view-transition-old(root) {
+      animation: 180ms cubic-bezier(0.16, 1, 0.3, 1) viewFadeOut;
+    }
+    ::view-transition-new(root) {
+      animation: 220ms cubic-bezier(0.16, 1, 0.3, 1) viewFadeIn;
+    }
+    @keyframes viewFadeOut {
+      to { opacity: 0; transform: scale(0.99); }
+    }
+    @keyframes viewFadeIn {
+      from { opacity: 0; transform: scale(0.99); }
+    }
+
+    /* 2026 Custom Cursor (Linear / Framer Micro-Interaction) */
+    @media (hover: hover) and (pointer: fine) {
+      body, body * {
+        cursor: none !important;
+      }
+      .custom-cursor {
+        position: fixed;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        pointer-events: none;
+        z-index: 999999;
+        mix-blend-mode: difference;
+        transition: width 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                    height 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                    background 0.18s ease;
+        transform: translate(-50%, -50%);
+      }
+      .custom-cursor.grow {
+        width: 28px;
+        height: 28px;
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .custom-cursor.text {
+        width: 2px;
+        height: 18px;
+        border-radius: 1px;
+        background: rgba(255, 255, 255, 0.85);
+      }
+    }
+
+    /* 2026 AI-Native Affordance (Ask-pill on hover) */
+    .bento-card, .develop-card {
+      position: relative;
+    }
+    .bento-card .card-ai-ask,
+    .develop-card .card-ai-ask {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.62rem;
+      color: rgba(255, 255, 255, 0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      z-index: 5;
+      cursor: pointer;
+    }
+    .bento-card:hover .card-ai-ask,
+    .develop-card:hover .card-ai-ask {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .bento-card:hover .card-ai-ask:hover,
+    .develop-card:hover .card-ai-ask:hover {
+      background: rgba(124, 58, 237, 0.15);
+      border-color: rgba(124, 58, 237, 0.35);
+      color: #c4b5fd;
+    }
+
+    /* 2026 Borderless Stat Cards (Linear 2025 Redesign) */
+    .bento-card.stat-only,
+    .develop-card.stat-only {
+      border-color: transparent !important;
+      background: rgba(255, 255, 255, 0.015) !important;
+    }
+    .bento-card.stat-only:hover,
+    .develop-card.stat-only:hover {
+      background: rgba(255, 255, 255, 0.03) !important;
+      border-color: transparent !important;
+      transform: none !important;
+    }
+
+    /* 2026 Variable Font Weight Animation on Hover */
+    h2, .develop-card-title, .bento-card-title {
+      transition: font-weight 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  letter-spacing 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .develop-card:hover h2,
+    .develop-card:hover .develop-card-title,
+    .bento-card:hover .bento-card-title {
+      font-weight: 620;
+      letter-spacing: -0.045em;
     }
 
     /* Modern Calls Card-List (Attio / Notion / Linear Style) */
@@ -3796,8 +3905,8 @@
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <!-- Live Status Indicator (Tier-1 SaaS) -->
           <div style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 99px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #34d399;">
-            <span class="status-dot dot-won" style="animation: livePulse 2s infinite; width: 6px; height: 6px;"></span>
-            <span>LIVE &bull; синхр. 12с назад</span>
+            <span class="status-dot dot-won" style="animation: livePulse 4.5s infinite; width: 6px; height: 6px;"></span>
+            <span data-live-status>LIVE · синхр. только что</span>
           </div>
 
           <!-- Search Pill with ⌘K Hint -->
@@ -3847,7 +3956,8 @@
         <div class="develop-left-col">
           
           <!-- Row 1: Editorial Hybrid KPI Block (Linear/Vercel style) -->
-          <div class="develop-editorial-kpis" style="display: grid; grid-template-columns: 1.35fr 1fr; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 28px; margin-bottom: 8px;">
+          <div class="develop-editorial-kpis" style="position: relative; display: grid; grid-template-columns: 1.35fr 1fr; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 28px; margin-bottom: 8px;">
+            <button class="card-ai-ask" onclick="openAiAsk('Что значит дефицит 4.5M?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
             <!-- Hero — без рамки -->
             <div style="padding-right: 36px;">
               <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
@@ -3902,7 +4012,8 @@
           </div>
 
           <!-- Row 2: Dissection (Bar Chart) -->
-          <div class="develop-card">
+          <div class="develop-card" style="position: relative;">
+            <button class="card-ai-ask" onclick="openAiAsk('В чем разрыв факт vs план по месяцам?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
             <div class="develop-card-header">
               <div class="develop-title-group">
                 <span class="develop-card-title">Динамика выручки и активности</span>
@@ -3915,6 +4026,7 @@
             </div>
             <div style="height: 230px; position: relative; width: 100%;">
               <canvas id="developDissectionChart"></canvas>
+              <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
             </div>
           </div>
 
@@ -4124,7 +4236,8 @@
           </div>
 
           <!-- Card 3: Income & Expenses (Wave Chart) -->
-          <div class="develop-card">
+          <div class="develop-card" style="position: relative;">
+            <button class="card-ai-ask" onclick="openAiAsk('Какова динамика сходимости SSOT и тренда?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
             <div class="develop-card-header">
               <span class="develop-card-title">Прогноз и тренд выручки</span>
               <div class="develop-legend">
@@ -4137,6 +4250,7 @@
               <div class="develop-floating-tooltip">
                 <span>2.37M ₽ SSOT</span>
               </div>
+              <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
             </div>
           </div>
 
@@ -4640,7 +4754,7 @@
     <div id="view-audit" class="tab-view">
 
       <div class="grid-4">
-        <div class="bento-card">
+        <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Всего звонков в аудите</span>
             <span class="badge-won">100% ПОКРЫТИЕ</span>
@@ -4649,7 +4763,7 @@
           <div class="metric-sub">5 000 000 ₽ сумма подтвержденных сделок</div>
         </div>
 
-        <div class="bento-card">
+        <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Средний балл качества</span>
             <span class="badge-won">70.0% ЭФФЕКТИВНОСТЬ</span>
@@ -4658,7 +4772,7 @@
           <div class="metric-sub">Отраслевая норма B2B: &ge; 9.0 баллов</div>
         </div>
 
-        <div class="bento-card">
+        <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Фиксация Next Step</span>
             <span class="badge-warn">70.0% В НОРМЕ</span>
@@ -4667,7 +4781,7 @@
           <div class="metric-sub">3 звонка отпущены без конкретной даты/времени</div>
         </div>
 
-        <div class="bento-card">
+        <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Выручка под угрозой</span>
             <span class="badge-lost">4 ДИАЛОГА С БРАКОМ</span>
@@ -4847,7 +4961,8 @@
 
 
       <!-- Calls Table (MPSTATS Ag-Grid Style) -->
-      <div class="bento-card" style="margin-bottom: 22px;">
+      <div class="bento-card" style="margin-bottom: 22px; position: relative;">
+        <button class="card-ai-ask" onclick="openAiAsk('Какие менеджеры чаще всего сливают Next Step?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
         <div class="bento-card-header">
           <span class="bento-card-title">Реестр звонков и сквозная сверка сделок (raw_calls &harr; raw_deals)</span>
           <span class="badge-won">10 СИНХРОНИЗИРОВАНО</span>
@@ -5491,7 +5606,7 @@
     <div id="view-montecarlo" class="tab-view">
 
       <div class="grid-4">
-        <div class="bento-card">
+        <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">P10 (Пессимистичный)</span>
             <span class="badge-lost">90% ГАРАНТИЯ</span>
@@ -5500,7 +5615,7 @@
           <div class="metric-sub">Минимальная гарантированная планка</div>
         </div>
 
-        <div class="bento-card">
+        <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">P50 (Медиана / Базовый)</span>
             <span class="badge-info">50% ВЕРОЯТНОСТЬ</span>
@@ -5509,7 +5624,7 @@
           <div class="metric-sub">Математическое ожидание кассы</div>
         </div>
 
-        <div class="bento-card">
+        <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">P90 (Оптимистичный)</span>
             <span class="badge-won">С ИИ-ДОЖИМОМ</span>
@@ -5518,7 +5633,7 @@
           <div class="metric-sub">Таргет при реанимации базы</div>
         </div>
 
-        <div class="bento-card">
+        <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Вероятность выполнения плана</span>
             <span class="badge-warn">СРЕДНИЙ РИСК</span>
@@ -5529,13 +5644,15 @@
       </div>
 
       <!-- Chart Card -->
-      <div class="bento-card" style="margin-bottom: 22px;">
+      <div class="bento-card" style="margin-bottom: 22px; position: relative;">
+        <button class="card-ai-ask" onclick="openAiAsk('Какова вероятность достижения плана 5M ₽ по симуляции?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
         <div class="bento-card-header">
           <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/></svg></span> Стохастическое распределение исходов выручки (10 000 итераций)</span>
           <span class="badge-info">MONTE CARLO 3.0</span>
         </div>
         <div style="height: 280px; position: relative;">
           <canvas id="mcChart"></canvas>
+          <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
         </div>
       </div>
 
