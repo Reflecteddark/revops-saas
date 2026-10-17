@@ -8,7 +8,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300..700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Chart.js 4.4.2 via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -165,9 +165,9 @@
 
     /* All Headings — Tier-1 Typography (Inter Tight 600, dense tracking) */
     h1, h2, h3, .develop-greeting-title, .bento-card-title, .develop-card-title {
-      font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
-      letter-spacing: -0.04em;
-      font-weight: 600;
+      font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif !important;
+      letter-spacing: -0.035em !important;
+      font-weight: 600 !important;
     }
 
     /* SnowUI Global Native Scrollbar Replacement */
@@ -2820,17 +2820,16 @@
     }
 
     .kpi-hero {
-      font-family: 'Instrument Serif', Georgia, serif;
-      font-style: italic;
-      font-weight: 400;
-      letter-spacing: -0.03em;
-      font-size: clamp(3.5rem, 7vw, 6rem);
-      line-height: 0.85;
-      background: none;
-      -webkit-background-clip: unset;
-      -webkit-text-fill-color: #ffffff;
-      background-clip: unset;
+      font-family: 'Inter Tight', sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      font-size: clamp(3.2rem, 6vw, 4.8rem);
+      line-height: 0.95;
+      background: linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       color: #ffffff;
+      font-variant-numeric: tabular-nums;
     }
 
     html[data-theme="light"] .kpi-hero {
@@ -3676,11 +3675,13 @@
       box-shadow: 0 4px 16px rgba(124, 58, 237, 0.45);
       pointer-events: none;
       white-space: nowrap;
+    }
+
     /* ==========================================================================
        MODERN SAAS OVERHAUL (Linear / Vercel / Attio Style)
        ========================================================================== */
 
-    /* 1. Глобальный фон */
+    /* 1. Глобальный фон и холст */
     body {
       background-color: #000000 !important;
     }
@@ -3689,23 +3690,36 @@
                   radial-gradient(circle at 85% 90%, rgba(56, 189, 248, 0.05), transparent 40%) !important;
     }
 
-    /* Убираем жесткие рамки и делаем карточки "парящими" */
+    /* 2. Унификация всех поверхностей и парящих карточек */
     .bento-card, 
-    .develop-card {
-      background: #0a0a0f !important; /* Очень темный, но не черный */
-      border: 1px solid rgba(255, 255, 255, 0.04) !important; /* Почти невидимая рамка */
-      border-radius: 24px !important;
+    .develop-card,
+    .meter-card,
+    .rop-pedestal-card,
+    .ai-agent-card,
+    .auth-card,
+    .podium-card {
+      background: #0a0a0f !important;
+      border: 1px solid rgba(255, 255, 255, 0.04) !important;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-      transition: border-color 0.3s ease, transform 0.3s ease !important;
+      transition: border-color 0.25s ease, transform 0.25s ease !important;
+    }
+    .bento-card, .develop-card, .auth-card {
+      border-radius: 24px !important;
+    }
+    .meter-card, .rop-pedestal-card, .ai-agent-card, .podium-card {
+      border-radius: 18px !important;
     }
 
     .bento-card:hover, 
-    .develop-card:hover {
+    .develop-card:hover,
+    .meter-card:hover,
+    .rop-pedestal-card:hover,
+    .ai-agent-card:hover {
       border-color: rgba(124, 58, 237, 0.2) !important;
       transform: translateY(-2px) !important;
     }
 
-    /* 2. Модернизация Sidebar (Бокового меню) */
+    /* 3. Модернизация Sidebar (Бокового меню) */
     .mp-sidebar {
       background: transparent !important;
       border-right: none !important;
@@ -3739,15 +3753,14 @@
       border: none !important;
     }
 
-    /* 3. Упрощение Topbar (Верхней панели) */
+    /* 4. Упрощение Topbar (Верхней панели) */
     .develop-topbar {
       background: transparent !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important; /* Очень тонкая линия */
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
       padding: 0 24px !important;
       height: 72px !important;
     }
 
-    /* Убираем лишние фоны у кнопок в топбаре */
     .develop-search-pill input {
       background: rgba(255, 255, 255, 0.03) !important;
       border: 1px solid rgba(255, 255, 255, 0.05) !important;
@@ -3761,7 +3774,6 @@
       box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
     }
 
-    /* Плашка пользователя */
     .develop-user-profile {
       padding: 4px 12px 4px 4px !important;
       border-radius: 99px !important;
@@ -3774,25 +3786,26 @@
       background: rgba(255, 255, 255, 0.06) !important;
     }
 
-    /* 4. Типографика и главные цифры (Hero KPI) */
+    /* 5. Типографика и главные цифры (Hero KPI) */
     .kpi-hero {
       font-family: 'Inter Tight', sans-serif !important;
       font-weight: 700 !important;
       letter-spacing: -0.05em !important;
-      font-size: clamp(3.5rem, 6vw, 5rem) !important;
+      font-size: clamp(3.2rem, 6vw, 4.8rem) !important;
+      line-height: 0.95 !important;
       background: linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%) !important;
       -webkit-background-clip: text !important;
       -webkit-text-fill-color: transparent !important;
+      font-variant-numeric: tabular-nums !important;
     }
 
-    /* Вторичные цифры */
     .kpi-secondary {
       font-family: 'Inter Tight', sans-serif !important;
       font-weight: 500 !important;
       color: rgba(255, 255, 255, 0.9) !important;
+      font-variant-numeric: tabular-nums !important;
     }
 
-    /* Убираем жесткие разделители в блоке KPI */
     .develop-editorial-kpis {
       border-bottom: none !important;
       padding-bottom: 0 !important;
@@ -3801,7 +3814,7 @@
       border-left: 1px solid rgba(255, 255, 255, 0.04) !important;
     }
 
-    /* 5. Кнопки и бейджи (Pills) */
+    /* 6. Кнопки и бейджи (Pills & Actions) */
     .btn-ghost {
       background: transparent !important;
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -3817,7 +3830,7 @@
     }
 
     .btn-primary {
-      background: #ffffff !important; /* Белая кнопка, как в Linear */
+      background: #ffffff !important;
       color: #000000 !important;
       font-weight: 600 !important;
       border: none !important;
@@ -3831,7 +3844,23 @@
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.2) !important;
     }
 
-    /* Бейджи (Pills) */
+    /* Деликатная кнопка копирования в WhatsApp / действий */
+    .btn-emerald {
+      background: rgba(16, 185, 129, 0.06) !important;
+      color: #34d399 !important;
+      border: 1px solid rgba(16, 185, 129, 0.18) !important;
+      border-radius: 10px !important;
+      font-size: 0.74rem !important;
+      font-weight: 500 !important;
+      transition: all 0.2s ease !important;
+    }
+    .btn-emerald:hover {
+      background: rgba(16, 185, 129, 0.14) !important;
+      border-color: rgba(16, 185, 129, 0.35) !important;
+      color: #ffffff !important;
+      transform: translateY(-1px) !important;
+    }
+
     .develop-pill {
       background: rgba(255, 255, 255, 0.05) !important;
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -3841,7 +3870,7 @@
     .pill-pos { background: rgba(16, 185, 129, 0.1) !important; color: #34d399 !important; border-color: rgba(16, 185, 129, 0.2) !important; }
     .pill-neg { background: rgba(244, 63, 94, 0.1) !important; color: #fb7185 !important; border-color: rgba(244, 63, 94, 0.2) !important; }
 
-    /* 6. Кнопка "Спросить AI" (фикс + редизайн) */
+    /* 7. Кнопка "Спросить AI" (Affordance) */
     .bento-card, .develop-card, .develop-editorial-kpis {
       position: relative;
     }
@@ -3879,6 +3908,118 @@
       background: rgba(124, 58, 237, 0.15) !important;
       border-color: rgba(124, 58, 237, 0.4) !important;
       color: #c4b5fd !important;
+    }
+
+    /* 8. Таблицы и списки данных (Modern Ag-Grid & Table Containers) */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 18px !important;
+      border: 1px solid rgba(255, 255, 255, 0.04) !important;
+      background: #0a0a0f !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+    }
+    th {
+      padding: 12px 16px !important;
+      font-size: 0.68rem !important;
+      font-weight: 600 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.06em !important;
+      color: rgba(255, 255, 255, 0.45) !important;
+      background: rgba(255, 255, 255, 0.015) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+      white-space: nowrap !important;
+    }
+    td {
+      padding: 12px 16px !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.035) !important;
+      color: rgba(255, 255, 255, 0.85) !important;
+      vertical-align: middle !important;
+      font-size: 0.8rem !important;
+    }
+    tr:last-child td {
+      border-bottom: none !important;
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02) !important;
+    }
+
+    /* 9. Диалоги и модальные окна (Modal & Toast) */
+    .modal-box {
+      background: #0a0a0f !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 24px !important;
+      box-shadow: 0 32px 72px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    }
+    .toast-box {
+      background: #0a0a10 !important;
+      border: 1px solid rgba(124, 58, 237, 0.4) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(124, 58, 237, 0.25) !important;
+    }
+
+    /* 10. Шкала шрифтов и семантические токены (Tier-1 Typography) */
+    .text-hero {
+      font-family: 'Inter Tight', sans-serif !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.05em !important;
+      font-size: clamp(3.2rem, 6vw, 4.8rem) !important;
+      line-height: 0.95 !important;
+    }
+    .text-h1 {
+      font-family: 'Inter Tight', sans-serif !important;
+      font-size: 1.4rem !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.035em !important;
+      color: #ffffff !important;
+      line-height: 1.25 !important;
+    }
+    .text-h2 {
+      font-family: 'Inter Tight', sans-serif !important;
+      font-size: 1.15rem !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.03em !important;
+      color: #ffffff !important;
+      line-height: 1.3 !important;
+    }
+    .text-subhead {
+      font-size: 0.88rem !important;
+      font-weight: 500 !important;
+      color: rgba(255, 255, 255, 0.8) !important;
+      line-height: 1.4 !important;
+    }
+    .text-body {
+      font-size: 0.82rem !important;
+      font-weight: 400 !important;
+      color: rgba(255, 255, 255, 0.65) !important;
+      line-height: 1.5 !important;
+    }
+    .text-caption {
+      font-size: 0.72rem !important;
+      font-weight: 500 !important;
+      color: rgba(255, 255, 255, 0.45) !important;
+      line-height: 1.35 !important;
+    }
+    .card-eyebrow {
+      font-size: 0.68rem !important;
+      font-weight: 600 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.08em !important;
+      color: #a78bfa !important;
+      margin-bottom: 4px !important;
+    }
+    .font-mono, .num-mono {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-variant-numeric: tabular-nums !important;
+      letter-spacing: -0.02em !important;
+    }
+    .metric-value, .kpi-hero, .kpi-secondary, .develop-tx-val, .step-amount-val {
+      font-variant-numeric: tabular-nums !important;
+    }
+
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: none !important;
+      box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.6) !important;
     }
   </style>
 </head>
