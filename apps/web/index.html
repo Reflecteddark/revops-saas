@@ -6998,7 +6998,108 @@
 
       </div>
 
-      <!-- MODULE 5: ИНТЕРАКТИВНАЯ ВЕБ-КОНСОЛЬ & ЖУРНАЛ ЛОГОВ (ПОЛНАЯ ЗАМЕНА ЧЕРНЫХ ОКОН CMD) -->
+      <!-- MODULE 5: РЕГИСТРАЦИЯ И ОНБОРДИНГ КЛИЕНТОВ (ГЕНЕРАТОР ДОСТУПОВ) -->
+      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(20, 16, 35, 0.95) 0%, rgba(10, 10, 18, 0.98) 100%); border: 1px solid rgba(167, 139, 250, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div class="bento-card-header" style="margin-bottom: 14px;">
+          <span class="bento-card-title">
+            <span class="title-icon" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            </span>
+            5. Регистрация нового клиента & Выдача доступов
+          </span>
+          <span class="badge-won" style="font-size: 0.65rem;">Мгновенная активация</span>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+          Создайте персональный доступ для нового клиента. Пароль автоматически хэшируется по алгоритму SHA-256 (без открытого текста), доступ активируется на платформе, и генерируется готовое приветственное сообщение для отправки клиенту в Telegram или WhatsApp.
+        </div>
+
+        <!-- Form Fields Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px;">
+          <!-- Login / Email -->
+          <div>
+            <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">📧 Email / Логин клиента:</label>
+            <input type="email" id="adminNewUserLogin" placeholder="client@company.ru" 
+                   style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+          </div>
+
+          <!-- Password + Generator -->
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">🔑 Пароль:</label>
+              <button type="button" onclick="generateRandomPassword()" class="btn-modern-ghost" style="padding: 1px 6px; font-size: 0.65rem; height: auto;">🎲 Сгенерировать</button>
+            </div>
+            <input type="text" id="adminNewUserPass" placeholder="Например: RevOps2026!" 
+                   style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #34d399; outline: none;">
+          </div>
+
+          <!-- Client Full Name -->
+          <div>
+            <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">👤 Имя / ФИО клиента:</label>
+            <input type="text" id="adminNewUserName" placeholder="Алексей Смирнов" 
+                   style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+          </div>
+
+          <!-- Company / Tenant -->
+          <div>
+            <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🏢 Название компании (Тенант):</label>
+            <input type="text" id="adminNewUserTenant" placeholder="ООО 'ТехноСбыт'" 
+                   style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+          </div>
+
+          <!-- Role Selector -->
+          <div>
+            <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🎭 Роль в системе:</label>
+            <select id="adminNewUserRole" 
+                    style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(15,15,25,0.95); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+              <option value="РОП • Руководитель ОП">РОП • Руководитель ОП</option>
+              <option value="CEO • Собственник бизнеса">CEO • Собственник бизнеса</option>
+              <option value="Менеджер по продажам">Менеджер по продажам</option>
+              <option value="Аналитик RevOps">Аналитик RevOps</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+          <button onclick="registerNewClientAccess()" class="btn-modern-primary" style="padding: 9px 18px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            <span>Зарегистрировать клиента и выдать доступ</span>
+          </button>
+          <span style="font-size: 0.7rem; color: var(--text-muted);">
+            🛡️ Zero-Knowledge: Пароль хэшируется в браузере через SHA-256
+          </span>
+        </div>
+
+        <!-- Generated Client Card & Ready Message (Hidden until created) -->
+        <div id="adminNewClientCard" style="display: none; padding: 14px 16px; background: rgba(52, 211, 153, 0.06); border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 12px; margin-top: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="status-dot dot-won"></span>
+              <strong style="color: #34d399; font-size: 0.82rem;">Доступ успешно создан и активен!</strong>
+            </div>
+            <button onclick="copyClientInviteMessage()" class="btn-modern-primary" style="padding: 5px 12px; font-size: 0.72rem;">
+              📋 Скопировать сообщение для клиента
+            </button>
+          </div>
+
+          <!-- Ready Text to send -->
+          <pre id="adminClientInviteText" style="margin: 0; padding: 12px; background: rgba(0,0,0,0.5); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: #e2e8f0; white-space: pre-wrap; line-height: 1.6; border: 1px solid rgba(255,255,255,0.08);"></pre>
+        </div>
+
+        <!-- List of registered clients -->
+        <div style="margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+            <span>Активные пользователи и клиенты:</span>
+            <span id="adminClientsCountBadge" class="badge-info" style="font-size: 0.65rem;">Загрузка...</span>
+          </div>
+          <div id="adminClientsListTable" style="display: flex; flex-direction: column; gap: 6px;">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 6: ИНТЕРАКТИВНАЯ ВЕБ-КОНСОЛЬ & ЖУРНАЛ ЛОГОВ (ПОЛНАЯ ЗАМЕНА ЧЕРНЫХ ОКОН CMD) -->
       <div class="bento-card" style="padding: 0; overflow: hidden; border: 1px solid rgba(124, 58, 237, 0.25);">
         <!-- Terminal Header -->
         <div style="padding: 10px 16px; background: rgba(5, 5, 8, 0.95); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">

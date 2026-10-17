@@ -774,3 +774,154 @@ def clear_console_logs():
     _CONSOLE_LOG_BUFFER.clear()
     append_console_log("Консоль очищена.", "info")
     return {"success": True}
+
+
+# ============================================================================
+# CLIENT REGISTRATION & ONBOARDING CREDENTIALS
+# ============================================================================
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+CLIENTS_FILE = DATA_DIR / "registered_clients.json"
+
+DEFAULT_SYSTEM_CLIENTS = [
+    {
+        "login": "dmitriyfedotov1908@gmail.com",
+        "keyHashes": [
+            "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
+            "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
+            "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
+            "9d3ba5c08978d3354103973088fcc0df35ece2ea9de24c9dfc250d46375c9eec",
+            "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410"
+        ],
+        "name": "Дмитрий Федотов",
+        "role": "РОП • Руководитель ОП",
+        "tenant": "TNT-001 • Самозанятый",
+        "is_system": True,
+        "created_at": "2026-10-01T00:00:00"
+    },
+    {
+        "login": "admin",
+        "keyHashes": [
+            "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
+            "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
+            "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
+            "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410"
+        ],
+        "name": "Администратор RevOps",
+        "role": "Admin / Супервайзер",
+        "tenant": "TNT-001 • Самозанятый",
+        "is_system": True,
+        "created_at": "2026-10-01T00:00:00"
+    },
+    {
+        "login": "rop",
+        "keyHashes": [
+            "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
+            "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
+            "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
+            "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410"
+        ],
+        "name": "Дмитрий Федотов",
+        "role": "РОП • Руководитель ОП",
+        "tenant": "TNT-001 • Самозанятый",
+        "is_system": True,
+        "created_at": "2026-10-01T00:00:00"
+    }
+]
+
+
+def load_registered_clients() -> List[Dict[str, Any]]:
+    if CLIENTS_FILE.exists():
+        try:
+            with open(CLIENTS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Error reading {CLIENTS_FILE}: {e}")
+    return list(DEFAULT_SYSTEM_CLIENTS)
+
+
+def save_registered_clients(clients: List[Dict[str, Any]]):
+    try:
+        with open(CLIENTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(clients, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Error saving {CLIENTS_FILE}: {e}")
+
+
+class ClientRegisterRequest(BaseModel):
+    login: str = Field(..., description="Client email or username")
+    password_hash: str = Field(..., description="SHA-256 hash of password")
+    name: str = Field(..., description="Client full name")
+    role: str = Field("РОП • Руководитель ОП", description="Assigned role")
+    tenant: str = Field("TNT-002 • Клиент", description="Tenant name or ID")
+
+
+@router.get("/clients")
+def list_clients():
+    """Returns list of registered users and clients."""
+    return {"clients": load_registered_clients()}
+
+
+@router.post("/clients/register")
+def register_client(req: ClientRegisterRequest):
+    """Registers a new client with SHA-256 password hash."""
+    clean_login = req.login.lower().strip()
+    if not clean_login or not req.password_hash:
+        raise HTTPException(status_code=400, detail="Логин и хэш пароля обязательны")
+
+    clients = load_registered_clients()
+    now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+    # Check if already exists
+    existing = next((c for c in clients if c["login"].lower() == clean_login), None)
+    if existing:
+        if req.password_hash not in existing.get("keyHashes", []):
+            existing.setdefault("keyHashes", []).append(req.password_hash)
+        existing["name"] = req.name.strip()
+        existing["role"] = req.role.strip()
+        existing["tenant"] = req.tenant.strip()
+        existing["updated_at"] = now_iso
+        client_record = existing
+        msg = f"Данные клиента {clean_login} обновлены"
+    else:
+        client_record = {
+            "login": clean_login,
+            "keyHashes": [req.password_hash],
+            "name": req.name.strip(),
+            "role": req.role.strip(),
+            "tenant": req.tenant.strip(),
+            "is_system": False,
+            "created_at": now_iso
+        }
+        clients.append(client_record)
+        msg = f"Клиент {clean_login} успешно зарегистрирован"
+
+    save_registered_clients(clients)
+    append_console_log(f"👥 Регистрация клиента: {req.name} ({clean_login}) &bull; {req.tenant}", "success")
+
+    return {
+        "success": True,
+        "message": msg,
+        "client": client_record
+    }
+
+
+@router.delete("/clients/{login}")
+def delete_client(login: str):
+    """Deletes custom client by login (system accounts protected)."""
+    clean_login = login.lower().strip()
+    if clean_login in ("admin", "rop", "dmitriyfedotov1908@gmail.com"):
+        raise HTTPException(status_code=400, detail="Системные аккаунты администратора защищены от удаления")
+
+    clients = load_registered_clients()
+    initial_len = len(clients)
+    clients = [c for c in clients if c["login"].lower() != clean_login]
+
+    if len(clients) == initial_len:
+        raise HTTPException(status_code=404, detail=f"Клиент {clean_login} не найден")
+
+    save_registered_clients(clients)
+    append_console_log(f"Удалён аккаунт клиента: {clean_login}", "warning")
+    return {"success": True, "message": f"Клиент {clean_login} удалён"}
+

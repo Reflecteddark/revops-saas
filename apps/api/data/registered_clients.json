@@ -1,0 +1,45 @@
+[
+  {
+    "login": "dmitriyfedotov1908@gmail.com",
+    "keyHashes": [
+      "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
+      "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
+      "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
+      "9d3ba5c08978d3354103973088fcc0df35ece2ea9de24c9dfc250d46375c9eec",
+      "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410"
+    ],
+    "name": "Дмитрий Федотов",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "TNT-001 • Самозанятый",
+    "is_system": true,
+    "created_at": "2026-10-01T00:00:00"
+  },
+  {
+    "login": "admin",
+    "keyHashes": [
+      "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
+      "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
+      "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
+      "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410"
+    ],
+    "name": "Администратор RevOps",
+    "role": "Admin / Супервайзер",
+    "tenant": "TNT-001 • Самозанятый",
+    "is_system": true,
+    "created_at": "2026-10-01T00:00:00"
+  },
+  {
+    "login": "rop",
+    "keyHashes": [
+      "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
+      "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
+      "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
+      "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410"
+    ],
+    "name": "Дмитрий Федотов",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "TNT-001 • Самозанятый",
+    "is_system": true,
+    "created_at": "2026-10-01T00:00:00"
+  }
+]

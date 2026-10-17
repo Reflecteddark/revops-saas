@@ -245,7 +245,7 @@ let CALLS_DATA = [
     const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
     // Only SHA-256 hashes are stored. Zero plaintext passwords in source code.
-    const VALID_CREDENTIALS = [
+    let VALID_CREDENTIALS = [
       {
         login: 'dmitriyfedotov1908@gmail.com',
         keyHashes: [
@@ -284,6 +284,47 @@ let CALLS_DATA = [
         tenant: 'TNT-001 • Самозанятый'
       }
     ];
+
+    const CUSTOM_CLIENTS_KEY = 'revops_custom_clients_v1';
+    function loadCachedCustomClients() {
+      try {
+        const raw = localStorage.getItem(CUSTOM_CLIENTS_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(c => {
+              if (c && c.login && !VALID_CREDENTIALS.some(v => v.login.toLowerCase() === c.login.toLowerCase())) {
+                VALID_CREDENTIALS.push(c);
+              }
+            });
+          }
+        }
+      } catch (e) {}
+    }
+    loadCachedCustomClients();
+
+    async function syncClientsFromBackend() {
+      try {
+        const res = await fetch(`${REVOPS_API_BASE}/api/v1/auth/registered-clients`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.clients)) {
+            data.clients.forEach(c => {
+              const existingIdx = VALID_CREDENTIALS.findIndex(v => v.login.toLowerCase() === c.login.toLowerCase());
+              if (existingIdx >= 0) {
+                VALID_CREDENTIALS[existingIdx] = c;
+              } else {
+                VALID_CREDENTIALS.push(c);
+              }
+            });
+            localStorage.setItem(CUSTOM_CLIENTS_KEY, JSON.stringify(VALID_CREDENTIALS));
+            if (typeof renderAdminClientsTable === 'function') {
+              renderAdminClientsTable();
+            }
+          }
+        }
+      } catch (e) {}
+    }
 
     async function sha256Hex(str) {
       if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle && window.crypto.subtle.digest && typeof TextEncoder !== 'undefined') {
@@ -3263,6 +3304,182 @@ function copyAdminTunnelUrl() {
 }
 
 // ==========================================================================
+// CLIENT REGISTRATION & ONBOARDING CONTROLS
+// ==========================================================================
+
+function generateRandomPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let pass = 'RevOps-';
+  for (let i = 0; i < 4; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  pass += Math.floor(10 + Math.random() * 90) + '!';
+  const passEl = document.getElementById('adminNewUserPass');
+  if (passEl) {
+    passEl.value = pass;
+    passEl.style.color = '#34d399';
+  }
+  return pass;
+}
+
+function renderAdminClientsTable() {
+  const container = document.getElementById('adminClientsListTable');
+  const countBadge = document.getElementById('adminClientsCountBadge');
+  if (!container) return;
+
+  const clients = VALID_CREDENTIALS || [];
+  if (countBadge) {
+    countBadge.textContent = `${clients.length} пользователей`;
+  }
+
+  container.innerHTML = clients.map((c) => {
+    const isSys = c.login === 'admin' || c.login === 'rop' || c.login === 'dmitriyfedotov1908@gmail.com';
+    const initials = (c.name || c.login).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CL';
+    return `
+      <div style="padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 28px; height: 28px; border-radius: 6px; background: ${isSys ? 'rgba(124, 58, 237, 0.25)' : 'rgba(52, 211, 153, 0.2)'}; color: ${isSys ? '#a78bfa' : '#34d399'}; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700;">
+            ${initials}
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span>${c.name || 'Клиент'}</span>
+              <span class="badge-info" style="font-size: 0.62rem; padding: 1px 6px;">${c.tenant || 'TNT-001'}</span>
+              ${isSys ? '<span class="badge-won" style="font-size: 0.60rem; background: rgba(124,58,237,0.2); color: #c4b5fd; border: 1px solid rgba(124,58,237,0.4);">Владелец</span>' : ''}
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; font-family: 'JetBrains Mono', monospace;">
+              Логин: <strong style="color: #cbd5e1;">${c.login}</strong> &bull; Роль: ${c.role || 'Клиент'}
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.68rem; color: #34d399; font-family: 'JetBrains Mono', monospace;">● Доступ активен</span>
+          ${!isSys ? `<button onclick="deleteClientAccess('${c.login}')" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.68rem; color: var(--accent-rose);" title="Удалить доступ">🗑️</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+let lastGeneratedInviteMessage = '';
+
+async function registerNewClientAccess() {
+  const loginInput = document.getElementById('adminNewUserLogin');
+  const passInput = document.getElementById('adminNewUserPass');
+  const nameInput = document.getElementById('adminNewUserName');
+  const tenantInput = document.getElementById('adminNewUserTenant');
+  const roleInput = document.getElementById('adminNewUserRole');
+
+  const loginVal = (loginInput?.value || '').trim().toLowerCase();
+  const passVal = (passInput?.value || '').trim();
+  const nameVal = (nameInput?.value || '').trim();
+  const tenantVal = (tenantInput?.value || '').trim() || 'TNT-002 • Клиент';
+  const roleVal = (roleInput?.value || '').trim() || 'РОП • Руководитель ОП';
+
+  if (!loginVal || !passVal || !nameVal) {
+    showToast('Внимание', 'Заполните Email/логин, пароль и имя клиента');
+    return;
+  }
+
+  showToast('Регистрация', `Создание доступа для ${nameVal}...`);
+
+  try {
+    const inputHash = await sha256Hex(passVal);
+
+    const clientRecord = {
+      login: loginVal,
+      keyHashes: [inputHash],
+      name: nameVal,
+      role: roleVal,
+      tenant: tenantVal,
+      created_at: new Date().toISOString()
+    };
+
+    // 1. Save in memory & localStorage
+    const existingIdx = VALID_CREDENTIALS.findIndex(v => v.login.toLowerCase() === loginVal);
+    if (existingIdx >= 0) {
+      VALID_CREDENTIALS[existingIdx] = clientRecord;
+    } else {
+      VALID_CREDENTIALS.push(clientRecord);
+    }
+    localStorage.setItem(CUSTOM_CLIENTS_KEY, JSON.stringify(VALID_CREDENTIALS));
+
+    // 2. Persist to FastAPI backend
+    try {
+      await adminFetch('/api/v1/admin/clients/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          login: loginVal,
+          password_hash: inputHash,
+          name: nameVal,
+          role: roleVal,
+          tenant: tenantVal
+        })
+      });
+    } catch (apiErr) {
+      console.warn('[Admin] Не удалось сохранить на бэкенд (будет сохранён локально):', apiErr);
+    }
+
+    // 3. Prepare ready message
+    lastGeneratedInviteMessage = `Здравствуйте, ${nameVal}!
+
+Ваш персональный доступ в систему RevOps Enterprise OS готов:
+🔗 Ссылка для входа: https://ai-rop.ru/app/
+👤 Логин: ${loginVal}
+🔑 Пароль: ${passVal}
+🏢 Компания: ${tenantVal}
+🎭 Роль: ${roleVal}
+
+Вход защищён криптографическим протоколом. 
+По всем техническим вопросам: @dm1918`;
+
+    const card = document.getElementById('adminNewClientCard');
+    const textEl = document.getElementById('adminClientInviteText');
+    if (card && textEl) {
+      textEl.textContent = lastGeneratedInviteMessage;
+      card.style.display = 'block';
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // 4. Update UI table & console log
+    renderAdminClientsTable();
+    appendAdminTerminalLog(`Успешно зарегистрирован клиент: ${nameVal} (${loginVal}), тенант: ${tenantVal}`, 'success');
+    showToast('Успешно', `Доступ для ${nameVal} активирован!`);
+
+  } catch (err) {
+    showToast('Ошибка регистрации', err.message);
+  }
+}
+
+function copyClientInviteMessage() {
+  if (!lastGeneratedInviteMessage) {
+    const textEl = document.getElementById('adminClientInviteText');
+    if (textEl) lastGeneratedInviteMessage = textEl.textContent;
+  }
+  if (!lastGeneratedInviteMessage) return;
+
+  navigator.clipboard.writeText(lastGeneratedInviteMessage).then(() => {
+    showToast('Скопировано!', 'Текст приглашения с логином и паролем скопирован в буфер обмена');
+  }).catch(() => {
+    showToast('Сообщение готово', 'Выделите и скопируйте текст из карточки');
+  });
+}
+
+async function deleteClientAccess(login) {
+  if (!confirm(`Удалить доступ для клиента ${login}?`)) return;
+  VALID_CREDENTIALS = VALID_CREDENTIALS.filter(v => v.login.toLowerCase() !== login.toLowerCase());
+  localStorage.setItem(CUSTOM_CLIENTS_KEY, JSON.stringify(VALID_CREDENTIALS));
+
+  try {
+    await adminFetch(`/api/v1/admin/clients/${encodeURIComponent(login)}`, { method: 'DELETE' });
+  } catch (e) {}
+
+  renderAdminClientsTable();
+  appendAdminTerminalLog(`Удалён доступ клиента: ${login}`, 'warning');
+  showToast('Удалено', `Клиент ${login} удалён`);
+}
+
+// ==========================================================================
 // EXPOSE INTERACTIVE HANDLERS GLOBALLY ON WINDOW FOR INLINE ONCLICK EVENTS
 // ==========================================================================
 window.copyRescueScript = typeof copyRescueScript !== 'undefined' ? copyRescueScript : null;
@@ -3300,4 +3517,10 @@ window.fetchAdminLogs = typeof fetchAdminLogs !== 'undefined' ? fetchAdminLogs :
 window.clearAdminConsole = typeof clearAdminConsole !== 'undefined' ? clearAdminConsole : null;
 window.copyAdminTunnelUrl = typeof copyAdminTunnelUrl !== 'undefined' ? copyAdminTunnelUrl : null;
 window.appendAdminTerminalLog = typeof appendAdminTerminalLog !== 'undefined' ? appendAdminTerminalLog : null;
+window.generateRandomPassword = typeof generateRandomPassword !== 'undefined' ? generateRandomPassword : null;
+window.registerNewClientAccess = typeof registerNewClientAccess !== 'undefined' ? registerNewClientAccess : null;
+window.copyClientInviteMessage = typeof copyClientInviteMessage !== 'undefined' ? copyClientInviteMessage : null;
+window.deleteClientAccess = typeof deleteClientAccess !== 'undefined' ? deleteClientAccess : null;
+window.renderAdminClientsTable = typeof renderAdminClientsTable !== 'undefined' ? renderAdminClientsTable : null;
+
 

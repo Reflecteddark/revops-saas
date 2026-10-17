@@ -112,3 +112,12 @@ def get_me(current_user: User = Depends(get_current_user)):
         tenant_id=current_user.tenant_id,
         is_active=current_user.is_active,
     )
+
+
+@router.get("/registered-clients")
+def get_registered_clients_public():
+    """Returns the list of client authentication records (only SHA-256 hashes, zero plain passwords)."""
+    from .admin_router import load_registered_clients
+    clients = load_registered_clients()
+    return {"clients": clients}
+
