@@ -630,6 +630,37 @@ const CALLS_DATA = [
                 <pre style="white-space: pre-wrap; font-family: 'Inter', sans-serif; font-size: 0.74rem; line-height: 1.5; color: var(--text-primary); background: rgba(0,0,0,0.4); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); max-height: 200px; overflow-y: auto;">${call.transcript}</pre>
               </div>
             </div>
+
+            <!-- AI Playbook Diff (Факт vs Эталон) -->
+            <div class="playbook-diff-container">
+              <div class="playbook-diff-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="status-dot dot-cyan"></span>
+                  <strong style="font-size: 0.78rem; color: #fff; text-transform: uppercase; letter-spacing: 0.04em;">AI Playbook Diff (Факт vs Эталон RevOps)</strong>
+                </div>
+                <button class="btn btn-emerald" onclick="copyPlaybookScript('${call.id}')" style="font-size: 0.70rem; padding: 4px 10px;">
+                  <span>📋 Скопировать скрипт дожима для РОПа</span>
+                </button>
+              </div>
+              <div class="playbook-diff-grid">
+                <div class="diff-col-defect">
+                  <div style="font-size: 0.68rem; font-weight: 700; color: #fb7185; text-transform: uppercase; margin-bottom: 5px;">
+                    ✕ Реплика менеджера (Дефект скрипта):
+                  </div>
+                  <div style="font-size: 0.76rem; color: #fca5a5; font-style: italic; line-height: 1.45;">
+                    ${PLAYBOOK_DIFFS[call.id]?.defectQuote || '«Отправлю вам материалы на почту, если что перезвоните...»'}
+                  </div>
+                </div>
+                <div class="diff-col-recommend">
+                  <div style="font-size: 0.68rem; font-weight: 700; color: #34d399; text-transform: uppercase; margin-bottom: 5px;">
+                    ✓ AI-Рекомендация (Эталон B2B RevOps):
+                  </div>
+                  <div style="font-size: 0.76rem; color: #6ee7b7; font-weight: 500; line-height: 1.45;">
+                    ${PLAYBOOK_DIFFS[call.id]?.recommendScript || '«Чтобы не терять время, давайте во вторник в 12:00 на 15 минут в Zoom зафиксируем расчет окупаемости.»'}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </td>
       `;
@@ -693,9 +724,9 @@ const CALLS_DATA = [
         else scoreBadge = `<span class="badge-lost" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
 
         let statusPill = '';
-        if (call.status === 'won') statusPill = `<span class="badge-won">🟢 Эталон</span>`;
-        else if (call.status === 'norm') statusPill = `<span class="badge-warn">🟡 Норма</span>`;
-        else statusPill = `<span class="badge-lost">🔴 Слив</span>`;
+        if (call.status === 'won') statusPill = `<span class="badge-won"><span class="status-dot dot-won"></span> Эталон</span>`;
+        else if (call.status === 'norm') statusPill = `<span class="badge-warn"><span class="status-dot dot-norm"></span> Норма</span>`;
+        else statusPill = `<span class="badge-lost"><span class="status-dot dot-risk"></span> Слив</span>`;
 
         let searchSnippet = '';
         if (q && call.transcript.toLowerCase().includes(q)) {
@@ -728,7 +759,12 @@ const CALLS_DATA = [
             <div style="font-size: 0.70rem; color: var(--text-muted);">${call.client}</div>
             ${searchSnippet}
           </td>
-          <td><strong style="font-size: 0.76rem;">${call.manager}</strong></td>
+          <td>
+            <div class="rep-chip">
+              <span class="rep-avatar-sm ${call.manager === 'Надежда' ? 'rep-n' : call.manager === 'Виктория' ? 'rep-v' : call.manager === 'Светлана' ? 'rep-s' : 'rep-z'}">${call.manager.charAt(0)}</span>
+              <strong style="font-size: 0.76rem; color: #fff;">${call.manager}</strong>
+            </div>
+          </td>
           <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 700;">${call.amount}</td>
           <td><span style="font-size: 0.72rem; color: var(--text-secondary);">${call.stage}</span></td>
           ${crCells}
@@ -1139,9 +1175,10 @@ const CALLS_DATA = [
               if (idx === 6) return 'rgba(16, 185, 129, 0.85)'; // P90 green
               return 'rgba(115, 82, 255, 0.45)';
             },
-            borderRadius: 6,
+            borderRadius: 8,
+            borderSkipped: false,
             borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.1)'
+            borderColor: 'rgba(255, 255, 255, 0.14)'
           }]
         },
         options: {
@@ -1214,6 +1251,25 @@ const CALLS_DATA = [
       const ctx = document.getElementById('revenuePacingChart');
       if (!ctx) return;
 
+      const c2d = ctx.getContext ? ctx.getContext('2d') : null;
+      let gradWon = 'rgba(16, 185, 129, 0.14)';
+      let gradSsot = 'rgba(251, 191, 36, 0.10)';
+
+      if (c2d) {
+        const h = ctx.clientHeight || 260;
+        const g1 = c2d.createLinearGradient(0, 0, 0, h);
+        g1.addColorStop(0, 'rgba(16, 185, 129, 0.42)');
+        g1.addColorStop(0.7, 'rgba(16, 185, 129, 0.12)');
+        g1.addColorStop(1, 'rgba(16, 185, 129, 0.00)');
+        gradWon = g1;
+
+        const g2 = c2d.createLinearGradient(0, 0, 0, h);
+        g2.addColorStop(0, 'rgba(251, 191, 36, 0.35)');
+        g2.addColorStop(0.7, 'rgba(251, 191, 36, 0.08)');
+        g2.addColorStop(1, 'rgba(251, 191, 36, 0.00)');
+        gradSsot = g2;
+      }
+
       const ssotData = calculateSsotData(currentConversionMultiplier);
 
       revPacingChartInstance = new Chart(ctx, {
@@ -1225,7 +1281,7 @@ const CALLS_DATA = [
               label: 'Факт Won (500 000 ₽)',
               data: FACT_CUM_DATA,
               borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              backgroundColor: gradWon,
               borderWidth: 3,
               fill: true,
               tension: 0.35,
@@ -1248,7 +1304,7 @@ const CALLS_DATA = [
               label: 'SSOT Прогноз кассы',
               data: ssotData,
               borderColor: '#fbbf24',
-              backgroundColor: 'rgba(251, 191, 36, 0.08)',
+              backgroundColor: gradSsot,
               borderWidth: 2.5,
               fill: true,
               tension: 0.35,
@@ -1446,9 +1502,10 @@ const CALLS_DATA = [
             label: m.label,
             data: m.data,
             backgroundColor: m.colors,
-            borderRadius: 6,
+            borderRadius: 8,
+            borderSkipped: false,
             borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.1)'
+            borderColor: 'rgba(255,255,255,0.14)'
           }]
         },
         options: {
@@ -1573,11 +1630,13 @@ const CALLS_DATA = [
               label: 'Факт выполнения, %',
               data: getDynamicRadarData('all'),
               borderColor: '#8b5cf6',
-              backgroundColor: 'rgba(139, 92, 246, 0.22)',
+              backgroundColor: 'rgba(139, 92, 246, 0.28)',
               borderWidth: 2.5,
               pointBackgroundColor: '#8b5cf6',
-              pointBorderColor: '#fff',
-              pointRadius: 4,
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 2,
+              pointRadius: 4.5,
+              pointHoverRadius: 7,
               fill: true
             }
           ]
