@@ -1294,15 +1294,15 @@ const CALLS_DATA = [
             data: dataValues,
             backgroundColor: function(context) {
               const idx = context.dataIndex;
-              if (idx === 2) return 'rgba(244, 63, 94, 0.75)'; // P10 red
-              if (idx === 4) return 'rgba(0, 212, 255, 0.85)';  // P50 cyan
-              if (idx === 6) return 'rgba(16, 185, 129, 0.85)'; // P90 green
-              return 'rgba(115, 82, 255, 0.45)';
+              if (idx === 2) return 'rgba(255, 71, 71, 0.85)';   // P10 SnowUI Red
+              if (idx === 4) return 'rgba(51, 209, 255, 0.90)';  // P50 SnowUI Cyan
+              if (idx === 6) return 'rgba(107, 230, 211, 0.90)'; // P90 SnowUI Mint
+              return 'rgba(184, 153, 235, 0.45)';               // SnowUI Secondary Purple
             },
             borderRadius: 8,
             borderSkipped: false,
             borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.14)'
+            borderColor: 'rgba(255, 255, 255, 0.12)'
           }]
         },
         options: {
@@ -1376,21 +1376,21 @@ const CALLS_DATA = [
       if (!ctx) return;
 
       const c2d = ctx.getContext ? ctx.getContext('2d') : null;
-      let gradWon = 'rgba(16, 185, 129, 0.14)';
-      let gradSsot = 'rgba(251, 191, 36, 0.10)';
+      let gradWon = 'rgba(107, 230, 211, 0.14)';
+      let gradSsot = 'rgba(255, 181, 91, 0.10)';
 
       if (c2d) {
         const h = ctx.clientHeight || 260;
         const g1 = c2d.createLinearGradient(0, 0, 0, h);
-        g1.addColorStop(0, 'rgba(16, 185, 129, 0.42)');
-        g1.addColorStop(0.7, 'rgba(16, 185, 129, 0.12)');
-        g1.addColorStop(1, 'rgba(16, 185, 129, 0.00)');
+        g1.addColorStop(0, 'rgba(107, 230, 211, 0.40)');
+        g1.addColorStop(0.7, 'rgba(107, 230, 211, 0.10)');
+        g1.addColorStop(1, 'rgba(107, 230, 211, 0.00)');
         gradWon = g1;
 
         const g2 = c2d.createLinearGradient(0, 0, 0, h);
-        g2.addColorStop(0, 'rgba(251, 191, 36, 0.35)');
-        g2.addColorStop(0.7, 'rgba(251, 191, 36, 0.08)');
-        g2.addColorStop(1, 'rgba(251, 191, 36, 0.00)');
+        g2.addColorStop(0, 'rgba(255, 181, 91, 0.35)');
+        g2.addColorStop(0.7, 'rgba(255, 181, 91, 0.08)');
+        g2.addColorStop(1, 'rgba(255, 181, 91, 0.00)');
         gradSsot = g2;
       }
 
@@ -1404,20 +1404,20 @@ const CALLS_DATA = [
             {
               label: 'Факт Won (500 000 ₽)',
               data: FACT_CUM_DATA,
-              borderColor: '#10b981',
+              borderColor: '#6be6d3',
               backgroundColor: gradWon,
               borderWidth: 3,
               fill: true,
               tension: 0.35,
               pointRadius: [0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0],
-              pointBackgroundColor: '#34d399',
+              pointBackgroundColor: '#6be6d3',
               pointBorderColor: '#fff',
               pointHoverRadius: 8
             },
             {
               label: 'План таргета (5 000 000 ₽)',
               data: PLAN_CUM_DATA,
-              borderColor: '#00d4ff',
+              borderColor: '#33d1ff',
               borderWidth: 2,
               borderDash: [5, 5],
               fill: false,
@@ -1427,13 +1427,13 @@ const CALLS_DATA = [
             {
               label: 'SSOT Прогноз кассы',
               data: ssotData,
-              borderColor: '#fbbf24',
+              borderColor: '#ffb55b',
               backgroundColor: gradSsot,
               borderWidth: 2.5,
               fill: true,
               tension: 0.35,
               pointRadius: [0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 6],
-              pointBackgroundColor: '#fbbf24',
+              pointBackgroundColor: '#ffb55b',
               pointHoverRadius: 8
             }
           ]
@@ -1583,28 +1583,28 @@ const CALLS_DATA = [
         pipe: {
           label: 'Пайплайн в работе, ₽',
           data: pipe,
-          colors: ['#f59e0b', '#94a3b8', '#d97706', '#ef4444'],
+          colors: ['#33d1ff', '#adadfb', '#b899eb', '#6be6d3'],
           unit: ' ₽',
           isCurrency: true
         },
         score: {
           label: 'Средний балл речи Gemini (/13)',
           data: score,
-          colors: ['#f59e0b', '#10b981', '#38bdf8', '#ef4444'],
+          colors: ['#ffb55b', '#6be6d3', '#33d1ff', '#ff4747'],
           unit: ' б.',
           isCurrency: false
         },
         step: {
           label: 'Фиксация Next Step, %',
           data: nextstep,
-          colors: ['#f59e0b', '#10b981', '#38bdf8', '#ef4444'],
+          colors: ['#ffb55b', '#6be6d3', '#33d1ff', '#ff4747'],
           unit: '%',
           isCurrency: false
         },
         risk: {
           label: 'Выручка под угрозой срыва, ₽',
           data: risk,
-          colors: ['#f59e0b', '#10b981', '#38bdf8', '#ef4444'],
+          colors: ['#ffb55b', '#ff4747', '#ff4747', '#ff4747'],
           unit: ' ₽',
           isCurrency: true
         }
@@ -1744,7 +1744,7 @@ const CALLS_DATA = [
             {
               label: 'Эталон B2B (100%)',
               data: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
-              borderColor: 'rgba(0, 212, 255, 0.4)',
+              borderColor: 'rgba(51, 209, 255, 0.45)',
               borderWidth: 1.5,
               borderDash: [4, 4],
               pointRadius: 0,
@@ -1753,10 +1753,10 @@ const CALLS_DATA = [
             {
               label: 'Факт выполнения, %',
               data: getDynamicRadarData('all'),
-              borderColor: '#8b5cf6',
-              backgroundColor: 'rgba(139, 92, 246, 0.28)',
+              borderColor: '#b899eb',
+              backgroundColor: 'rgba(184, 153, 235, 0.22)',
               borderWidth: 2.5,
-              pointBackgroundColor: '#8b5cf6',
+              pointBackgroundColor: '#33d1ff',
               pointBorderColor: '#ffffff',
               pointBorderWidth: 2,
               pointRadius: 4.5,

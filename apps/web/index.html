@@ -16,35 +16,60 @@
 
   <style>
     /* ==========================================================================
-       DESIGN SYSTEM TOKENS — DARK LUXE BENTO (REVOPS ENTERPRISE V20.0)
+       DESIGN SYSTEM TOKENS — SNOWUI × REVOPS ENTERPRISE V20.0 (BYEWIND AESTHETIC)
        ========================================================================== */
     :root {
+      /* SnowUI Surface & Background Tokens */
       --bg-void: #06070a;
-      --bg-canvas: #0a0c10;
-      --bg-card: rgba(14, 17, 24, 0.82);
-      --bg-card-hover: rgba(22, 27, 40, 0.92);
-      --bg-card-featured: rgba(28, 20, 56, 0.82);
+      --bg-canvas: #090b10;
+      --background-1: #0a0c12;
+      --background-2: #0f131a;
+      --background-3: rgba(15, 19, 26, 0.90);
+      --surface-1: rgba(255, 255, 255, 0.035);
+      --surface-2: rgba(0, 0, 0, 0.20);
+      --surface-3: rgba(255, 255, 255, 0.02);
+      
+      --bg-card: rgba(14, 17, 24, 0.78);
+      --bg-card-hover: rgba(20, 25, 36, 0.90);
+      --bg-card-featured: rgba(26, 21, 52, 0.82);
       --bg-glass: rgba(255, 255, 255, 0.03);
       
+      /* SnowUI Inside Stroke / Inset Borders */
       --border-subtle: rgba(255, 255, 255, 0.08);
       --border-subtle-hover: rgba(255, 255, 255, 0.18);
+      --border-focus: rgba(51, 209, 255, 0.45);
       
-      --accent-purple: #7352ff;
-      --accent-purple-glow: rgba(115, 82, 255, 0.35);
-      --accent-cyan: #00d4ff;
-      --accent-emerald: #10b981;
-      --accent-rose: #f43f5e;
-      --accent-amber: #f59e0b;
+      /* SnowUI Brand & Accent Palette */
+      --brand: #33d1ff;
+      --brand-glow: rgba(51, 209, 255, 0.30);
+      --accent-purple: #b899eb;
+      --accent-purple-glow: rgba(184, 153, 235, 0.35);
+      --accent-indigo: #adadfb;
+      --accent-cyan: #33d1ff;
+      --accent-mint: #6be6d3;
+      --accent-emerald: #71dd8c;
+      --accent-rose: #ff4747;
+      --accent-amber: #ffb55b;
+      --accent-yellow: #ffcc00;
       
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
+      /* SnowUI Typography & Contrast Levels */
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.42);
+      --text-dim: rgba(255, 255, 255, 0.20);
 
+      /* SnowUI Multiples of 4 Radius System */
+      --radius-xs: 4px;
       --radius-sm: 8px;
       --radius-md: 12px;
-      --radius-lg: 18px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
       --radius-pill: 9999px;
 
+      /* SnowUI Motion & Depth */
+      --shadow-glass-1: 0 4px 20px 0 rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      --shadow-glass-2: 0 8px 32px 0 rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+      --shadow-focus: 0 0 0 4px rgba(51, 209, 255, 0.15);
       --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -65,16 +90,39 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Ambient background glows */
+    /* SnowUI Global Native Scrollbar Replacement */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+    }
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+      background: transparent;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+      border: 0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.16);
+      border-radius: 99px;
+      transition: background-color 150ms ease-out;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(255, 255, 255, 0.30);
+    }
+
+    /* Ambient background glows (SnowUI Cyan & Indigo) */
     .ambient-bg {
       position: fixed;
       inset: 0;
       pointer-events: none;
       z-index: 0;
       background:
-        radial-gradient(circle at 18% 12%, rgba(115, 82, 255, 0.14), transparent 45%),
-        radial-gradient(circle at 82% 28%, rgba(0, 212, 255, 0.10), transparent 50%),
-        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.06), transparent 60%);
+        radial-gradient(circle at 18% 12%, rgba(51, 209, 255, 0.10), transparent 45%),
+        radial-gradient(circle at 82% 28%, rgba(184, 153, 235, 0.12), transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(107, 230, 211, 0.06), transparent 60%);
     }
 
     /* App Shell */
@@ -108,12 +156,12 @@
       width: 44px;
       height: 44px;
       border-radius: var(--radius-md);
-      background: linear-gradient(135deg, var(--accent-purple), #4f2ae8);
+      background: linear-gradient(135deg, var(--brand), #7352ff);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      box-shadow: 0 0 24px var(--accent-purple-glow);
+      box-shadow: 0 0 24px rgba(51, 209, 255, 0.35);
       flex-shrink: 0;
     }
 
@@ -187,9 +235,9 @@
 
     .tab-btn.active {
       color: #fff;
-      background: rgba(115, 82, 255, 0.22);
-      border-color: rgba(115, 82, 255, 0.5);
-      box-shadow: 0 0 16px rgba(115, 82, 255, 0.25);
+      background: rgba(51, 209, 255, 0.16);
+      border-color: rgba(51, 209, 255, 0.45);
+      box-shadow: 0 0 16px rgba(51, 209, 255, 0.22), inset 0 0 0 1px rgba(51, 209, 255, 0.20);
     }
 
     /* Action Buttons */
@@ -222,28 +270,30 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--accent-purple), #5935f5);
-      color: #fff;
-      box-shadow: 0 0 20px var(--accent-purple-glow);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: linear-gradient(135deg, var(--brand), #0099ff);
+      color: #06070a;
+      font-weight: 600;
+      box-shadow: 0 2px 16px var(--brand-glow);
+      border: 1px solid rgba(255, 255, 255, 0.25);
     }
 
     .btn-primary:hover {
-      box-shadow: 0 0 30px rgba(115, 82, 255, 0.6);
+      box-shadow: 0 4px 24px rgba(51, 209, 255, 0.55);
       transform: translateY(-1px);
+      color: #000;
     }
 
     .btn-emerald {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.35);
+      background: rgba(107, 230, 211, 0.14);
+      color: var(--accent-mint);
+      border: 1px solid rgba(107, 230, 211, 0.35);
     }
     .btn-emerald:hover {
-      background: rgba(16, 185, 129, 0.25);
+      background: rgba(107, 230, 211, 0.24);
       color: #fff;
     }
 
-    /* Bento Cards */
+    /* Bento Cards (SnowUI Surface & Glass Depth) */
     .bento-card {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
@@ -251,13 +301,17 @@
       padding: 22px;
       position: relative;
       overflow: hidden;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: var(--shadow-glass-1);
       transition: all 0.25s var(--ease-spring);
     }
 
     .bento-card:hover {
       border-color: var(--border-subtle-hover);
       background: var(--bg-card-hover);
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+      box-shadow: var(--shadow-glass-2);
+      transform: translateY(-1px);
     }
 
     .bento-card-header {
@@ -2096,18 +2150,21 @@
     .segmented-pills-group {
       display: inline-flex;
       align-items: center;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(0, 0, 0, 0.40);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 10px;
+      border-radius: var(--radius-md);
       padding: 3px;
-      gap: 2px;
+      gap: 3px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
     }
     .pill-btn {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       padding: 5px 12px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: transparent;
       border: 1px solid transparent;
       color: var(--text-secondary);
@@ -2119,13 +2176,13 @@
     }
     .pill-btn:hover {
       color: #fff;
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.06);
     }
     .pill-btn.active {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.09);
-      border-color: rgba(255, 255, 255, 0.18);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      color: #06070a;
+      background: var(--brand);
+      border-color: var(--brand);
+      box-shadow: 0 2px 10px rgba(51, 209, 255, 0.35);
       font-weight: 600;
     }
 
