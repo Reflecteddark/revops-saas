@@ -572,6 +572,33 @@ const CALLS_DATA = [
       showToast('Фильтр по менеджеру', `Открыт аудит звонков сотрудника: ${repName}`);
     }
 
+    function animateCounter(el, target, duration = 1100) {
+      if (!el) return;
+      const start = performance.now();
+      const fmt = n => n.toLocaleString('ru-RU');
+      function tick(now) {
+        const p = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 4); // ease-out quart
+        el.textContent = fmt(Math.round(target * eased)) + ' ₽';
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function animateCardsIn(container) {
+      if (!container) return;
+      const cards = container.querySelectorAll('.develop-card, .bento-card, .call-row');
+      cards.forEach((card, idx) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(8px)';
+        card.style.transition = `opacity 0.24s ease ${Math.min(idx * 0.025, 0.3)}s, transform 0.24s cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(idx * 0.025, 0.3)}s`;
+        requestAnimationFrame(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        });
+      });
+    }
+
     function switchTab(tabId) {
       ALL_TABS.forEach(t => {
         const btn = document.getElementById('tab-' + t) || document.getElementById('sb-' + t);
@@ -583,7 +610,10 @@ const CALLS_DATA = [
       const activeBtn = document.getElementById('tab-' + tabId) || document.getElementById('sb-' + tabId);
       const activeView = document.getElementById('view-' + tabId);
       if (activeBtn) activeBtn.classList.add('active');
-      if (activeView) activeView.classList.add('active');
+      if (activeView) {
+        activeView.classList.add('active');
+        animateCardsIn(activeView);
+      }
 
       // Update Breadcrumbs
       const bc = document.getElementById('currentViewBreadcrumb');
@@ -671,125 +701,125 @@ const CALLS_DATA = [
       mainRow.classList.add('expanded');
       activeExpandedCallId = callId;
 
-      const expandTr = document.createElement('tr');
-      expandTr.id = `expand-row-${callId}`;
-      expandTr.className = 'inline-expand-row';
+      const expandCard = document.createElement('div');
+      expandCard.id = `expand-row-${callId}`;
+      expandCard.className = 'call-expand-card';
 
-      const nextStepColor = call.next_step === 1 ? '#10b981' : '#f43f5e';
-      const nextStepBg = call.next_step === 1 ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)';
+      const nextStepColor = call.next_step === 1 ? '#34d399' : '#fb7185';
+      const nextStepBg = call.next_step === 1 ? 'rgba(52,211,153,0.08)' : 'rgba(251,113,133,0.08)';
       const nextStepText = call.next_step === 1 ? '✓ Слот встречи зафиксирован' : '✕ Слив: точный день и время не зафиксированы';
 
-      expandTr.innerHTML = `
-        <td colspan="22" class="inline-expand-cell">
-          <div class="inline-expand-drawer">
-            <!-- Header Bar -->
-            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; flex-wrap: wrap;">
-              <div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="badge-info" style="font-family: 'JetBrains Mono', monospace;">${call.id}</span>
-                  <span class="badge-won">${call.deal_id}</span>
-                  <span style="font-size: 0.72rem; color: var(--text-muted);">&bull; Длительность: <strong>${call.duration}</strong></span>
-                </div>
-                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 4px;">
-                  ${call.deal_title}
-                </h3>
-                <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
-                  Менеджер: <strong>${call.manager}</strong> &bull; Клиент: ${call.client} &bull; Сумма: <strong style="color: #34d399; font-family: 'JetBrains Mono', monospace;">${call.amount}</strong> &bull; Этап: ${call.stage}
-                </div>
-              </div>
-
+      expandCard.innerHTML = `
+        <div class="inline-expand-drawer">
+          <!-- Header Bar -->
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; flex-wrap: wrap;">
+            <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="btn btn-emerald" onclick="copyRescueScriptByCallId('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px;">
-                  <span>💬 Скопировать в WhatsApp</span>
-                </button>
-                <button class="btn btn-primary" onclick="openCallModal('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px;">
-                  <span>Полный экран &nearr;</span>
-                </button>
-                <button class="btn btn-ghost" onclick="toggleInlineCallDetails('${call.id}')" style="padding: 6px 10px; font-size: 0.72rem;">✕ Свернуть</button>
+                <span class="badge-info" style="font-family: 'JetBrains Mono', monospace; background: rgba(124,58,237,0.15); color: #c4b5fd; border: 1px solid rgba(124,58,237,0.3);">${call.id}</span>
+                <span class="badge-won" style="background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3);">${call.deal_id}</span>
+                <span style="font-size: 0.72rem; color: rgba(255,255,255,0.45);">&bull; Длительность: <strong style="color: #fff;">${call.duration}</strong></span>
+              </div>
+              <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 6px;">
+                ${call.deal_title}
+              </h3>
+              <div style="font-size: 0.76rem; color: rgba(255,255,255,0.6); margin-top: 2px;">
+                Менеджер: <strong style="color: #fff;">${call.manager}</strong> &bull; Клиент: ${call.client} &bull; Сумма: <strong style="color: #34d399; font-family: 'JetBrains Mono', monospace;">${call.amount}</strong> &bull; Этап: ${call.stage}
               </div>
             </div>
 
-            <!-- 4-Step Audit Timeline -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;">
-              <div style="padding: 8px; background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; border-radius: 4px;">
-                <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:00 &bull; Вступление</div>
-                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Приветствие и регламент</div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button class="btn btn-emerald" onclick="copyRescueScriptByCallId('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px; background: #059669; border-color: #10b981;">
+                <span>💬 Скопировать в WhatsApp</span>
+              </button>
+              <button class="btn btn-primary" onclick="openCallModal('${call.id}')" style="font-size: 0.72rem; padding: 6px 12px;">
+                <span>Полный экран &nearr;</span>
+              </button>
+              <button class="btn btn-ghost" onclick="toggleInlineCallDetails('${call.id}', event)" style="padding: 6px 10px; font-size: 0.72rem;">✕ Свернуть</button>
+            </div>
+          </div>
+
+          <!-- 4-Step Audit Timeline -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;">
+            <div style="padding: 8px; background: rgba(52,211,153,0.08); border-left: 3px solid #34d399; border-radius: 4px;">
+              <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:00 &bull; Вступление</div>
+              <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Приветствие и регламент</div>
+            </div>
+            <div style="padding: 8px; background: rgba(52,211,153,0.08); border-left: 3px solid #34d399; border-radius: 4px;">
+              <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:35 &bull; Квалификация</div>
+              <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Выявление болей и ЛПР</div>
+            </div>
+            <div style="padding: 8px; background: rgba(124,58,237,0.08); border-left: 3px solid #7c3aed; border-radius: 4px;">
+              <div style="font-size: 0.68rem; color: #c4b5fd; font-weight: 700;">1:10 &bull; Презентация</div>
+              <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Оффер и кейсы</div>
+            </div>
+            <div style="padding: 8px; background: ${nextStepBg}; border-left: 3px solid ${nextStepColor}; border-radius: 4px;">
+              <div style="font-size: 0.68rem; color: ${nextStepColor}; font-weight: 700;">1:45 &bull; Next Step</div>
+              <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">${nextStepText}</div>
+            </div>
+          </div>
+
+          <!-- 2-Column Details: Left = Error & Recommendation, Right = Transcript -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="padding: 12px; background: rgba(251,113,133,0.08); border: 1px solid rgba(251,113,133,0.3); border-radius: var(--radius-sm);">
+                <div style="font-size: 0.7rem; font-weight: 700; color: #fb7185; text-transform: uppercase;">ДЕФЕКТЫ РЕЧИ И ОШИБКИ:</div>
+                <div style="font-size: 0.78rem; color: #fff; margin-top: 4px; line-height: 1.4;">${call.error_summary}</div>
               </div>
-              <div style="padding: 8px; background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; border-radius: 4px;">
-                <div style="font-size: 0.68rem; color: #34d399; font-weight: 700;">0:35 &bull; Квалификация</div>
-                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Выявление болей и ЛПР</div>
+
+              <div style="padding: 12px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.3); border-radius: var(--radius-sm);">
+                <div style="font-size: 0.7rem; font-weight: 700; color: #34d399; text-transform: uppercase;">РЕКОМЕНДАЦИЯ РОПу / ИИ-КОУЧИНГ:</div>
+                <div style="font-size: 0.78rem; color: rgba(255,255,255,0.7); margin-top: 4px; line-height: 1.4;">${call.recommendation}</div>
               </div>
-              <div style="padding: 8px; background: rgba(251,191,36,0.08); border-left: 3px solid #fbbf24; border-radius: 4px;">
-                <div style="font-size: 0.68rem; color: #fde68a; font-weight: 700;">1:10 &bull; Презентация</div>
-                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">Оффер и кейсы</div>
-              </div>
-              <div style="padding: 8px; background: ${nextStepBg}; border-left: 3px solid ${nextStepColor}; border-radius: 4px;">
-                <div style="font-size: 0.68rem; color: ${nextStepColor}; font-weight: 700;">1:45 &bull; Next Step</div>
-                <div style="font-size: 0.72rem; color: #fff; margin-top: 2px;">${nextStepText}</div>
+
+              <div style="padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); font-size: 0.74rem;">
+                <span style="color: rgba(255,255,255,0.45);">Выручка под угрозой:</span> <strong style="color: #fb7185; font-family: 'JetBrains Mono', monospace;">${call.risk_amount}</strong>
               </div>
             </div>
 
-            <!-- 2-Column Details: Left = Error & Recommendation, Right = Transcript -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div style="display: flex; flex-direction: column; gap: 10px;">
-                <div style="padding: 12px; background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.3); border-radius: var(--radius-sm);">
-                  <div style="font-size: 0.7rem; font-weight: 700; color: #fb7185; text-transform: uppercase;">ДЕФЕКТЫ РЕЧИ И ОШИБКИ:</div>
-                  <div style="font-size: 0.78rem; color: #fff; margin-top: 4px; line-height: 1.4;">${call.error_summary}</div>
-                </div>
-
-                <div style="padding: 12px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: var(--radius-sm);">
-                  <div style="font-size: 0.7rem; font-weight: 700; color: #34d399; text-transform: uppercase;">РЕКОМЕНДАЦИЯ РОПу / ИИ-КОУЧИНГ:</div>
-                  <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">${call.recommendation}</div>
-                </div>
-
-                <div style="padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 0.74rem;">
-                  <span style="color: var(--text-muted);">Выручка под угрозой:</span> <strong style="color: #fb7185; font-family: 'JetBrains Mono', monospace;">${call.risk_amount}</strong>
-                </div>
+            <div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; margin-bottom: 6px;">
+                Стенограмма диалога (Gemini 3.5 Flash):
               </div>
-
-              <div>
-                <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
-                  Стенограмма диалога (Gemini 3.5 Flash):
-                </div>
-                <pre style="white-space: pre-wrap; font-family: 'Inter', sans-serif; font-size: 0.74rem; line-height: 1.5; color: var(--text-primary); background: rgba(0,0,0,0.4); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); max-height: 200px; overflow-y: auto;">${call.transcript}</pre>
-              </div>
+              <pre style="white-space: pre-wrap; font-family: 'Inter', sans-serif; font-size: 0.74rem; line-height: 1.5; color: #fff; background: rgba(0,0,0,0.5); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08); max-height: 200px; overflow-y: auto;">${call.transcript}</pre>
             </div>
+          </div>
 
-            <!-- AI Playbook Diff (Факт vs Эталон) -->
-            <div class="playbook-diff-container">
-              <div class="playbook-diff-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="status-dot dot-cyan"></span>
-                  <strong style="font-size: 0.78rem; color: #fff; text-transform: uppercase; letter-spacing: 0.04em;">AI Playbook Diff (Факт vs Эталон RevOps)</strong>
-                </div>
-                <button class="btn btn-emerald" onclick="copyPlaybookScript('${call.id}')" style="font-size: 0.70rem; padding: 4px 10px;">
-                  <span>📋 Скопировать скрипт дожима для РОПа</span>
-                </button>
+          <!-- AI Playbook Diff (Факт vs Эталон) -->
+          <div class="playbook-diff-container" style="margin-top: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px;">
+            <div class="playbook-diff-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot dot-won" style="background: #7c3aed; box-shadow: 0 0 8px #7c3aed;"></span>
+                <strong style="font-size: 0.78rem; color: #fff; text-transform: uppercase; letter-spacing: 0.04em;">AI Playbook Diff (Факт vs Эталон RevOps)</strong>
               </div>
-              <div class="playbook-diff-grid">
-                <div class="diff-col-defect">
-                  <div style="font-size: 0.68rem; font-weight: 700; color: #fb7185; text-transform: uppercase; margin-bottom: 5px;">
-                    ✕ Реплика менеджера (Дефект скрипта):
-                  </div>
-                  <div style="font-size: 0.76rem; color: #fca5a5; font-style: italic; line-height: 1.45;">
-                    ${PLAYBOOK_DIFFS[call.id]?.defectQuote || '«Отправлю вам материалы на почту, если что перезвоните...»'}
-                  </div>
+              <button class="btn btn-emerald" onclick="copyPlaybookScript('${call.id}')" style="font-size: 0.70rem; padding: 4px 10px; background: #059669; border-color: #10b981;">
+                <span>📋 Скопировать скрипт дожима для РОПа</span>
+              </button>
+            </div>
+            <div class="playbook-diff-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="diff-col-defect" style="padding: 10px; background: rgba(251,113,133,0.05); border: 1px solid rgba(251,113,133,0.2); border-radius: 6px;">
+                <div style="font-size: 0.68rem; font-weight: 700; color: #fb7185; text-transform: uppercase; margin-bottom: 5px;">
+                  ✕ Реплика менеджера (Дефект скрипта):
                 </div>
-                <div class="diff-col-recommend">
-                  <div style="font-size: 0.68rem; font-weight: 700; color: #34d399; text-transform: uppercase; margin-bottom: 5px;">
-                    ✓ AI-Рекомендация (Эталон B2B RevOps):
-                  </div>
-                  <div style="font-size: 0.76rem; color: #6ee7b7; font-weight: 500; line-height: 1.45;">
-                    ${PLAYBOOK_DIFFS[call.id]?.recommendScript || '«Чтобы не терять время, давайте во вторник в 12:00 на 15 минут в Zoom зафиксируем расчет окупаемости.»'}
-                  </div>
+                <div style="font-size: 0.76rem; color: #fca5a5; font-style: italic; line-height: 1.45;">
+                  ${PLAYBOOK_DIFFS[call.id]?.defectQuote || '«Отправлю вам материалы на почту, если что перезвоните...»'}
+                </div>
+              </div>
+              <div class="diff-col-recommend" style="padding: 10px; background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.2); border-radius: 6px;">
+                <div style="font-size: 0.68rem; font-weight: 700; color: #34d399; text-transform: uppercase; margin-bottom: 5px;">
+                  ✓ AI-Рекомендация (Эталон B2B RevOps):
+                </div>
+                <div style="font-size: 0.76rem; color: #6ee7b7; font-weight: 500; line-height: 1.45;">
+                  ${PLAYBOOK_DIFFS[call.id]?.recommendScript || '«Чтобы не терять время, давайте во вторник в 12:00 на 15 минут в Zoom зафиксируем расчет окупаемости.»'}
                 </div>
               </div>
             </div>
           </div>
-        </td>
+        </div>
       `;
 
-      mainRow.parentNode.insertBefore(expandTr, mainRow.nextSibling);
+      if (mainRow.parentNode) {
+        mainRow.parentNode.insertBefore(expandCard, mainRow.nextSibling);
+      }
     }
 
     function copyRescueScriptByCallId(callId) {
@@ -813,9 +843,12 @@ const CALLS_DATA = [
       const mgr = document.getElementById('filterManager')?.value || 'all';
       const st = document.getElementById('filterStatus')?.value || 'all';
       const q = (document.getElementById('transcriptSearch')?.value || '').trim().toLowerCase();
+
+      const listContainer = document.getElementById('callsListContainer');
       const tbody = document.getElementById('callsTableBody');
-      if (!tbody) return;
-      tbody.innerHTML = '';
+      if (!listContainer && !tbody) return;
+      if (listContainer) listContainer.innerHTML = '';
+      if (tbody) tbody.innerHTML = '';
 
       const filtered = CALLS_DATA.filter(call => {
         const matchMgr = (mgr === 'all' || call.manager === mgr);
@@ -835,22 +868,32 @@ const CALLS_DATA = [
       }
 
       const rowsCountEl = document.getElementById('agRowsCount');
-      if (rowsCountEl) rowsCountEl.textContent = `${filtered.length} строк`;
+      if (rowsCountEl) rowsCountEl.textContent = `${filtered.length} карточек`;
 
-      filtered.forEach((call, rowIdx) => {
-        const tr = document.createElement('tr');
-        tr.id = `call-row-${call.id}`;
-        tr.className = 'call-row';
+      let crSums = Array(13).fill(0);
+      let totalRisk = 0;
+      let totalScore = 0;
 
-        let scoreBadge = '';
-        if (call.score >= 11) scoreBadge = `<span class="badge-won" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
-        else if (call.score >= 8) scoreBadge = `<span class="badge-warn" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
-        else scoreBadge = `<span class="badge-lost" style="font-family: 'JetBrains Mono', monospace;">${call.score}/13</span>`;
+      filtered.forEach((call) => {
+        call.cr.forEach((val, idx) => {
+          if (val === 1) crSums[idx]++;
+        });
+        totalScore += call.score;
+        if (call.status === 'risk') totalRisk += 500000;
 
-        let statusPill = '';
-        if (call.status === 'won') statusPill = `<span class="badge-won"><span class="status-dot dot-won"></span> Эталон</span>`;
-        else if (call.status === 'norm') statusPill = `<span class="badge-warn"><span class="status-dot dot-norm"></span> Норма</span>`;
-        else statusPill = `<span class="badge-lost"><span class="status-dot dot-risk"></span> Слив</span>`;
+        let statusClass = 'status-norm';
+        let statusText = 'Норма';
+        let scoreStrokeColor = '#7c3aed';
+
+        if (call.status === 'won') {
+          statusClass = 'status-won';
+          statusText = 'Эталон';
+          scoreStrokeColor = '#34d399';
+        } else if (call.status === 'risk') {
+          statusClass = 'status-loss';
+          statusText = 'Слив';
+          scoreStrokeColor = '#fb7185';
+        }
 
         let searchSnippet = '';
         if (q && call.transcript.toLowerCase().includes(q)) {
@@ -859,95 +902,97 @@ const CALLS_DATA = [
           const end = Math.min(call.transcript.length, idx + q.length + 50);
           const rawSnippet = call.transcript.substring(start, end);
           const highlighted = rawSnippet.replace(new RegExp(`(${q})`, 'gi'), '<mark class="search-highlight">$1</mark>');
-          searchSnippet = `<div style="font-size: 0.70rem; color: var(--accent-cyan); margin-top: 3px;">💬 "...${highlighted}..."</div>`;
+          searchSnippet = `<div style="font-size: 0.70rem; color: #c4b5fd; margin-top: 4px;">💬 "...${highlighted}..."</div>`;
         }
 
-        // 13 criteria heatmap cells
-        let crCells = '';
+        // 13 criteria heatmap dots
+        let crDots = '';
         call.cr.forEach((val, idx) => {
           const pass = (val === 1);
-          const icon = pass ? '1' : '0';
-          const cls = pass ? 'cr-pass' : 'cr-fail';
+          const cls = pass ? 'pass' : 'fail';
           const tip = `${pass ? '✓ Выполнено' : '✕ Дефект'}: ${CRITERIA_NAMES[idx]}`;
-          crCells += `<td style="text-align: center; padding: 4px 2px;"><span class="cr-dot ${cls}" title="${tip}">${icon}</span></td>`;
+          crDots += `<div class="heat-dot ${cls}" title="${tip}"></div>`;
         });
 
-        const riskCol = (call.status === 'risk')
-          ? `<strong style="color: #fb7185; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem;">${call.risk_amount}</strong>`
-          : `<span style="color: #34d399; font-size: 0.72rem;">0 ₽</span>`;
+        const scoreDash = Math.round((call.score / 13) * 100);
+        const avatarClass = call.manager === 'Надежда' ? 'rep-n' : call.manager === 'Виктория' ? 'rep-v' : call.manager === 'Светлана' ? 'rep-s' : 'rep-z';
 
-        tr.innerHTML = `
-          <td><code style="color: var(--accent-cyan); font-size: 0.74rem;">${call.id}</code></td>
-          <td>
-            <div style="font-weight: 700; color: #fff; font-size: 0.78rem;">${call.deal_title}</div>
-            <div style="font-size: 0.70rem; color: var(--text-muted);">${call.client}</div>
-            ${searchSnippet}
-          </td>
-          <td>
-            <div class="rep-chip">
-              <span class="rep-avatar-sm ${call.manager === 'Надежда' ? 'rep-n' : call.manager === 'Виктория' ? 'rep-v' : call.manager === 'Светлана' ? 'rep-s' : 'rep-z'}">${call.manager.charAt(0)}</span>
-              <strong style="font-size: 0.76rem; color: #fff;">${call.manager}</strong>
+        if (listContainer) {
+          const card = document.createElement('div');
+          card.id = `call-row-${call.id}`;
+          card.className = `call-row ${activeExpandedCallId === call.id ? 'expanded' : ''}`;
+          card.onclick = (e) => {
+            if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+              toggleInlineCallDetails(call.id, e);
+            }
+          };
+
+          card.innerHTML = `
+            <div class="call-avatar ${avatarClass}">${call.manager.charAt(0)}</div>
+            <div class="call-body">
+              <div class="call-title">
+                <span>${call.deal_id} · ${call.deal_title}</span>
+              </div>
+              <div class="call-sub">
+                <span style="color: #fff; font-weight: 600;">${call.manager}</span>
+                <span class="call-dot"></span>
+                <span style="font-family: 'JetBrains Mono', monospace; color: #34d399; font-weight: 700;">${call.amount}</span>
+                <span class="call-dot"></span>
+                <span>⏱ ${call.duration}</span>
+                <span class="call-dot"></span>
+                <span>${call.client}</span>
+              </div>
+              ${searchSnippet}
             </div>
-          </td>
-          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 700;">${call.amount}</td>
-          <td><span style="font-size: 0.72rem; color: var(--text-secondary);">${call.stage}</span></td>
-          ${crCells}
-          <td style="text-align: center;">${scoreBadge}</td>
-          <td style="text-align: center;">${statusPill}</td>
-          <td style="text-align: right;">${riskCol}</td>
-          <td style="text-align: center;">
-            <button class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border-color: rgba(115,82,255,0.3); color: #c4b5fd;" onclick="toggleInlineCallDetails('${call.id}', event)">
-              <span>Разбор ▾</span>
-            </button>
-          </td>
-        `;
+            <div class="call-heat" title="13 критериев ИИ-аудита (зеленый = норма, красный = дефект)">
+              ${crDots}
+            </div>
+            <div class="call-score" title="Балл аудита: ${call.score} из 13">
+              <svg class="score-ring" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="${scoreStrokeColor}" stroke-width="3"
+                        stroke-dasharray="${scoreDash}, 100" stroke-linecap="round"/>
+              </svg>
+              <span class="score-num">${call.score}</span>
+            </div>
+            <div class="call-status-pill ${statusClass}">${statusText}</div>
+            <div class="call-action" onclick="toggleInlineCallDetails('${call.id}', event)">Разбор →</div>
+          `;
 
-        tr.onclick = (e) => {
-          if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
-            toggleInlineCallDetails(call.id);
-          }
-        };
+          listContainer.appendChild(card);
+        }
 
-        tbody.appendChild(tr);
+        // Backward compatibility for table tbody if present
+        if (tbody) {
+          const tr = document.createElement('tr');
+          tr.id = `legacy-call-row-${call.id}`;
+          tr.innerHTML = `
+            <td><code>${call.id}</code></td>
+            <td>${call.deal_title}</td>
+            <td>${call.manager}</td>
+            <td>${call.amount}</td>
+            <td>${call.stage}</td>
+          `;
+          tbody.appendChild(tr);
+        }
       });
 
-      // Calculate team summary for each cr1..cr13
-      let crSums = Array(13).fill(0);
-      let totalRisk = 0;
-      let totalScore = 0;
-
-      filtered.forEach(c => {
-        c.cr.forEach((val, idx) => {
-          if (val === 1) crSums[idx]++;
-        });
-        totalScore += c.score;
-        if (c.status === 'risk') totalRisk += 500000;
-      });
-
+      // Calculate team summary
       const count = filtered.length || 1;
-      let crFootCells = '';
-      crSums.forEach((sum, idx) => {
-        const pct = Math.round((sum / count) * 100);
-        let color = '#34d399';
-        if (pct < 50) color = '#fb7185';
-        else if (pct < 80) color = '#fbbf24';
-        crFootCells += `<td style="text-align: center; padding: 6px 2px; font-size: 0.68rem; color: ${color};" title="Среднее по команде: ${CRITERIA_NAMES[idx]} = ${pct}%">${pct}%</td>`;
-      });
-
       const avgScore = (totalScore / count).toFixed(1);
-      const foot = document.getElementById('callsTableFoot');
-      if (foot) {
-        foot.innerHTML = `
-          <tr>
-            <td colspan="5" style="padding: 8px 12px; color: #fff; font-size: 0.74rem;">
-              <span>📊 СРЕДНИЙ % ПРОХОЖДЕНИЯ СТАНДАРТОВ (КОМАНДА):</span>
-            </td>
-            ${crFootCells}
-            <td style="text-align: center; color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">${avgScore}/13</td>
-            <td style="text-align: center;"><span class="badge-won" style="font-size: 0.65rem;">70% Win</span></td>
-            <td style="text-align: right; color: #fb7185; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">${totalRisk.toLocaleString('ru-RU')} ₽</td>
-            <td style="text-align: center; font-size: 0.70rem; color: var(--text-muted);">${count} звонков</td>
-          </tr>
+      const summaryEl = document.getElementById('callsListSummary');
+      if (summaryEl) {
+        summaryEl.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div><span>Реестр звонков:</span> <strong style="color: #fff;">${filtered.length}</strong></div>
+            <div class="call-dot"></div>
+            <div><span>Средний балл по команде:</span> <strong style="color: #c4b5fd; font-family: 'JetBrains Mono', monospace;">${avgScore} / 13</strong></div>
+            <div class="call-dot"></div>
+            <div><span>Выручка под угрозой (Сливы):</span> <strong style="color: #fb7185; font-family: 'JetBrains Mono', monospace;">${totalRisk.toLocaleString('ru-RU')} ₽</strong></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: rgba(255,255,255,0.45);">
+            <span>Gemini 3.5 Flash &bull; Strict JSON</span>
+          </div>
         `;
       }
     }
@@ -1186,27 +1231,27 @@ const CALLS_DATA = [
 
       const syncText = document.getElementById('periodSyncText');
       if (period === 'today') {
-        document.getElementById('metricPlanVal').textContent = '250 000 ₽';
-        document.getElementById('metricFactVal').textContent = '0 ₽';
+        animateCounter(document.getElementById('metricPlanVal'), 250000);
+        animateCounter(document.getElementById('metricFactVal'), 0);
         document.getElementById('metricFactBadge').textContent = '0.0% ВЫПОЛНЕНО';
-        document.getElementById('metricSsotVal').textContent = '120 000 ₽';
-        document.getElementById('metricPipeVal').textContent = '4 500 000 ₽';
+        animateCounter(document.getElementById('metricSsotVal'), 120000);
+        animateCounter(document.getElementById('metricPipeVal'), 4500000);
         if (syncText) syncText.textContent = 'Срез за 16 октября 2026 (Сегодня)';
         showToast('Период: Сегодня', 'Показана суточная операционная активность.');
       } else if (period === '7d') {
-        document.getElementById('metricPlanVal').textContent = '1 250 000 ₽';
-        document.getElementById('metricFactVal').textContent = '500 000 ₽';
+        animateCounter(document.getElementById('metricPlanVal'), 1250000);
+        animateCounter(document.getElementById('metricFactVal'), 500000);
         document.getElementById('metricFactBadge').textContent = '40.0% ВЫПОЛНЕНО';
-        document.getElementById('metricSsotVal').textContent = '850 000 ₽';
-        document.getElementById('metricPipeVal').textContent = '4 500 000 ₽';
+        animateCounter(document.getElementById('metricSsotVal'), 850000);
+        animateCounter(document.getElementById('metricPipeVal'), 4500000);
         if (syncText) syncText.textContent = 'Срез за последние 7 дней (10 звонков)';
         showToast('Период: 7 дней', 'Показаны данные за прошедшую неделю.');
       } else {
-        document.getElementById('metricPlanVal').textContent = '5 000 000 ₽';
-        document.getElementById('metricFactVal').textContent = '500 000 ₽';
+        animateCounter(document.getElementById('metricPlanVal'), 5000000);
+        animateCounter(document.getElementById('metricFactVal'), 500000);
         document.getElementById('metricFactBadge').textContent = '🟢 10.0% ВЫПОЛНЕНО';
-        document.getElementById('metricSsotVal').textContent = '2 375 000 ₽';
-        document.getElementById('metricPipeVal').textContent = '4 500 000 ₽';
+        animateCounter(document.getElementById('metricSsotVal'), 2375000);
+        animateCounter(document.getElementById('metricPipeVal'), 4500000);
         if (syncText) syncText.textContent = 'Синхронизировано: amoCRM + Битрикс24 (16.10.2026, 21:50)';
         showToast('Период: Октябрь 2026', 'Показан полный месячный контур компании.');
       }
@@ -2240,6 +2285,19 @@ const CALLS_DATA = [
       initCallsTable();
       const savedDensity = localStorage.getItem('revops_table_density') || 'excel-pro';
       setTableDensity(savedDensity);
+
+      // Hero KPI count-up animation on startup
+      const factVal = document.getElementById('metricFactVal');
+      if (factVal) animateCounter(factVal, 500000, 1100);
+      const planVal = document.getElementById('metricPlanVal');
+      if (planVal) animateCounter(planVal, 5000000, 1100);
+      const ssotVal = document.getElementById('metricSsotVal');
+      if (ssotVal) animateCounter(ssotVal, 2375000, 1100);
+
+      // Trigger card motion entrance on active tab
+      const initialView = document.querySelector('.tab-view.active');
+      if (initialView) animateCardsIn(initialView);
+
       initMonteCarloChart();
       initRevenuePacingChart();
       initRepPerformanceChart();

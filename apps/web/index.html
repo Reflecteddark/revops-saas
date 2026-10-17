@@ -2862,13 +2862,13 @@
     }
 
     .develop-card {
-      background: var(--bg-card);
+      background: #0a0a10;
       border-radius: 20px;
       padding: 22px 24px;
-      border: 1px solid var(--border-subtle);
-      box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.75), 0 0 16px -4px rgba(124, 58, 237, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: none;
       position: relative;
-      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease;
     }
 
     html[data-theme="light"] .develop-card {
@@ -2878,9 +2878,272 @@
     }
 
     .develop-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.85), 0 0 24px -2px rgba(124, 58, 237, 0.22);
-      border-color: var(--border-subtle-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.8);
+      border-color: rgba(124, 58, 237, 0.25);
+    }
+
+    .develop-card--hero {
+      border-color: rgba(124, 58, 237, 0.35) !important;
+      box-shadow: 0 30px 80px -20px rgba(124, 58, 237, 0.28), inset 0 1px 0 0 rgba(255, 255, 255, 0.12) !important;
+    }
+
+    .kpi-hero {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(2.75rem, 5.5vw, 4.5rem);
+      font-weight: 500;
+      letter-spacing: -0.055em;
+      line-height: 0.92;
+      font-variant-numeric: tabular-nums;
+      color: #ffffff;
+      background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.55) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    html[data-theme="light"] .kpi-hero {
+      background: linear-gradient(180deg, #11142d 0%, #4b5563 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .kpi-hero-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 8px;
+    }
+
+    .kpi-hero-live {
+      position: relative;
+      display: inline-block;
+    }
+    .kpi-hero-live::after {
+      content: '';
+      position: absolute;
+      right: -18px;
+      top: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 12px #34d399;
+      animation: livePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.75; transform: scale(0.9); }
+    }
+
+    /* Modern Calls Card-List (Attio / Notion / Linear Style) */
+    .calls-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.015);
+      border-radius: 16px;
+      padding: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .call-row {
+      display: grid;
+      grid-template-columns: 40px 1.8fr auto 56px 86px 80px;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.15s ease;
+    }
+
+    .call-row:hover {
+      background: rgba(255, 255, 255, 0.045);
+      border-color: rgba(124, 58, 237, 0.28);
+      transform: translateY(-1px);
+    }
+
+    .call-row.expanded {
+      background: rgba(124, 58, 237, 0.09);
+      border-color: rgba(124, 58, 237, 0.45);
+    }
+
+    .call-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.78rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .call-body {
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .call-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .call-sub {
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.45);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+      flex-wrap: wrap;
+    }
+
+    .call-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .call-heat {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .heat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      transition: transform 0.15s ease;
+    }
+    .heat-dot:hover {
+      transform: scale(1.4);
+    }
+    .heat-dot.pass { background: rgba(52, 211, 153, 0.75); }
+    .heat-dot.fail { background: rgba(251, 113, 133, 0.75); }
+
+    .call-score {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .score-ring {
+      width: 36px;
+      height: 36px;
+      transform: rotate(-90deg);
+    }
+
+    .score-num {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .call-status-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 99px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .status-won {
+      background: rgba(52, 211, 153, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+    .status-norm {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .status-loss {
+      background: rgba(251, 113, 133, 0.15);
+      color: #fb7185;
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+
+    .call-action {
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: #a78bfa;
+      text-align: right;
+      transition: color 0.15s ease;
+      white-space: nowrap;
+    }
+    .call-row:hover .call-action {
+      color: #c4b5fd;
+    }
+
+    .call-expand-card {
+      background: rgba(13, 13, 20, 0.98);
+      border: 1px solid rgba(124, 58, 237, 0.35);
+      border-radius: 14px;
+      padding: 20px;
+      margin: 4px 0 8px;
+      box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(124, 58, 237, 0.15);
+      animation: expandFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes expandFadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .signature-revenue {
+      width: 100%;
+      height: 180px;
+      display: block;
+      overflow: visible;
+    }
+    .signature-revenue path.sig-line {
+      stroke-dasharray: 1500;
+      stroke-dashoffset: 1500;
+      animation: drawLine 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes drawLine {
+      to { stroke-dashoffset: 0; }
+    }
+
+    @media (max-width: 900px) {
+      .call-row {
+        grid-template-columns: 36px 1fr auto auto;
+        gap: 12px;
+      }
+      .call-heat, .call-action {
+        display: none;
+      }
     }
 
     .develop-card-header {
@@ -3648,23 +3911,26 @@
           
           <!-- Row 1: 2 KPI Cards -->
           <div class="develop-kpi-pair">
-            <!-- Card 1: Total balance / Факт закрыто -->
-            <div class="develop-card">
+            <!-- Card 1: Total balance / Факт закрыто (Hero) -->
+            <div class="develop-card develop-card--hero">
               <div class="develop-card-header">
-                <span class="develop-card-title">Факт закрыто</span>
+                <div>
+                  <div class="kpi-hero-label">Главный KPI &bull; Выручка</div>
+                  <span class="develop-card-title">Факт закрыто</span>
+                </div>
                 <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
               </div>
-              <div class="develop-kpi-row">
+              <div class="develop-kpi-row" style="align-items: flex-start; margin-top: 8px;">
                 <div>
-                  <div class="develop-kpi-num" id="metricFactVal">500 000 ₽</div>
-                  <div class="develop-pill pill-pos">
+                  <div class="kpi-hero kpi-hero-live" id="metricFactVal">500 000 ₽</div>
+                  <div class="develop-pill pill-pos" style="margin-top: 14px;">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
                     <span id="metricFactBadge">+10.0%</span>
                     <span class="pill-sub">к плану</span>
                   </div>
                 </div>
                 <!-- Sparkline spline SVG wave -->
-                <svg class="develop-sparkline" viewBox="0 0 120 40">
+                <svg class="develop-sparkline" viewBox="0 0 120 40" style="margin-top: 8px;">
                   <defs>
                     <linearGradient id="splineFactWon" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.45"/>
@@ -3680,27 +3946,30 @@
             <!-- Card 2: Total expenses / План таргета -->
             <div class="develop-card">
               <div class="develop-card-header">
-                <span class="develop-card-title">План месяца</span>
+                <div>
+                  <div class="kpi-hero-label">Таргет &bull; План месяца</div>
+                  <span class="develop-card-title">План месяца</span>
+                </div>
                 <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
               </div>
-              <div class="develop-kpi-row">
+              <div class="develop-kpi-row" style="align-items: flex-start; margin-top: 8px;">
                 <div>
-                  <div class="develop-kpi-num" id="metricPlanVal">5 000 000 ₽</div>
-                  <div class="develop-pill pill-neg">
+                  <div class="develop-kpi-num" id="metricPlanVal" style="font-size: 2.2rem; font-weight: 600; letter-spacing: -0.04em;">5 000 000 ₽</div>
+                  <div class="develop-pill pill-neg" style="margin-top: 14px;">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
                     <span>-4.5M ₽</span>
                     <span class="pill-sub">дефицит плана</span>
                   </div>
                 </div>
-                <svg class="develop-sparkline" viewBox="0 0 120 40">
+                <svg class="develop-sparkline" viewBox="0 0 120 40" style="margin-top: 8px;">
                   <defs>
                     <linearGradient id="splineTarget" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#f36594" stop-opacity="0.35"/>
-                      <stop offset="100%" stop-color="#f36594" stop-opacity="0"/>
+                      <stop offset="0%" stop-color="#fb7185" stop-opacity="0.35"/>
+                      <stop offset="100%" stop-color="#fb7185" stop-opacity="0"/>
                     </linearGradient>
                   </defs>
                   <path d="M 0,15 Q 30,8 55,20 T 90,12 T 120,25 L 120,40 L 0,40 Z" fill="url(#splineTarget)"/>
-                  <path d="M 0,15 Q 30,8 55,20 T 90,12 T 120,25" fill="none" stroke="#f36594" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M 0,15 Q 30,8 55,20 T 90,12 T 120,25" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round"/>
                 </svg>
               </div>
             </div>
@@ -4657,58 +4926,13 @@
           Реестр звонков: <strong id="agRowsCount" style="color: #fff;">10 строк</strong> &bull; Strict JSON application/json
         </div>
       </div>
-        <div class="table-container excel-pro" id="callsTableContainer">
-          <table id="callsTable" class="calls-table">
-            <thead>
-              <!-- Top Tier Group Headers -->
-              <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08);">
-                <th colspan="5" style="text-align: center; color: var(--accent-cyan); border-right: 1px solid rgba(255,255,255,0.08); font-size: 0.68rem; padding: 6px;">
-                  1. ПАРАМЕТРЫ ДИАЛОГА (CRM)
-                </th>
-                <th colspan="13" style="text-align: center; color: #c4b5fd; border-right: 1px solid rgba(255,255,255,0.08); font-size: 0.68rem; padding: 6px;">
-                  2. ТЕПЛОВАЯ КАРТА 13 КРИТЕРИЕВ B2B-АУДИТА (GEMINI AI)
-                </th>
-                <th colspan="4" style="text-align: center; color: #34d399; font-size: 0.68rem; padding: 6px;">
-                  3. ФИНАНСЫ, СКОРИНГ & ДЕЙСТВИЯ
-                </th>
-              </tr>
-              <!-- Sub Tier Column Headers -->
-              <tr>
-                <th style="width: 70px;">Call ID</th>
-                <th style="min-width: 170px;">Сделка / Клиент</th>
-                <th style="width: 85px;">Менеджер</th>
-                <th style="width: 85px;">Чек, ₽</th>
-                <th style="width: 100px;">Этап CRM</th>
-                
-                <!-- 13 Criteria Columns -->
-                <th style="text-align: center; width: 26px;" title="1. Next Step: Фиксация жесткого следующего шага">cr1</th>
-                <th style="text-align: center; width: 26px;" title="2. Инициатива: Ведение диалога и вопросы">cr2</th>
-                <th style="text-align: center; width: 26px;" title="3. ЛПР: Квалификация должности лица принимающего решения">cr3</th>
-                <th style="text-align: center; width: 26px;" title="4. Боли: Выявление скрытых проблем и срочности">cr4</th>
-                <th style="text-align: center; width: 26px;" title="5. Дорого: Отработка ценового возражения">cr5</th>
-                <th style="text-align: center; width: 26px;" title="6. Подумаю: Отработка ухода от ответа">cr6</th>
-                <th style="text-align: center; width: 26px;" title="7. Кейсы: Приведение пруфов и оцифрованных кейсов">cr7</th>
-                <th style="text-align: center; width: 26px;" title="8. Закрытие: Попытка назначения встречи или сделки">cr8</th>
-                <th style="text-align: center; width: 26px;" title="9. Приветствие: Корректное вступление и представление">cr9</th>
-                <th style="text-align: center; width: 26px;" title="10. Чистота речи: Отсутствие слов-паразитов и пауз">cr10</th>
-                <th style="text-align: center; width: 26px;" title="11. Talk/Listen: Баланс речи менеджера и клиента">cr11</th>
-                <th style="text-align: center; width: 26px;" title="12. Итоги: Резюмирование договоренностей в конце">cr12</th>
-                <th style="text-align: center; width: 26px;" title="13. Маржа: Защита базовой цены и маржинальности">cr13</th>
-
-                <th style="text-align: center; width: 65px;">Балл</th>
-                <th style="text-align: center; width: 85px;">Статус</th>
-                <th style="text-align: right; width: 95px;">Риск, ₽</th>
-                <th style="text-align: center; width: 85px;">Разбор</th>
-              </tr>
-            </thead>
-            <tbody id="callsTableBody">
-              <!-- Dynamically populated via JS -->
-            </tbody>
-            <tfoot id="callsTableFoot" style="background: rgba(14, 18, 28, 0.95); font-weight: 700; border-top: 2px solid rgba(115, 82, 255, 0.4);">
-              <!-- Dynamically computed summary row -->
-            </tfoot>
-          </table>
-
+        <div id="callsTableContainer">
+          <div id="callsListContainer" class="calls-list">
+            <!-- Modern Card-List Dynamically populated via filterCallsTable -->
+          </div>
+          <div id="callsListSummary" style="margin-top: 14px; padding: 14px 20px; background: rgba(255, 255, 255, 0.02); border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.06); display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: var(--text-secondary); flex-wrap: wrap; gap: 12px;">
+            <!-- Dynamically computed team summary -->
+          </div>
         </div>
       </div>
 
