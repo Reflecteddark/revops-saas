@@ -1246,29 +1246,29 @@ const CALLS_DATA = [
     function setAccentTheme(themeName) {
       const root = document.documentElement;
       const themes = {
-        cyan: {
-          brand: '#33d1ff',
-          brandGlow: 'rgba(51, 209, 255, 0.35)',
-          borderFocus: 'rgba(51, 209, 255, 0.45)'
-        },
         purple: {
-          brand: '#b899eb',
-          brandGlow: 'rgba(184, 153, 235, 0.35)',
-          borderFocus: 'rgba(184, 153, 235, 0.45)'
+          brand: '#7c3aed',
+          brandGlow: 'rgba(124, 58, 237, 0.40)',
+          borderFocus: 'rgba(124, 58, 237, 0.60)'
+        },
+        cyan: {
+          brand: '#00d4ff',
+          brandGlow: 'rgba(0, 212, 255, 0.35)',
+          borderFocus: 'rgba(0, 212, 255, 0.45)'
         },
         emerald: {
-          brand: '#6be6d3',
-          brandGlow: 'rgba(107, 230, 211, 0.35)',
-          borderFocus: 'rgba(107, 230, 211, 0.45)'
+          brand: '#10b981',
+          brandGlow: 'rgba(16, 185, 129, 0.35)',
+          borderFocus: 'rgba(16, 185, 129, 0.45)'
         },
         amber: {
-          brand: '#ffb55b',
-          brandGlow: 'rgba(255, 181, 91, 0.35)',
-          borderFocus: 'rgba(255, 181, 91, 0.45)'
+          brand: '#fbbf24',
+          brandGlow: 'rgba(251, 191, 36, 0.35)',
+          borderFocus: 'rgba(251, 191, 36, 0.45)'
         }
       };
 
-      const t = themes[themeName] || themes.cyan;
+      const t = themes[themeName] || themes.purple;
       root.style.setProperty('--brand', t.brand);
       root.style.setProperty('--brand-glow', t.brandGlow);
       root.style.setProperty('--border-focus', t.borderFocus);
@@ -1331,11 +1331,11 @@ const CALLS_DATA = [
     function updateAllChartsTheme(mode) {
       const isLight = mode === 'light';
       const gridColor = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
-      const tickColor = isLight ? '#64748b' : '#94a3b8';
-      const tooltipBg = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(14, 18, 28, 0.95)';
+      const tickColor = isLight ? '#64748b' : '#a1a1aa';
+      const tooltipBg = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(13, 13, 20, 0.95)';
       const tooltipTitle = isLight ? '#0f172a' : '#ffffff';
       const tooltipBody = isLight ? '#334155' : '#cbd5e1';
-      const tooltipBorder = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)';
+      const tooltipBorder = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(124, 58, 237, 0.25)';
 
       // 1. Revenue Pacing Chart
       if (typeof revPacingChartInstance !== 'undefined' && revPacingChartInstance) {
@@ -1417,10 +1417,10 @@ const CALLS_DATA = [
             developDissectionChartInstance.options.scales.x.ticks.color = isLight ? '#808191' : '#7c8099';
           }
           if (developDissectionChartInstance.options.plugins?.tooltip) {
-            developDissectionChartInstance.options.plugins.tooltip.backgroundColor = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(17, 19, 29, 0.95)';
+            developDissectionChartInstance.options.plugins.tooltip.backgroundColor = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(13, 13, 20, 0.95)';
             developDissectionChartInstance.options.plugins.tooltip.titleColor = isLight ? '#11142d' : '#ffffff';
             developDissectionChartInstance.options.plugins.tooltip.bodyColor = isLight ? '#4b5563' : '#cbd5e1';
-            developDissectionChartInstance.options.plugins.tooltip.borderColor = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)';
+            developDissectionChartInstance.options.plugins.tooltip.borderColor = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(124, 58, 237, 0.25)';
           }
           developDissectionChartInstance.update('none');
         } catch (e) {}
@@ -1463,7 +1463,7 @@ const CALLS_DATA = [
             {
               label: 'Выручка',
               data: [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
-              backgroundColor: '#6c5dd3',
+              backgroundColor: '#7c3aed',
               borderRadius: 6,
               borderSkipped: false,
               barPercentage: 0.55,
@@ -1486,10 +1486,10 @@ const CALLS_DATA = [
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(17, 19, 29, 0.95)',
+              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(13, 13, 20, 0.95)',
               titleColor: isLight ? '#11142d' : '#ffffff',
               bodyColor: isLight ? '#4b5563' : '#cbd5e1',
-              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(124, 58, 237, 0.25)',
               borderWidth: 1,
               padding: 10,
               callbacks: {
@@ -1525,7 +1525,7 @@ const CALLS_DATA = [
           datasets: [
             {
               data: [34, 25, 17, 12, 6],
-              backgroundColor: ['#6c5dd3', '#f36594', '#00d4ff', '#ffb55b', '#fb7185'],
+              backgroundColor: ['#7c3aed', '#a78bfa', '#00d4ff', '#fbbf24', '#f43f5e'],
               borderWidth: 0,
               hoverOffset: 4
             }
@@ -1552,13 +1552,13 @@ const CALLS_DATA = [
       if (!ctx) return;
       const isLight = getThemeMode() === 'light';
       const c2d = ctx.getContext('2d');
-      let grad1 = 'rgba(108, 93, 211, 0.15)';
+      let grad1 = 'rgba(124, 58, 237, 0.15)';
       let grad2 = 'rgba(243, 101, 148, 0.12)';
       if (c2d) {
         const h = ctx.clientHeight || 180;
         const g1 = c2d.createLinearGradient(0, 0, 0, h);
-        g1.addColorStop(0, 'rgba(108, 93, 211, 0.38)');
-        g1.addColorStop(1, 'rgba(108, 93, 211, 0.00)');
+        g1.addColorStop(0, 'rgba(124, 58, 237, 0.40)');
+        g1.addColorStop(1, 'rgba(124, 58, 237, 0.00)');
         grad1 = g1;
 
         const g2 = c2d.createLinearGradient(0, 0, 0, h);
@@ -1578,7 +1578,7 @@ const CALLS_DATA = [
             {
               label: 'Тренд',
               data: [310, 420, 390, 520, 460, 590, 540],
-              borderColor: '#6c5dd3',
+              borderColor: '#7c3aed',
               backgroundColor: grad1,
               borderWidth: 2.8,
               tension: 0.45,
@@ -2254,12 +2254,16 @@ const CALLS_DATA = [
       initSpotlight();
       initWaveformScrubbing();
 
-      const savedTheme = localStorage.getItem('revops_accent_theme') || 'cyan';
+      const savedTheme = localStorage.getItem('revops_accent_theme') || 'purple';
       if (typeof setAccentTheme === 'function') {
         setAccentTheme(savedTheme);
       }
 
-      const savedMode = localStorage.getItem('revops_theme_mode') || 'light';
+      let savedMode = localStorage.getItem('revops_theme_mode');
+      if (!savedMode || savedMode === 'light') {
+        savedMode = 'dark';
+        try { localStorage.setItem('revops_theme_mode', 'dark'); } catch (e) {}
+      }
       if (typeof setThemeMode === 'function') {
         setThemeMode(savedMode);
       }
