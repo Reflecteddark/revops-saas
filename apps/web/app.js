@@ -568,7 +568,13 @@ const CALLS_DATA = [
         const p = Math.min((now - start) / duration, 1);
         const eased = 1 - Math.pow(1 - p, 4); // ease-out quart
         el.textContent = fmt(Math.round(target * eased)) + ' ₽';
+        el.style.filter = `blur(${(1 - p) * 2}px)`;
+        el.style.opacity = 0.7 + 0.3 * p;
         if (p < 1) requestAnimationFrame(tick);
+        else {
+          el.style.filter = '';
+          el.style.opacity = '1';
+        }
       }
       requestAnimationFrame(tick);
     }

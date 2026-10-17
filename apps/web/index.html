@@ -6,10 +6,10 @@
   <title>RevOps Platform V20.0 — Behavioral Intelligence Edition | TNT-001</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.ico">
 
-  <!-- Typography -->
+  <!-- Typography (Tier-1 SaaS: Inter Tight, Instrument Serif, Inter, JetBrains Mono) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Chart.js 4.4.2 via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -90,8 +90,8 @@
       --radius-xs: 6px;
       --radius-sm: 10px;
       --radius-md: 14px;
-      --radius-lg: 18px;
-      --radius-xl: 22px;
+      --radius-lg: 22px;
+      --radius-xl: 24px;
       --radius-pill: 9999px;
 
       /* Develop Elevation & Shadows */
@@ -162,6 +162,13 @@
       overflow-x: hidden;
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
+    }
+
+    /* All Headings — Tier-1 Typography (Inter Tight 600, dense tracking) */
+    h1, h2, h3, .develop-greeting-title, .bento-card-title, .develop-card-title {
+      font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.04em;
+      font-weight: 600;
     }
 
     /* SnowUI Global Native Scrollbar Replacement */
@@ -372,8 +379,8 @@
     .develop-card {
       background: #0a0a10;
       border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 16px;
-      padding: 22px 24px;
+      border-radius: 22px;
+      padding: 28px 28px;
       box-shadow: none;
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
@@ -510,11 +517,68 @@
       gap: 6px;
     }
 
-    /* Status Badges */
-    .badge-won { color: #34d399; background: rgba(16, 185, 129, 0.12); padding: 2px 7px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.7rem; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-lost { color: #fb7185; background: rgba(244, 63, 94, 0.12); padding: 2px 7px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.7rem; border: 1px solid rgba(244, 63, 94, 0.3); }
-    .badge-warn { color: #fbbf24; background: rgba(245, 158, 11, 0.12); padding: 2px 7px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.7rem; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-info { color: #38bdf8; background: rgba(6, 182, 212, 0.12); padding: 2px 7px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.7rem; border: 1px solid rgba(6, 182, 212, 0.3); }
+    /* Status Badges — Flat Mono with Status Dot */
+    .badge-won, .badge-lost, .badge-warn, .badge-info {
+      background: transparent !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      color: rgba(255, 255, 255, 0.6) !important;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 99px;
+      display: inline-flex;
+      align-items: center;
+      letter-spacing: 0.02em;
+    }
+    .badge-won::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+    .badge-lost::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fb7185;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+    .badge-warn::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fbbf24;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+    .badge-info::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #38bdf8;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+
+    html[data-theme="light"] .badge-won,
+    html[data-theme="light"] .badge-lost,
+    html[data-theme="light"] .badge-warn,
+    html[data-theme="light"] .badge-info {
+      border: 1px solid rgba(0, 0, 0, 0.1) !important;
+      color: rgba(0, 0, 0, 0.65) !important;
+    }
 
     /* Tables */
     .table-container {
@@ -607,11 +671,11 @@
     }
     .tab-view.active {
       display: block;
-      animation: tabEnter 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: tabEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     @keyframes tabEnter {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: scale(0.98); }
+      to   { opacity: 1; transform: scale(1); }
     }
 
     /* Auth Gate Overlay */
@@ -1070,8 +1134,8 @@
     }
 
     .mp-content-area {
-      padding: 24px 28px 80px;
-      max-width: 1440px;
+      padding: 32px 40px 100px;
+      max-width: 1360px;
       margin: 0 auto;
       width: 100%;
     }
@@ -2721,30 +2785,61 @@
     .develop-right-col {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 32px;
     }
 
+    .develop-editorial-kpis {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 28px;
+      margin-bottom: 8px;
+    }
 
+    html[data-theme="light"] .develop-editorial-kpis {
+      border-bottom-color: rgba(0, 0, 0, 0.08);
+    }
+    html[data-theme="light"] .develop-editorial-kpis > div:last-child {
+      border-left-color: rgba(0, 0, 0, 0.08) !important;
+    }
+
+    @media (max-width: 768px) {
+      .develop-editorial-kpis {
+        grid-template-columns: 1fr !important;
+        gap: 24px !important;
+      }
+      .develop-editorial-kpis > div:first-child {
+        padding-right: 0 !important;
+      }
+      .develop-editorial-kpis > div:last-child {
+        padding-left: 0 !important;
+        border-left: none !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding-top: 24px;
+      }
+    }
 
     .kpi-hero {
-      font-family: 'Inter', sans-serif;
-      font-size: clamp(2.75rem, 5.5vw, 4.5rem);
-      font-weight: 500;
-      letter-spacing: -0.055em;
-      line-height: 0.92;
-      font-variant-numeric: tabular-nums;
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-style: italic;
+      font-weight: 400;
+      letter-spacing: -0.03em;
+      font-size: clamp(3.5rem, 7vw, 6rem);
+      line-height: 0.85;
+      background: none;
+      -webkit-background-clip: unset;
+      -webkit-text-fill-color: #ffffff;
+      background-clip: unset;
       color: #ffffff;
-      background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.55) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
     }
 
     html[data-theme="light"] .kpi-hero {
-      background: linear-gradient(180deg, #11142d 0%, #4b5563 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      background: none;
+      -webkit-background-clip: unset;
+      -webkit-text-fill-color: #11142d;
+      background-clip: unset;
+      color: #11142d;
     }
 
     .kpi-hero-label {
@@ -3519,7 +3614,7 @@
       </div>
 
       <div style="font-size: 0.7rem; font-weight: 700; color: #a78bfa; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px;">
-        🔒 Закрытый контур &bull; Тенант TNT-001
+        Закрытый контур &bull; Тенант TNT-001
       </div>
       <h2 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 8px;">
         Вход в RevOps OS
@@ -3529,7 +3624,7 @@
       </p>
 
       <div id="authErrorBox" class="auth-error">
-        <strong>⛔ Доступ запрещён:</strong> Неверный логин или ключ доступа. Попробуйте снова или обратитесь к администратору.
+        <strong>Доступ запрещён:</strong> Неверный логин или ключ доступа. Попробуйте снова или обратитесь к администратору.
       </div>
 
       <form id="authForm" onsubmit="handleAuthSubmit(event)">
@@ -3566,7 +3661,7 @@
       <!-- Security Info Footer -->
       <div style="margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center;">
         <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.5;">
-          🔐 Закрытый контур RevOps Enterprise. Для получения или сброса ключа доступа обратитесь к администратору или в бот <a href="https://t.me/RevOps_Super_Audit_Bot" target="_blank" rel="noopener noreferrer" style="color: var(--accent-cyan); text-decoration: none;">@RevOps_Super_Audit_Bot</a>
+          Закрытый контур RevOps Enterprise. Для получения или сброса ключа доступа обратитесь к администратору или в бот <a href="https://t.me/RevOps_Super_Audit_Bot" target="_blank" rel="noopener noreferrer" style="color: var(--accent-cyan); text-decoration: none;">@RevOps_Super_Audit_Bot</a>
         </div>
       </div>
     </div>
@@ -3699,10 +3794,16 @@
         </div>
 
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <!-- Search Pill -->
-          <div class="develop-search-pill">
+          <!-- Live Status Indicator (Tier-1 SaaS) -->
+          <div style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 99px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #34d399;">
+            <span class="status-dot dot-won" style="animation: livePulse 2s infinite; width: 6px; height: 6px;"></span>
+            <span>LIVE &bull; синхр. 12с назад</span>
+          </div>
+
+          <!-- Search Pill with ⌘K Hint -->
+          <div class="develop-search-pill" style="position: relative;">
             <input type="text" id="globalDevelopSearch" placeholder="Поиск сделок..." onkeydown="if(event.key==='Enter') openCommandPalette()">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <kbd style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; padding: 2px 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: rgba(255,255,255,0.4); pointer-events: none; font-family: 'JetBrains Mono', monospace;">⌘K</kbd>
           </div>
 
           <!-- Develop Theme Mode Toggle Pill (Sun / Moon) -->
@@ -3745,28 +3846,22 @@
         <!-- ================= LEFT COLUMN (63%) ================= -->
         <div class="develop-left-col">
           
-          <!-- Row 1: 2 KPI Cards -->
-          <div class="develop-kpi-pair">
-            <!-- Card 1: Total balance / Факт закрыто (Hero) -->
-            <div class="develop-card card-featured">
-              <div class="develop-card-header">
-                <div>
-                  <div class="kpi-hero-label">Главный KPI &bull; Выручка</div>
-                  <span class="develop-card-title">Факт закрыто</span>
-                </div>
+          <!-- Row 1: Editorial Hybrid KPI Block (Linear/Vercel style) -->
+          <div class="develop-editorial-kpis" style="display: grid; grid-template-columns: 1.35fr 1fr; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 28px; margin-bottom: 8px;">
+            <!-- Hero — без рамки -->
+            <div style="padding-right: 36px;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                <div class="kpi-hero-label" style="margin-bottom: 0;">Главный KPI &bull; Октябрь 2026</div>
                 <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
               </div>
-              <div class="develop-kpi-row" style="align-items: flex-start; margin-top: 8px;">
-                <div>
-                  <div class="kpi-hero kpi-hero-live" id="metricFactVal">500 000 ₽</div>
-                  <div class="develop-pill pill-pos" style="margin-top: 14px;">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
-                    <span id="metricFactBadge">+10.0%</span>
-                    <span class="pill-sub">к плану</span>
-                  </div>
+              <div class="kpi-hero kpi-hero-live" id="metricFactVal">500 000 ₽</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+                <div class="develop-pill pill-pos">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
+                  <span id="metricFactBadge">+10.0%</span>
+                  <span class="pill-sub">к плану</span>
                 </div>
-                <!-- Sparkline spline SVG wave -->
-                <svg class="develop-sparkline" viewBox="0 0 120 40" style="margin-top: 8px;">
+                <svg class="develop-sparkline" viewBox="0 0 120 40" style="width: 100px; height: 32px;">
                   <defs>
                     <linearGradient id="splineFactWon" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.45"/>
@@ -3779,25 +3874,20 @@
               </div>
             </div>
 
-            <!-- Card 2: Total expenses / План таргета -->
-            <div class="develop-card">
-              <div class="develop-card-header">
-                <div>
-                  <div class="kpi-hero-label">Таргет &bull; План месяца</div>
-                  <span class="develop-card-title">План месяца</span>
-                </div>
+            <!-- Plan — без рамки, с divider слева -->
+            <div style="padding-left: 36px; border-left: 1px solid rgba(255,255,255,0.06);">
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                <div class="kpi-hero-label" style="margin-bottom: 0;">Таргет &bull; План месяца</div>
                 <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
               </div>
-              <div class="develop-kpi-row" style="align-items: flex-start; margin-top: 8px;">
-                <div>
-                  <div class="kpi-secondary" id="metricPlanVal">5 000 000 ₽</div>
-                  <div class="develop-pill pill-neg" style="margin-top: 14px;">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-                    <span>-4.5M ₽</span>
-                    <span class="pill-sub">дефицит плана</span>
-                  </div>
+              <div class="kpi-secondary" id="metricPlanVal">5 000 000 ₽</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+                <div class="develop-pill pill-neg">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+                  <span>-4.5M ₽</span>
+                  <span class="pill-sub">дефицит плана</span>
                 </div>
-                <svg class="develop-sparkline" viewBox="0 0 120 40" style="margin-top: 8px;">
+                <svg class="develop-sparkline" viewBox="0 0 120 40" style="width: 100px; height: 32px;">
                   <defs>
                     <linearGradient id="splineTarget" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stop-color="#fb7185" stop-opacity="0.35"/>
@@ -4067,9 +4157,9 @@
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="badge-won" style="font-size: 0.68rem; padding: 3px 8px;"><span class="status-dot dot-won"></span> LIVE &bull; 24/7 AUTONOMOUS</span>
+            <span class="badge-won" style="font-size: 0.68rem; padding: 3px 8px;">LIVE &bull; 24/7 AUTONOMOUS</span>
             <button id="btnSelfHealingAuditPulse" class="btn btn-primary" onclick="triggerSelfHealingAudit()" style="padding: 6px 14px; font-size: 0.74rem;">
-              <span>⚡ Запустить Self-Healing аудит</span>
+              <span>Запустить Self-Healing аудит</span>
             </button>
           </div>
         </div>
@@ -4087,7 +4177,7 @@
         <div class="bento-card-header">
           <div>
             <div style="font-size: 0.7rem; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.08em;">
-              ⚡ Экспресс-калькулятор упущенной прибыли ОП
+              Экспресс-калькулятор упущенной прибыли ОП
             </div>
             <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-top: 2px;">
               Диагностика потерь и скрытых резервов за 30 секунд
@@ -4141,19 +4231,19 @@
         <!-- Calculated Summary Boxes -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px;">
           <div style="padding: 16px; background: rgba(244,63,94,0.12); border: 1px solid rgba(244,63,94,0.35); border-radius: var(--radius-md);">
-            <div style="font-size: 0.74rem; font-weight: 700; color: #fca5a5;">🔴 ВЫЯВЛЕННЫЙ РИСК ПОТЕРЬ</div>
+            <div style="font-size: 0.74rem; font-weight: 700; color: #fca5a5;">ВЫЯВЛЕННЫЙ РИСК ПОТЕРЬ</div>
             <div id="expLostRev" style="font-size: 1.6rem; font-weight: 800; color: #fb7185; font-family: 'JetBrains Mono', monospace; margin-top: 4px;">340 000 ₽</div>
             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Упущенная выручка в месяц по 4 узким местам</div>
           </div>
 
           <div style="padding: 16px; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); border-radius: var(--radius-md);">
-            <div style="font-size: 0.74rem; font-weight: 700; color: #34d399;">🚀 БАЗОВЫЙ ПЛАН (+30%)</div>
+            <div style="font-size: 0.74rem; font-weight: 700; color: #34d399;">БАЗОВЫЙ ПЛАН (+30%)</div>
             <div id="expBasePlan" style="font-size: 1.6rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace; margin-top: 4px;">602 000 ₽</div>
             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Касса To-Be при устранении ключевых ошибок</div>
           </div>
 
           <div style="padding: 16px; background: rgba(115,82,255,0.15); border: 1px solid rgba(115,82,255,0.4); border-radius: var(--radius-md);">
-            <div style="font-size: 0.74rem; font-weight: 700; color: #c4b5fd;">⭐ ОПТИМИСТИЧНЫЙ (+50%)</div>
+            <div style="font-size: 0.74rem; font-weight: 700; color: #c4b5fd;">ОПТИМИСТИЧНЫЙ (+50%)</div>
             <div id="expOptPlan" style="font-size: 1.6rem; font-weight: 800; color: #c4b5fd; font-family: 'JetBrains Mono', monospace; margin-top: 4px;">670 000 ₽</div>
             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Потенциал кассы с автодожимом WhatsApp</div>
           </div>
@@ -4231,7 +4321,7 @@
 
       <div style="padding: 14px 18px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.1rem;">⚠️</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <div style="font-size: 0.82rem; font-weight: 700; color: #fde68a;">
             ФОКУС ПЛАНЁРКИ: 5 СДЕЛОК ПОД УГРОЗОЙ СРЫВА НА 2 500 000 ₽ &bull; ТРЕБУЕТСЯ 15 МИНУТ КОНТРОЛЯ РОПа
           </div>
@@ -4246,7 +4336,7 @@
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
           <div>
             <div style="font-size: 0.7rem; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.08em;">
-              🏆 РЕЙТИНГ И ДИСЦИПЛИНА МЕНЕДЖЕРОВ ОП
+              РЕЙТИНГ И ДИСЦИПЛИНА МЕНЕДЖЕРОВ ОП
             </div>
             <h2 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin-top: 2px;">
               Пьедестал производительности отдела продаж
@@ -4265,7 +4355,7 @@
               <div class="podium-avatar">Н</div>
             </div>
             <div class="podium-rep-name">Надежда</div>
-            <div class="podium-role-badge">🥈 2 МЕСТО &bull; ЭТАЛОН СКРИПТА</div>
+            <div class="podium-role-badge">2 МЕСТО &bull; ЭТАЛОН СКРИПТА</div>
             <div class="podium-metrics-box">
               <div class="podium-metric-row">
                 <span style="color: var(--text-muted);">Качество речи:</span>
@@ -4285,11 +4375,11 @@
           <!-- 1st Place: Заряна (Center - Raised) -->
           <div class="podium-card rank-1" style="cursor: pointer;" onclick="filterRepAudit('Заряна')" title="Нажмите для фильтрации звонков Заряны">
             <div class="podium-avatar-wrap">
-              <span class="podium-crown">👑</span>
+              <span class="podium-crown" style="font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fbbf24;">ТОП-1</span>
               <div class="podium-avatar">З</div>
             </div>
             <div class="podium-rep-name">Заряна</div>
-            <div class="podium-role-badge" style="color: #f59e0b; font-weight: 800;">🥇 1 МЕСТО &bull; ТОП-ПЕРФОРМЕР</div>
+            <div class="podium-role-badge" style="color: #f59e0b; font-weight: 800;">1 МЕСТО &bull; ТОП-ПЕРФОРМЕР</div>
             <div class="podium-metrics-box" style="border: 1px solid rgba(245, 158, 11, 0.25);">
               <div class="podium-metric-row">
                 <span style="color: var(--text-muted);">Качество речи:</span>
@@ -4312,7 +4402,7 @@
               <div class="podium-avatar">В</div>
             </div>
             <div class="podium-rep-name">Виктория</div>
-            <div class="podium-role-badge">🥉 3 МЕСТО &bull; СТАБИЛЬНОСТЬ</div>
+            <div class="podium-role-badge">3 МЕСТО &bull; СТАБИЛЬНОСТЬ</div>
             <div class="podium-metrics-box">
               <div class="podium-metric-row">
                 <span style="color: var(--text-muted);">Качество речи:</span>
@@ -4336,7 +4426,7 @@
             <div class="hazard-rep-avatar">С</div>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="delta-badge delta-neg"><span class="delta-dot"></span>🚨 P0 ЗОНА КРИТИЧЕСКОГО РИСКА</span>
+                <span class="delta-badge delta-neg"><span class="delta-dot"></span>P0 ЗОНА КРИТИЧЕСКОГО РИСКА</span>
                 <strong style="color: #fff; font-size: 0.88rem;">Светлана</strong>
                 <span style="font-size: 0.74rem; color: #fca5a5;">(1 000 000 ₽ в работе &bull; 2 сделки)</span>
               </div>
@@ -4346,7 +4436,7 @@
             </div>
           </div>
           <button class="btn btn-emerald" onclick="event.stopPropagation(); document.getElementById('script-case01').scrollIntoView({behavior: 'smooth'})" style="font-size: 0.74rem;">
-            <span>⚡ Разбор звонков и дожим (15 мин)</span>
+            <span>Разбор звонков и дожим (15 мин)</span>
           </button>
         </div>
       </div>
@@ -4356,7 +4446,7 @@
         <div class="bento-card-header" style="flex-wrap: wrap; gap: 12px;">
           <div>
             <div style="font-size: 0.7rem; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.08em;">
-              📊 СРАВНИТЕЛЬНЫЙ АНАЛИЗ КОМАНДЫ РОПа
+              СРАВНИТЕЛЬНЫЙ АНАЛИЗ КОМАНДЫ РОПа
             </div>
             <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">
               Интерактивная аналитика перформанса менеджеров
@@ -4565,9 +4655,9 @@
         <div class="meter-card">
           <div class="meter-header">
             <div class="meter-title">
-              <span>🎙️ Баланс речевой доминанты (Talk-to-Listen)</span>
+              <span>Баланс речевой доминанты (Talk-to-Listen)</span>
             </div>
-            <span class="delta-badge delta-pos"><span class="delta-dot"></span>🟢 ИДЕАЛЬНЫЙ БАЛАНС</span>
+            <span class="delta-badge delta-pos"><span class="delta-dot"></span>ИДЕАЛЬНЫЙ БАЛАНС</span>
           </div>
 
           <div class="segmented-bar">
@@ -4594,7 +4684,7 @@
         <div class="meter-card">
           <div class="meter-header">
             <div class="meter-title">
-              <span>📊 Спектр качества звонков (10 диалогов)</span>
+              <span>Спектр качества звонков (10 диалогов)</span>
             </div>
             <span class="delta-badge delta-cyan"><span class="delta-dot"></span>Gemini Score 9.1</span>
           </div>
@@ -4631,7 +4721,7 @@
         <div class="bento-card-header" style="flex-wrap: wrap; gap: 12px;">
           <div>
             <div style="font-size: 0.7rem; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.08em;">
-              🕸️ 13-ФАКТОРНЫЙ РЕЧЕВОЙ РАДАР СТАНДАРТОВ B2B (GEMINI AI)
+              13-ФАКТОРНЫЙ РЕЧЕВОЙ РАДАР СТАНДАРТОВ B2B (GEMINI AI)
             </div>
             <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">
               Карта речевых компетенций: Эталон vs Факт
@@ -4672,7 +4762,7 @@
       <div style="background: rgba(14,18,28,0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <div style="flex: 1; min-width: 260px; position: relative;">
-            <input type="text" id="transcriptSearch" class="auth-input" style="padding-left: 36px; font-size: 0.82rem;" placeholder="🔎 Смысловой поиск по стенограммам (дорого, Битрикс, скидка, матрас, шеф, договор, инвестиции)..." oninput="filterCallsTable()">
+            <input type="text" id="transcriptSearch" class="auth-input" style="padding-left: 36px; font-size: 0.82rem;" placeholder="Смысловой поиск по стенограммам (дорого, Битрикс, скидка, матрас, шеф, договор, инвестиции)..." oninput="filterCallsTable()">
             <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           </div>
           <span id="searchResultBadge" class="badge-info" style="font-size: 0.76rem; padding: 6px 12px;">10 из 10 звонков</span>
@@ -4692,9 +4782,9 @@
 
             <select id="filterStatus" onchange="filterCallsTable()" style="display: none;">
               <option value="all">Все статусы</option>
-              <option value="won">🟢 Эталон (11-13 баллов)</option>
-              <option value="norm">🟡 Норма (7-10 баллов)</option>
-              <option value="risk">🔴 Слив (&lt;9 баллов / нет Next Step)</option>
+              <option value="won">Эталон (11-13 баллов)</option>
+              <option value="norm">Норма (7-10 баллов)</option>
+              <option value="risk">Слив (&lt;9 баллов / нет Next Step)</option>
             </select>
 
             <!-- Segmented Pills for Manager -->
@@ -4738,18 +4828,18 @@
       <div class="mp-ag-toolbar">
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <button class="btn btn-ghost" onclick="showToast('Столбцы Ag-Grid', 'Отображены все 13 параметров B2B-аудита речи.')" style="font-size: 0.74rem;">
-            <span>⚙️ Столбцы (13) ▾</span>
+            <span>Столбцы (13) ▾</span>
           </button>
           <button class="btn btn-ghost" onclick="document.getElementById('transcriptSearch').focus()" style="font-size: 0.74rem;">
-            <span>🔍 Фильтры</span>
+            <span>Фильтры</span>
           </button>
           <button class="btn btn-emerald" onclick="exportCallsToCSV()" style="font-size: 0.74rem;">
             <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            <span>📥 Скачать Excel (CSV)</span>
+            <span>Экспорт CSV</span>
           </button>
           <div style="display: flex; background: rgba(255,255,255,0.04); padding: 2px; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle); margin-left: 6px;">
-            <button id="btnDensityPro" class="btn btn-ghost" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill); background: rgba(115,82,255,0.3); color: #fff;" onclick="setTableDensity('excel-pro')">📊 Excel Pro (Плотный)</button>
-            <button id="btnDensityComfort" class="btn btn-ghost" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill);" onclick="setTableDensity('comfort')">🛋️ Comfort</button>
+            <button id="btnDensityPro" class="btn btn-ghost" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill); background: rgba(115,82,255,0.3); color: #fff;" onclick="setTableDensity('excel-pro')">Excel Pro (Плотный)</button>
+            <button id="btnDensityComfort" class="btn btn-ghost" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill);" onclick="setTableDensity('comfort')">Comfort</button>
           </div>
 
           <button class="btn btn-ghost" onclick="clearSearch()" style="font-size: 0.74rem;">
@@ -4782,7 +4872,7 @@
         <div class="bento-card-header">
           <div>
             <div style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">
-              🌉 Финансовый мост выручки (Revenue Bridge To-Be)
+              Финансовый мост выручки (Revenue Bridge To-Be)
             </div>
             <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
               От факта 500 000 ₽ к целевой кассе 3 550 000 ₽
@@ -4796,17 +4886,17 @@
             <div style="font-size: 0.72rem; color: var(--text-muted);">Факт выручки (As-Is)</div>
             <div style="font-size: 1.3rem; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace;">500 000 ₽</div>
           </div>
-          <div style="font-size: 1.3rem; color: var(--text-muted);">➕</div>
+          <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">+</div>
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: var(--text-muted);">Взвешенный SSOT пайплайн</div>
             <div style="font-size: 1.3rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace;">2 375 000 ₽</div>
           </div>
-          <div style="font-size: 1.3rem; color: var(--text-muted);">➕</div>
+          <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">+</div>
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: var(--text-muted);">Возврат 30% утечек ОП</div>
             <div style="font-size: 1.3rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace;">+675 000 ₽</div>
           </div>
-          <div style="font-size: 1.3rem; color: var(--text-muted);">➔</div>
+          <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">→</div>
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: #a78bfa; font-weight: 700;">ИТОГО КАССА TO-BE</div>
             <div style="font-size: 1.5rem; font-weight: 800; color: #a78bfa; font-family: 'JetBrains Mono', monospace;">3 550 000 ₽</div>
@@ -4819,7 +4909,7 @@
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
           <div>
             <div style="font-size: 0.7rem; font-weight: 700; color: #fb7185; text-transform: uppercase; letter-spacing: 0.08em;">
-              📉 СТУПЕНЧАТАЯ ВОРОНКА УТЕЧЕК ВЫРУЧКИ (FUNNEL LOSS STEPPER)
+              СТУПЕНЧАТАЯ ВОРОНКА УТЕЧЕК ВЫРУЧКИ (FUNNEL LOSS STEPPER)
             </div>
             <h2 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin-top: 2px;">
               От валового таргета 5 000 000 ₽ к защищенной кассе SSOT 2 375 000 ₽
@@ -4931,7 +5021,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="delta-badge delta-pos"><span class="delta-dot"></span>🛡️ SSOT ГАРАНТИЯ</span>
+                <span class="delta-badge delta-pos"><span class="delta-dot"></span>SSOT ГАРАНТИЯ</span>
                 <span class="step-amount-val" style="color: #34d399; font-size: 1.25rem;">2 375 000 ₽</span>
               </div>
             </div>
@@ -5251,7 +5341,7 @@
         <div class="bento-card-header">
           <div>
             <div style="font-size: 0.7rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.08em;">
-              📊 Влияние речевого ИИ на выручку (AI Impact Matrix)
+              Влияние речевого ИИ на выручку (AI Impact Matrix)
             </div>
             <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
               Конверсия и выручка по корзинам ИИ-оценок (Total Score)
@@ -5274,7 +5364,7 @@
             </thead>
             <tbody>
               <tr>
-                <td><span class="badge-lost">🔴 Зона риска (Низкий балл)</span></td>
+                <td><span class="badge-lost">Зона риска (Низкий балл)</span></td>
                 <td>0 - 6 баллов</td>
                 <td>1 звонок</td>
                 <td>4.0%</td>
@@ -5282,7 +5372,7 @@
                 <td>1.0x (Базовый слив)</td>
               </tr>
               <tr>
-                <td><span class="badge-warn">🟡 Рабочая норма (Средний)</span></td>
+                <td><span class="badge-warn">Рабочая норма (Средний)</span></td>
                 <td>7 - 10 баллов</td>
                 <td>5 звонков</td>
                 <td>22.0%</td>
@@ -5290,7 +5380,7 @@
                 <td>3.2x рост</td>
               </tr>
               <tr style="background: rgba(16,185,129,0.08);">
-                <td><span class="badge-won">🟢 Эталонные переговоры (Высокий)</span></td>
+                <td><span class="badge-won">Эталонные переговоры (Высокий)</span></td>
                 <td>11 - 13 баллов</td>
                 <td>4 звонка</td>
                 <td>68.0%</td>
@@ -5302,7 +5392,7 @@
         </div>
 
         <div style="padding: 14px 18px; background: rgba(115,82,255,0.1); border: 1px solid rgba(115,82,255,0.3); border-radius: var(--radius-md); font-size: 0.8rem; color: #c4b5fd;">
-          💡 <strong>Инсайт для собственника:</strong> Сделки с оценкой ИИ 11–13 баллов закрываются в <strong>4.8 раза чаще</strong>, чем в зоне риска (0–6 баллов)! При балле &le;6 вероятность победы ниже 5%.
+          <strong>Инсайт для собственника:</strong> Сделки с оценкой ИИ 11–13 баллов закрываются в <strong>4.8 раза чаще</strong>, чем в зоне риска (0–6 баллов)! При балле &le;6 вероятность победы ниже 5%.
         </div>
       </div>
 
@@ -5337,7 +5427,7 @@
                 <td>Первичный контакт</td>
                 <td><strong style="color: #fff;">Светлана</strong></td>
                 <td><span class="badge-warn">7 / 13</span></td>
-                <td><span class="badge-lost">🔴 Слив на почту (cr1=0, cr4=0)</span></td>
+                <td><span class="badge-lost">Слив на почту (cr1=0, cr4=0)</span></td>
                 <td>Срочный перезвон РОПа: квалифицировать боль и ЛПР</td>
               </tr>
               <tr>
@@ -5347,7 +5437,7 @@
                 <td>Переговоры</td>
                 <td><strong style="color: #fff;">Заряна</strong></td>
                 <td><span class="badge-warn">8 / 13</span></td>
-                <td><span class="badge-lost">🔴 Плавающий слот (cr1=0, cr3=0)</span></td>
+                <td><span class="badge-lost">Плавающий слот (cr1=0, cr3=0)</span></td>
                 <td>РОП: согласовать точное время встречи и статус ЛПР</td>
               </tr>
               <tr>
@@ -5357,7 +5447,7 @@
                 <td>Первичный контакт</td>
                 <td><strong style="color: #fff;">Светлана</strong></td>
                 <td><span class="badge-lost">4 / 13</span></td>
-                <td><span class="badge-lost">🔴 Слив КП на почту (cr1=0, cr8=0)</span></td>
+                <td><span class="badge-lost">Слив КП на почту (cr1=0, cr8=0)</span></td>
                 <td>Срочно подключить РОПа к повторному звонку</td>
               </tr>
             </tbody>
@@ -5449,7 +5539,7 @@
         </div>
 
         <div style="margin-top: 14px; padding: 12px 16px; background: rgba(115, 82, 255, 0.1); border-radius: var(--radius-sm); border: 1px solid rgba(115, 82, 255, 0.3); font-size: 0.8rem; color: #c4b5fd;">
-          <strong>🎯 Прогноз симулятора:</strong> <span id="simVerdictText">При текущих параметрах прогнозная касса составляет 2 100 000 ₽.</span>
+          <strong>Прогноз симулятора:</strong> <span id="simVerdictText">При текущих параметрах прогнозная касса составляет 2 100 000 ₽.</span>
         </div>
       </div>
 
@@ -5496,7 +5586,7 @@
                 <td>3.0%</td>
                 <td><span class="badge-won">1.05 (+5%)</span></td>
                 <td><strong style="font-family: 'JetBrains Mono', monospace;">150 000 ₽</strong></td>
-                <td><span class="badge-won">🟢 Бонус за личные закрытия + надбавка речи (+5%)</span></td>
+                <td><span class="badge-won">Бонус за личные закрытия + надбавка речи (+5%)</span></td>
               </tr>
               <tr>
                 <td><strong>Надежда</strong></td>
@@ -5505,7 +5595,7 @@
                 <td>5.0%</td>
                 <td><span class="badge-won">1.15 (+15%)</span></td>
                 <td><strong style="font-family: 'JetBrains Mono', monospace;">115 000 ₽</strong></td>
-                <td><span class="badge-won">🟢 Максимальный бонус за эталон речи (12.0/13)</span></td>
+                <td><span class="badge-won">Максимальный бонус за эталон речи (12.0/13)</span></td>
               </tr>
               <tr>
                 <td><strong>Виктория</strong></td>
@@ -5514,7 +5604,7 @@
                 <td>0.0%</td>
                 <td><span class="badge-won">1.10 (+10%)</span></td>
                 <td><strong style="font-family: 'JetBrains Mono', monospace;">77 000 ₽</strong></td>
-                <td><span class="badge-won">🟢 Премия за квалификацию + надбавка речи (+10%)</span></td>
+                <td><span class="badge-won">Премия за квалификацию + надбавка речи (+10%)</span></td>
               </tr>
               <tr>
                 <td><strong>Светлана</strong></td>
@@ -5523,13 +5613,13 @@
                 <td>4.0%</td>
                 <td><span class="badge-lost">0.70 (-30%)</span></td>
                 <td><strong style="font-family: 'JetBrains Mono', monospace; color: #fb7185;">52 000 ₽</strong></td>
-                <td><span class="badge-lost">🔴 ДЕПРЕМИРОВАНИЕ (-30% бонуса за срыв Next Step)</span></td>
+                <td><span class="badge-lost">ДЕПРЕМИРОВАНИЕ (-30% бонуса за срыв Next Step)</span></td>
               </tr>
             </tbody>
           </table>
         </div>
         <div style="font-size: 0.78rem; color: #fde68a; padding: 10px 14px; background: rgba(245,158,11,0.1); border-radius: var(--radius-sm); border: 1px solid rgba(245,158,11,0.3);">
-          💡 <strong>Правило RevOps:</strong> При среднем балле звонков менеджера ниже 9.0 из 13, переменная часть бонуса автоматически дисконтируется на 30%.
+          <strong>Правило RevOps:</strong> При среднем балле звонков менеджера ниже 9.0 из 13, переменная часть бонуса автоматически дисконтируется на 30%.
         </div>
       </div>
 
@@ -5629,7 +5719,7 @@
             Автоматическое исправление сбоев, перезапуск потоков и синхронизация финансового контура без участия человека.
           </div>
           <button id="btnSelfHealingAuditSettings" class="btn btn-primary" onclick="triggerSelfHealingAudit()" style="padding: 7px 16px; font-size: 0.76rem;">
-            <span>⚡ Запустить Self-Healing аудит</span>
+            <span>Запустить Self-Healing аудит</span>
           </button>
         </div>
 
@@ -5640,36 +5730,36 @@
       <div class="bento-card" style="margin-bottom: 22px;">
         <div class="bento-card-header">
           <span class="bento-card-title"><span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> Паспорт клиентского контура (RevOps Platform V20.0)</span>
-          <span class="badge-won">🟢 ПОДПИСКА АКТИВНА 24/7</span>
+          <span class="badge-won">ПОДПИСКА АКТИВНА 24/7</span>
         </div>
         <div class="table-container">
           <table>
             <tbody>
               <tr>
-                <td style="width: 280px; color: var(--text-muted);">🏢 Название компании / Тенант:</td>
+                <td style="width: 280px; color: var(--text-muted);">Название компании / Тенант:</td>
                 <td><strong>Самозанятый (TNT-001)</strong></td>
               </tr>
               <tr>
-                <td style="color: var(--text-muted);">🛡️ Статус защиты ядра:</td>
+                <td style="color: var(--text-muted);">Статус защиты ядра:</td>
                 <td><span class="badge-won">RBAC Hardware Lock (Активен)</span> &bull; 152-ФЗ РФ Compliant</td>
               </tr>
               <tr>
-                <td style="color: var(--text-muted);">📧 Email администратора (РОП):</td>
+                <td style="color: var(--text-muted);">Email администратора (РОП):</td>
                 <td><strong>dmitriyfedotov1908@gmail.com</strong></td>
               </tr>
               <tr>
-                <td style="color: var(--text-muted);">🔌 CRM Интеграции:</td>
+                <td style="color: var(--text-muted);">CRM Интеграции:</td>
                 <td>
-                  <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" style="color: var(--accent-cyan); text-decoration: none; margin-right: 14px;">🟦 b24-8dmblj.bitrix24.ru &nearr;</a>
-                  <a href="https://revopsofficial.amocrm.ru" target="_blank" rel="noopener noreferrer" style="color: #c4b5fd; text-decoration: none;">🔗 revopsofficial.amocrm.ru &nearr;</a>
+                  <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" style="color: var(--accent-cyan); text-decoration: none; margin-right: 14px;">b24-8dmblj.bitrix24.ru &nearr;</a>
+                  <a href="https://revopsofficial.amocrm.ru" target="_blank" rel="noopener noreferrer" style="color: #c4b5fd; text-decoration: none;">revopsofficial.amocrm.ru &nearr;</a>
                 </td>
               </tr>
               <tr>
-                <td style="color: var(--text-muted);">🚀 Входящий Webhook n8n:</td>
+                <td style="color: var(--text-muted);">Входящий Webhook n8n:</td>
                 <td><code style="font-size: 0.72rem; color: #a78bfa;">https://webhook.ai-rop.ru/webhook/amocrm-call?tenant=TNT-001</code></td>
               </tr>
               <tr>
-                <td style="color: var(--text-muted);">📊 Точка А (Старт проекта):</td>
+                <td style="color: var(--text-muted);">Точка А (Старт проекта):</td>
                 <td>Базовый балл речи: 64.6% (8.4 из 13) &bull; Брошенная выручка: 50 000 ₽</td>
               </tr>
             </tbody>
@@ -5698,7 +5788,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="badge-won">🟢 ONLINE</span>
+                <span class="badge-won">ONLINE</span>
               </div>
             </div>
           </div>
@@ -5717,7 +5807,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="badge-won">🟢 ONLINE</span>
+                <span class="badge-won">ONLINE</span>
               </div>
             </div>
           </div>
@@ -5736,7 +5826,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="badge-warn">🟡 WARN</span>
+                <span class="badge-warn">WARN</span>
               </div>
             </div>
           </div>
@@ -5755,7 +5845,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="badge-won">🟢 ONLINE</span>
+                <span class="badge-won">ONLINE</span>
               </div>
             </div>
           </div>
@@ -5774,7 +5864,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="badge-won">🟢 ONLINE</span>
+                <span class="badge-won">ONLINE</span>
               </div>
             </div>
           </div>
@@ -5793,7 +5883,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="badge-won">🟢 ONLINE</span>
+                <span class="badge-won">ONLINE</span>
               </div>
             </div>
           </div>
@@ -5812,7 +5902,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="badge-won">🟢 ONLINE</span>
+                <span class="badge-won">ONLINE</span>
               </div>
             </div>
           </div>
@@ -5831,7 +5921,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="badge-won">🟢 ONLINE</span>
+                <span class="badge-won">ONLINE</span>
               </div>
             </div>
           </div>
@@ -5850,7 +5940,7 @@
                 </div>
               </div>
               <div class="step-right">
-                <span class="badge-won">🟢 ONLINE</span>
+                <span class="badge-won">ONLINE</span>
               </div>
             </div>
           </div>
@@ -5866,13 +5956,13 @@
         <div class="feature-flags-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
           <!-- MOD-01 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
-               onclick="showToast('Модуль MOD-01', '🎙️ Речевой ИИ-Супервайзер 100% звонков активен')">
+               onclick="showToast('Модуль MOD-01', 'Речевой ИИ-Супервайзер 100% звонков активен')">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-01</span>
               <span class="status-dot dot-won"></span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
-              🎙️ Речевой ИИ-Супервайзер 100% звонков (Gemini 3.5 Flash)
+              Речевой ИИ-Супервайзер 100% звонков (Gemini 3.5 Flash)
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
               <span>Light</span>
@@ -5882,13 +5972,13 @@
 
           <!-- MOD-02 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
-               onclick="showToast('Модуль MOD-02', '⚡ Мгновенные алерты в Telegram активны')">
+               onclick="showToast('Модуль MOD-02', 'Мгновенные алерты в Telegram активны')">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-02</span>
               <span class="status-dot dot-won"></span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
-              ⚡ Мгновенные алерты в Telegram (30с со сценарием спасения)
+              Мгновенные алерты в Telegram (30с со сценарием спасения)
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
               <span>Pro</span>
@@ -5898,13 +5988,13 @@
 
           <!-- MOD-03 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
-               onclick="showToast('Модуль MOD-03', '🤖 Автозаполнение CRM активно')">
+               onclick="showToast('Модуль MOD-03', 'Автозаполнение CRM активно')">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-03</span>
               <span class="status-dot dot-won"></span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
-              🤖 Автозаполнение CRM (Executive Summary + договоренности)
+              Автозаполнение CRM (Executive Summary + договоренности)
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
               <span>Pro</span>
@@ -5914,13 +6004,13 @@
 
           <!-- MOD-04 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
-               onclick="showToast('Модуль MOD-04', '🛡️ Пакет «Антисаботаж» активен')">
+               onclick="showToast('Модуль MOD-04', 'Пакет «Антисаботаж» активен')">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-04</span>
               <span class="status-dot dot-won"></span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
-              🛡️ Пакет «Антисаботаж» и Режим «Адвокат менеджера»
+              Пакет «Антисаботаж» и Режим «Адвокат менеджера»
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
               <span>Pro</span>
@@ -5930,13 +6020,13 @@
 
           <!-- MOD-05 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
-               onclick="showToast('Модуль MOD-05', '🎯 Контроль 13 B2B-стандартов речи активен')">
+               onclick="showToast('Модуль MOD-05', 'Контроль 13 B2B-стандартов речи активен')">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-05</span>
               <span class="status-dot dot-won"></span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
-              🎯 Контроль 13 B2B-стандартов речи и жесткого Next Step
+              Контроль 13 B2B-стандартов речи и жесткого Next Step
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
               <span>Pro</span>
@@ -5946,13 +6036,13 @@
 
           <!-- MOD-06 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
-               onclick="showToast('Модуль MOD-06', '📊 Пульт РОПа 15 минут активен')">
+               onclick="showToast('Модуль MOD-06', 'Пульт РОПа 15 минут активен')">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-06</span>
               <span class="status-dot dot-won"></span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
-              📊 Пульт РОПа 15 минут: утренний радар сливов и лидерборд
+              Пульт РОПа 15 минут: утренний радар сливов и лидерборд
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
               <span>Pro</span>
@@ -5962,13 +6052,13 @@
 
           <!-- MOD-07 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
-               onclick="showToast('Модуль MOD-07', '🔐 Контур безопасности 152-ФЗ активен')">
+               onclick="showToast('Модуль MOD-07', 'Контур безопасности 152-ФЗ активен')">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-07</span>
               <span class="status-dot dot-won"></span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
-              🔐 Контур безопасности 152-ФЗ и токенизация биометрии
+              Контур безопасности 152-ФЗ и токенизация биометрии
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
               <span>Enterprise</span>
@@ -5978,13 +6068,13 @@
 
           <!-- MOD-08 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
-               onclick="showToast('Модуль MOD-08', '📄 Executive OnePager генератор активен')">
+               onclick="showToast('Модуль MOD-08', 'Executive OnePager генератор активен')">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-08</span>
               <span class="status-dot dot-won"></span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
-              📄 Executive OnePager генератор для Собственника и CFO
+              Executive OnePager генератор для Собственника и CFO
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
               <span>Enterprise</span>
@@ -5994,13 +6084,13 @@
 
           <!-- MOD-09 -->
           <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;"
-               onclick="showToast('Модуль MOD-09', '🔄 Фоновая синхронизация сделок CRM активна')">
+               onclick="showToast('Модуль MOD-09', 'Фоновая синхронизация сделок CRM активна')">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #a78bfa; font-weight: 700;">MOD-09</span>
               <span class="status-dot dot-won"></span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px;">
-              🔄 Фоновая синхронизация сделок CRM (raw_deals Auto-Sync)
+              Фоновая синхронизация сделок CRM (raw_deals Auto-Sync)
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: rgba(255,255,255,0.5);">
               <span>Enterprise</span>
@@ -6076,13 +6166,13 @@
         <div class="wave-pins-bar">
           <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">ИИ-Маркеры диалога:</span>
           <span class="wave-pin wave-pin-cyan" onclick="showToast('00:15 Приветствие', 'Менеджер представился и назвал компанию.')">
-            <span>⏱ 00:15 Приветствие</span>
+            <span>00:15 Приветствие</span>
           </span>
           <span class="wave-pin wave-pin-red" onclick="showToast('00:54 Возражение', 'Клиент: Скиньте на почту, не интересно.')">
-            <span>⚠️ 00:54 Возражение «Скиньте на почту»</span>
+            <span>00:54 Возражение «Скиньте на почту»</span>
           </span>
           <span class="wave-pin wave-pin-red" id="wavePinStep" onclick="showToast('01:45 Next Step', 'Слив: точный день и время не зафиксированы.')">
-            <span>🚨 01:45 Слив Next Step</span>
+            <span>01:45 Слив Next Step</span>
           </span>
         </div>
       </div>
@@ -6150,7 +6240,7 @@
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="tenant-badge" style="font-size: 0.72rem;">TNT-001 • САМОЗАНЯТЫЙ</span>
-            <span class="badge-won">🟢 ЭТАЛОННАЯ СХОДИМОСТЬ (100% SSOT)</span>
+            <span class="badge-won">ЭТАЛОННАЯ СХОДИМОСТЬ (100% SSOT)</span>
           </div>
           <h2 style="font-size: 1.45rem; font-weight: 800; color: #fff; margin-top: 6px;">
             RevOps Executive One-Pager &bull; Управленческий дайджест
@@ -6262,7 +6352,7 @@
   <!-- Toast Notification -->
   <div id="toastBox" class="toast-box">
     <div style="display: flex; align-items: center; gap: 10px;">
-      <span style="font-size: 1.1rem;">🔔</span>
+      <svg width="18" height="18" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
       <div>
         <strong id="toastTitle" style="color: #fff; font-size: 0.82rem; display: block;">Уведомление</strong>
         <span id="toastDesc" style="color: var(--text-secondary); font-size: 0.76rem;">Текст оповещения</span>
@@ -6278,7 +6368,7 @@
   <div id="cmdPaletteOverlay" class="cmd-palette-overlay" onclick="closeCommandPalette(event)">
     <div class="cmd-palette-box" onclick="event.stopPropagation()">
       <div class="cmd-palette-header">
-        <span style="font-size: 1rem;">🔍</span>
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         <input type="text" id="cmdPaletteInput" class="cmd-palette-input" placeholder="Введите раздел, сделку, менеджера или действие..." oninput="handleCmdPaletteSearch(this.value)" autocomplete="off" />
         <span class="cmd-palette-esc-badge" onclick="closeCommandPalette()">ESC</span>
       </div>
