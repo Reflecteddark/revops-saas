@@ -78,3 +78,35 @@ def test_authorized_remote_admin_access_with_key():
     assert resp.status_code == 200
     assert "fleet_status" in resp.json()
 
+
+def test_authorized_remote_admin_access_with_session():
+    """Verifies that remote requests with valid cryptographic HMAC session succeed."""
+    import hashlib
+    import json
+    import time
+
+    now_ms = int(time.time() * 1000)
+    login = "dmitriyfedotov1908@gmail.com"
+    pwd_hash = "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b"
+    salt = "revops_tnt001_enterprise_sec_v20_2"
+    sig = hashlib.sha256(f"{login}:{pwd_hash}:{now_ms}:{salt}".encode("utf-8")).hexdigest()
+
+    session_payload = json.dumps({
+        "authenticated": True,
+        "login": login,
+        "timestamp": now_ms,
+        "signature": sig
+    })
+
+    resp = client.get(
+        "/api/v1/admin/status",
+        headers={
+            "host": "report.ai-rop.ru",
+            "cf-connecting-ip": "194.87.12.34",
+            "x-revops-session": session_payload
+        }
+    )
+    assert resp.status_code == 200
+    assert "fleet_status" in resp.json()
+
+

@@ -28,11 +28,25 @@ logger = logging.getLogger("admin_router")
 # Allowed admin secret key for remote administration via Cloudflare Tunnel
 REVOPS_ADMIN_KEY = os.getenv("REVOPS_ADMIN_KEY", "revops_admin_fleet_secret_2026")
 
+AUTH_SIGN_SALT = "revops_tnt001_enterprise_sec_v20_2"
+ADMIN_KEY_HASHES = [
+    "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
+    "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
+    "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
+    "9d3ba5c08978d3354103973088fcc0df35ece2ea9de24c9dfc250d46375c9eec",
+    "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410",
+]
+ADMIN_AUTHORIZED_LOGINS = {"admin", "dmitriyfedotov1908@gmail.com"}
+
 
 def verify_admin_access(request: Request):
     """
     Guarantees zero unauthorized access to admin fleet actions.
-    Public requests via Cloudflare Tunnel / Vercel without admin key will receive 403 Forbidden.
+    Public requests via Cloudflare Tunnel / Vercel are allowed if:
+    1. Localhost direct request without public proxy headers, OR
+    2. Valid X-RevOps-Admin-Key header, OR
+    3. Valid X-RevOps-Session header with verified cryptographic signature.
+    Otherwise returns 403 Forbidden.
     """
     client_ip = request.client.host if request.client else ""
     cf_connecting_ip = request.headers.get("cf-connecting-ip")
@@ -50,17 +64,38 @@ def verify_admin_access(request: Request):
     ):
         return True
 
-    # Remote administration requires secret key
+    # 1. Direct secret admin key check
     admin_key = request.headers.get("x-revops-admin-key") or request.query_params.get("admin_key")
     if admin_key and admin_key == REVOPS_ADMIN_KEY:
         return True
+
+    # 2. Cryptographic session signature check
+    raw_session = request.headers.get("x-revops-session")
+    if raw_session:
+        try:
+            session_data = json.loads(raw_session)
+            login = (session_data.get("login") or "").lower().strip()
+            ts = session_data.get("timestamp")
+            sig = session_data.get("signature")
+
+            if login in ADMIN_AUTHORIZED_LOGINS and ts and sig:
+                # 7 days TTL (7 * 86400 * 1000 ms)
+                if abs(time.time() * 1000 - ts) < (7 * 86400 * 1000):
+                    import hashlib
+                    for valid_hash in ADMIN_KEY_HASHES:
+                        candidate = f"{login}:{valid_hash}:{ts}:{AUTH_SIGN_SALT}"
+                        expected_sig = hashlib.sha256(candidate.encode("utf-8")).hexdigest()
+                        if expected_sig == sig:
+                            return True
+        except Exception as e:
+            logger.debug(f"Session verification failed: {e}")
 
     logger.warning(
         f"Blocked unauthorized admin access attempt from IP={cf_connecting_ip or client_ip}, Host={host_header}"
     )
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="Доступ запрещён: управление инфраструктурой и автозадачами доступно только Администратору с локального ПК.",
+        detail="Доступ запрещён: управление инфраструктурой и автозадачами доступно только Администратору.",
     )
 
 
