@@ -2884,11 +2884,15 @@ async function triggerSelfHealingAudit() {
 // ==========================================================================
 // ADMIN DASHBOARD & FLEET CONTROL CENTER
 // ==========================================================================
+const REVOPS_API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? ''
+  : (window.location.hostname.includes('ai-rop.ru') && !window.location.hostname.startsWith('report.') ? 'https://report.ai-rop.ru' : '');
+
 let isAdminActionRunning = false;
 
 async function loadAdminStatus() {
   try {
-    const res = await fetch('/api/v1/admin/status');
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/status`);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
 
@@ -2976,7 +2980,7 @@ async function runFleetAction(action) {
   showToast('Управление службами', `Выполняется: ${action}`);
 
   try {
-    const res = await fetch('/api/v1/admin/fleet/action', {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/fleet/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action })
@@ -3003,7 +3007,7 @@ async function runSheetsAction(action) {
   showToast('Google Таблицы', `Запущена операция: ${action}`);
 
   try {
-    const res = await fetch('/api/v1/admin/sheets/action', {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/sheets/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action })
@@ -3038,7 +3042,7 @@ async function runSheetsTarget() {
   showToast('Google Таблицы', `Обновление таблицы ${sheetId.slice(0, 10)}...`);
 
   try {
-    const res = await fetch('/api/v1/admin/sheets/action', {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/sheets/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'target', spreadsheet_id: sheetId })
@@ -3064,7 +3068,7 @@ async function runTaskAction(action) {
   appendAdminTerminalLog(`Планировщик задач: действие ${action}...`, 'info');
 
   try {
-    const res = await fetch('/api/v1/admin/tasks/action', {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/tasks/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action })
@@ -3086,7 +3090,7 @@ async function saveDailyTaskTime() {
   appendAdminTerminalLog(`Переустановка автозадачи на время: ${timeVal}...`, 'info');
 
   try {
-    const res = await fetch('/api/v1/admin/tasks/action', {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/tasks/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'install_daily', time_str: timeVal })
@@ -3107,7 +3111,7 @@ async function testGeminiApi() {
   appendAdminTerminalLog('Пинг Google Gemini 3.5 Flash через Cloudflare Proxy Worker...', 'info');
 
   try {
-    const res = await fetch('/api/v1/admin/ai/test-gemini', { method: 'POST' });
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/ai/test-gemini`, { method: 'POST' });
     const data = await res.json();
     if (latEl) latEl.textContent = `${data.latency_ms || '—'} ms`;
     appendAdminTerminalLog(data.message || 'Тест Gemini API завершён', data.success ? 'success' : 'error');
@@ -3126,7 +3130,7 @@ async function fetchAdminLogs(logType) {
     modeEl.textContent = logType === 'console' ? 'Интерактивная консоль' : (logType === 'daily_sync' ? 'Журнал ежедневной автозадачи' : 'Журнал DevOps Healer');
   }
   try {
-    const res = await fetch(`/api/v1/admin/logs?log_type=${logType}`);
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/logs?log_type=${logType}`);
     const data = await res.json();
     const term = document.getElementById('adminTerminalBody');
     if (!term) return;
@@ -3151,7 +3155,7 @@ async function fetchAdminLogs(logType) {
 
 async function clearAdminConsole() {
   try {
-    await fetch('/api/v1/admin/logs/clear', { method: 'POST' });
+    await fetch(`${REVOPS_API_BASE}/api/v1/admin/logs/clear`, { method: 'POST' });
     const term = document.getElementById('adminTerminalBody');
     if (term) term.innerHTML = '<div style="color: #64748b;">[System] Консоль очищена.</div>';
   } catch (err) {
