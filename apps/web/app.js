@@ -1547,6 +1547,9 @@ const CALLS_DATA = [
     // ==========================================================================
     // DEVELOP BENTO CHARTS (DISSECTION, DONUT CATEGORIES, SPLINE TREND)
     // ==========================================================================
+    // ==========================================================================
+    // TIER-1 SAAS CHARTS (LINEAR / FEY / VERCEL AESTHETIC)
+    // ==========================================================================
     let developDissectionChartInstance = null;
     let developDonutChartInstance = null;
     let developSplineChartInstance = null;
@@ -1555,50 +1558,60 @@ const CALLS_DATA = [
       const ctx = document.getElementById('developDissectionChart');
       if (!ctx) return;
       const isLight = getThemeMode() === 'light';
-      const gridColor = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
-      const tickColor = isLight ? '#808191' : '#7c8099';
+      const c2d = ctx.getContext('2d');
+
+      let revGrad = '#8b5cf6';
+      if (c2d) {
+        revGrad = c2d.createLinearGradient(0, 0, 0, 220);
+        revGrad.addColorStop(0, '#a78bfa');
+        revGrad.addColorStop(1, '#6d28d9');
+      }
 
       developDissectionChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
           datasets: [
             {
               label: 'Выручка',
               data: [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
-              backgroundColor: '#7c3aed',
-              borderRadius: 100,
+              backgroundColor: revGrad,
+              hoverBackgroundColor: '#c4b5fd',
+              borderRadius: 6,
               borderSkipped: false,
-              barPercentage: 0.4,
-              categoryPercentage: 0.7
+              barPercentage: 0.52,
+              categoryPercentage: 0.68
             },
             {
               label: 'План',
               data: [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830],
-              backgroundColor: '#f36594',
-              borderRadius: 100,
+              backgroundColor: isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.10)',
+              hoverBackgroundColor: isLight ? 'rgba(15, 23, 42, 0.22)' : 'rgba(255, 255, 255, 0.20)',
+              borderRadius: 6,
               borderSkipped: false,
-              barPercentage: 0.4,
-              categoryPercentage: 0.7
+              barPercentage: 0.52,
+              categoryPercentage: 0.68
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(10, 10, 16, 0.98)',
+              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(9, 9, 13, 0.96)',
               titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
               bodyFont: { family: 'JetBrains Mono', size: 11 },
-              titleColor: isLight ? '#11142d' : '#ffffff',
-              bodyColor: isLight ? '#4b5563' : '#cbd5e1',
-              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
+              titleColor: isLight ? '#09090b' : '#fafafa',
+              bodyColor: isLight ? '#52525b' : '#a1a1aa',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.10)',
               borderWidth: 1,
-              cornerRadius: 8,
-              padding: 10,
-              displayColors: false,
+              cornerRadius: 10,
+              padding: 12,
+              boxPadding: 6,
+              usePointStyle: true,
               callbacks: {
                 label: (c) => ` ${c.dataset.label}: ${c.raw}k ₽`
               }
@@ -1607,13 +1620,14 @@ const CALLS_DATA = [
           scales: {
             x: {
               grid: { display: false, drawBorder: false },
-              ticks: { color: '#71717a', font: { size: 11, family: 'Inter' } }
+              ticks: { color: isLight ? '#71717a' : '#52525b', font: { size: 11, family: 'Inter', weight: '500' } }
             },
             y: {
-              grid: { color: 'rgba(255, 255, 255, 0.03)', drawBorder: false },
+              border: { display: false },
+              grid: { color: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.035)', drawBorder: false },
               ticks: {
-                color: '#71717a',
-                font: { size: 11, family: 'Inter' },
+                color: isLight ? '#71717a' : '#52525b',
+                font: { size: 11, family: 'JetBrains Mono' },
                 callback: (v) => v + 'k'
               }
             }
@@ -1625,6 +1639,8 @@ const CALLS_DATA = [
     function initDevelopDonutChart() {
       const ctx = document.getElementById('developDonutChart');
       if (!ctx) return;
+      const isLight = getThemeMode() === 'light'; // FIX: объявлена переменная isLight
+
       developDonutChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -1632,29 +1648,31 @@ const CALLS_DATA = [
           datasets: [
             {
               data: [34, 25, 17, 12, 6],
-              backgroundColor: ['#7c3aed', '#a78bfa', '#00d4ff', '#fbbf24', '#f43f5e'],
-              borderWidth: 0,
-              hoverOffset: 4
+              backgroundColor: ['#8b5cf6', '#6366f1', '#38bdf8', '#f59e0b', '#f43f5e'],
+              borderWidth: 2,
+              borderColor: isLight ? '#ffffff' : '#0b0b10',
+              hoverOffset: 3
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '74%',
+          cutout: '78%',
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(10, 10, 16, 0.98)',
+              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(9, 9, 13, 0.96)',
               titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
               bodyFont: { family: 'JetBrains Mono', size: 11 },
-              titleColor: isLight ? '#11142d' : '#ffffff',
-              bodyColor: isLight ? '#4b5563' : '#cbd5e1',
-              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
+              titleColor: isLight ? '#09090b' : '#fafafa',
+              bodyColor: isLight ? '#52525b' : '#a1a1aa',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.10)',
               borderWidth: 1,
-              cornerRadius: 8,
+              cornerRadius: 10,
               padding: 10,
-              displayColors: false,
+              displayColors: true,
+              usePointStyle: true,
               callbacks: {
                 label: (c) => ` ${c.label}: ${c.raw}%`
               }
@@ -1669,69 +1687,68 @@ const CALLS_DATA = [
       if (!ctx) return;
       const isLight = getThemeMode() === 'light';
       const c2d = ctx.getContext('2d');
-      let grad1 = 'rgba(124, 58, 237, 0.15)';
-      let grad2 = 'rgba(243, 101, 148, 0.12)';
+      let grad1 = 'rgba(139, 92, 246, 0.16)';
       if (c2d) {
         const h = ctx.clientHeight || 180;
         const g1 = c2d.createLinearGradient(0, 0, 0, h);
-        g1.addColorStop(0, 'rgba(124, 58, 237, 0.40)');
-        g1.addColorStop(1, 'rgba(124, 58, 237, 0.00)');
+        g1.addColorStop(0, 'rgba(139, 92, 246, 0.30)');
+        g1.addColorStop(1, 'rgba(139, 92, 246, 0.00)');
         grad1 = g1;
-
-        const g2 = c2d.createLinearGradient(0, 0, 0, h);
-        g2.addColorStop(0, 'rgba(243, 101, 148, 0.32)');
-        g2.addColorStop(1, 'rgba(243, 101, 148, 0.00)');
-        grad2 = g2;
       }
 
-      const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.04)';
-      const tickColor = isLight ? '#808191' : '#7c8099';
+      const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.035)';
+      const tickColor = isLight ? '#71717a' : '#52525b';
 
       developSplineChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
           datasets: [
             {
-              label: 'Тренд',
-              data: [310, 420, 390, 520, 460, 590, 540],
-              borderColor: '#7c3aed',
+              label: 'SSOT Факт',
+              data: [240, 310, 460, 380, 540, 470, 610],
+              borderColor: '#8b5cf6',
               backgroundColor: grad1,
-              borderWidth: 1.75,
-              tension: 0.35,
-              fill: false,
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true,
               pointRadius: 0,
-              pointHoverRadius: 4
+              pointHoverRadius: 4,
+              pointHoverBackgroundColor: '#ffffff',
+              pointHoverBorderColor: '#8b5cf6',
+              pointHoverBorderWidth: 2
             },
             {
-              label: 'SSOT',
-              data: [240, 310, 460, 380, 540, 470, 610],
-              borderColor: '#f36594',
-              backgroundColor: grad2,
-              borderWidth: 1.75,
-              tension: 0.35,
+              label: 'Базовый тренд',
+              data: [310, 420, 390, 520, 460, 590, 540],
+              borderColor: isLight ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.22)',
+              borderDash: [4, 4],
+              borderWidth: 1.5,
+              tension: 0.4,
               fill: false,
               pointRadius: 0,
-              pointHoverRadius: 4
+              pointHoverRadius: 3
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(10, 10, 16, 0.98)',
+              backgroundColor: isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(9, 9, 13, 0.96)',
               titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
               bodyFont: { family: 'JetBrains Mono', size: 11 },
-              titleColor: isLight ? '#11142d' : '#ffffff',
-              bodyColor: isLight ? '#4b5563' : '#cbd5e1',
-              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
+              titleColor: isLight ? '#09090b' : '#fafafa',
+              bodyColor: isLight ? '#52525b' : '#a1a1aa',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.10)',
               borderWidth: 1,
-              cornerRadius: 8,
+              cornerRadius: 10,
               padding: 10,
-              displayColors: false,
+              displayColors: true,
+              usePointStyle: true,
               callbacks: {
                 label: (c) => ` ${c.dataset.label}: ${c.raw}k ₽`
               }
@@ -1743,10 +1760,11 @@ const CALLS_DATA = [
               ticks: { color: tickColor, font: { size: 10, family: 'Inter' } }
             },
             y: {
+              border: { display: false },
               grid: { color: gridColor },
               ticks: {
                 color: tickColor,
-                font: { size: 10, family: 'Inter' },
+                font: { size: 10, family: 'JetBrains Mono' },
                 callback: (v) => v + 'k'
               }
             }

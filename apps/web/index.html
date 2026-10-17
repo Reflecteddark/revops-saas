@@ -3678,217 +3678,389 @@
     }
 
     /* ==========================================================================
-       MODERN SAAS OVERHAUL (Linear / Vercel / Attio Style)
+       TIER-1 SAAS MASTER DESIGN SYSTEM (LINEAR / FEY / ATTIO / VERCEL GEIST)
+       Drop-in replacement at the end of <style> in index.html
        ========================================================================== */
 
-    /* 1. Глобальный фон и холст */
-    body {
-      background-color: #000000 !important;
-    }
-    .ambient-bg {
-      background: radial-gradient(circle at 15% 10%, rgba(124, 58, 237, 0.08), transparent 40%),
-                  radial-gradient(circle at 85% 90%, rgba(56, 189, 248, 0.05), transparent 40%) !important;
+    :root {
+      --bg-void: #050507 !important;
+      --bg-canvas: #08080b !important;
+      --bg-sidebar: rgba(8, 8, 12, 0.85) !important;
+      --bg-card: rgba(14, 14, 20, 0.72) !important;
+      --bg-card-hover: rgba(20, 20, 28, 0.88) !important;
+      --border-subtle: rgba(255, 255, 255, 0.065) !important;
+      --border-subtle-hover: rgba(255, 255, 255, 0.14) !important;
+      --brand: #8b5cf6 !important;
+      --brand-glow: rgba(139, 92, 246, 0.28) !important;
+      --text-primary: #fafafa !important;
+      --text-secondary: #a1a1aa !important;
+      --text-muted: #71717a !important;
+      --radius-sm: 8px !important;
+      --radius-md: 12px !important;
+      --radius-lg: 16px !important;
+      --radius-xl: 18px !important;
     }
 
-    /* 2. Унификация всех поверхностей и парящих карточек */
-    .bento-card, 
+    body {
+      background-color: var(--bg-void) !important;
+      color: var(--text-primary) !important;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      letter-spacing: -0.011em;
+    }
+
+    /* Тонкое фоновое свечение без визуального шума */
+    .ambient-bg {
+      background:
+        radial-gradient(ellipse 65% 40% at 50% -10%, rgba(139, 92, 246, 0.12), transparent 70%),
+        radial-gradient(ellipse 40% 30% at 85% 20%, rgba(56, 189, 248, 0.04), transparent 65%) !important;
+    }
+
+    /* 1. SIDEBAR (В стиле Linear / Attio) */
+    .mp-sidebar {
+      width: 248px !important;
+      background: rgba(7, 7, 10, 0.82) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.055) !important;
+    }
+    .mp-sidebar-header {
+      height: 60px !important;
+      padding: 0 18px !important;
+      margin-bottom: 8px !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.045) !important;
+    }
+    .mp-brand-badge {
+      width: 30px !important;
+      height: 30px !important;
+      border-radius: 8px !important;
+      background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 10px rgba(139, 92, 246, 0.35) !important;
+    }
+    .mp-brand-name {
+      font-family: 'Inter Tight', sans-serif !important;
+      font-size: 0.86rem !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.02em !important;
+    }
+    .mp-brand-ver {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.58rem !important;
+      background: rgba(255, 255, 255, 0.06) !important;
+      color: #a1a1aa !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    .mp-nav-group-title {
+      font-size: 0.62rem !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.07em !important;
+      color: #52525b !important;
+      padding: 10px 12px 4px !important;
+    }
+    .mp-nav-item {
+      height: 34px !important;
+      padding: 0 10px !important;
+      border-radius: 8px !important;
+      font-size: 0.78rem !important;
+      font-weight: 500 !important;
+      color: #a1a1aa !important;
+      margin-bottom: 2px !important;
+      transition: all 0.15s ease !important;
+    }
+    .mp-nav-item:hover {
+      background: rgba(255, 255, 255, 0.04) !important;
+      color: #f4f4f5 !important;
+    }
+    .mp-nav-item.active {
+      background: rgba(255, 255, 255, 0.075) !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    }
+    .mp-nav-icon {
+      width: 22px !important;
+      height: 22px !important;
+      color: #71717a !important;
+    }
+    .mp-nav-item.active .mp-nav-icon {
+      color: #a78bfa !important;
+    }
+
+    /* 2. TOPBAR (Чистая навигационная панель Vercel / Fey) */
+    .develop-topbar {
+      height: 60px !important;
+      padding: 0 32px !important;
+      background: rgba(5, 5, 7, 0.78) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.055) !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 80 !important;
+    }
+    .develop-greeting-title {
+      font-size: 1.12rem !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.025em !important;
+      color: #fafafa !important;
+    }
+
+    /* 3. УНИФИКАЦИЯ ВСЕХ КАРТОЧЕК (Bento Surface Architecture) */
+    .bento-card,
     .develop-card,
     .meter-card,
     .rop-pedestal-card,
+    .loss-funnel-card,
     .ai-agent-card,
-    .auth-card,
-    .podium-card {
-      background: #0a0a0f !important;
-      border: 1px solid rgba(255, 255, 255, 0.04) !important;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-      transition: border-color 0.25s ease, transform 0.25s ease !important;
-    }
-    .bento-card, .develop-card, .auth-card {
-      border-radius: 24px !important;
-    }
-    .meter-card, .rop-pedestal-card, .ai-agent-card, .podium-card {
-      border-radius: 18px !important;
+    .podium-card,
+    .linear-waveform-box {
+      background: linear-gradient(180deg, rgba(18, 18, 24, 0.75) 0%, rgba(11, 11, 16, 0.85) 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.065) !important;
+      border-radius: 16px !important;
+      padding: 22px 24px !important;
+      box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.07),
+        0 10px 30px -10px rgba(0, 0, 0, 0.55) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      transition: border-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
     }
 
-    .bento-card:hover, 
+    .bento-card:hover,
     .develop-card:hover,
     .meter-card:hover,
-    .rop-pedestal-card:hover,
-    .ai-agent-card:hover {
-      border-color: rgba(124, 58, 237, 0.2) !important;
-      transform: translateY(-2px) !important;
+    .ai-agent-card:hover,
+    .podium-card:hover {
+      border-color: rgba(255, 255, 255, 0.13) !important;
+      transform: translateY(-1px) !important;
+      box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.11),
+        0 16px 36px -12px rgba(0, 0, 0, 0.7) !important;
     }
 
-    /* 3. Модернизация Sidebar (Бокового меню) */
-    .mp-sidebar {
-      background: transparent !important;
-      border-right: none !important;
+    /* Компактные stat-карточки в рядах grid-4 */
+    .bento-card.stat-only {
+      padding: 18px 20px !important;
+      background: rgba(14, 14, 20, 0.55) !important;
+      border: 1px solid rgba(255, 255, 255, 0.055) !important;
     }
 
-    .mp-sidebar-header {
-      border-bottom: none !important;
-      margin-bottom: 20px;
+    /* 4. HERO KPI (Экран 1 — Пульс выручки) */
+    .develop-editorial-kpis {
+      background: linear-gradient(180deg, rgba(20, 20, 28, 0.65) 0%, rgba(11, 11, 16, 0.75) 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.07) !important;
+      border-radius: 16px !important;
+      padding: 26px 28px !important;
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 12px 32px -12px rgba(0, 0, 0, 0.6) !important;
+      margin-bottom: 0 !important;
     }
-
-    /* Пункты меню */
-    .mp-nav-item {
-      border-radius: 12px !important;
-      margin-bottom: 4px;
-      border: none !important;
-      transition: background 0.2s ease, color 0.2s ease !important;
-    }
-
-    .mp-nav-item:hover {
-      background: rgba(255, 255, 255, 0.04) !important;
-    }
-
-    .mp-nav-item.active {
-      background: rgba(124, 58, 237, 0.15) !important;
-      color: #ffffff !important;
-    }
-
-    /* Убираем рамку у иконок в меню */
-    .mp-nav-icon {
-      background: transparent !important;
-      border: none !important;
-    }
-
-    /* 4. Упрощение Topbar (Верхней панели) */
-    .develop-topbar {
-      background: transparent !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
-      padding: 0 24px !important;
-      height: 72px !important;
-    }
-
-    .develop-search-pill input {
-      background: rgba(255, 255, 255, 0.03) !important;
-      border: 1px solid rgba(255, 255, 255, 0.05) !important;
-      border-radius: 99px !important;
-      transition: all 0.2s ease !important;
-    }
-
-    .develop-search-pill input:focus {
-      background: rgba(255, 255, 255, 0.06) !important;
-      border-color: rgba(124, 58, 237, 0.5) !important;
-      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
-    }
-
-    .develop-user-profile {
-      padding: 4px 12px 4px 4px !important;
-      border-radius: 99px !important;
-      border: 1px solid rgba(255, 255, 255, 0.05) !important;
-      background: rgba(255, 255, 255, 0.02) !important;
-      transition: background 0.2s !important;
-    }
-
-    .develop-user-profile:hover {
-      background: rgba(255, 255, 255, 0.06) !important;
-    }
-
-    /* 5. Типографика и главные цифры (Hero KPI) */
     .kpi-hero {
       font-family: 'Inter Tight', sans-serif !important;
-      font-weight: 700 !important;
-      letter-spacing: -0.05em !important;
-      font-size: clamp(3.2rem, 6vw, 4.8rem) !important;
-      line-height: 0.95 !important;
-      background: linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%) !important;
+      font-size: clamp(2.5rem, 4.2vw, 3.4rem) !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.045em !important;
+      line-height: 1 !important;
+      background: linear-gradient(180deg, #ffffff 30%, #a1a1aa 100%) !important;
       -webkit-background-clip: text !important;
       -webkit-text-fill-color: transparent !important;
-      font-variant-numeric: tabular-nums !important;
     }
-
     .kpi-secondary {
       font-family: 'Inter Tight', sans-serif !important;
+      font-size: clamp(1.85rem, 3vw, 2.4rem) !important;
       font-weight: 500 !important;
-      color: rgba(255, 255, 255, 0.9) !important;
-      font-variant-numeric: tabular-nums !important;
+      letter-spacing: -0.035em !important;
+      color: #d4d4d8 !important;
+    }
+    .kpi-hero-label {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.66rem !important;
+      font-weight: 500 !important;
+      letter-spacing: 0.08em !important;
+      color: #71717a !important;
     }
 
-    .develop-editorial-kpis {
-      border-bottom: none !important;
-      padding-bottom: 0 !important;
+    /* 5. ТРАНСФОРМАЦИЯ БАНКОВСКОЙ КАРТЫ В ТЕЛЕМЕТРИЮ ИНФРАСТРУКТУРЫ */
+    .develop-bank-card {
+      background: rgba(255, 255, 255, 0.02) !important;
+      border: 1px solid rgba(255, 255, 255, 0.07) !important;
+      border-radius: 12px !important;
+      padding: 18px 20px !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
     }
-    .develop-editorial-kpis > div:last-child {
-      border-left: 1px solid rgba(255, 255, 255, 0.04) !important;
-    }
-
-    /* 6. Кнопки и бейджи (Pills & Actions) */
-    .btn-ghost {
-      background: transparent !important;
-      border: 1px solid rgba(255, 255, 255, 0.08) !important;
-      border-radius: 10px !important;
-      color: #a1a1aa !important;
-      transition: all 0.2s ease !important;
-    }
-
-    .btn-ghost:hover {
-      background: rgba(255, 255, 255, 0.04) !important;
-      color: #ffffff !important;
-      border-color: rgba(255, 255, 255, 0.15) !important;
-    }
-
-    .btn-primary {
-      background: #ffffff !important;
-      color: #000000 !important;
+    .bank-card-balance {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 1.5rem !important;
       font-weight: 600 !important;
-      border: none !important;
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.1) !important;
-      border-radius: 10px !important;
+      letter-spacing: -0.03em !important;
+      color: #fafafa !important;
     }
-
-    .btn-primary:hover {
-      background: #f4f4f5 !important;
-      transform: translateY(-1px) !important;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2) !important;
-    }
-
-    /* Деликатная кнопка копирования в WhatsApp / действий */
-    .btn-emerald {
-      background: rgba(16, 185, 129, 0.06) !important;
+    .bank-card-exp {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.62rem !important;
+      background: rgba(16, 185, 129, 0.12) !important;
       color: #34d399 !important;
-      border: 1px solid rgba(16, 185, 129, 0.18) !important;
-      border-radius: 10px !important;
-      font-size: 0.74rem !important;
-      font-weight: 500 !important;
-      transition: all 0.2s ease !important;
+      border: 1px solid rgba(16, 185, 129, 0.25) !important;
+      padding: 2px 8px !important;
     }
-    .btn-emerald:hover {
-      background: rgba(16, 185, 129, 0.14) !important;
-      border-color: rgba(16, 185, 129, 0.35) !important;
+
+    /* 6. КНОПКИ, ДРОПДАУНЫ И СЕГМЕНТНЫЕ ПИЛЛЫ */
+    .develop-dropdown {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      color: #a1a1aa !important;
+      font-size: 0.72rem !important;
+      font-weight: 500 !important;
+      padding: 4px 10px !important;
+      border-radius: 8px !important;
+    }
+    .develop-dropdown:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
       color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.16) !important;
+    }
+
+    .btn {
+      height: 32px !important;
+      padding: 0 12px !important;
+      border-radius: 8px !important;
+      font-size: 0.76rem !important;
+      font-weight: 500 !important;
+      letter-spacing: -0.01em !important;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #fafafa 0%, #e4e4e7 100%) !important;
+      color: #09090b !important;
+      font-weight: 600 !important;
+      border: 1px solid #ffffff !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.12) !important;
+    }
+    .btn-primary:hover {
+      background: #ffffff !important;
       transform: translateY(-1px) !important;
     }
 
-    .develop-pill {
-      background: rgba(255, 255, 255, 0.05) !important;
-      border: 1px solid rgba(255, 255, 255, 0.08) !important;
-      border-radius: 8px !important;
-      padding: 4px 8px !important;
+    .segmented-pills-group {
+      background: rgba(9, 9, 13, 0.8) !important;
+      border: 1px solid rgba(255, 255, 255, 0.07) !important;
+      border-radius: 9px !important;
+      padding: 3px !important;
     }
-    .pill-pos { background: rgba(16, 185, 129, 0.1) !important; color: #34d399 !important; border-color: rgba(16, 185, 129, 0.2) !important; }
-    .pill-neg { background: rgba(244, 63, 94, 0.1) !important; color: #fb7185 !important; border-color: rgba(244, 63, 94, 0.2) !important; }
+    .pill-btn {
+      border-radius: 6px !important;
+      padding: 4px 10px !important;
+      font-size: 0.73rem !important;
+      color: #a1a1aa !important;
+    }
+    .pill-btn.active {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+    }
 
-    /* 7. Кнопка "Спросить AI" (Affordance) */
+    /* 7. РЕЕСТР ЗВОНКОВ И КАРТОЧКИ СПИСКА (Attio CRM List Style) */
+    .calls-list {
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      gap: 6px !important;
+    }
+    .call-row {
+      background: rgba(255, 255, 255, 0.018) !important;
+      border: 1px solid rgba(255, 255, 255, 0.055) !important;
+      border-radius: 10px !important;
+      padding: 10px 16px !important;
+      transition: all 0.15s ease !important;
+    }
+    .call-row:hover {
+      background: rgba(255, 255, 255, 0.038) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      transform: none !important;
+    }
+    .call-row.expanded {
+      background: rgba(139, 92, 246, 0.06) !important;
+      border-color: rgba(139, 92, 246, 0.32) !important;
+    }
+    .call-avatar {
+      width: 32px !important;
+      height: 32px !important;
+      font-size: 0.74rem !important;
+      font-weight: 600 !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    }
+    .rep-z { background: rgba(245, 158, 11, 0.18) !important; color: #fbbf24 !important; }
+    .rep-n { background: rgba(16, 185, 129, 0.18) !important; color: #34d399 !important; }
+    .rep-v { background: rgba(56, 189, 248, 0.18) !important; color: #38bdf8 !important; }
+    .rep-s { background: rgba(244, 63, 94, 0.18) !important; color: #fb7185 !important; }
+
+    /* 8. СОВРЕМЕННЫЕ RANGE SLIDERS (Для калькуляторов Express & Monte Carlo) */
+    input[type="range"] {
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      height: 5px !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-radius: 99px !important;
+      outline: none !important;
+      cursor: pointer !important;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none !important;
+      width: 16px !important;
+      height: 16px !important;
+      border-radius: 50% !important;
+      background: #ffffff !important;
+      border: 2px solid #8b5cf6 !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+      transition: transform 0.15s ease !important;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15) !important;
+    }
+
+    /* 9. СЕТКА И ВОЗДУХ НА ГЛАВНОМ ЭКРАНЕ */
+    .mp-content-area {
+      padding: 28px 36px 80px !important;
+      max-width: 1400px !important;
+    }
+    .develop-grid {
+      gap: 20px !important;
+    }
+    .develop-left-col,
+    .develop-right-col {
+      gap: 20px !important;
+    }
+    .develop-sub-pair {
+      gap: 20px !important;
+    }
+
+    /* 10. ТОЧЕЧНАЯ ПОЛИРОВКА ЛЕГЕНДЫ ГРАФИКОВ */
+    .dot-purple {
+      background: #8b5cf6 !important;
+      box-shadow: 0 0 8px rgba(139, 92, 246, 0.5) !important;
+    }
+    .dot-pink {
+      background: rgba(255, 255, 255, 0.28) !important;
+    }
+
+    /* 11. КНОПКА СПРОСИТЬ AI (Affordance) */
     .bento-card, .develop-card, .develop-editorial-kpis {
       position: relative;
     }
-
-    .card-ai-ask {
+    .bento-card .card-ai-ask,
+    .develop-card .card-ai-ask,
+    .develop-editorial-kpis .card-ai-ask {
       position: absolute !important;
-      top: 16px !important;
-      right: 16px !important;
+      top: 14px !important;
+      right: 14px !important;
       display: inline-flex !important;
       align-items: center !important;
       gap: 6px !important;
       padding: 4px 10px !important;
       border-radius: 99px !important;
       background: rgba(255, 255, 255, 0.03) !important;
-      border: 1px solid rgba(255, 255, 255, 0.06) !important;
+      border: 1px solid rgba(255, 255, 255, 0.07) !important;
       font-size: 0.68rem !important;
       font-weight: 500 !important;
-      color: rgba(255, 255, 255, 0.4) !important;
+      color: rgba(255, 255, 255, 0.45) !important;
       opacity: 0 !important;
       pointer-events: none !important;
       transition: all 0.2s ease !important;
@@ -3896,118 +4068,33 @@
       cursor: pointer !important;
       backdrop-filter: blur(8px) !important;
     }
-
     .bento-card:hover .card-ai-ask,
     .develop-card:hover .card-ai-ask,
     .develop-editorial-kpis:hover .card-ai-ask {
       opacity: 1 !important;
       pointer-events: auto !important;
     }
-
     .card-ai-ask:hover {
-      background: rgba(124, 58, 237, 0.15) !important;
-      border-color: rgba(124, 58, 237, 0.4) !important;
+      background: rgba(139, 92, 246, 0.15) !important;
+      border-color: rgba(139, 92, 246, 0.4) !important;
       color: #c4b5fd !important;
     }
 
-    /* 8. Таблицы и списки данных (Modern Ag-Grid & Table Containers) */
-    .table-container {
-      width: 100%;
-      overflow-x: auto;
-      border-radius: 18px !important;
-      border: 1px solid rgba(255, 255, 255, 0.04) !important;
-      background: #0a0a0f !important;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
-    }
-    th {
-      padding: 12px 16px !important;
-      font-size: 0.68rem !important;
-      font-weight: 600 !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.06em !important;
-      color: rgba(255, 255, 255, 0.45) !important;
-      background: rgba(255, 255, 255, 0.015) !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-      white-space: nowrap !important;
-    }
-    td {
-      padding: 12px 16px !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.035) !important;
-      color: rgba(255, 255, 255, 0.85) !important;
-      vertical-align: middle !important;
-      font-size: 0.8rem !important;
-    }
-    tr:last-child td {
-      border-bottom: none !important;
-    }
-    tr:hover td {
-      background: rgba(255, 255, 255, 0.02) !important;
-    }
-
-    /* 9. Диалоги и модальные окна (Modal & Toast) */
+    /* 12. ДИАЛОГИ И МОДАЛЬНЫЕ ОКНА (Modal & Toast) */
     .modal-box {
       background: #0a0a0f !important;
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
-      border-radius: 24px !important;
+      border-radius: 20px !important;
       box-shadow: 0 32px 72px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     }
     .toast-box {
       background: #0a0a10 !important;
-      border: 1px solid rgba(124, 58, 237, 0.4) !important;
-      border-radius: 14px !important;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(124, 58, 237, 0.25) !important;
+      border: 1px solid rgba(139, 92, 246, 0.4) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(139, 92, 246, 0.25) !important;
     }
 
-    /* 10. Шкала шрифтов и семантические токены (Tier-1 Typography) */
-    .text-hero {
-      font-family: 'Inter Tight', sans-serif !important;
-      font-weight: 700 !important;
-      letter-spacing: -0.05em !important;
-      font-size: clamp(3.2rem, 6vw, 4.8rem) !important;
-      line-height: 0.95 !important;
-    }
-    .text-h1 {
-      font-family: 'Inter Tight', sans-serif !important;
-      font-size: 1.4rem !important;
-      font-weight: 600 !important;
-      letter-spacing: -0.035em !important;
-      color: #ffffff !important;
-      line-height: 1.25 !important;
-    }
-    .text-h2 {
-      font-family: 'Inter Tight', sans-serif !important;
-      font-size: 1.15rem !important;
-      font-weight: 600 !important;
-      letter-spacing: -0.03em !important;
-      color: #ffffff !important;
-      line-height: 1.3 !important;
-    }
-    .text-subhead {
-      font-size: 0.88rem !important;
-      font-weight: 500 !important;
-      color: rgba(255, 255, 255, 0.8) !important;
-      line-height: 1.4 !important;
-    }
-    .text-body {
-      font-size: 0.82rem !important;
-      font-weight: 400 !important;
-      color: rgba(255, 255, 255, 0.65) !important;
-      line-height: 1.5 !important;
-    }
-    .text-caption {
-      font-size: 0.72rem !important;
-      font-weight: 500 !important;
-      color: rgba(255, 255, 255, 0.45) !important;
-      line-height: 1.35 !important;
-    }
-    .card-eyebrow {
-      font-size: 0.68rem !important;
-      font-weight: 600 !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.08em !important;
-      color: #a78bfa !important;
-      margin-bottom: 4px !important;
-    }
+    /* 13. ТИПОГРАФИЧЕСКИЕ И ЧИСЛОВЫЕ УТИЛИТЫ */
     .font-mono, .num-mono {
       font-family: 'JetBrains Mono', monospace !important;
       font-variant-numeric: tabular-nums !important;
@@ -4019,7 +4106,7 @@
 
     button:focus-visible, input:focus-visible, select:focus-visible {
       outline: none !important;
-      box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.6) !important;
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.6) !important;
     }
   </style>
 </head>
@@ -4557,8 +4644,8 @@
             <div class="develop-card-header">
               <span class="develop-card-title">Прогноз и тренд выручки</span>
               <div class="develop-legend">
-                <span class="legend-circle dot-purple"></span><span>Тренд</span>
-                <span class="legend-circle dot-pink" style="margin-left: 8px;"></span><span>SSOT</span>
+                <span class="legend-circle dot-purple"></span><span>SSOT Факт</span>
+                <span class="legend-circle dot-pink" style="margin-left: 8px;"></span><span>Базовый тренд</span>
               </div>
             </div>
             <div style="height: 180px; position: relative; width: 100%;">
