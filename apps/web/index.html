@@ -4321,6 +4321,11 @@
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
           <span class="mp-nav-label">9. Паспорт & E2E</span>
         </button>
+        <button id="sb-admin" class="mp-nav-item" onclick="switchTab('admin')">
+          <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 10 7 12"/><line x1="12" y1="12" x2="16" y2="12"/></svg></span>
+          <span class="mp-nav-label">10. Админ-кабинет</span>
+          <span class="badge-info" style="font-size: 0.60rem; margin-left: auto; background: rgba(124, 58, 237, 0.2); color: #a78bfa; border: 1px solid rgba(124, 58, 237, 0.4);">Fleet</span>
+        </button>
         <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
           <span class="mp-nav-label">Битрикс24 REST &nearr;</span>
@@ -6704,6 +6709,322 @@
               <strong style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #34d399;">Включено</strong>
             </div>
           </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =====================================================================
+         TAB 10: АДМИН-КАБИНЕТ & FLEET CONTROL CENTER (V20.2 Tier-1)
+         Полное управление проектом вместо бесконечных батников
+         ===================================================================== -->
+    <div id="view-admin" class="tab-view">
+
+      <!-- Executive Fleet Ribbon -->
+      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(24, 18, 42, 0.95) 0%, rgba(13, 13, 20, 0.98) 100%); border: 1px solid rgba(124, 58, 237, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(124, 58, 237, 0.2); border: 1px solid rgba(124, 58, 237, 0.4); color: #a78bfa;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 10 7 12"/><line x1="12" y1="12" x2="16" y2="12"/></svg>
+              </span>
+              <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.02em;">
+                Админ-кабинет: Единый Пульт Управления Проектом
+              </h2>
+              <span id="adminFleetBadge" class="badge-won" style="font-size: 0.72rem; padding: 4px 10px; text-transform: uppercase;">
+                🟢 ИНИЦИАЛИЗАЦИЯ...
+              </span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); display: flex; flex-wrap: wrap; align-items: center; gap: 14px;">
+              <span>Полное управление службами, базами Google Таблиц, автозадачами Windows и ИИ взамен батников</span>
+              <span style="color: rgba(255,255,255,0.2);">&bull;</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="color: var(--accent-cyan);">🌐 Внешний Вебхук:</span>
+                <a id="adminTunnelLink" href="https://webhook.ai-rop.ru" target="_blank" rel="noopener noreferrer" style="color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-decoration: underline; text-underline-offset: 3px;">https://webhook.ai-rop.ru</a>
+                <button onclick="copyAdminTunnelUrl()" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.65rem; height: auto;" title="Скопировать URL туннеля">📋 Копировать</button>
+              </span>
+            </div>
+          </div>
+
+          <!-- Master Fleet Actions -->
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <button onclick="runFleetAction('start_all')" class="btn-modern-primary" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; font-size: 0.8rem; font-weight: 600;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Запустить все службы</span>
+            </button>
+            <button onclick="runFleetAction('stop_all')" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 0.8rem; color: var(--accent-rose); border-color: rgba(243, 101, 148, 0.35);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+              <span>Остановить все</span>
+            </button>
+            <button onclick="loadAdminStatus()" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 0.8rem;" title="Обновить статус служб">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Обновить</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Grid: 4 Core Modules -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 18px; margin-bottom: 20px;">
+
+        <!-- MODULE 1: ФОНОВЫЕ СЛУЖБЫ & ПОРТЫ -->
+        <div class="bento-card">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
+              1. Фоновые службы & Порты (Service Fleet)
+            </span>
+            <span class="badge-info" style="font-size: 0.65rem;">Локальный ПК</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Service: FastAPI -->
+            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>FastAPI SaaS & PDF-сервер</span>
+                  <span id="adminFastapiBadge" class="badge-won" style="font-size: 0.65rem;">🟢 ПОРТ 8000</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;">
+                  PID: <span id="adminFastapiPid">—</span> &bull; Память: <span id="adminFastapiMem">— MB</span> &bull; Uvicorn Async
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <a href="/docs" target="_blank" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Swagger Docs &nearr;</a>
+              </div>
+            </div>
+
+            <!-- Service: n8n Orchestrator -->
+            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>n8n Orchestrator (Воркфлоу & CRM-вебхуки)</span>
+                  <span id="adminN8nBadge" class="badge-won" style="font-size: 0.65rem;">🟢 ПОРТ 5678</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px;">
+                  Сценарии: речевой аудит, amoCRM/B24 вебхуки, публикация Published
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <a href="http://127.0.0.1:5678" target="_blank" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Веб-консоль &nearr;</a>
+                <button onclick="runFleetAction('restart_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;" title="Перезапустить n8n">🔄</button>
+                <button onclick="runFleetAction('stop_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem; color: var(--accent-rose);" title="Остановить n8n">🛑</button>
+              </div>
+            </div>
+
+            <!-- Service: Cloudflare Tunnel -->
+            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>Cloudflare Защищённый Туннель</span>
+                  <span id="adminTunnelBadge" class="badge-won" style="font-size: 0.65rem;">🟢 HTTPS АКТИВЕН</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;" id="adminTunnelSubtext">
+                  https://webhook.ai-rop.ru &bull; Без белого IP
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <button onclick="runFleetAction('start_tunnel')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">🚀 Пуск</button>
+                <button onclick="runFleetAction('stop_tunnel')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem; color: var(--accent-rose);">🛑 Стоп</button>
+              </div>
+            </div>
+
+            <!-- Service: Google Service Account -->
+            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>Google Sheets & Drive Service Account</span>
+                  <span id="adminSaBadge" class="badge-won" style="font-size: 0.65rem;">🟢 ПОДКЛЮЧЕН</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;" id="adminSaEmail">
+                  revops-prod-sa@revops-441112.iam.gserviceaccount.com
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <button onclick="showToast('Ключ сервисного аккаунта', 'service_account.json проверен и валиден')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Проверен ✓</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 2: GOOGLE ТАБЛИЦЫ (СИНХРОНИЗАЦИЯ И АУДИТ ФОРМУЛ) -->
+        <div class="bento-card">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+              2. Google Таблицы: Синхронизация & Формулы
+            </span>
+            <span class="badge-info" style="font-size: 0.65rem;">Вместо батника обновления</span>
+          </div>
+
+          <div style="font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.45;">
+            Автоматическое обнаружение всех клиентских баз на Google Диске, накат 100% динамических формул, защита структуры и форматов (#,##0 ₽).
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+            <button onclick="runSheetsAction('sync_all')" class="btn-modern-primary" style="padding: 10px 12px; font-size: 0.78rem; text-align: left; display: flex; flex-direction: column; gap: 3px;">
+              <strong style="color: #fff; display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Обновить ВСЕ таблицы
+              </strong>
+              <span style="font-size: 0.68rem; opacity: 0.8; font-weight: normal;">1 клик для всех баз и шаблонов</span>
+            </button>
+
+            <button onclick="runSheetsAction('scan')" class="btn-modern-ghost" style="padding: 10px 12px; font-size: 0.78rem; text-align: left; display: flex; flex-direction: column; gap: 3px;">
+              <strong style="color: #fff; display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Сканировать Google Диск
+              </strong>
+              <span style="font-size: 0.68rem; color: var(--text-secondary); font-weight: normal;">Аудит формул без изменений</span>
+            </button>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <button onclick="runSheetsAction('starter_only')" class="btn-modern-ghost" style="width: 100%; padding: 8px 12px; font-size: 0.76rem; display: flex; align-items: center; justify-content: space-between;">
+              <span>⭐ Обновить только Эталонный Шаблон (Clean Client Starter)</span>
+              <span class="badge-info" style="font-size: 0.62rem;">Master Copy</span>
+            </button>
+          </div>
+
+          <!-- Target Single Table Update -->
+          <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
+            <div style="font-size: 0.75rem; font-weight: 600; color: #fff; margin-bottom: 8px;">
+              🏢 Обновление конкретной таблицы по ID:
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="adminTargetSheetId" placeholder="Вставьте Spreadsheet ID (например: 1KoKhFJR_...)" 
+                     style="flex: 1; padding: 7px 10px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+              <button onclick="runSheetsTarget()" class="btn-modern-ghost" style="padding: 7px 12px; font-size: 0.75rem; white-space: nowrap;">
+                🎯 Обновить
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 3: ПЛАНИРОВЩИК WINDOWS (TASK SCHEDULER) -->
+        <div class="bento-card">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+              3. Планировщик Windows: Ежедневные Автозадачи
+            </span>
+            <span class="badge-info" style="font-size: 0.65rem;">Task Scheduler</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Task: Daily Sheets AutoSync -->
+            <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+                <div>
+                  <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">
+                    ⏰ RevOps_Daily_Sheets_AutoSync
+                  </div>
+                  <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                    Статус: <strong id="adminDailyStatusLabel" style="color: #34d399;">🟢 Готов</strong> &bull; След: <span id="adminDailyNextRun" style="font-family: 'JetBrains Mono', monospace; color: #a78bfa;">04:00</span>
+                  </div>
+                  <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px;">
+                    Режим нагона: <span style="color: #34d399;">StartWhenAvailable=True</span> (срабатывает сразу при включении ПК)
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <button onclick="runTaskAction('run_daily_now')" class="btn-modern-primary" style="padding: 5px 9px; font-size: 0.72rem;">
+                    ⚡ Запустить сейчас
+                  </button>
+                  <button onclick="runTaskAction('uninstall_daily')" class="btn-modern-ghost" style="padding: 5px 8px; font-size: 0.72rem; color: var(--accent-rose);" title="Удалить задачу">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+
+              <!-- Schedule Time Changer -->
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.72rem;">
+                <span style="color: var(--text-secondary);">Время ежедневного запуска:</span>
+                <input type="time" id="adminDailyTimeInput" value="04:00" 
+                       style="padding: 3px 6px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;">
+                <button onclick="saveDailyTaskTime()" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.7rem;">
+                  💾 Сохранить
+                </button>
+              </div>
+            </div>
+
+            <!-- Task: DevOps & QA Healer -->
+            <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">
+                  🩺 RevOps_DevOps_QA_Healer (Дежурный Ревизор)
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                  Период: <span style="color: #a78bfa;">каждые 15 минут</span> &bull; Авто-исправление дрейфа формул и портов
+                </div>
+              </div>
+              <div>
+                <button onclick="runTaskAction('run_healer_now')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
+                  🩺 Инспекция сейчас
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 4: ИИ ЯДРО & РЕЧЕВОЙ АУДИТ -->
+        <div class="bento-card">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
+              4. Google Gemini ИИ Аудит & 13 Критериев
+            </span>
+            <span class="badge-won" style="font-size: 0.65rem;">Direct API</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45;">
+            <div>
+              &bull; <strong>Модель:</strong> <span style="color: #fff;">Google Gemini 3.5 Flash (Cloudflare Proxy Worker)</span><br>
+              &bull; <strong>Параметры:</strong> <span style="font-family: 'JetBrains Mono', monospace; color: #a78bfa;">temperature=0.1, responseMimeType="application/json"</span><br>
+              &bull; <strong>13 критериев B2B-аудита:</strong> <span style="color: #34d399;">cr1..cr13 строгий бинарный скоринг (0/1)</span><br>
+              &bull; <strong>Задержка API:</strong> <span id="adminGeminiLatency" style="font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">— ms</span>
+            </div>
+
+            <div style="margin-top: 4px; padding: 10px 12px; background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div style="font-size: 0.74rem;">
+                <span style="color: #fff; font-weight: 600;">Проверка сквозного канала Gemini</span>
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 1px;">Пинг прокси-воркера и ответ модели</div>
+              </div>
+              <button id="btnTestGemini" onclick="testGeminiApi()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem; white-space: nowrap;">
+                🧪 Тест Gemini API
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MODULE 5: ИНТЕРАКТИВНАЯ ВЕБ-КОНСОЛЬ & ЖУРНАЛ ЛОГОВ (ПОЛНАЯ ЗАМЕНА ЧЕРНЫХ ОКОН CMD) -->
+      <div class="bento-card" style="padding: 0; overflow: hidden; border: 1px solid rgba(124, 58, 237, 0.25);">
+        <!-- Terminal Header -->
+        <div style="padding: 10px 16px; background: rgba(5, 5, 8, 0.95); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; gap: 6px;">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+            </div>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; font-weight: 600; color: #fff;">
+              RevOps Live Terminal &bull; <span id="adminTerminalMode" style="color: var(--accent-cyan);">Интерактивная консоль операций</span>
+            </span>
+          </div>
+
+          <!-- Log switchers -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button onclick="fetchAdminLogs('console')" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem;">Консоль</button>
+            <button onclick="fetchAdminLogs('daily_sync')" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem;">Лог автозадачи</button>
+            <button onclick="fetchAdminLogs('healer')" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem;">Лог Healer</button>
+            <button onclick="clearAdminConsole()" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem; color: var(--text-muted);" title="Очистить консоль">🧹 Очистить</button>
+          </div>
+        </div>
+
+        <!-- Terminal Output Screen -->
+        <div id="adminTerminalBody" style="background: #040407; padding: 14px 16px; min-height: 220px; max-height: 380px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; line-height: 1.6; color: #e2e8f0; white-space: pre-wrap; word-break: break-all;">
+          <div style="color: #64748b;">[System] RevOps Live Console запущена. Нажмите любую кнопку управления выше для выполнения команды...</div>
         </div>
       </div>
 

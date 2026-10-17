@@ -547,7 +547,7 @@ let CALLS_DATA = [
     // ==========================================================================
     // TABS SWITCHING
     // ==========================================================================
-    const ALL_TABS = ['pulse', 'express', 'rop', 'audit', 'leaks', 'impact', 'montecarlo', 'skills', 'settings'];
+    const ALL_TABS = ['pulse', 'express', 'rop', 'audit', 'leaks', 'impact', 'montecarlo', 'skills', 'settings', 'admin'];
 
 
     function filterRepAudit(repName) {
@@ -631,6 +631,9 @@ let CALLS_DATA = [
         }
         if (tabId === 'audit' && speechRadarChartInstance) {
           speechRadarChartInstance.resize();
+        }
+        if (tabId === 'admin') {
+          loadAdminStatus();
         }
       };
 
@@ -2252,6 +2255,15 @@ let CALLS_DATA = [
       fetchLiveCallsData(false);
       tickLiveStatus();
       updateChartTimestamps();
+
+      // Initial tab router (?tab=admin or /admin)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetTab = window.__INITIAL_TAB__ || urlParams.get('tab');
+        if (targetTab && ALL_TABS.includes(targetTab)) {
+          switchTab(targetTab);
+        }
+      } catch (e) {}
     });
 
     // ==========================================================================
@@ -2383,6 +2395,7 @@ let CALLS_DATA = [
       { type: 'Раздел', icon: '→', label: '7. Monte Carlo 3.0 симуляция', action: () => switchTab('montecarlo') },
       { type: 'Раздел', icon: '→', label: '8. Навыки & Динамический Payroll', action: () => switchTab('skills') },
       { type: 'Раздел', icon: '→', label: '9. Настройки & E2E Контур', action: () => switchTab('settings') },
+      { type: 'Раздел', icon: '→', label: '10. Админ-кабинет (Управление проектом)', action: () => switchTab('admin') },
 
       // CRM Deals Drilldown
       { type: 'Сделка', icon: '§', label: 'B24-80: Услуги повышения лояльности (Светлана • 500k)', action: () => { switchTab('audit'); openCallModal('b24_activity_78'); } },
@@ -2869,6 +2882,294 @@ async function triggerSelfHealingAudit() {
 }
 
 // ==========================================================================
+// ADMIN DASHBOARD & FLEET CONTROL CENTER
+// ==========================================================================
+let isAdminActionRunning = false;
+
+async function loadAdminStatus() {
+  try {
+    const res = await fetch('/api/v1/admin/status');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    // 1. Fleet Ribbon
+    const fleetBadge = document.getElementById('adminFleetBadge');
+    if (fleetBadge) {
+      fleetBadge.textContent = data.fleet_label;
+      fleetBadge.className = data.fleet_status === 'ALL_SYSTEMS_NOMINAL' ? 'badge-won' : (data.fleet_status === 'DEGRADED_LOCAL' ? 'badge-warn' : 'badge-lost');
+    }
+
+    const tunnelLink = document.getElementById('adminTunnelLink');
+    const tunnelSubtext = document.getElementById('adminTunnelSubtext');
+    if (tunnelLink && data.cloudflare_tunnel.url) {
+      tunnelLink.href = data.cloudflare_tunnel.url;
+      tunnelLink.textContent = data.cloudflare_tunnel.url;
+    }
+    if (tunnelSubtext) {
+      tunnelSubtext.textContent = data.cloudflare_tunnel.url + ' • Без белого IP';
+    }
+
+    // 2. Services Badges
+    const fastapiBadge = document.getElementById('adminFastapiBadge');
+    const fastapiPid = document.getElementById('adminFastapiPid');
+    const fastapiMem = document.getElementById('adminFastapiMem');
+    if (fastapiBadge) fastapiBadge.textContent = data.fastapi.status_label;
+    if (fastapiPid) fastapiPid.textContent = data.fastapi.pid;
+    if (fastapiMem) fastapiMem.textContent = data.fastapi.memory_mb + ' MB';
+
+    const n8nBadge = document.getElementById('adminN8nBadge');
+    if (n8nBadge) {
+      n8nBadge.textContent = data.n8n.status_label;
+      n8nBadge.className = data.n8n.healthy ? 'badge-won' : 'badge-lost';
+    }
+
+    const tunnelBadge = document.getElementById('adminTunnelBadge');
+    if (tunnelBadge) {
+      tunnelBadge.textContent = data.cloudflare_tunnel.status_label;
+      tunnelBadge.className = data.cloudflare_tunnel.running ? 'badge-won' : 'badge-lost';
+    }
+
+    const saBadge = document.getElementById('adminSaBadge');
+    const saEmail = document.getElementById('adminSaEmail');
+    if (saBadge) {
+      saBadge.textContent = data.google_sheets.status_label;
+      saBadge.className = data.google_sheets.valid ? 'badge-won' : 'badge-lost';
+    }
+    if (saEmail && data.google_sheets.client_email) {
+      saEmail.textContent = data.google_sheets.client_email;
+    }
+
+    // 3. Tasks
+    const dailyStatusLabel = document.getElementById('adminDailyStatusLabel');
+    const dailyNextRun = document.getElementById('adminDailyNextRun');
+    if (dailyStatusLabel) dailyStatusLabel.textContent = data.tasks.daily_sync.status_label;
+    if (dailyNextRun) dailyNextRun.textContent = data.tasks.daily_sync.next_run;
+
+  } catch (err) {
+    console.warn('[Admin] Не удалось загрузить статус:', err);
+  }
+}
+
+function appendAdminTerminalLog(msg, level = 'info') {
+  const term = document.getElementById('adminTerminalBody');
+  if (!term) return;
+  const ts = new Date().toLocaleTimeString('ru-RU');
+  const div = document.createElement('div');
+  div.style.marginTop = '4px';
+
+  let color = '#cbd5e1';
+  if (level === 'success') color = '#34d399';
+  else if (level === 'error') color = '#f87171';
+  else if (level === 'warning') color = '#fbbf24';
+  else if (level === 'info') color = '#38bdf8';
+
+  div.style.color = color;
+  div.textContent = `[${ts}] ${msg}`;
+  term.appendChild(div);
+  term.scrollTop = term.scrollHeight;
+}
+
+async function runFleetAction(action) {
+  if (isAdminActionRunning) return;
+  isAdminActionRunning = true;
+  appendAdminTerminalLog(`Инициализация команды флота: ${action}...`, 'info');
+  showToast('Управление службами', `Выполняется: ${action}`);
+
+  try {
+    const res = await fetch('/api/v1/admin/fleet/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (data.output && Array.isArray(data.output)) {
+      data.output.forEach(line => appendAdminTerminalLog(line, data.success ? 'success' : 'error'));
+    }
+    appendAdminTerminalLog(data.message || 'Действие выполнено', data.success ? 'success' : 'error');
+    showToast('Службы RevOps', data.message || 'Готово');
+    await loadAdminStatus();
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка выполнения: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
+  } finally {
+    isAdminActionRunning = false;
+  }
+}
+
+async function runSheetsAction(action) {
+  if (isAdminActionRunning) return;
+  isAdminActionRunning = true;
+  appendAdminTerminalLog(`Запуск операции с Google Таблицами: ${action}...`, 'info');
+  showToast('Google Таблицы', `Запущена операция: ${action}`);
+
+  try {
+    const res = await fetch('/api/v1/admin/sheets/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (data.output) {
+      const lines = data.output.split('\n');
+      lines.slice(-15).forEach(l => {
+        if (l.trim()) appendAdminTerminalLog(l.trim(), data.success ? 'success' : 'error');
+      });
+    }
+    appendAdminTerminalLog(data.summary || (data.success ? 'Синхронизация таблиц успешно завершена!' : 'Ошибка синхронизации'), data.success ? 'success' : 'error');
+    showToast('Google Таблицы', data.success ? 'Таблицы успешно обновлены!' : 'Ошибка при синхронизации');
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
+  } finally {
+    isAdminActionRunning = false;
+  }
+}
+
+async function runSheetsTarget() {
+  const input = document.getElementById('adminTargetSheetId');
+  const sheetId = input ? input.value.trim() : '';
+  if (!sheetId) {
+    showToast('Внимание', 'Введите Spreadsheet ID для обновления');
+    return;
+  }
+  if (isAdminActionRunning) return;
+  isAdminActionRunning = true;
+  appendAdminTerminalLog(`Точечное обновление таблицы: ${sheetId}...`, 'info');
+  showToast('Google Таблицы', `Обновление таблицы ${sheetId.slice(0, 10)}...`);
+
+  try {
+    const res = await fetch('/api/v1/admin/sheets/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'target', spreadsheet_id: sheetId })
+    });
+    const data = await res.json();
+    if (data.output) {
+      data.output.split('\n').slice(-10).forEach(l => {
+        if (l.trim()) appendAdminTerminalLog(l.trim(), data.success ? 'success' : 'error');
+      });
+    }
+    appendAdminTerminalLog(data.success ? `Таблица ${sheetId} обновлена!` : 'Сбой обновления таблицы', data.success ? 'success' : 'error');
+    showToast('Google Таблицы', data.success ? 'Таблица обновлена!' : 'Сбой обновления');
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка: ${err.message}`, 'error');
+  } finally {
+    isAdminActionRunning = false;
+  }
+}
+
+async function runTaskAction(action) {
+  if (isAdminActionRunning) return;
+  isAdminActionRunning = true;
+  appendAdminTerminalLog(`Планировщик задач: действие ${action}...`, 'info');
+
+  try {
+    const res = await fetch('/api/v1/admin/tasks/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    appendAdminTerminalLog(data.message || 'Действие выполнено', data.success ? 'success' : 'error');
+    showToast('Планировщик Windows', data.message || 'Готово');
+    await loadAdminStatus();
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка планировщика: ${err.message}`, 'error');
+  } finally {
+    isAdminActionRunning = false;
+  }
+}
+
+async function saveDailyTaskTime() {
+  const input = document.getElementById('adminDailyTimeInput');
+  const timeVal = input ? input.value : '04:00';
+  appendAdminTerminalLog(`Переустановка автозадачи на время: ${timeVal}...`, 'info');
+
+  try {
+    const res = await fetch('/api/v1/admin/tasks/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'install_daily', time_str: timeVal })
+    });
+    const data = await res.json();
+    appendAdminTerminalLog(data.message || 'Расписание сохранено', data.success ? 'success' : 'error');
+    showToast('Автозадача Windows', data.message || 'Время сохранено');
+    await loadAdminStatus();
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка: ${err.message}`, 'error');
+  }
+}
+
+async function testGeminiApi() {
+  const btn = document.getElementById('btnTestGemini');
+  const latEl = document.getElementById('adminGeminiLatency');
+  if (btn) btn.disabled = true;
+  appendAdminTerminalLog('Пинг Google Gemini 3.5 Flash через Cloudflare Proxy Worker...', 'info');
+
+  try {
+    const res = await fetch('/api/v1/admin/ai/test-gemini', { method: 'POST' });
+    const data = await res.json();
+    if (latEl) latEl.textContent = `${data.latency_ms || '—'} ms`;
+    appendAdminTerminalLog(data.message || 'Тест Gemini API завершён', data.success ? 'success' : 'error');
+    showToast('Gemini API', data.success ? `Успешно (${data.latency_ms} ms)` : 'Ошибка связи');
+  } catch (err) {
+    appendAdminTerminalLog(`Сбой связи с Gemini: ${err.message}`, 'error');
+    showToast('Ошибка Gemini', err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function fetchAdminLogs(logType) {
+  const modeEl = document.getElementById('adminTerminalMode');
+  if (modeEl) {
+    modeEl.textContent = logType === 'console' ? 'Интерактивная консоль' : (logType === 'daily_sync' ? 'Журнал ежедневной автозадачи' : 'Журнал DevOps Healer');
+  }
+  try {
+    const res = await fetch(`/api/v1/admin/logs?log_type=${logType}`);
+    const data = await res.json();
+    const term = document.getElementById('adminTerminalBody');
+    if (!term) return;
+
+    if (logType === 'console' && data.logs) {
+      term.innerHTML = '';
+      data.logs.forEach(e => {
+        appendAdminTerminalLog(e.msg, e.level);
+      });
+    } else if (data.content) {
+      term.innerHTML = '';
+      const div = document.createElement('div');
+      div.style.color = '#94a3b8';
+      div.textContent = data.content;
+      term.appendChild(div);
+      term.scrollTop = term.scrollHeight;
+    }
+  } catch (err) {
+    appendAdminTerminalLog(`Не удалось прочесть лог: ${err.message}`, 'error');
+  }
+}
+
+async function clearAdminConsole() {
+  try {
+    await fetch('/api/v1/admin/logs/clear', { method: 'POST' });
+    const term = document.getElementById('adminTerminalBody');
+    if (term) term.innerHTML = '<div style="color: #64748b;">[System] Консоль очищена.</div>';
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function copyAdminTunnelUrl() {
+  const link = document.getElementById('adminTunnelLink');
+  const url = link ? link.textContent.trim() : 'https://webhook.ai-rop.ru';
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('Скопировано в буфер', url);
+  }).catch(() => {
+    showToast('URL скопирован', url);
+  });
+}
+
+// ==========================================================================
 // EXPOSE INTERACTIVE HANDLERS GLOBALLY ON WINDOW FOR INLINE ONCLICK EVENTS
 // ==========================================================================
 window.copyRescueScript = typeof copyRescueScript !== 'undefined' ? copyRescueScript : null;
@@ -2893,4 +3194,17 @@ window.triggerSyncSimulation = typeof triggerSyncSimulation !== 'undefined' ? tr
 window.renderSkillsHeatmap = typeof renderSkillsHeatmap !== 'undefined' ? renderSkillsHeatmap : null;
 window.filterRepAudit = typeof filterRepAudit !== 'undefined' ? filterRepAudit : null;
 window.toggleSinDetails = typeof toggleSinDetails !== 'undefined' ? toggleSinDetails : null;
+
+// Admin Fleet Control Handlers
+window.loadAdminStatus = typeof loadAdminStatus !== 'undefined' ? loadAdminStatus : null;
+window.runFleetAction = typeof runFleetAction !== 'undefined' ? runFleetAction : null;
+window.runSheetsAction = typeof runSheetsAction !== 'undefined' ? runSheetsAction : null;
+window.runSheetsTarget = typeof runSheetsTarget !== 'undefined' ? runSheetsTarget : null;
+window.runTaskAction = typeof runTaskAction !== 'undefined' ? runTaskAction : null;
+window.saveDailyTaskTime = typeof saveDailyTaskTime !== 'undefined' ? saveDailyTaskTime : null;
+window.testGeminiApi = typeof testGeminiApi !== 'undefined' ? testGeminiApi : null;
+window.fetchAdminLogs = typeof fetchAdminLogs !== 'undefined' ? fetchAdminLogs : null;
+window.clearAdminConsole = typeof clearAdminConsole !== 'undefined' ? clearAdminConsole : null;
+window.copyAdminTunnelUrl = typeof copyAdminTunnelUrl !== 'undefined' ? copyAdminTunnelUrl : null;
+window.appendAdminTerminalLog = typeof appendAdminTerminalLog !== 'undefined' ? appendAdminTerminalLog : null;
 

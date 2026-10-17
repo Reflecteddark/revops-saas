@@ -28,7 +28,8 @@ from .routers import (
     metrics_router,
     insights_router,
     webhooks_router,
-    monitoring_router
+    monitoring_router,
+    admin_router
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -76,6 +77,7 @@ app.include_router(auth_router.router, prefix="/api/v1")
 app.include_router(diagnostics_router.router, prefix="/api/v1")
 app.include_router(radar_router.router, prefix="/api/v1")
 app.include_router(calls_router.router, prefix="/api/v1")
+app.include_router(admin_router.router, prefix="/api/v1")
 
 
 # Real-time WebSocket Endpoint
@@ -135,6 +137,14 @@ if INDEX_HTML.exists():
     def serve_dashboard():
         with open(INDEX_HTML, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
+
+    @app.get("/admin", response_class=HTMLResponse)
+    def serve_admin():
+        with open(INDEX_HTML, "r", encoding="utf-8") as f:
+            content = f.read()
+            # Inject initial tab override for direct /admin URL
+            content = content.replace("</head>", '<script>window.__INITIAL_TAB__="admin";</script></head>')
+            return HTMLResponse(content=content)
 
 if APP_JS.exists():
     @app.get("/app.js")
