@@ -7152,8 +7152,7 @@
          ===================================================================== -->
     <div id="view-admin" class="tab-view">
 
-      <!-- Executive Fleet Ribbon -->
-      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(24, 18, 42, 0.95) 0%, rgba(13, 13, 20, 0.98) 100%); border: 1px solid rgba(124, 58, 237, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+<div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(24, 18, 42, 0.95) 0%, rgba(13, 13, 20, 0.98) 100%); border: 1px solid rgba(124, 58, 237, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
         <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
           <div>
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
@@ -7202,325 +7201,698 @@
         </div>
       </div>
 
-      <!-- Bento Grid: Core Modules -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 18px; margin-bottom: 20px;">
-
-        <!-- MODULE 0: ИНТЕГРАЦИЯ CRM (BITRIX24 & AMOCRM) -->
-        <div class="bento-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(22, 18, 38, 0.95) 0%, rgba(12, 12, 22, 0.98) 100%); border: 1px solid rgba(167, 139, 250, 0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.45);">
-          <div class="bento-card-header" style="margin-bottom: 14px;">
-            <span class="bento-card-title">
-              <span class="title-icon" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M8 12h14"/></svg>
-              </span>
-              0. Интеграция с CRM: Bitrix24 REST API & amoCRM API v4
-            </span>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span id="adminActiveCrmBadge" class="badge-won" style="font-size: 0.70rem; padding: 3px 9px;">🟢 BITRIX24 REST</span>
-              <button id="btnSwitchCrm" onclick="switchAdminCrm()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.72rem; color: #a78bfa; border-color: rgba(167, 139, 250, 0.4);">
-                🔄 Переключить CRM
-              </button>
-            </div>
-          </div>
-
-          <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
-            <div>
-              Текущий клиент (тенант): <strong id="adminCrmTenantLabel" style="color: #fff;">TNT-001</strong> &bull;
-              Связанная Google Таблица: <span id="adminCrmSheetLabel" style="font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">1KoKhFJR_...</span>
-            </div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">
-              Прямая замена <code style="color: #a78bfa;">Интеграция_Bitrix24.bat</code> и <code style="color: #34d399;">Интеграция_AmoCRM.bat</code>
-            </div>
-          </div>
-
-          <!-- Two Column Bento: Bitrix24 vs amoCRM -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
-
-            <!-- Bitrix24 Card -->
-            <div style="padding: 14px; background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
-                  <span>Bitrix24 REST API</span>
-                  <span id="adminB24StatusBadge" class="badge-won" style="font-size: 0.62rem;">Готов</span>
-                </div>
-                <span style="font-size: 0.68rem; color: var(--text-muted);">b24-8dmblj.bitrix24.ru</span>
-              </div>
-              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;" id="adminB24WebhookPreview">
-                Вебхук: /rest/1/azekoswdul7y2cpi/
-              </div>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
-                <button id="btnB24Stages" onclick="runAdminCrmAction('show_stages', 'bitrix24')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
-                  🔍 Этапы воронки
-                </button>
-                <button id="btnB24DryRun" onclick="runAdminCrmAction('dry_run', 'bitrix24')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
-                  🧪 Тест сделок (30 дн)
-                </button>
-                <button id="btnB24Sync" onclick="runAdminCrmAction('sync_deals', 'bitrix24')" class="btn-modern-primary" style="padding: 7px 10px; font-size: 0.72rem; text-align: left; grid-column: 1 / -1;">
-                  ⚡ Боевая выгрузка сделок в raw_deals
-                </button>
-              </div>
-            </div>
-
-            <!-- amoCRM Card -->
-            <div style="padding: 14px; background: rgba(52, 211, 153, 0.04); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 10px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 8px;">
-                  <span>amoCRM API v4</span>
-                  <span id="adminAmoStatusBadge" class="badge-won" style="font-size: 0.62rem;">Готов</span>
-                </div>
-                <span style="font-size: 0.68rem; color: var(--text-muted);">revopsofficial.amocrm.ru</span>
-              </div>
-              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;" id="adminAmoDomainPreview">
-                OAuth 2.0 Bearer JWT токен активен
-              </div>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
-                <button id="btnAmoStages" onclick="runAdminCrmAction('show_stages', 'amocrm')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
-                  🔍 Пайплайны и статусы
-                </button>
-                <button id="btnAmoDryRun" onclick="runAdminCrmAction('dry_run', 'amocrm')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
-                  🧪 Тест сделок (30 дн)
-                </button>
-                <button id="btnAmoSync" onclick="runAdminCrmAction('sync_deals', 'amocrm')" class="btn-modern-primary" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: rgba(52, 211, 153, 0.4); padding: 7px 10px; font-size: 0.72rem; text-align: left; grid-column: 1 / -1;">
-                  ⚡ Боевая выгрузка сделок в raw_deals
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-
-        <!-- MODULE 1: ФОНОВЫЕ СЛУЖБЫ & ПОРТЫ -->
-        <div class="bento-card">
-          <div class="bento-card-header" style="margin-bottom: 14px;">
-            <span class="bento-card-title">
-              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
-              1. Фоновые службы & Порты (Service Fleet)
-            </span>
-            <span class="badge-info" style="font-size: 0.65rem;">Локальный ПК</span>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <!-- Service: FastAPI -->
-            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-              <div>
-                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
-                  <span>FastAPI SaaS & PDF-сервер</span>
-                  <span id="adminFastapiBadge" class="badge-won" style="font-size: 0.65rem;">🟢 ПОРТ 8000</span>
-                </div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;">
-                  PID: <span id="adminFastapiPid">—</span> &bull; Память: <span id="adminFastapiMem">— MB</span> &bull; Uvicorn Async
-                </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <a href="/docs" target="_blank" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Swagger Docs &nearr;</a>
-              </div>
-            </div>
-
-            <!-- Service: n8n Orchestrator -->
-            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-              <div>
-                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
-                  <span>n8n Orchestrator (Воркфлоу & CRM-вебхуки)</span>
-                  <span id="adminN8nBadge" class="badge-won" style="font-size: 0.65rem;">🟢 ПОРТ 5678</span>
-                </div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px;">
-                  Сценарии: речевой аудит, amoCRM/B24 вебхуки, публикация Published
-                </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <a href="http://127.0.0.1:5678" target="_blank" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Веб-консоль &nearr;</a>
-                <button onclick="runFleetAction('restart_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;" title="Перезапустить n8n">🔄</button>
-                <button onclick="runFleetAction('stop_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem; color: var(--accent-rose);" title="Остановить n8n">🛑</button>
-              </div>
-            </div>
-
-            <!-- Service: Cloudflare Tunnel -->
-            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-              <div>
-                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
-                  <span>Cloudflare Защищённый Туннель</span>
-                  <span id="adminTunnelBadge" class="badge-won" style="font-size: 0.65rem;">🟢 HTTPS АКТИВЕН</span>
-                </div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;" id="adminTunnelSubtext">
-                  https://webhook.ai-rop.ru &bull; Без белого IP
-                </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <button onclick="runFleetAction('start_tunnel')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">🚀 Пуск</button>
-                <button onclick="runFleetAction('stop_tunnel')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem; color: var(--accent-rose);">🛑 Стоп</button>
-              </div>
-            </div>
-
-            <!-- Service: Google Service Account -->
-            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-              <div>
-                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
-                  <span>Google Sheets & Drive Service Account</span>
-                  <span id="adminSaBadge" class="badge-won" style="font-size: 0.65rem;">🟢 ПОДКЛЮЧЕН</span>
-                </div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;" id="adminSaEmail">
-                  revops-prod-sa@revops-441112.iam.gserviceaccount.com
-                </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <button onclick="showToast('Ключ сервисного аккаунта', 'service_account.json проверен и валиден')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Проверен ✓</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- MODULE 2: GOOGLE ТАБЛИЦЫ (СИНХРОНИЗАЦИЯ И АУДИТ ФОРМУЛ) -->
-        <div class="bento-card">
-          <div class="bento-card-header" style="margin-bottom: 14px;">
-            <span class="bento-card-title">
-              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
-              2. Google Таблицы: Синхронизация & Формулы
-            </span>
-            <span class="badge-info" style="font-size: 0.65rem;">Вместо батника обновления</span>
-          </div>
-
-          <div style="font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.45;">
-            Автоматическое обнаружение всех клиентских баз на Google Диске, накат 100% динамических формул, защита структуры и форматов (#,##0 ₽).
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
-            <button onclick="runSheetsAction('sync_all')" class="btn-modern-primary" style="padding: 10px 12px; font-size: 0.78rem; text-align: left; display: flex; flex-direction: column; gap: 3px;">
-              <strong style="color: #fff; display: flex; align-items: center; gap: 6px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                Обновить ВСЕ таблицы
-              </strong>
-              <span style="font-size: 0.68rem; opacity: 0.8; font-weight: normal;">1 клик для всех баз и шаблонов</span>
-            </button>
-
-            <button onclick="runSheetsAction('scan')" class="btn-modern-ghost" style="padding: 10px 12px; font-size: 0.78rem; text-align: left; display: flex; flex-direction: column; gap: 3px;">
-              <strong style="color: #fff; display: flex; align-items: center; gap: 6px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                Сканировать Google Диск
-              </strong>
-              <span style="font-size: 0.68rem; color: var(--text-secondary); font-weight: normal;">Аудит формул без изменений</span>
-            </button>
-          </div>
-
-          <div style="margin-bottom: 14px;">
-            <button onclick="runSheetsAction('starter_only')" class="btn-modern-ghost" style="width: 100%; padding: 8px 12px; font-size: 0.76rem; display: flex; align-items: center; justify-content: space-between;">
-              <span>⭐ Обновить только Эталонный Шаблон (Clean Client Starter)</span>
-              <span class="badge-info" style="font-size: 0.62rem;">Master Copy</span>
-            </button>
-          </div>
-
-          <!-- Target Single Table Update -->
-          <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
-            <div style="font-size: 0.75rem; font-weight: 600; color: #fff; margin-bottom: 8px;">
-              🏢 Обновление конкретной таблицы по ID:
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="adminTargetSheetId" placeholder="Вставьте Spreadsheet ID (например: 1KoKhFJR_...)" 
-                     style="flex: 1; padding: 7px 10px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
-              <button onclick="runSheetsTarget()" class="btn-modern-ghost" style="padding: 7px 12px; font-size: 0.75rem; white-space: nowrap;">
-                🎯 Обновить
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- MODULE 3: ПЛАНИРОВЩИК WINDOWS (TASK SCHEDULER) -->
-        <div class="bento-card">
-          <div class="bento-card-header" style="margin-bottom: 14px;">
-            <span class="bento-card-title">
-              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-              3. Планировщик Windows: Ежедневные Автозадачи
-            </span>
-            <span class="badge-info" style="font-size: 0.65rem;">Task Scheduler</span>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <!-- Task: Daily Sheets AutoSync -->
-            <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
-                <div>
-                  <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">
-                    ⏰ RevOps_Daily_Sheets_AutoSync
-                  </div>
-                  <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
-                    Статус: <strong id="adminDailyStatusLabel" style="color: #34d399;">🟢 Готов</strong> &bull; След: <span id="adminDailyNextRun" style="font-family: 'JetBrains Mono', monospace; color: #a78bfa;">04:00</span>
-                  </div>
-                  <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px;">
-                    Режим нагона: <span style="color: #34d399;">StartWhenAvailable=True</span> (срабатывает сразу при включении ПК)
-                  </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <button onclick="runTaskAction('run_daily_now')" class="btn-modern-primary" style="padding: 5px 9px; font-size: 0.72rem;">
-                    ⚡ Запустить сейчас
-                  </button>
-                  <button onclick="runTaskAction('uninstall_daily')" class="btn-modern-ghost" style="padding: 5px 8px; font-size: 0.72rem; color: var(--accent-rose);" title="Удалить задачу">
-                    🗑️
-                  </button>
-                </div>
-              </div>
-
-              <!-- Schedule Time Changer -->
-              <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.72rem;">
-                <span style="color: var(--text-secondary);">Время ежедневного запуска:</span>
-                <input type="time" id="adminDailyTimeInput" value="04:00" 
-                       style="padding: 3px 6px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;">
-                <button onclick="saveDailyTaskTime()" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.7rem;">
-                  💾 Сохранить
-                </button>
-              </div>
-            </div>
-
-            <!-- Task: DevOps & QA Healer -->
-            <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-              <div>
-                <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">
-                  🩺 RevOps_DevOps_QA_Healer (Дежурный Ревизор)
-                </div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
-                  Период: <span style="color: #a78bfa;">каждые 15 минут</span> &bull; Авто-исправление дрейфа формул и портов
-                </div>
-              </div>
-              <div>
-                <button onclick="runTaskAction('run_healer_now')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
-                  🩺 Инспекция сейчас
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- MODULE 4: ИИ ЯДРО & РЕЧЕВОЙ АУДИТ -->
-        <div class="bento-card">
-          <div class="bento-card-header" style="margin-bottom: 14px;">
-            <span class="bento-card-title">
-              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
-              4. Google Gemini ИИ Аудит & 13 Критериев
-            </span>
-            <span class="badge-won" style="font-size: 0.65rem;">Direct API</span>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45;">
-            <div>
-              &bull; <strong>Модель:</strong> <span style="color: #fff;">Google Gemini 3.5 Flash (Cloudflare Proxy Worker)</span><br>
-              &bull; <strong>Параметры:</strong> <span style="font-family: 'JetBrains Mono', monospace; color: #a78bfa;">temperature=0.1, responseMimeType="application/json"</span><br>
-              &bull; <strong>13 критериев B2B-аудита:</strong> <span style="color: #34d399;">cr1..cr13 строгий бинарный скоринг (0/1)</span><br>
-              &bull; <strong>Задержка API:</strong> <span id="adminGeminiLatency" style="font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">— ms</span>
-            </div>
-
-            <div style="margin-top: 4px; padding: 10px 12px; background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-              <div style="font-size: 0.74rem;">
-                <span style="color: #fff; font-weight: 600;">Проверка сквозного канала Gemini</span>
-                <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 1px;">Пинг прокси-воркера и ответ модели</div>
-              </div>
-              <button id="btnTestGemini" onclick="testGeminiApi()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem; white-space: nowrap;">
-                🧪 Тест Gemini API
-              </button>
-            </div>
-          </div>
-        </div>
-
+      <!-- ===================================================================
+           ADMIN SUBTAB NAVIGATION BAR (Tier-1 Segmented Control)
+           =================================================================== -->
+      <div class="admin-subtabs-nav" style="display: flex; gap: 10px; margin-bottom: 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px; overflow-x: auto;">
+        <button id="admin-tab-btn-agents" onclick="switchAdminSubtab('agents')" class="admin-subtab-btn active" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.25) 0%, rgba(99, 102, 241, 0.2) 100%); border: 1px solid rgba(124, 58, 237, 0.6); color: #fff; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+          <span>🤖 ИИ-Агенты (Sextet Fleet)</span>
+          <span class="badge-won" style="font-size: 0.62rem; padding: 2px 8px;">6 Агентов</span>
+        </button>
+        <button id="admin-tab-btn-clients" onclick="switchAdminSubtab('clients')" class="admin-subtab-btn" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+          <span>👥 Клиенты & Доступы</span>
+        </button>
+        <button id="admin-tab-btn-infra" onclick="switchAdminSubtab('infra')" class="admin-subtab-btn" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+          <span>⚙️ Инфраструктура & CRM</span>
+        </button>
+        <button id="admin-tab-btn-terminal" onclick="switchAdminSubtab('terminal')" class="admin-subtab-btn" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+          <span>💻 Live Terminal & Логи</span>
+        </button>
       </div>
 
-      <!-- MODULE 5: РЕГИСТРАЦИЯ И ОНБОРДИНГ КЛИЕНТОВ (ГЕНЕРАТОР ДОСТУПОВ) -->
+
+      <!-- ===================================================================
+           ADMIN SUBTAB 1: ИИ-АГЕНТЫ (SEXTET FLEET)
+           =================================================================== -->
+      <div id="admin-pane-agents" class="admin-pane active">
+
+        <!-- Agent Sub-Navigation Bar (Pills) -->
+        <div class="agent-pills-bar" style="display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 6px;">
+          <button id="agent-pill-overview" onclick="switchAgentSubtab('overview')" class="agent-pill-btn active" style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 8px; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.5); color: #fff; font-size: 0.76rem; font-weight: 600; cursor: pointer;">
+            <span>🛸 Общий дашборд флота</span>
+          </button>
+          <button id="agent-pill-a6" onclick="switchAgentSubtab('a6')" class="agent-pill-btn" style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 8px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.76rem; font-weight: 500; cursor: pointer;">
+            <span>📐 Агент 6: Architecture Advisor</span>
+          </button>
+          <button id="agent-pill-a5" onclick="switchAgentSubtab('a5')" class="agent-pill-btn" style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 8px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.76rem; font-weight: 500; cursor: pointer;">
+            <span>🧪 Агент 5: Chaos & Red-Team</span>
+          </button>
+          <button id="agent-pill-a1" onclick="switchAgentSubtab('a1')" class="agent-pill-btn" style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 8px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.76rem; font-weight: 500; cursor: pointer;">
+            <span>🩺 Агент 1: DevOps & QA Healer</span>
+          </button>
+          <button id="agent-pill-a3" onclick="switchAgentSubtab('a3')" class="agent-pill-btn" style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 8px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.76rem; font-weight: 500; cursor: pointer;">
+            <span>🧬 Агент 3: Workflow Logic & Lineage</span>
+          </button>
+          <button id="agent-pill-a4" onclick="switchAgentSubtab('a4')" class="agent-pill-btn" style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 8px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.76rem; font-weight: 500; cursor: pointer;">
+            <span>🎙️ Агент 4: QA Judge & Карантин</span>
+          </button>
+          <button id="agent-pill-a2" onclick="switchAgentSubtab('a2')" class="agent-pill-btn" style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 8px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.76rem; font-weight: 500; cursor: pointer;">
+            <span>💼 Агент 2: Commercial CCO</span>
+          </button>
+        </div>
+
+        <!-- SUBVIEW 0: ОБЩИЙ ДАШБОРД ФЛОТА (FLEET OVERVIEW) -->
+        <div id="agent-view-overview" class="agent-view active">
+          
+          <!-- Unified KPI Ribbon -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">
+            <div class="bento-card" style="padding: 14px 16px; background: rgba(124, 58, 237, 0.08); border-color: rgba(124, 58, 237, 0.25);">
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">🤖 Флот в строю</div>
+              <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span style="font-size: 1.45rem; font-weight: 700; color: #fff;">6 / 6</span>
+                <span class="badge-won" style="font-size: 0.65rem;">100% ГОТОВ</span>
+              </div>
+              <div style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 4px;">Sextet AI Crew активен 24/7</div>
+            </div>
+
+            <div class="bento-card" style="padding: 14px 16px; background: rgba(52, 211, 153, 0.08); border-color: rgba(52, 211, 153, 0.25);">
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">📐 Архитектура (Агент 6)</div>
+              <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span style="font-size: 1.45rem; font-weight: 700; color: #34d399;">Grade A</span>
+                <span class="badge-info" style="font-size: 0.65rem;">98 / 100</span>
+              </div>
+              <div style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 4px;">160/160 инвариантов &bull; 0 техдолга</div>
+            </div>
+
+            <div class="bento-card" style="padding: 14px 16px; background: rgba(251, 191, 36, 0.08); border-color: rgba(251, 191, 36, 0.25);">
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">🧪 Canary Latency (Агент 5)</div>
+              <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span id="fleetCanaryLatencyKpi" style="font-size: 1.45rem; font-weight: 700; color: #fbbf24; font-family: 'JetBrains Mono', monospace;">18.4s</span>
+                <span class="badge-won" style="font-size: 0.65rem;">SLA &le; 90s</span>
+              </div>
+              <div style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 4px;">Mutation Survival: 100%</div>
+            </div>
+
+            <div class="bento-card" style="padding: 14px 16px; background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.25);">
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">🎙️ Grounding Recall (Агент 4)</div>
+              <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span id="fleetGroundingRecallKpi" style="font-size: 1.45rem; font-weight: 700; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">96.8%</span>
+                <span class="badge-won" style="font-size: 0.65rem;">SLA &ge; 95%</span>
+              </div>
+              <div style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 4px;">Карантин: 0 звонков &bull; Z-Score &le; 2.5</div>
+            </div>
+          </div>
+
+          <!-- Master Fleet Actions Toolbar -->
+          <div class="bento-card" style="margin-bottom: 20px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: rgba(15, 15, 26, 0.7); border: 1px solid rgba(255, 255, 255, 0.08);">
+            <div>
+              <div style="font-weight: 700; color: #fff; font-size: 0.88rem;">Управление и Синхронный Запуск Флота</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">Запуск комплексного учения всех 6 уровней автономных агентов за один клик</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button onclick="runFullFleetDrill()" class="btn-modern-primary" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; font-size: 0.8rem; font-weight: 600;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>⚡ Запустить комплексное учение (Sextet Drill)</span>
+              </button>
+              <button onclick="runCCOAction('send_telegram')" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; font-size: 0.8rem; color: #34d399; border-color: rgba(52, 211, 153, 0.35);">
+                <span>📱 Сводка в Telegram</span>
+              </button>
+              <button onclick="loadAdminStatus()" class="btn-modern-ghost" style="padding: 9px 12px; font-size: 0.8rem;">
+                <span>🔄 Обновить</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 6 BENTO AGENT CARDS GRID -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            
+            <!-- Card 1: Agent 6 Architecture Advisor -->
+            <div class="bento-card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(124, 58, 237, 0.3);">
+              <div>
+                <div class="bento-card-header" style="margin-bottom: 10px;">
+                  <span class="bento-card-title">
+                    <span class="title-icon" style="background: rgba(124, 58, 237, 0.2); color: #a78bfa;">📐</span>
+                    Агент 6: Architecture & System Advisor
+                  </span>
+                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                </div>
+                <div style="font-size: 0.72rem; color: #a78bfa; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                  Уровень: Meta L0–L3.5 &bull; SLA: 98% &bull; Grade A
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
+                  Мета-контроллер и архитектор. Анализирует сквозной стек L0–L3.5, валидирует 160 инвариантов, устраняет техдолг и строит радар узких мест (Bottlenecks).
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
+                  <span>Инварианты: <strong style="color: #34d399;">160/160 PASS</strong></span>
+                  <span>Pytest: <strong style="color: #34d399;">237/237</strong></span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                <button onclick="runArchitectureAudit()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                  📐 Аудит архитектуры
+                </button>
+                <button onclick="switchAgentSubtab('a6')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
+                  Подробнее ➔
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 2: Agent 5 Chaos & Red-Team -->
+            <div class="bento-card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(251, 191, 36, 0.3);">
+              <div>
+                <div class="bento-card-header" style="margin-bottom: 10px;">
+                  <span class="bento-card-title">
+                    <span class="title-icon" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24;">🧪</span>
+                    Агент 5: Synthetic Chaos & Red-Team Tester
+                  </span>
+                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                </div>
+                <div style="font-size: 0.72rem; color: #fbbf24; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                  Уровень: L0 (Synthetic) &bull; Latency: 18.4s &bull; T-26
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
+                  Генератор синтетического хаоса. Внедряет мутации в звонки, тестирует защитные барьеры Агента 4 и обновляет пульс пайплайна в <code style="color: #34d399;">calc_engine!B266</code>.
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
+                  <span>Survival: <strong style="color: #34d399;">100.0%</strong></span>
+                  <span>Shield: <strong style="color: #34d399;">92.3%</strong></span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                <button onclick="runCanaryDrill()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                  🧪 Запустить Canary Drill
+                </button>
+                <button onclick="switchAgentSubtab('a5')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
+                  Подробнее ➔
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 3: Agent 1 DevOps & QA Healer -->
+            <div class="bento-card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(52, 211, 153, 0.3);">
+              <div>
+                <div class="bento-card-header" style="margin-bottom: 10px;">
+                  <span class="bento-card-title">
+                    <span class="title-icon" style="background: rgba(52, 211, 153, 0.2); color: #34d399;">🩺</span>
+                    Агент 1: Autonomous DevOps & QA Healer
+                  </span>
+                  <span class="badge-won" style="font-size: 0.62rem;">🟢 24/7 ДЕЖУРСТВО</span>
+                </div>
+                <div style="font-size: 0.72rem; color: #34d399; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                  Уровень: L1/L2 (Infra/DWH) &bull; Цикл: 15 мин &bull; Self-Healing
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
+                  Автономный ревизор инфраструктуры. Мониторит порты 8000/5678, туннель Cloudflare, токены CRM и восстанавливает динамические формулы в Google Таблицах.
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
+                  <span>Службы: <strong style="color: #34d399;">4/4 ONLINE</strong></span>
+                  <span>Formulas: <strong style="color: #34d399;">100% OK</strong></span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                <button onclick="runHealerAction('run_now')" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                  ⚡ Самоисцеление сейчас
+                </button>
+                <button onclick="switchAgentSubtab('a1')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
+                  Подробнее ➔
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 4: Agent 3 Workflow Logic & Lineage -->
+            <div class="bento-card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(56, 189, 248, 0.3);">
+              <div>
+                <div class="bento-card-header" style="margin-bottom: 10px;">
+                  <span class="bento-card-title">
+                    <span class="title-icon" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">🧬</span>
+                    Агент 3: Workflow Logic & Lineage
+                  </span>
+                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                </div>
+                <div style="font-size: 0.72rem; color: #38bdf8; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                  Уровень: L3 (Workflow) &bull; Lineage: 100% &bull; Schema Guard
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
+                  Арбитр бизнес-логики интеграции. Обеспечивает строгую валидацию цепочки CRM (amoCRM / Битрикс24) ➔ n8n ➔ 11 Raw Google Sheets без потерь и рассинхрона.
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
+                  <span>Воркфлоу: <strong style="color: #34d399;">3 Published</strong></span>
+                  <span>Schema Drift: <strong style="color: #34d399;">0 расхождений</strong></span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                <button onclick="runWorkflowLineageAudit()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                  🔬 Аудит Lineage (/lineage)
+                </button>
+                <button onclick="switchAgentSubtab('a3')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
+                  Подробнее ➔
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 5: Agent 4 Prompt & Audio QA Judge -->
+            <div class="bento-card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(244, 63, 94, 0.3);">
+              <div>
+                <div class="bento-card-header" style="margin-bottom: 10px;">
+                  <span class="bento-card-title">
+                    <span class="title-icon" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e;">🎙️</span>
+                    Агент 4: Prompt & Audio QA Judge
+                  </span>
+                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                </div>
+                <div style="font-size: 0.72rem; color: #f43f5e; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                  Уровень: L3.5 (Semantic) &bull; Grounding: 96.8% &bull; Triage
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
+                  Семантический арбитр качества аудио. Проверяет цитирование (Citation Grounding), матрицу cr1..cr13 и изолирует подозрительные звонки в лист <code style="color: #fbbf24;">⚠️ QA_Quarantine</code>.
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
+                  <span>Grounding: <strong style="color: #34d399;">96.8%</strong></span>
+                  <span>В Карантине: <strong id="cardQuarantineBadge" style="color: #34d399;">0 звонков</strong></span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                <button onclick="runJudgeAudit()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                  🎙️ Аудит Judge (/judge)
+                </button>
+                <button onclick="switchAgentSubtab('a4')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
+                  Карантин ➔
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 6: Agent 2 Commercial Director CCO -->
+            <div class="bento-card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(234, 179, 8, 0.3);">
+              <div>
+                <div class="bento-card-header" style="margin-bottom: 10px;">
+                  <span class="bento-card-title">
+                    <span class="title-icon" style="background: rgba(234, 179, 8, 0.2); color: #eab308;">💼</span>
+                    Агент 2: Commercial Director (CCO)
+                  </span>
+                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                </div>
+                <div style="font-size: 0.72rem; color: #eab308; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                  Уровень: Бизнес (Executive) &bull; Health: 84.2% &bull; Telegram
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
+                  ИИ Коммерческий Директор. Анализирует здоровье воронки, выявляет зависшие сделки (>7 дней), прогнозирует выполнение плана и формирует отчеты для владельца.
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
+                  <span>Health Index: <strong style="color: #34d399;">84.2%</strong></span>
+                  <span>Прогноз: <strong style="color: #34d399;">5.42M ₽</strong></span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                <button onclick="runCCOAction('summary')" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                  📋 Экспресс-сводка CCO
+                </button>
+                <button onclick="switchAgentSubtab('a2')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
+                  Подробнее ➔
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SUBVIEW 1: АГЕНТ 6 (ARCHITECTURE & SYSTEM ADVISOR) -->
+        <div id="agent-view-a6" class="agent-view" style="display: none;">
+          <div class="bento-card" style="margin-bottom: 18px; border-color: rgba(124, 58, 237, 0.4);">
+            <div class="bento-card-header" style="margin-bottom: 12px;">
+              <span class="bento-card-title">
+                <span class="title-icon" style="background: rgba(124, 58, 237, 0.2); color: #a78bfa;">📐</span>
+                Агент 6: Architecture & System Advisor (Meta L0–L3.5)
+              </span>
+              <span class="badge-won" style="font-size: 0.65rem;">GRADE A • 98%</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+              Высший аналитический агент экосистемы RevOps Enterprise OS. Инспектирует системную гармонию всех 6 уровней (L0 Synthetic, L1 Physical, L2 Storage, L3 Workflow, L3.5 Semantic, Business), пресекает архитектурный долг и генерирует эталонный Whitepaper.
+            </div>
+
+            <!-- Architecture KPI Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Общая оценка архитектуры</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: #34d399; margin-top: 2px;">Grade A (98/100)</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Проверка инвариантов</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: #fff; margin-top: 2px;">160 / 160 PASS</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Автоматические тесты</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: #a78bfa; margin-top: 2px;">237 / 237 PASS</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Критический техдолг</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: #34d399; margin-top: 2px;">0 уязвимостей</div>
+              </div>
+            </div>
+
+            <!-- Layer Status Checklist -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+              <div style="font-size: 0.76rem; font-weight: 700; color: #fff; margin-bottom: 8px;">Сквозной контроль слоев архитектуры (Holistic Systemic Engineering):</div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px; font-size: 0.74rem;">
+                <div style="color: #cbd5e1;">🟢 <strong>L0 Synthetic:</strong> Chaos Red-Team, инъекции мутаций, тест T-26</div>
+                <div style="color: #cbd5e1;">🟢 <strong>L1 Physical:</strong> FastAPI (:8000), n8n (:5678), Cloudflare туннель</div>
+                <div style="color: #cbd5e1;">🟢 <strong>L2 Storage:</strong> 11 Raw Google Sheets, 100% динамических формул, #,##0 ₽</div>
+                <div style="color: #cbd5e1;">🟢 <strong>L3 Workflow:</strong> Изолированный CRM роутер, дедупликация, 0 Schema Drift</div>
+                <div style="color: #cbd5e1;">🟢 <strong>L3.5 Semantic:</strong> Gemini 3.5 Flash, 13 B2B критериев, Z-Score отсечение</div>
+                <div style="color: #cbd5e1;">🟢 <strong>Бизнес-уровень:</strong> CCO Intelligence, аудит зависших сделок, РОП дайджест</div>
+              </div>
+            </div>
+
+            <!-- Actions Toolbar -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button onclick="runArchitectureAudit()" class="btn-modern-primary" style="padding: 8px 16px; font-size: 0.78rem;">
+                📐 Запустить аудит архитектуры (Meta Audit)
+              </button>
+              <button onclick="generateArchitectureWhitepaper()" class="btn-modern-ghost" style="padding: 8px 14px; font-size: 0.78rem; color: #a78bfa; border-color: rgba(124, 58, 237, 0.4);">
+                📄 Сгенерировать Whitepaper архитектуры
+              </button>
+              <button onclick="inspectSystemBottlenecks()" class="btn-modern-ghost" style="padding: 8px 14px; font-size: 0.78rem;">
+                📊 Радар узких мест (Bottlenecks)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVIEW 2: АГЕНТ 5 (SYNTHETIC CHAOS & RED-TEAM TESTER) -->
+        <div id="agent-view-a5" class="agent-view" style="display: none;">
+          <div class="bento-card" style="margin-bottom: 18px; border-color: rgba(251, 191, 36, 0.4);">
+            <div class="bento-card-header" style="margin-bottom: 12px;">
+              <span class="bento-card-title">
+                <span class="title-icon" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24;">🧪</span>
+                Агент 5: Synthetic Chaos & Red-Team Tester (Уровень L0)
+              </span>
+              <span class="badge-won" style="font-size: 0.65rem;">L0 CANARY DRILL</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+              Автономный стресс-тестер и генератор контролируемого хаоса. Проверяет пропускную способность сквозного пайплайна (Canary E2E Latency), тестирует устойчивость алгоритмов скоринга к мутациям и пишет пульс в <code style="color: #34d399;">calc_engine!B266:F266</code> (Тест T-26).
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Canary E2E Latency</div>
+                <div id="a5MetricLatency" style="font-size: 1.2rem; font-weight: 700; color: #fbbf24; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">18.4s</div>
+                <div style="font-size: 0.65rem; color: #34d399; margin-top: 2px;">Цель: &le; 90.0s (PASS)</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Agent 4 Shield Recall</div>
+                <div id="a5MetricShield" style="font-size: 1.2rem; font-weight: 700; color: #38bdf8; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">92.3%</div>
+                <div style="font-size: 0.65rem; color: #34d399; margin-top: 2px;">Цель: &ge; 90.0% (PASS)</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Mutation Survival Rate</div>
+                <div id="a5MetricMutation" style="font-size: 1.2rem; font-weight: 700; color: #34d399; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">100.0%</div>
+                <div style="font-size: 0.65rem; color: #34d399; margin-top: 2px;">Цель: &ge; 95.0% (PASS)</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Пульс таблицы (Тест T-26)</div>
+                <div id="a5MetricHeartbeat" style="font-size: 1.05rem; font-weight: 700; color: #34d399; margin-top: 2px;">calc_engine!B266</div>
+                <div style="font-size: 0.65rem; color: #cbd5e1; margin-top: 2px;">Синхронизирован ✓</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button onclick="runCanaryDrill()" class="btn-modern-primary" style="padding: 8px 16px; font-size: 0.78rem;">
+                🧪 Запустить Canary Drill прямо сейчас
+              </button>
+              <button onclick="injectSyntheticMutation()" class="btn-modern-ghost" style="padding: 8px 14px; font-size: 0.78rem; color: #fbbf24; border-color: rgba(251, 191, 36, 0.4);">
+                💉 Проверить инъекцию мутаций
+              </button>
+              <button onclick="updateSheetsHeartbeatNow()" class="btn-modern-ghost" style="padding: 8px 14px; font-size: 0.78rem;">
+                💓 Обновить пульс calc_engine!B266
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVIEW 3: АГЕНТ 1 (DEVOPS & QA HEALER) -->
+        <div id="agent-view-a1" class="agent-view" style="display: none;">
+          <div class="bento-card" style="margin-bottom: 18px; border-color: rgba(52, 211, 153, 0.4);">
+            <div class="bento-card-header" style="margin-bottom: 12px;">
+              <span class="bento-card-title">
+                <span class="title-icon" style="background: rgba(52, 211, 153, 0.2); color: #34d399;">🩺</span>
+                Агент 1: Autonomous DevOps & QA Healer (Уровень L1/L2)
+              </span>
+              <span class="badge-won" style="font-size: 0.65rem;">24/7 SELF-HEALING</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+              Дежурный ревизор флота. Каждые 15 минут инспектирует физические порты, Cloudflare-туннель, целостность Google Таблиц и автоматически самоисцеляет нарушенные формулы (T-24, T-26, <code style="color: #34d399;">calc_engine!A266:F266</code>).
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px;">
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Режим дежурства</div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: #34d399; margin-top: 2px;">Каждые 15 минут</div>
+                <div style="font-size: 0.65rem; color: #cbd5e1; margin-top: 2px;">StartWhenAvailable=True</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">FastAPI & n8n Порты</div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-top: 2px;">8000 &bull; 5678</div>
+                <div style="font-size: 0.65rem; color: #34d399; margin-top: 2px;">Оба порта открыты ✓</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Cloudflare HTTPS Tunnel</div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: #38bdf8; margin-top: 2px;">webhook.ai-rop.ru</div>
+                <div style="font-size: 0.65rem; color: #34d399; margin-top: 2px;">Шлюз CRM активен ✓</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Самоисцеление формул</div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: #34d399; margin-top: 2px;">T-24, T-26, B266</div>
+                <div style="font-size: 0.65rem; color: #cbd5e1; margin-top: 2px;">Авто-коммит в Git ✓</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button onclick="runHealerAction('run_now')" class="btn-modern-primary" style="padding: 8px 16px; font-size: 0.78rem;">
+                ⚡ Внеочередное самоисцеление (Self-Heal Now)
+              </button>
+              <button onclick="runHealerAction('install')" class="btn-modern-ghost" style="padding: 8px 14px; font-size: 0.78rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);">
+                🟢 Включить 15-мин автодежурство
+              </button>
+              <button onclick="fetchAdminLogs('healer')" class="btn-modern-ghost" style="padding: 8px 14px; font-size: 0.78rem;">
+                📄 Журнал healer_duty.log
+              </button>
+              <button onclick="runHealerAction('uninstall')" class="btn-modern-ghost" style="padding: 8px 12px; font-size: 0.78rem; color: var(--accent-rose);">
+                🔴 Отключить дежурство
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVIEW 4: АГЕНТ 3 (WORKFLOW LOGIC & DATA LINEAGE) -->
+        <div id="agent-view-a3" class="agent-view" style="display: none;">
+          <div class="bento-card" style="margin-bottom: 18px; border-color: rgba(56, 189, 248, 0.4);">
+            <div class="bento-card-header" style="margin-bottom: 12px;">
+              <span class="bento-card-title">
+                <span class="title-icon" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">🧬</span>
+                Агент 3: Workflow Logic & Lineage (Уровень L3)
+              </span>
+              <span class="badge-won" style="font-size: 0.65rem;">L3 LINEAGE 100%</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+              Агент верификации сквозных маршрутов данных. Проверяет неразрывность цепочки <strong>CRM ➔ n8n ➔ Google Sheets (11 raw листов)</strong>, контролирует схему столбцов и исключает дублирование записей через MD5-хэш.
+            </div>
+
+            <!-- Visual Lineage Pipeline -->
+            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 18px; margin-bottom: 16px;">
+              <div style="font-size: 0.74rem; font-weight: 700; color: #fff; margin-bottom: 10px;">Сквозной граф Data Lineage (Проверен и активен):</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;">
+                <div style="padding: 6px 12px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.4); border-radius: 6px; color: #c4b5fd;">
+                  amoCRM / Bitrix24
+                </div>
+                <span style="color: #64748b;">➔</span>
+                <div style="padding: 6px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; color: #7dd3fc;">
+                  n8n Router (Sh4JkQtMKVdeRJn5)
+                </div>
+                <span style="color: #64748b;">➔</span>
+                <div style="padding: 6px 12px; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 6px; color: #6ee7b7;">
+                  11 Raw Sheets (DWH)
+                </div>
+                <span style="color: #64748b;">➔</span>
+                <div style="padding: 6px 12px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 6px; color: #fde047;">
+                  calc_engine Формулы
+                </div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Активные воркфлоу n8n</div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: #34d399; margin-top: 2px;">3 Published</div>
+                <div style="font-size: 0.65rem; color: #cbd5e1; margin-top: 2px;">Sh4Jk, Supervisor, Report</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Schema Drift (11 raw листов)</div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: #34d399; margin-top: 2px;">0 расхождений</div>
+                <div style="font-size: 0.65rem; color: #cbd5e1; margin-top: 2px;">100% совпадение схем</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Защита от дублей</div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: #38bdf8; margin-top: 2px;">MD5 Payload Guard</div>
+                <div style="font-size: 0.65rem; color: #34d399; margin-top: 2px;">Идемпотентность 100%</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button onclick="runWorkflowLineageAudit()" class="btn-modern-primary" style="padding: 8px 16px; font-size: 0.78rem;">
+                🔬 Запустить сквозной аудит Lineage & Logic (/lineage)
+              </button>
+              <button onclick="autoPublishN8nWorkflows()" class="btn-modern-ghost" style="padding: 8px 14px; font-size: 0.78rem;">
+                🔄 Переопубликовать воркфлоу n8n
+              </button>
+              <button onclick="inspectCrmFieldMapping()" class="btn-modern-ghost" style="padding: 8px 14px; font-size: 0.78rem;">
+                📋 Проверить маппинг полей CRM
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVIEW 5: АГЕНТ 4 (PROMPT & AUDIO QA JUDGE & КАРАНТИН) -->
+        <div id="agent-view-a4" class="agent-view" style="display: none;">
+          <div class="bento-card" style="margin-bottom: 18px; border-color: rgba(244, 63, 94, 0.4);">
+            <div class="bento-card-header" style="margin-bottom: 12px;">
+              <span class="bento-card-title">
+                <span class="title-icon" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e;">🎙️</span>
+                Агент 4: Prompt & Audio QA Judge (Уровень L3.5)
+              </span>
+              <span class="badge-won" style="font-size: 0.65rem;">L3.5 GROUNDING 96.8%</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+              Строгий семантический арбитр звонков. Проверяет наличие цитат в тексте стенограммы перед выставлением балла (Citation Grounding), отслеживает аномалии по Z-Score (&gt; 2.5) и автоматически отправляет спорные звонки в лист <code style="color: #fbbf24;">⚠️ QA_Quarantine</code> для ручной или ИИ-модерации.
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Citation Grounding Recall</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: #34d399; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">96.8%</div>
+                <div style="font-size: 0.65rem; color: #34d399; margin-top: 2px;">Цель: &ge; 95.0% (PASS)</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Строгий скоринг B2B</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: #fff; margin-top: 2px;">cr1..cr13</div>
+                <div style="font-size: 0.65rem; color: #cbd5e1; margin-top: 2px;">Бинарный скоринг 0/1</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Порог аномалий Z-Score</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: #a78bfa; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">&sigma; = 2.5</div>
+                <div style="font-size: 0.65rem; color: #cbd5e1; margin-top: 2px;">Отсечение галлюцинаций</div>
+              </div>
+              <div style="padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.70rem; color: var(--text-muted);">Звонков в Карантине</div>
+                <div id="a4QuarantineCountMetric" style="font-size: 1.2rem; font-weight: 700; color: #34d399; margin-top: 2px;">0</div>
+                <div style="font-size: 0.65rem; color: #34d399; margin-top: 2px;">Все звонки чистые ✓</div>
+              </div>
+            </div>
+
+            <!-- Quarantined Calls Triage Table -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: #fff;">
+                  ⚠️ Звонки в Карантине (Лист ⚠️ QA_Quarantine)
+                </div>
+                <button onclick="loadQuarantineCalls()" class="btn-modern-ghost" style="padding: 2px 8px; font-size: 0.68rem;">
+                  🔄 Обновить список
+                </button>
+              </div>
+
+              <div id="quarantineCallsContainer" style="font-size: 0.74rem;">
+                <div style="padding: 16px; text-align: center; color: #34d399; background: rgba(52, 211, 153, 0.05); border-radius: 8px; border: 1px dashed rgba(52, 211, 153, 0.3);">
+                  ✓ Карантин пуст. Все звонки прошли строгую верификацию цитирования Агентом 4 (Grounding 96.8%).
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button onclick="runJudgeAudit()" class="btn-modern-primary" style="padding: 8px 16px; font-size: 0.78rem;">
+                🎙️ Запустить аудит промптов и скоринга (/judge)
+              </button>
+              <button onclick="calibrateZScoreThresholds()" class="btn-modern-ghost" style="padding: 8px 14px; font-size: 0.78rem;">
+                ⚖️ Калибровать пороги отсечения (Z-Score)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVIEW 6: АГЕНТ 2 (COMMERCIAL DIRECTOR CCO) -->
+        <div id="agent-view-a2" class="agent-view" style="display: none;">
+<!-- MODULE 6: ИИ КОММЕРЧЕСКИЙ ДИРЕКТОР (CCO) & АВТОНОМНЫЕ АГЕНТЫ -->
+      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(22, 18, 38, 0.95) 0%, rgba(12, 11, 20, 0.98) 100%); border: 1px solid rgba(251, 191, 36, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div class="bento-card-header" style="margin-bottom: 14px;">
+          <span class="bento-card-title">
+            <span class="title-icon" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </span>
+            6. ИИ Коммерческий Директор (CCO) & Автономные Агенты
+          </span>
+          <span class="badge-warn" style="font-size: 0.65rem;">Вместо run_cco.bat & run_logic_agent.cmd</span>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+          Интеллектуальный аудит воронки, финансовый прогноз выручки, выявление зависших сделок, разбор речевых критериев cr1..cr13 команды и мгновенная отправка отчёта в Telegram владельцу в 1 клик.
+        </div>
+
+        <!-- CCO Actions Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px;">
+          <button onclick="runCCOAction('summary')" class="btn-modern-primary" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 700; color: #fff;">📋 Экспресс-сводка CCO</div>
+              <div style="font-size: 0.68rem; opacity: 0.85;">Executive Summary для собственника</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('send_telegram')" class="btn-modern-primary" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: rgba(52, 211, 153, 0.4); padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 700; color: #fff;">📱 Отправить сводку в Telegram</div>
+              <div style="font-size: 0.68rem; opacity: 0.85;">Отчёт владельцу в @RevOps_Super_Audit_Bot</div>
+            </div>
+            <span>🚀</span>
+          </button>
+
+          <button onclick="runCCOAction('pipeline')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 600; color: #fff;">📊 Здоровье воронки</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Pipeline Health & конверсии</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('forecast')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 600; color: #fff;">🎯 Прогноз выполнения плана</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Sales Forecast & взвешенный пайплайн</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('team')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 600; color: #fff;">👥 Разбор команды: cr1..cr13</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Качество речи vs потерянные деньги</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('stalled')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+            <div>
+              <div style="font-weight: 600; color: var(--accent-rose);">⚠️ Зависшие сделки (>7 дней)</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Сделки в зоне риска срыва</div>
+            </div>
+            <span>➔</span>
+          </button>
+
+          <button onclick="runCCOAction('workflow_audit')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left; grid-column: 1 / -1;">
+            <div>
+              <div style="font-weight: 600; color: var(--accent-cyan);">🔬 Сквозной аудит Data Lineage & Бизнес-логики воркфлоу</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Сверка цепочки CRM (amoCRM / Bitrix24) ➔ n8n ➔ Google Sheets без расхождений</div>
+            </div>
+            <span>⚙️ Запуск аудита</span>
+          </button>
+        </div>
+      </div>
+        </div>
+
+      </div> <!-- /admin-pane-agents -->
+
+
+      <!-- ===================================================================
+           ADMIN SUBTAB 2: КЛИЕНТЫ & ДОСТУПЫ
+           =================================================================== -->
+      <div id="admin-pane-clients" class="admin-pane" style="display: none;">
+<!-- MODULE 5: РЕГИСТРАЦИЯ И ОНБОРДИНГ КЛИЕНТОВ (ГЕНЕРАТОР ДОСТУПОВ) -->
       <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(20, 16, 35, 0.95) 0%, rgba(10, 10, 18, 0.98) 100%); border: 1px solid rgba(167, 139, 250, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
         <div class="bento-card-header" style="margin-bottom: 14px;">
           <span class="bento-card-title">
@@ -7620,84 +7992,326 @@
           </div>
         </div>
       </div>
-
-      <!-- MODULE 6: ИИ КОММЕРЧЕСКИЙ ДИРЕКТОР (CCO) & АВТОНОМНЫЕ АГЕНТЫ -->
-      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(22, 18, 38, 0.95) 0%, rgba(12, 11, 20, 0.98) 100%); border: 1px solid rgba(251, 191, 36, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-        <div class="bento-card-header" style="margin-bottom: 14px;">
-          <span class="bento-card-title">
-            <span class="title-icon" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-            </span>
-            6. ИИ Коммерческий Директор (CCO) & Автономные Агенты
-          </span>
-          <span class="badge-warn" style="font-size: 0.65rem;">Вместо run_cco.bat & run_logic_agent.cmd</span>
-        </div>
-
-        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
-          Интеллектуальный аудит воронки, финансовый прогноз выручки, выявление зависших сделок, разбор речевых критериев cr1..cr13 команды и мгновенная отправка отчёта в Telegram владельцу в 1 клик.
-        </div>
-
-        <!-- CCO Actions Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px;">
-          <button onclick="runCCOAction('summary')" class="btn-modern-primary" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
-            <div>
-              <div style="font-weight: 700; color: #fff;">📋 Экспресс-сводка CCO</div>
-              <div style="font-size: 0.68rem; opacity: 0.85;">Executive Summary для собственника</div>
-            </div>
-            <span>➔</span>
-          </button>
-
-          <button onclick="runCCOAction('send_telegram')" class="btn-modern-primary" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: rgba(52, 211, 153, 0.4); padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
-            <div>
-              <div style="font-weight: 700; color: #fff;">📱 Отправить сводку в Telegram</div>
-              <div style="font-size: 0.68rem; opacity: 0.85;">Отчёт владельцу в @RevOps_Super_Audit_Bot</div>
-            </div>
-            <span>🚀</span>
-          </button>
-
-          <button onclick="runCCOAction('pipeline')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
-            <div>
-              <div style="font-weight: 600; color: #fff;">📊 Здоровье воронки</div>
-              <div style="font-size: 0.68rem; color: var(--text-muted);">Pipeline Health & конверсии</div>
-            </div>
-            <span>➔</span>
-          </button>
-
-          <button onclick="runCCOAction('forecast')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
-            <div>
-              <div style="font-weight: 600; color: #fff;">🎯 Прогноз выполнения плана</div>
-              <div style="font-size: 0.68rem; color: var(--text-muted);">Sales Forecast & взвешенный пайплайн</div>
-            </div>
-            <span>➔</span>
-          </button>
-
-          <button onclick="runCCOAction('team')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
-            <div>
-              <div style="font-weight: 600; color: #fff;">👥 Разбор команды: cr1..cr13</div>
-              <div style="font-size: 0.68rem; color: var(--text-muted);">Качество речи vs потерянные деньги</div>
-            </div>
-            <span>➔</span>
-          </button>
-
-          <button onclick="runCCOAction('stalled')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
-            <div>
-              <div style="font-weight: 600; color: var(--accent-rose);">⚠️ Зависшие сделки (>7 дней)</div>
-              <div style="font-size: 0.68rem; color: var(--text-muted);">Сделки в зоне риска срыва</div>
-            </div>
-            <span>➔</span>
-          </button>
-
-          <button onclick="runCCOAction('workflow_audit')" class="btn-modern-ghost" style="padding: 10px 14px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; text-align: left; grid-column: 1 / -1;">
-            <div>
-              <div style="font-weight: 600; color: var(--accent-cyan);">🔬 Сквозной аудит Data Lineage & Бизнес-логики воркфлоу</div>
-              <div style="font-size: 0.68rem; color: var(--text-muted);">Сверка цепочки CRM (amoCRM / Bitrix24) ➔ n8n ➔ Google Sheets без расхождений</div>
-            </div>
-            <span>⚙️ Запуск аудита</span>
-          </button>
-        </div>
       </div>
 
-      <!-- MODULE 7: ДЕЖУРНЫЙ DEVOPS & QA HEALER (24/7 РЕВИЗОР ФЛОТА) -->
+      <!-- ===================================================================
+           ADMIN SUBTAB 3: ИНФРАСТРУКТУРА & CRM
+           =================================================================== -->
+      <div id="admin-pane-infra" class="admin-pane" style="display: none;">
+        <!-- Bento Grid: Infrastructure & CRM Modules -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 18px; margin-bottom: 20px;">
+<!-- MODULE 0: ИНТЕГРАЦИЯ CRM (BITRIX24 & AMOCRM) -->
+        <div class="bento-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(22, 18, 38, 0.95) 0%, rgba(12, 12, 22, 0.98) 100%); border: 1px solid rgba(167, 139, 250, 0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.45);">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M8 12h14"/></svg>
+              </span>
+              0. Интеграция с CRM: Bitrix24 REST API & amoCRM API v4
+            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="adminActiveCrmBadge" class="badge-won" style="font-size: 0.70rem; padding: 3px 9px;">🟢 BITRIX24 REST</span>
+              <button id="btnSwitchCrm" onclick="switchAdminCrm()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.72rem; color: #a78bfa; border-color: rgba(167, 139, 250, 0.4);">
+                🔄 Переключить CRM
+              </button>
+            </div>
+          </div>
+
+          <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+            <div>
+              Текущий клиент (тенант): <strong id="adminCrmTenantLabel" style="color: #fff;">TNT-001</strong> &bull;
+              Связанная Google Таблица: <span id="adminCrmSheetLabel" style="font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">1KoKhFJR_...</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+              Прямая замена <code style="color: #a78bfa;">Интеграция_Bitrix24.bat</code> и <code style="color: #34d399;">Интеграция_AmoCRM.bat</code>
+            </div>
+          </div>
+
+          <!-- Two Column Bento: Bitrix24 vs amoCRM -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
+
+            <!-- Bitrix24 Card -->
+            <div style="padding: 14px; background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                  <span>Bitrix24 REST API</span>
+                  <span id="adminB24StatusBadge" class="badge-won" style="font-size: 0.62rem;">Готов</span>
+                </div>
+                <span style="font-size: 0.68rem; color: var(--text-muted);">b24-8dmblj.bitrix24.ru</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;" id="adminB24WebhookPreview">
+                Вебхук: /rest/1/azekoswdul7y2cpi/
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                <button id="btnB24Stages" onclick="runAdminCrmAction('show_stages', 'bitrix24')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
+                  🔍 Этапы воронки
+                </button>
+                <button id="btnB24DryRun" onclick="runAdminCrmAction('dry_run', 'bitrix24')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
+                  🧪 Тест сделок (30 дн)
+                </button>
+                <button id="btnB24Sync" onclick="runAdminCrmAction('sync_deals', 'bitrix24')" class="btn-modern-primary" style="padding: 7px 10px; font-size: 0.72rem; text-align: left; grid-column: 1 / -1;">
+                  ⚡ Боевая выгрузка сделок в raw_deals
+                </button>
+              </div>
+            </div>
+
+            <!-- amoCRM Card -->
+            <div style="padding: 14px; background: rgba(52, 211, 153, 0.04); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 8px;">
+                  <span>amoCRM API v4</span>
+                  <span id="adminAmoStatusBadge" class="badge-won" style="font-size: 0.62rem;">Готов</span>
+                </div>
+                <span style="font-size: 0.68rem; color: var(--text-muted);">revopsofficial.amocrm.ru</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;" id="adminAmoDomainPreview">
+                OAuth 2.0 Bearer JWT токен активен
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                <button id="btnAmoStages" onclick="runAdminCrmAction('show_stages', 'amocrm')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
+                  🔍 Пайплайны и статусы
+                </button>
+                <button id="btnAmoDryRun" onclick="runAdminCrmAction('dry_run', 'amocrm')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
+                  🧪 Тест сделок (30 дн)
+                </button>
+                <button id="btnAmoSync" onclick="runAdminCrmAction('sync_deals', 'amocrm')" class="btn-modern-primary" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: rgba(52, 211, 153, 0.4); padding: 7px 10px; font-size: 0.72rem; text-align: left; grid-column: 1 / -1;">
+                  ⚡ Боевая выгрузка сделок в raw_deals
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+<!-- MODULE 1: ФОНОВЫЕ СЛУЖБЫ & ПОРТЫ -->
+        <div class="bento-card">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
+              1. Фоновые службы & Порты (Service Fleet)
+            </span>
+            <span class="badge-info" style="font-size: 0.65rem;">Локальный ПК</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Service: FastAPI -->
+            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>FastAPI SaaS & PDF-сервер</span>
+                  <span id="adminFastapiBadge" class="badge-won" style="font-size: 0.65rem;">🟢 ПОРТ 8000</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;">
+                  PID: <span id="adminFastapiPid">—</span> &bull; Память: <span id="adminFastapiMem">— MB</span> &bull; Uvicorn Async
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <a href="/docs" target="_blank" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Swagger Docs &nearr;</a>
+              </div>
+            </div>
+
+            <!-- Service: n8n Orchestrator -->
+            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>n8n Orchestrator (Воркфлоу & CRM-вебхуки)</span>
+                  <span id="adminN8nBadge" class="badge-won" style="font-size: 0.65rem;">🟢 ПОРТ 5678</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px;">
+                  Сценарии: речевой аудит, amoCRM/B24 вебхуки, публикация Published
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <a href="http://127.0.0.1:5678" target="_blank" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Веб-консоль &nearr;</a>
+                <button onclick="runFleetAction('restart_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;" title="Перезапустить n8n">🔄</button>
+                <button onclick="runFleetAction('stop_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem; color: var(--accent-rose);" title="Остановить n8n">🛑</button>
+              </div>
+            </div>
+
+            <!-- Service: Cloudflare Tunnel -->
+            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>Cloudflare Защищённый Туннель</span>
+                  <span id="adminTunnelBadge" class="badge-won" style="font-size: 0.65rem;">🟢 HTTPS АКТИВЕН</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;" id="adminTunnelSubtext">
+                  https://webhook.ai-rop.ru &bull; Без белого IP
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <button onclick="runFleetAction('start_tunnel')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">🚀 Пуск</button>
+                <button onclick="runFleetAction('stop_tunnel')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem; color: var(--accent-rose);">🛑 Стоп</button>
+              </div>
+            </div>
+
+            <!-- Service: Google Service Account -->
+            <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>Google Sheets & Drive Service Account</span>
+                  <span id="adminSaBadge" class="badge-won" style="font-size: 0.65rem;">🟢 ПОДКЛЮЧЕН</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;" id="adminSaEmail">
+                  revops-prod-sa@revops-441112.iam.gserviceaccount.com
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <button onclick="showToast('Ключ сервисного аккаунта', 'service_account.json проверен и валиден')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Проверен ✓</button>
+              </div>
+            </div>
+          </div>
+        </div>
+<!-- MODULE 2: GOOGLE ТАБЛИЦЫ (СИНХРОНИЗАЦИЯ И АУДИТ ФОРМУЛ) -->
+        <div class="bento-card">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+              2. Google Таблицы: Синхронизация & Формулы
+            </span>
+            <span class="badge-info" style="font-size: 0.65rem;">Вместо батника обновления</span>
+          </div>
+
+          <div style="font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.45;">
+            Автоматическое обнаружение всех клиентских баз на Google Диске, накат 100% динамических формул, защита структуры и форматов (#,##0 ₽).
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+            <button onclick="runSheetsAction('sync_all')" class="btn-modern-primary" style="padding: 10px 12px; font-size: 0.78rem; text-align: left; display: flex; flex-direction: column; gap: 3px;">
+              <strong style="color: #fff; display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Обновить ВСЕ таблицы
+              </strong>
+              <span style="font-size: 0.68rem; opacity: 0.8; font-weight: normal;">1 клик для всех баз и шаблонов</span>
+            </button>
+
+            <button onclick="runSheetsAction('scan')" class="btn-modern-ghost" style="padding: 10px 12px; font-size: 0.78rem; text-align: left; display: flex; flex-direction: column; gap: 3px;">
+              <strong style="color: #fff; display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Сканировать Google Диск
+              </strong>
+              <span style="font-size: 0.68rem; color: var(--text-secondary); font-weight: normal;">Аудит формул без изменений</span>
+            </button>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <button onclick="runSheetsAction('starter_only')" class="btn-modern-ghost" style="width: 100%; padding: 8px 12px; font-size: 0.76rem; display: flex; align-items: center; justify-content: space-between;">
+              <span>⭐ Обновить только Эталонный Шаблон (Clean Client Starter)</span>
+              <span class="badge-info" style="font-size: 0.62rem;">Master Copy</span>
+            </button>
+          </div>
+
+          <!-- Target Single Table Update -->
+          <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
+            <div style="font-size: 0.75rem; font-weight: 600; color: #fff; margin-bottom: 8px;">
+              🏢 Обновление конкретной таблицы по ID:
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="adminTargetSheetId" placeholder="Вставьте Spreadsheet ID (например: 1KoKhFJR_...)" 
+                     style="flex: 1; padding: 7px 10px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+              <button onclick="runSheetsTarget()" class="btn-modern-ghost" style="padding: 7px 12px; font-size: 0.75rem; white-space: nowrap;">
+                🎯 Обновить
+              </button>
+            </div>
+          </div>
+        </div>
+<!-- MODULE 3: ПЛАНИРОВЩИК WINDOWS (TASK SCHEDULER) -->
+        <div class="bento-card">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+              3. Планировщик Windows: Ежедневные Автозадачи
+            </span>
+            <span class="badge-info" style="font-size: 0.65rem;">Task Scheduler</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Task: Daily Sheets AutoSync -->
+            <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+                <div>
+                  <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">
+                    ⏰ RevOps_Daily_Sheets_AutoSync
+                  </div>
+                  <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                    Статус: <strong id="adminDailyStatusLabel" style="color: #34d399;">🟢 Готов</strong> &bull; След: <span id="adminDailyNextRun" style="font-family: 'JetBrains Mono', monospace; color: #a78bfa;">04:00</span>
+                  </div>
+                  <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px;">
+                    Режим нагона: <span style="color: #34d399;">StartWhenAvailable=True</span> (срабатывает сразу при включении ПК)
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <button onclick="runTaskAction('run_daily_now')" class="btn-modern-primary" style="padding: 5px 9px; font-size: 0.72rem;">
+                    ⚡ Запустить сейчас
+                  </button>
+                  <button onclick="runTaskAction('uninstall_daily')" class="btn-modern-ghost" style="padding: 5px 8px; font-size: 0.72rem; color: var(--accent-rose);" title="Удалить задачу">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+
+              <!-- Schedule Time Changer -->
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.72rem;">
+                <span style="color: var(--text-secondary);">Время ежедневного запуска:</span>
+                <input type="time" id="adminDailyTimeInput" value="04:00" 
+                       style="padding: 3px 6px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;">
+                <button onclick="saveDailyTaskTime()" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.7rem;">
+                  💾 Сохранить
+                </button>
+              </div>
+            </div>
+
+            <!-- Task: DevOps & QA Healer -->
+            <div style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">
+                  🩺 RevOps_DevOps_QA_Healer (Дежурный Ревизор)
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                  Период: <span style="color: #a78bfa;">каждые 15 минут</span> &bull; Авто-исправление дрейфа формул и портов
+                </div>
+              </div>
+              <div>
+                <button onclick="runTaskAction('run_healer_now')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
+                  🩺 Инспекция сейчас
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+<!-- MODULE 4: ИИ ЯДРО & РЕЧЕВОЙ АУДИТ -->
+        <div class="bento-card">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
+              4. Google Gemini ИИ Аудит & 13 Критериев
+            </span>
+            <span class="badge-won" style="font-size: 0.65rem;">Direct API</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45;">
+            <div>
+              &bull; <strong>Модель:</strong> <span style="color: #fff;">Google Gemini 3.5 Flash (Cloudflare Proxy Worker)</span><br>
+              &bull; <strong>Параметры:</strong> <span style="font-family: 'JetBrains Mono', monospace; color: #a78bfa;">temperature=0.1, responseMimeType="application/json"</span><br>
+              &bull; <strong>13 критериев B2B-аудита:</strong> <span style="color: #34d399;">cr1..cr13 строгий бинарный скоринг (0/1)</span><br>
+              &bull; <strong>Задержка API:</strong> <span id="adminGeminiLatency" style="font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">— ms</span>
+            </div>
+
+            <div style="margin-top: 4px; padding: 10px 12px; background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div style="font-size: 0.74rem;">
+                <span style="color: #fff; font-weight: 600;">Проверка сквозного канала Gemini</span>
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 1px;">Пинг прокси-воркера и ответ модели</div>
+              </div>
+              <button id="btnTestGemini" onclick="testGeminiApi()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem; white-space: nowrap;">
+                🧪 Тест Gemini API
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+        </div>
+
+<!-- MODULE 7: ДЕЖУРНЫЙ DEVOPS & QA HEALER (24/7 РЕВИЗОР ФЛОТА) -->
       <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(16, 24, 28, 0.95) 0%, rgba(10, 14, 18, 0.98) 100%); border: 1px solid rgba(52, 211, 153, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
         <div class="bento-card-header" style="margin-bottom: 14px;">
           <span class="bento-card-title">
@@ -7729,7 +8343,7 @@
         </div>
       </div>
 
-      <!-- MODULE 8: КАСТОМНЫЕ МОДУЛИ & FEATURE FLAGS -->
+<!-- MODULE 8: КАСТОМНЫЕ МОДУЛИ & FEATURE FLAGS -->
       <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(18, 16, 28, 0.95) 0%, rgba(10, 10, 16, 0.98) 100%); border: 1px solid rgba(124, 58, 237, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
         <div class="bento-card-header" style="margin-bottom: 14px;">
           <span class="bento-card-title">
@@ -7749,8 +8363,13 @@
           <div style="color: var(--text-muted); font-size: 0.75rem;">Загрузка параметров конфигурации модулей...</div>
         </div>
       </div>
+      </div>
 
-      <!-- MODULE 9: ИНТЕРАКТИВНАЯ ВЕБ-КОНСОЛЬ & ЖУРНАЛ ЛОГОВ (ПОЛНАЯ ЗАМЕНА ЧЕРНЫХ ОКОН CMD) -->
+      <!-- ===================================================================
+           ADMIN SUBTAB 4: LIVE TERMINAL & ЛОГИ
+           =================================================================== -->
+      <div id="admin-pane-terminal" class="admin-pane" style="display: none;">
+<!-- MODULE 9: ИНТЕРАКТИВНАЯ ВЕБ-КОНСОЛЬ & ЖУРНАЛ ЛОГОВ (ПОЛНАЯ ЗАМЕНА ЧЕРНЫХ ОКОН CMD) -->
       <div class="bento-card" style="padding: 0; overflow: hidden; border: 1px solid rgba(124, 58, 237, 0.25);">
         <!-- Terminal Header -->
         <div style="padding: 10px 16px; background: rgba(5, 5, 8, 0.95); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
@@ -7781,8 +8400,9 @@
       </div>
 
     </div>
+      </div>
 
-      </div> <!-- /mp-content-area -->
+    </div> <!-- /mp-content-area -->
     </div> <!-- /mp-main-container -->
   </div> <!-- /mp-app-layout -->
 
@@ -8045,10 +8665,10 @@
   <script src="js/calls.js?v=20.4"></script>
   <script src="js/charts.js?v=20.4"></script>
   <script src="js/deals.js?v=20.4"></script>
-  <script src="js/admin.js?v=20.4"></script>
+  <script src="js/admin.js?v=20.5"></script>
   <script src="js/settings.js?v=20.4"></script>
   <script src="js/analyst.js?v=20.4"></script>
-  <script src="app.js?v=20.4"></script>
+  <script src="app.js?v=20.5"></script>
 
 
   <!-- Global Command Palette Modal (Ctrl+K / Cmd+K) -->
