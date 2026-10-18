@@ -21,17 +21,6 @@ function closeOnePagerModal() {
 // PERIOD SELECTOR (TAB 1: PULSE)
 // ==========================================================================
 function setPulsePeriod(period) {
-  ['today', '7d', 'month'].forEach(id => {
-    const btn = document.getElementById('btnPeriod' + id.charAt(0).toUpperCase() + id.slice(1));
-    if (btn) {
-      if (id === period) {
-        btn.className = 'btn btn-primary';
-      } else {
-        btn.className = 'btn btn-ghost';
-      }
-    }
-  });
-
   const syncText = document.getElementById('periodSyncText');
   let totalFact = 0;
   CALLS_DATA.forEach(c => {
@@ -43,36 +32,65 @@ function setPulsePeriod(period) {
   const computedSsot = CALLS_DATA.length * 250000;
   const computedPipe = CALLS_DATA.length * 500000;
 
+  let targetPlan = getMonthlyTarget();
+  let periodLabel = 'Октябрь 2026';
+
   if (period === 'today') {
-    animateCounter(document.getElementById('metricPlanVal'), 250000);
-    animateCounter(document.getElementById('metricFactVal'), totalFact);
-    const pct = totalFact > 0 ? ((totalFact / 250000) * 100).toFixed(1) : '0.0';
-    const b = document.getElementById('metricFactBadge');
-    if (b) b.textContent = `${pct}% ВЫПОЛНЕНО`;
-    animateCounter(document.getElementById('metricSsotVal'), computedSsot);
-    if (document.getElementById('metricPipeVal')) animateCounter(document.getElementById('metricPipeVal'), computedPipe);
+    targetPlan = 250000;
+    periodLabel = 'Сегодня';
     if (syncText) syncText.textContent = `Срез за сегодня (${CALLS_DATA.length} звонков)`;
     showToast('Период: Сегодня', 'Показана суточная операционная активность.');
   } else if (period === '7d') {
-    animateCounter(document.getElementById('metricPlanVal'), 1250000);
-    animateCounter(document.getElementById('metricFactVal'), totalFact);
-    const pct = totalFact > 0 ? ((totalFact / 1250000) * 100).toFixed(1) : '0.0';
-    const b = document.getElementById('metricFactBadge');
-    if (b) b.textContent = `${pct}% ВЫПОЛНЕНО`;
-    animateCounter(document.getElementById('metricSsotVal'), computedSsot);
-    if (document.getElementById('metricPipeVal')) animateCounter(document.getElementById('metricPipeVal'), computedPipe);
+    targetPlan = 1250000;
+    periodLabel = 'За 7 дней';
     if (syncText) syncText.textContent = `Срез за последние 7 дней (${CALLS_DATA.length} звонков)`;
     showToast('Период: 7 дней', 'Показаны данные за прошедшую неделю.');
+  } else if (period === 'prev_month') {
+    targetPlan = 4800000;
+    periodLabel = 'Сентябрь 2026';
+    if (syncText) syncText.textContent = `Архив за прошлый месяц (${CALLS_DATA.length} звонков)`;
+    showToast('Период: Сентябрь 2026', 'Показаны архивные данные за сентябрь.');
+  } else if (period === 'year') {
+    targetPlan = 60000000;
+    periodLabel = 'Весь 2026 год';
+    if (syncText) syncText.textContent = `Годовой контур 2026 (${CALLS_DATA.length} звонков)`;
+    showToast('Период: 2026 Год (YTD)', 'Показан суммарный годовой таргет.');
   } else {
-    animateCounter(document.getElementById('metricPlanVal'), getMonthlyTarget());
-    animateCounter(document.getElementById('metricFactVal'), totalFact);
-    const pct = totalFact > 0 ? ((totalFact / getMonthlyTarget()) * 100).toFixed(1) : '0.0';
-    const b = document.getElementById('metricFactBadge');
-    if (b) b.textContent = `${pct}% ВЫПОЛНЕНО`;
-    animateCounter(document.getElementById('metricSsotVal'), computedSsot);
-    if (document.getElementById('metricPipeVal')) animateCounter(document.getElementById('metricPipeVal'), computedPipe);
+    // default: current month
+    targetPlan = getMonthlyTarget();
+    periodLabel = 'Октябрь 2026';
     if (syncText) syncText.textContent = `Синхронизировано: amoCRM + Битрикс24 (${CALLS_DATA.length} звонков)`;
     showToast('Период: Октябрь 2026', 'Показан полный месячный контур компании.');
+  }
+
+  animateCounter(document.getElementById('metricPlanVal'), targetPlan);
+  animateCounter(document.getElementById('metricFactVal'), totalFact);
+  animateCounter(document.getElementById('metricSsotVal'), computedSsot);
+  if (document.getElementById('metricPipeVal')) animateCounter(document.getElementById('metricPipeVal'), computedPipe);
+
+  const pct = targetPlan > 0 ? ((totalFact / targetPlan) * 100).toFixed(1) : '0.0';
+  const b = document.getElementById('metricFactBadge');
+  if (b) b.textContent = `${pct}%`;
+
+  const deficit = totalFact - targetPlan;
+  const defEl = document.getElementById('metricDeficitVal');
+  const defPill = document.getElementById('metricDeficitPill');
+  if (defEl) {
+    if (deficit < 0) {
+      defEl.textContent = `-${(Math.abs(deficit) / 1000000).toFixed(1)}M ₽`;
+      if (defPill) {
+        defPill.className = 'develop-pill pill-neg';
+        const sub = defPill.querySelector('.pill-sub');
+        if (sub) sub.textContent = 'дефицит плана';
+      }
+    } else {
+      defEl.textContent = `+${(deficit / 1000000).toFixed(1)}M ₽`;
+      if (defPill) {
+        defPill.className = 'develop-pill pill-pos';
+        const sub = defPill.querySelector('.pill-sub');
+        if (sub) sub.textContent = 'профицит плана';
+      }
+    }
   }
 }
 

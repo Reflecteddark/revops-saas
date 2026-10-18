@@ -135,29 +135,39 @@ def get_favicon():
 # Mount Web Dashboard
 INDEX_HTML = BASE_DIR / "apps" / "web" / "index.html"
 APP_JS = BASE_DIR / "apps" / "web" / "app.js"
+NO_CACHE_HEADERS = {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0"
+}
 
 if INDEX_HTML.exists():
     @app.get("/", response_class=HTMLResponse)
+    @app.get("/app", response_class=HTMLResponse)
+    @app.get("/app/", response_class=HTMLResponse)
     def serve_dashboard():
         with open(INDEX_HTML, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            return HTMLResponse(content=f.read(), headers=NO_CACHE_HEADERS)
 
     @app.get("/admin", response_class=HTMLResponse)
+    @app.get("/app/admin", response_class=HTMLResponse)
     def serve_admin():
         with open(INDEX_HTML, "r", encoding="utf-8") as f:
             content = f.read()
             # Inject initial tab override for direct /admin URL
             content = content.replace("</head>", '<script>window.__INITIAL_TAB__="admin";</script></head>')
-            return HTMLResponse(content=content)
+            return HTMLResponse(content=content, headers=NO_CACHE_HEADERS)
 
 if APP_JS.exists():
     @app.get("/app.js")
+    @app.get("/app/app.js")
     def serve_app_js():
-        return FileResponse(APP_JS, media_type="application/javascript")
+        return FileResponse(APP_JS, media_type="application/javascript", headers=NO_CACHE_HEADERS)
 
 WEB_JS_DIR = BASE_DIR / "apps" / "web" / "js"
 if WEB_JS_DIR.exists():
     app.mount("/js", StaticFiles(directory=str(WEB_JS_DIR)), name="js")
+    app.mount("/app/js", StaticFiles(directory=str(WEB_JS_DIR)), name="app_js")
 
 # Mount Marketing Landing (apps/landing)
 LANDING_DIR = BASE_DIR / "apps" / "landing"

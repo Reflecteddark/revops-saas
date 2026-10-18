@@ -449,10 +449,10 @@ function toggleSidebar() {
     const isOpen = sb.classList.contains('mobile-open');
     if (backdrop) backdrop.classList.toggle('active', isOpen);
   } else {
-    sb.classList.toggle('collapsed');
-    const isCollapsed = sb.classList.contains('collapsed');
-    localStorage.setItem('revops_sidebar_collapsed', isCollapsed ? '1' : '0');
-    if (mcChartInstance) {
+    sb.classList.toggle('expanded');
+    const isExpanded = sb.classList.contains('expanded');
+    localStorage.setItem('revops_sidebar_expanded', isExpanded ? '1' : '0');
+    if (typeof mcChartInstance !== 'undefined' && mcChartInstance) {
       setTimeout(() => mcChartInstance.resize(), 260);
     }
   }
@@ -486,12 +486,43 @@ const ALL_TABS = ['pulse', 'express', 'rop', 'audit', 'analyst', 'leaks', 'impac
 
 
 
+function syncHeroKpiCards() {
+  const defEl = document.getElementById('metricDeficitVal');
+  const heroSla = document.getElementById('heroSla');
+  if (defEl && heroSla) {
+    heroSla.textContent = defEl.textContent;
+  }
+  const heroQuality = document.getElementById('heroQuality');
+  if (heroQuality && typeof CALLS_DATA !== 'undefined') {
+    const count = CALLS_DATA.length;
+    if (count > 0) {
+      const avg = CALLS_DATA.reduce((s, c) => s + (c.score || 0), 0) / count;
+      heroQuality.textContent = Math.round((avg / 13) * 100) + '%';
+    } else {
+      heroQuality.textContent = '0%';
+    }
+  }
+}
+
 function animateCounter(el, target, duration = 900) {
   if (!el) return;
   const start = performance.now();
   const fmt = n => n.toLocaleString('ru-RU');
   const isInitial = !el.dataset.hasValue;
   el.dataset.hasValue = '1';
+
+  // Synchronize with Tier-1 Hero KPI cards
+  if (el.id === 'metricFactVal') {
+    const heroRev = document.getElementById('heroRevenue');
+    if (heroRev && heroRev !== el) {
+      animateCounter(heroRev, target, duration);
+    }
+  } else if (el.id === 'metricSsotVal') {
+    const heroPipe = document.getElementById('heroPipeline');
+    if (heroPipe && heroPipe !== el) {
+      animateCounter(heroPipe, target, duration);
+    }
+  }
 
   function tick(now) {
     const p = Math.min((now - start) / duration, 1);
@@ -510,6 +541,7 @@ function animateCounter(el, target, duration = 900) {
       el.style.transform = '';
       el.style.filter = '';
       el.style.opacity = '1';
+      syncHeroKpiCards();
     }
   }
   requestAnimationFrame(tick);
@@ -781,14 +813,70 @@ function updateAllChartsTheme(mode) {
 
 
 // ==========================================================================
-// TOAST NOTIFICATION
+// BLOCK 5: SEQUENTIAL TOAST NOTIFICATION QUEUE (TIER-1)
 // ==========================================================================
-function showToast(title, desc) {
+const _toastQueue = [];
+let _isToastShowing = false;
+let _toastHideTimeout = null;
+
+function showToast(title, desc, type = 'info', duration = 3000) {
+  _toastQueue.push({
+    title: title || '',
+    desc: desc || '',
+    type: type || 'info',
+    duration: duration || 3000
+  });
+  if (!_isToastShowing) {
+    _processToastQueue();
+  }
+}
+
+function _processToastQueue() {
+  if (_toastQueue.length === 0) {
+    _isToastShowing = false;
+    return;
+  }
+  _isToastShowing = true;
+  const item = _toastQueue.shift();
   const box = document.getElementById('toastBox');
-  document.getElementById('toastTitle').textContent = title;
-  document.getElementById('toastDesc').textContent = desc;
+  if (!box) {
+    _isToastShowing = false;
+    return;
+  }
+
+  const titleEl = document.getElementById('toastTitle');
+  const descEl = document.getElementById('toastDesc');
+  const icon = box.querySelector('svg');
+
+  if (titleEl) titleEl.textContent = item.title;
+  if (descEl) descEl.textContent = item.desc;
+
+  // Reset classes and set typed styling
+  box.classList.remove('toast-leaving', 'toast--success', 'toast--error', 'toast--warn', 'toast--info');
+  const typeClass = 'toast--' + (['success', 'error', 'warn', 'info'].includes(item.type) ? item.type : 'info');
+  box.classList.add(typeClass);
+
+  if (icon) {
+    const strokeColors = {
+      success: '#10b981',
+      error: '#f43f5e',
+      warn: '#f59e0b',
+      info: '#a78bfa'
+    };
+    icon.setAttribute('stroke', strokeColors[item.type] || '#a78bfa');
+  }
+
   box.style.display = 'block';
-  setTimeout(() => { box.style.display = 'none'; }, 3500);
+
+  clearTimeout(_toastHideTimeout);
+  _toastHideTimeout = setTimeout(() => {
+    box.classList.add('toast-leaving');
+    setTimeout(() => {
+      box.style.display = 'none';
+      box.classList.remove('toast-leaving');
+      _processToastQueue();
+    }, 220);
+  }, item.duration);
 }
 
 
@@ -1106,6 +1194,7 @@ window.filterSidebarItems = filterSidebarItems;
 window.ALL_TABS = ALL_TABS;
 window.switchTab = switchTab;
 window.animateCounter = animateCounter;
+window.syncHeroKpiCards = syncHeroKpiCards;
 window.animateCardsIn = animateCardsIn;
 window.setAccentTheme = setAccentTheme;
 window.getThemeMode = getThemeMode;

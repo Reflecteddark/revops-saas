@@ -31,10 +31,15 @@ function renderSkillsHeatmap() {
 
   if (reps.length === 0) {
     container.innerHTML = `
-      <div style="padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.08); border-radius: 10px;">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 10px; opacity: 0.35; display: block;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        <strong style="color: #fff; font-size: 0.9rem; display: block; margin-bottom: 4px;">Нет данных о менеджерах (Чистый лист)</strong>
-        <span>Ожидание поступления звонков из телефонии CRM через n8n</span>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+        </div>
+        <div class="empty-state-title">Нет данных о менеджерах</div>
+        <div class="empty-state-desc">Ожидание поступления звонков из телефонии CRM через n8n для построения матрицы навыков</div>
+        <span class="empty-state-badge"><span class="badge-dot"></span>Ожидание CRM</span>
       </div>`;
     return;
   }
@@ -102,6 +107,22 @@ function renderSkillsHeatmap() {
 // ==========================================================================
 // TIER-1 SAAS CHARTS (LINEAR / FEY / VERCEL AESTHETIC)
 // ==========================================================================
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = 'rgba(255, 255, 255, 0.55)';
+  Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.06)';
+  Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(10, 10, 16, 0.95)';
+  Chart.defaults.plugins.tooltip.borderColor = 'rgba(255, 255, 255, 0.12)';
+  Chart.defaults.plugins.tooltip.borderWidth = 1;
+  Chart.defaults.plugins.tooltip.cornerRadius = 10;
+  Chart.defaults.plugins.tooltip.padding = 12;
+  Chart.defaults.plugins.tooltip.boxPadding = 6;
+  Chart.defaults.plugins.tooltip.titleFont = { family: "'Inter', sans-serif", size: 12, weight: '600' };
+  Chart.defaults.plugins.tooltip.bodyFont = { family: "'JetBrains Mono', monospace", size: 11 };
+  Chart.defaults.plugins.tooltip.usePointStyle = true;
+}
+
 let developDissectionChartInstance = null;
 let developDonutChartInstance = null;
 let developSplineChartInstance = null;
@@ -187,6 +208,58 @@ function initDevelopDissectionChart() {
       }
     }
   });
+
+  initSparklines();
+}
+
+// ==========================================================================
+// HERO KPI SPARKLINES (TIER-1 LINEAR/VERCEL)
+// ==========================================================================
+let sparklineChartInstances = {};
+
+function initSparklines() {
+  if (typeof Chart === 'undefined') return;
+  const sparkDef = {
+    type: 'line',
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 600 },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      elements: { point: { radius: 0 }, line: { tension: 0.4, borderWidth: 2 } },
+      scales: { x: { display: false }, y: { display: false } }
+    }
+  };
+
+  const mockWeekly = [0, 0, 0, 0, 0, 0, 0];
+  const ids = ['sparkRevenue', 'sparkPipeline', 'sparkQuality', 'sparkSla'];
+  const colors = ['#7c3aed', '#f59e0b', '#06b6d4', '#f43f5e'];
+
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (sparklineChartInstances[id]) {
+      try { sparklineChartInstances[id].destroy(); } catch (e) {}
+      sparklineChartInstances[id] = null;
+    }
+    const existing = Chart.getChart ? Chart.getChart(el) : null;
+    if (existing) {
+      try { existing.destroy(); } catch (e) {}
+    }
+
+    sparklineChartInstances[id] = new Chart(el, {
+      ...sparkDef,
+      data: {
+        labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+        datasets: [{
+          data: mockWeekly,
+          borderColor: colors[i],
+          backgroundColor: colors[i] + '1a',
+          fill: true
+        }]
+      }
+    });
+  });
 }
 
 function initDevelopDonutChart() {
@@ -241,16 +314,16 @@ function initDevelopSplineChart() {
   if (!ctx) return;
   const isLight = getThemeMode() === 'light';
   const c2d = ctx.getContext('2d');
-  let grad1 = 'rgba(139, 92, 246, 0.16)';
+  let grad1 = 'rgba(124, 58, 237, 0.20)';
   if (c2d) {
     const h = ctx.clientHeight || 180;
     const g1 = c2d.createLinearGradient(0, 0, 0, h);
-    g1.addColorStop(0, 'rgba(139, 92, 246, 0.30)');
-    g1.addColorStop(1, 'rgba(139, 92, 246, 0.00)');
+    g1.addColorStop(0, 'rgba(124, 58, 237, 0.35)');
+    g1.addColorStop(1, 'rgba(124, 58, 237, 0.00)');
     grad1 = g1;
   }
 
-  const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.035)';
+  const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.04)';
   const tickColor = isLight ? '#71717a' : '#52525b';
 
   const isZero = CALLS_DATA.length === 0;
@@ -262,15 +335,15 @@ function initDevelopSplineChart() {
         {
           label: 'SSOT Факт',
           data: isZero ? [0, 0, 0, 0, 0, 0, 0] : [240, 310, 460, 380, 540, 470, 610],
-          borderColor: '#8b5cf6',
+          borderColor: '#7c3aed',
           backgroundColor: grad1,
-          borderWidth: 2,
-          tension: 0.4,
+          borderWidth: 2.2,
+          tension: 0.42,
           fill: true,
           pointRadius: 0,
-          pointHoverRadius: 4,
+          pointHoverRadius: 5,
           pointHoverBackgroundColor: '#ffffff',
-          pointHoverBorderColor: '#8b5cf6',
+          pointHoverBorderColor: '#7c3aed',
           pointHoverBorderWidth: 2
         },
         {
@@ -279,10 +352,13 @@ function initDevelopSplineChart() {
           borderColor: isLight ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.22)',
           borderDash: [4, 4],
           borderWidth: 1.5,
-          tension: 0.4,
+          tension: 0.42,
           fill: false,
           pointRadius: 0,
-          pointHoverRadius: 3
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: '#ffffff',
+          pointHoverBorderColor: '#a78bfa',
+          pointHoverBorderWidth: 2
         }
       ]
     },
@@ -293,15 +369,16 @@ function initDevelopSplineChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(9, 9, 13, 0.96)',
-          titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+          backgroundColor: isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(10, 10, 16, 0.96)',
+          titleFont: { family: 'Inter', size: 12, weight: '600' },
           bodyFont: { family: 'JetBrains Mono', size: 11 },
           titleColor: isLight ? '#09090b' : '#fafafa',
           bodyColor: isLight ? '#52525b' : '#a1a1aa',
-          borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.10)',
+          borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)',
           borderWidth: 1,
           cornerRadius: 10,
-          padding: 10,
+          padding: 12,
+          boxPadding: 6,
           displayColors: true,
           usePointStyle: true,
           callbacks: {
@@ -311,12 +388,16 @@ function initDevelopSplineChart() {
       },
       scales: {
         x: {
-          grid: { display: false },
-          ticks: { color: tickColor, font: { size: 10, family: 'Inter' } }
+          grid: { display: false, drawBorder: false },
+          ticks: { color: tickColor, font: { size: 10, family: 'Inter', weight: '500' } }
         },
         y: {
           border: { display: false },
-          grid: { color: gridColor },
+          grid: {
+            color: gridColor,
+            borderDash: [3, 3],
+            drawBorder: false
+          },
           ticks: {
             color: tickColor,
             font: { size: 10, family: 'JetBrains Mono' },
@@ -766,7 +847,7 @@ function initSpeechRadarChart() {
         {
           label: 'Эталон B2B (100%)',
           data: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
-          borderColor: 'rgba(51, 209, 255, 0.45)',
+          borderColor: 'rgba(6, 182, 212, 0.40)',
           borderWidth: 1.5,
           borderDash: [4, 4],
           pointRadius: 0,
@@ -775,14 +856,14 @@ function initSpeechRadarChart() {
         {
           label: 'Факт выполнения, %',
           data: getDynamicRadarData('all'),
-          borderColor: '#b899eb',
-          backgroundColor: 'rgba(184, 153, 235, 0.22)',
-          borderWidth: 1.75,
-          pointBackgroundColor: '#33d1ff',
+          borderColor: '#7c3aed',
+          backgroundColor: 'rgba(124, 58, 237, 0.22)',
+          borderWidth: 2,
+          pointBackgroundColor: '#06b6d4',
           pointBorderColor: '#ffffff',
           pointBorderWidth: 1.5,
-          pointRadius: 3,
-          pointHoverRadius: 5,
+          pointRadius: 3.5,
+          pointHoverRadius: 6,
           fill: true
         }
       ]
@@ -793,19 +874,21 @@ function initSpeechRadarChart() {
       plugins: {
         legend: {
           display: true,
-          labels: { color: '#cbd5e1', font: { size: 11 } }
+          labels: { color: '#cbd5e1', font: { size: 11, family: 'Inter' } }
         },
         tooltip: {
-          backgroundColor: 'rgba(10, 10, 16, 0.98)',
-          titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+          backgroundColor: 'rgba(10, 10, 16, 0.96)',
+          titleFont: { family: 'Inter', size: 12, weight: '600' },
           bodyFont: { family: 'JetBrains Mono', size: 11 },
           titleColor: '#fff',
           bodyColor: '#cbd5e1',
-          borderColor: 'rgba(255, 255, 255, 0.08)',
+          borderColor: 'rgba(255, 255, 255, 0.12)',
           borderWidth: 1,
-          cornerRadius: 8,
-          padding: 10,
-          displayColors: false,
+          cornerRadius: 10,
+          padding: 12,
+          boxPadding: 6,
+          displayColors: true,
+          usePointStyle: true,
           callbacks: {
             label: function(ctx) {
               return ` ${ctx.dataset.label}: ${ctx.parsed.r}%`;
@@ -1142,15 +1225,192 @@ function updateDevelopBentoCharts() {
   if (rValPay) rValPay.textContent = `${payPct}%`;
   if (rFillPay) rFillPay.setAttribute('stroke-dasharray', `${payPct}, 100`);
 
-  // Sidebar badges
-  const sbBadgeAudit = document.getElementById('sbBadgeAudit');
-  if (sbBadgeAudit) sbBadgeAudit.textContent = `${total}`;
-  const sbBadgeRop = document.getElementById('sbBadgeRop');
-  if (sbBadgeRop) sbBadgeRop.textContent = `${total} сд.`;
+  // Live Counters & Badges
+  const recentCallsCount = document.getElementById('pulseRecentCallsCount');
+  if (recentCallsCount) recentCallsCount.textContent = `${total}`;
+  const lblRecentCalls = document.getElementById('lblRecentCallsFilter');
+  if (lblRecentCalls && lblRecentCalls.textContent.startsWith('Все')) {
+    lblRecentCalls.textContent = `Все (${total})`;
+  }
+
   const syncBadge = document.getElementById('syncStatusBadge');
   if (syncBadge) syncBadge.textContent = `${total} СИНХРОНИЗИРОВАНО`;
 }
 
+
+// ==========================================================================
+// REVOPS INTERACTIVE DROPDOWNS CONTROLLER
+// ==========================================================================
+function toggleRevopsDropdown(dropdownId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const el = document.getElementById(dropdownId);
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+  closeAllRevopsDropdowns();
+  if (!isOpen) {
+    el.classList.add('open');
+  }
+}
+
+function closeAllRevopsDropdowns() {
+  document.querySelectorAll('.revops-dropdown.open').forEach(el => {
+    el.classList.remove('open');
+  });
+}
+
+function selectPulsePeriod(periodKey, labelText) {
+  const lblFact = document.getElementById('lblPulsePeriodFact');
+  if (lblFact) lblFact.textContent = labelText;
+  const lblPlan = document.getElementById('lblPulsePeriodPlan');
+  if (lblPlan) lblPlan.textContent = labelText;
+
+  const kpiFact = document.getElementById('kpiFactPeriodLabel');
+  if (kpiFact) kpiFact.innerHTML = `Главный KPI &bull; ${labelText}`;
+  const kpiPlan = document.getElementById('kpiPlanPeriodLabel');
+  if (kpiPlan) kpiPlan.innerHTML = `Таргет &bull; ${labelText}`;
+
+  // Sync active item in both dropdowns
+  ['dropdownPulsePeriodFact', 'dropdownPulsePeriodPlan'].forEach(dId => {
+    const d = document.getElementById(dId);
+    if (d) {
+      d.querySelectorAll('.revops-dropdown-item').forEach(item => {
+        item.classList.toggle('active', item.textContent.includes(labelText));
+      });
+    }
+  });
+
+  if (typeof setPulsePeriod === 'function') {
+    setPulsePeriod(periodKey);
+  }
+  closeAllRevopsDropdowns();
+}
+
+function setDissectionScale(scaleKey, labelText) {
+  const lbl = document.getElementById('lblDissectionScale');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownDissectionScale');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  if (developDissectionChartInstance) {
+    const isZero = CALLS_DATA.length === 0;
+    if (scaleKey === 'weeks') {
+      developDissectionChartInstance.data.labels = ['Нед 40 (1-7 Окт)', 'Нед 41 (8-14 Окт)', 'Нед 42 (15-21 Окт)', 'Нед 43 (22-28 Окт)'];
+      developDissectionChartInstance.data.datasets[0].data = isZero ? [0, 0, 0, 0] : [210, 245, 190, 245];
+      developDissectionChartInstance.data.datasets[1].data = isZero ? [0, 0, 0, 0] : [190, 190, 190, 190];
+    } else if (scaleKey === 'days') {
+      developDissectionChartInstance.data.labels = ['Пн (12 Окт)', 'Вт (13 Окт)', 'Ср (14 Окт)', 'Чт (15 Окт)', 'Пт (16 Окт)', 'Сб (17 Окт)', 'Вс (18 Окт)'];
+      developDissectionChartInstance.data.datasets[0].data = isZero ? [0, 0, 0, 0, 0, 0, 0] : [35, 48, 52, 60, 45, 12, 8];
+      developDissectionChartInstance.data.datasets[1].data = isZero ? [0, 0, 0, 0, 0, 0, 0] : [40, 40, 40, 40, 40, 15, 10];
+    } else {
+      developDissectionChartInstance.data.labels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+      developDissectionChartInstance.data.datasets[0].data = isZero ? Array(12).fill(0) : [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950];
+      developDissectionChartInstance.data.datasets[1].data = isZero ? Array(12).fill(0) : [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830];
+    }
+    developDissectionChartInstance.update();
+  }
+
+  showToast('Динамика выручки', 'Масштаб графика: ' + labelText);
+  closeAllRevopsDropdowns();
+}
+
+function selectDonutPeriod(periodKey, labelText) {
+  const lbl = document.getElementById('lblDonutPeriod');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownDonutPeriod');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  if (developDonutChartInstance) {
+    const isZero = CALLS_DATA.length === 0;
+    if (periodKey === '7d') {
+      developDonutChartInstance.data.datasets[0].data = isZero ? [1] : [40, 30, 15, 10, 5];
+    } else if (periodKey === '30d') {
+      developDonutChartInstance.data.datasets[0].data = isZero ? [1] : [35, 25, 20, 12, 8];
+    } else {
+      developDonutChartInstance.data.datasets[0].data = isZero ? [1] : [34, 25, 17, 12, 6];
+    }
+    developDonutChartInstance.update();
+  }
+
+  showToast('Категории звонков', 'Срез: ' + labelText);
+  closeAllRevopsDropdowns();
+}
+
+function selectCriteriaScope(scopeKey, labelText) {
+  const lbl = document.getElementById('lblCriteriaScope');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownCriteriaScope');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  if (scopeKey === 'core5') {
+    showToast('Нормативы конверсии', 'Фокус: 5 ключевых этапов B2B');
+  } else if (scopeKey === 'risks') {
+    showToast('Нормативы конверсии', 'Фокус: Критические точки срыва и Fake Yes');
+  } else {
+    showToast('Нормативы конверсии', 'Фокус: Все 13 критериев B2B-аудита');
+  }
+  closeAllRevopsDropdowns();
+}
+
+function filterRecentCalls(filterKey, labelText) {
+  const lbl = document.getElementById('lblRecentCallsFilter');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownRecentCallsFilter');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  showToast('Последние звонки', 'Применен фильтр: ' + labelText);
+  closeAllRevopsDropdowns();
+}
+
+function selectFunnelPeriod(periodKey, labelText) {
+  const lbl = document.getElementById('lblFunnelPeriod');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownFunnelPeriod');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  showToast('Воронка продаж SSOT', 'Период: ' + labelText);
+  closeAllRevopsDropdowns();
+}
+
+// Global click-away listeners for RevOps dropdowns
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.revops-dropdown')) {
+    closeAllRevopsDropdowns();
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeAllRevopsDropdowns();
+  }
+});
 
 
 // Expose Charts handlers & instances on window
@@ -1181,3 +1441,15 @@ window.updateRadarChart = updateRadarChart;
 window.renderRadarRepPills = renderRadarRepPills;
 window.renderPayrollTable = renderPayrollTable;
 window.renderAiImpactAndFakeYes = renderAiImpactAndFakeYes;
+
+window.toggleRevopsDropdown = toggleRevopsDropdown;
+window.closeAllRevopsDropdowns = closeAllRevopsDropdowns;
+window.selectPulsePeriod = selectPulsePeriod;
+window.setDissectionScale = setDissectionScale;
+window.selectDissectionScale = setDissectionScale;
+window.selectDonutPeriod = selectDonutPeriod;
+window.selectCriteriaScope = selectCriteriaScope;
+window.filterRecentCalls = filterRecentCalls;
+window.selectFunnelPeriod = selectFunnelPeriod;
+window.initSparklines = initSparklines;
+

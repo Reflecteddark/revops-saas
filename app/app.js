@@ -12,9 +12,9 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
-  if (localStorage.getItem('revops_sidebar_collapsed') === '1') {
+  if (localStorage.getItem('revops_sidebar_expanded') === '1') {
     const sb = document.getElementById('mpSidebar');
-    if (sb) sb.classList.add('collapsed');
+    if (sb) sb.classList.add('expanded');
   }
   initCallsTable();
   renderSkillsHeatmap();

@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <base href="/app/">
   <title>RevOps Platform V20.0 — Behavioral Intelligence Edition | TNT-001</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.ico">
@@ -866,7 +869,7 @@
 
     /* Left Collapsible Sidebar */
     .mp-sidebar {
-      width: 256px;
+      width: 270px;
       flex-shrink: 0;
       background: var(--bg-sidebar);
       border-right: 1px solid var(--border-subtle);
@@ -3203,6 +3206,97 @@
       color: #808191 !important;
     }
 
+    /* Interactive RevOps Dropdowns */
+    .revops-dropdown {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .revops-dropdown .develop-dropdown {
+      border: 1px solid rgba(124, 58, 237, 0.28);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .revops-dropdown .develop-dropdown:hover {
+      border-color: rgba(124, 58, 237, 0.55);
+      background: rgba(124, 58, 237, 0.22);
+    }
+
+    .revops-dropdown.open .develop-dropdown {
+      border-color: #8b5cf6;
+      background: rgba(124, 58, 237, 0.28);
+      box-shadow: 0 0 12px rgba(124, 58, 237, 0.35);
+    }
+
+    .revops-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 200px;
+      background: rgba(13, 13, 20, 0.98);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(124, 58, 237, 0.35);
+      border-radius: 12px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 16px rgba(124, 58, 237, 0.2);
+      padding: 6px;
+      z-index: 1000;
+      display: none;
+      transform-origin: top right;
+      animation: revopsDropdownPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes revopsDropdownPop {
+      from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .revops-dropdown.open .revops-dropdown-menu {
+      display: block;
+    }
+
+    .revops-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 0.74rem;
+      font-weight: 500;
+      color: #d4d4d8;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .revops-dropdown-item:hover {
+      color: #ffffff;
+      background: rgba(124, 58, 237, 0.25);
+    }
+
+    .revops-dropdown-item.active {
+      color: #c4b5fd;
+      background: rgba(124, 58, 237, 0.18);
+      font-weight: 600;
+    }
+
+    html[data-theme="light"] .revops-dropdown-menu {
+      background: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.12) !important;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    html[data-theme="light"] .revops-dropdown-item {
+      color: #3f3f46 !important;
+    }
+
+    html[data-theme="light"] .revops-dropdown-item:hover {
+      background: #f4f4f5 !important;
+      color: #18181b !important;
+    }
+
     .develop-kpi-pair {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -4297,6 +4391,501 @@
       background: rgba(124, 58, 237, 0.1);
       color: #6d28d9;
     }
+
+    /* ==========================================================================
+       BLOCK 1: SIDEBAR COLLAPSED ICON-ONLY NAVIGATION (TIER-1 LINEAR/VERCEL)
+       ========================================================================== */
+    .mp-sidebar {
+      width: 64px !important;
+      transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      overflow: hidden !important;
+    }
+
+    .mp-sidebar:hover,
+    .mp-sidebar.expanded {
+      width: 220px !important;
+    }
+
+    /* Скрывать текст в collapsed */
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-label,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-sidebar-section-title,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-group-title,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-brand-text,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-sidebar-toggle,
+    .mp-sidebar:not(:hover):not(.expanded) .badge-lost,
+    .mp-sidebar:not(:hover):not(.expanded) .badge-info,
+    .mp-sidebar:not(:hover):not(.expanded) .badge-won,
+    .mp-sidebar:not(:hover):not(.expanded) .badge-subtle,
+    .mp-sidebar:not(:hover):not(.expanded) .sidebar-tool-search-wrap,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-sidebar-search,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-sidebar-footer {
+      opacity: 0 !important;
+      width: 0 !important;
+      max-width: 0 !important;
+      height: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      transition: opacity 0.15s ease !important;
+      pointer-events: none !important;
+    }
+
+    /* Иконка — всегда видна */
+    .mp-nav-icon,
+    .mp-nav-item-icon {
+      flex-shrink: 0 !important;
+      width: 18px !important;
+      height: 18px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-item {
+      position: relative !important;
+      justify-content: center !important;
+      padding: 10px 0 !important;
+    }
+
+    /* Tooltip при collapsed */
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-item::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(14, 18, 28, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 1000;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-item:hover::after {
+      opacity: 1;
+    }
+
+    /* ==========================================================================
+       BLOCK 2: HERO KPI CARDS (TIER-1 LINEAR/VERCEL VISUAL WEIGHT)
+       ========================================================================== */
+    .kpi-hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1200px) {
+      .kpi-hero-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 640px) {
+      .kpi-hero-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-card {
+      background: #0a0a10;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 22px 24px 18px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Colored vertical accent indicator on left border */
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      bottom: 20%;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+    }
+    .kpi-card--violet::before { background: #7c3aed; box-shadow: 0 0 12px #7c3aed; }
+    .kpi-card--amber::before  { background: #f59e0b; box-shadow: 0 0 12px #f59e0b; }
+    .kpi-card--cyan::before   { background: #06b6d4; box-shadow: 0 0 12px #06b6d4; }
+    .kpi-card--rose::before   { background: #f43f5e; box-shadow: 0 0 12px #f43f5e; }
+
+    .kpi-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .kpi-card-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .kpi-card-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .kpi-card-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: #fff;
+      line-height: 1.1;
+      margin: 8px 0 6px;
+    }
+
+    .kpi-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      min-height: 20px;
+    }
+
+    .kpi-delta {
+      font-size: 0.72rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .kpi-delta--up    { color: #34d399; }
+    .kpi-delta--down  { color: #f87171; }
+    .kpi-delta--neutral { color: var(--text-muted); }
+
+    .kpi-sparkline {
+      height: 32px;
+      width: 100%;
+      opacity: 0.75;
+      margin-top: auto;
+    }
+    .kpi-sparkline canvas {
+      width: 100% !important;
+      height: 32px !important;
+    }
+
+    /* ==========================================================================
+       BLOCK 3: BENTO GRID (TIER-1 ASYMMETRIC 12-COLUMN LAYOUT)
+       ========================================================================== */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 24px;
+    }
+    .bento-span-3  { grid-column: span 3; }
+    .bento-span-4  { grid-column: span 4; }
+    .bento-span-5  { grid-column: span 5; }
+    .bento-span-6  { grid-column: span 6; }
+    .bento-span-7  { grid-column: span 7; }
+    .bento-span-8  { grid-column: span 8; }
+    .bento-span-12 { grid-column: span 12; }
+
+    @media (max-width: 1200px) {
+      .bento-span-3  { grid-column: span 6; }
+      .bento-span-4  { grid-column: span 12; }
+      .bento-span-6  { grid-column: span 12; }
+      .bento-span-8  { grid-column: span 12; }
+    }
+    @media (max-width: 768px) {
+      .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .bento-span-3,
+      .bento-span-4,
+      .bento-span-5,
+      .bento-span-6,
+      .bento-span-7,
+      .bento-span-8,
+      .bento-span-12 {
+        grid-column: span 1;
+      }
+    }
+
+    /* ==========================================================================
+       BLOCK 5: SEQUENTIAL TOAST NOTIFICATION QUEUE (TIER-1)
+       ========================================================================== */
+    @keyframes toastEnter {
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes toastLeave {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(8px) scale(0.96); }
+    }
+
+    .toast-box {
+      animation: toastEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    }
+    .toast-box.toast-leaving {
+      animation: toastLeave 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    }
+
+    .toast--success {
+      border-color: rgba(16, 185, 129, 0.5) !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(16, 185, 129, 0.2) !important;
+    }
+    .toast--error {
+      border-color: rgba(244, 63, 94, 0.5) !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(244, 63, 94, 0.2) !important;
+    }
+    .toast--warn {
+      border-color: rgba(245, 158, 11, 0.5) !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(245, 158, 11, 0.2) !important;
+    }
+    .toast--info {
+      border-color: rgba(124, 58, 237, 0.5) !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(124, 58, 237, 0.2) !important;
+    }
+
+    /* ==========================================================================
+       BLOCK 6: TIER-1 TYPOGRAPHY & NUMERIC HIERARCHY (LINEAR / VERCEL BENCHMARK)
+       ========================================================================== */
+    /* Hero KPI 2.2rem hierarchy */
+    .kpi-card-value,
+    .kpi-hero-val,
+    .hero-stat-value {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 2.2rem !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.04em !important;
+      line-height: 1.1 !important;
+      font-variant-numeric: tabular-nums !important;
+    }
+
+    /* Tighter section & card headers */
+    .develop-card-title,
+    .section-title,
+    .bento-card-header h2,
+    .bento-card-header h3 {
+      letter-spacing: -0.03em !important;
+      font-weight: 700 !important;
+      line-height: 1.25 !important;
+    }
+
+    /* Tabular numeric alignment for all financial & percentage metrics */
+    .font-mono,
+    .num-mono,
+    .metric-value,
+    .kpi-hero,
+    .kpi-secondary,
+    .bank-card-balance,
+    .develop-tx-val,
+    .develop-inv-val,
+    .step-amount-val,
+    .donut-center-num,
+    .spending-ring-val,
+    .kpi-delta,
+    .metric-delta,
+    .rate-badge {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-variant-numeric: tabular-nums !important;
+      letter-spacing: -0.02em !important;
+    }
+
+    /* Compact high-density table cells with tabular figures */
+    .data-table td,
+    .call-table td,
+    .payroll-table td {
+      font-variant-numeric: tabular-nums !important;
+    }
+
+    /* ==========================================================================
+       BLOCK 7: EMPTY STATES (TIER-1 LINEAR/VERCEL DESIGN)
+       ========================================================================== */
+    .empty-state {
+      padding: 36px 20px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px dashed rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 12px 0;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .empty-state:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .empty-state-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(124, 58, 237, 0.08);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      color: #a78bfa;
+    }
+
+    .empty-state-title {
+      color: #fff;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+
+    .empty-state-desc {
+      color: var(--text-secondary);
+      font-size: 0.74rem;
+      max-width: 440px;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .empty-state-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 99px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .empty-state-badge .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #f59e0b;
+      box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+    }
+
+    /* ==========================================================================
+       BLOCK 8: ANIMATED LIVE PULSE STATUS INDICATORS (TIER-1 LINEAR/VERCEL)
+       ========================================================================== */
+    @keyframes dotPulseLive {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+    @keyframes dotPulseWarn {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+      }
+    }
+    @keyframes dotPulseError {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(244, 63, 94, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+      }
+    }
+    @keyframes dotPulseViolet {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(124, 58, 237, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+      }
+    }
+
+    .dot-live {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      flex-shrink: 0;
+      animation: dotPulseLive 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .dot-warn {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f59e0b;
+      display: inline-block;
+      flex-shrink: 0;
+      animation: dotPulseWarn 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .dot-error {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f43f5e;
+      display: inline-block;
+      flex-shrink: 0;
+      animation: dotPulseError 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .dot-violet {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #7c3aed;
+      display: inline-block;
+      flex-shrink: 0;
+      animation: dotPulseViolet 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
   </style>
 </head>
 <body>
@@ -4398,74 +4987,70 @@
       <!-- Nav Items: 1. Оперативное управление -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Оперативное управление</div>
-        <button id="sb-pulse" class="mp-nav-item active" onclick="switchTab('pulse')">
+        <button id="sb-pulse" class="mp-nav-item active" onclick="switchTab('pulse')" data-tooltip="Пульс выручки">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
           <span class="mp-nav-label">1. Пульс выручки</span>
         </button>
-        <button id="sb-express" class="mp-nav-item" onclick="switchTab('express')">
+        <button id="sb-express" class="mp-nav-item" onclick="switchTab('express')" data-tooltip="Экспресс 3 цифры">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
           <span class="mp-nav-label">2. Экспресс 3 цифры</span>
         </button>
-        <button id="sb-rop" class="mp-nav-item" onclick="switchTab('rop')">
+        <button id="sb-rop" class="mp-nav-item" onclick="switchTab('rop')" data-tooltip="Пульт РОПа 15 мин">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span>
           <span class="mp-nav-label">3. Пульт РОПа 15 мин</span>
-          <span class="badge-lost" id="sbBadgeRop" style="font-size: 0.62rem; margin-left: auto;">0 сд.</span>
         </button>
       </div>
 
       <!-- Nav Items: 2. Речевой ИИ & Аудит -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Речевой ИИ & Аудит</div>
-        <button id="sb-audit" class="mp-nav-item" onclick="switchTab('audit')">
+        <button id="sb-audit" class="mp-nav-item" onclick="switchTab('audit')" data-tooltip="ИИ-Аудит звонков">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 19v4m-4 0h8"/></svg></span>
           <span class="mp-nav-label">4. ИИ-Аудит звонков</span>
-          <span class="badge-info" id="sbBadgeAudit" style="font-size: 0.62rem; margin-left: auto;">0</span>
         </button>
-        <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')">
-          <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
-          <span class="mp-nav-label">8. Навыки & Payroll</span>
-        </button>
-        <button id="sb-impact" class="mp-nav-item" onclick="switchTab('impact')">
+        <button id="sb-impact" class="mp-nav-item" onclick="switchTab('impact')" data-tooltip="AI Impact & Детектор">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
-          <span class="mp-nav-label">6. AI Impact & Детектор</span>
+          <span class="mp-nav-label">5. AI Impact & Детектор</span>
+        </button>
+        <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')" data-tooltip="Навыки & Payroll">
+          <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+          <span class="mp-nav-label">6. Навыки & Payroll</span>
         </button>
       </div>
 
       <!-- Nav Items: 3. Финансы & Аналитика -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Финансы & Аналитика</div>
-        <button id="sb-analyst" class="mp-nav-item" onclick="switchTab('analyst')">
+        <button id="sb-analyst" class="mp-nav-item" onclick="switchTab('analyst')" data-tooltip="ИИ Аналитик (CCO)">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12L2.1 12a10.1 10.1 0 0 0 9.9 10z"/></svg></span>
-          <span class="mp-nav-label">ИИ Аналитик (CCO)</span>
-          <span class="badge-won" style="font-size: 0.60rem; margin-left: auto; padding: 1px 5px; border-radius: 4px;">Agent 2</span>
+          <span class="mp-nav-label">7. ИИ Аналитик (CCO)</span>
         </button>
-        <button id="sb-leaks" class="mp-nav-item" onclick="switchTab('leaks')">
+        <button id="sb-leaks" class="mp-nav-item" onclick="switchTab('leaks')" data-tooltip="Диагностика утечек">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></span>
-          <span class="mp-nav-label">5. Диагностика утечек</span>
+          <span class="mp-nav-label">8. Диагностика утечек</span>
         </button>
-        <button id="sb-montecarlo" class="mp-nav-item" onclick="switchTab('montecarlo')">
+        <button id="sb-montecarlo" class="mp-nav-item" onclick="switchTab('montecarlo')" data-tooltip="Монте-Карло 3.0">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/></svg></span>
-          <span class="mp-nav-label">7. Монте-Карло 3.0</span>
+          <span class="mp-nav-label">9. Монте-Карло 3.0</span>
         </button>
       </div>
 
       <!-- Nav Items: 4. Система & Интеграции -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Система & Интеграции</div>
-        <button id="sb-settings" class="mp-nav-item" onclick="switchTab('settings')">
+        <button id="sb-settings" class="mp-nav-item" onclick="switchTab('settings')" data-tooltip="Паспорт & E2E">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
-          <span class="mp-nav-label">9. Паспорт & E2E</span>
+          <span class="mp-nav-label">10. Паспорт & E2E</span>
         </button>
-        <button id="sb-admin" class="mp-nav-item" onclick="switchTab('admin')" style="display: none;">
+        <button id="sb-admin" class="mp-nav-item" onclick="switchTab('admin')" style="display: none;" data-tooltip="Админ-кабинет">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 10 7 12"/><line x1="12" y1="12" x2="16" y2="12"/></svg></span>
-          <span class="mp-nav-label">10. Админ-кабинет</span>
-          <span class="badge-info" style="font-size: 0.60rem; margin-left: auto; background: rgba(124, 58, 237, 0.2); color: #a78bfa; border: 1px solid rgba(124, 58, 237, 0.4);">Fleet</span>
+          <span class="mp-nav-label">11. Админ-кабинет</span>
         </button>
-        <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item">
+        <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item" data-tooltip="Битрикс24 REST">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
           <span class="mp-nav-label">Битрикс24 REST &nearr;</span>
         </a>
-        <a href="https://revopsofficial.amocrm.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item">
+        <a href="https://revopsofficial.amocrm.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item" data-tooltip="amoCRM API v4">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></span>
           <span class="mp-nav-label">amoCRM API v4 &nearr;</span>
         </a>
@@ -4518,7 +5103,7 @@
 
           <!-- Live Status Indicator (Tier-1 SaaS) -->
           <div style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 99px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #34d399;">
-            <span class="status-dot dot-won" style="animation: livePulse 4.5s infinite; width: 6px; height: 6px;"></span>
+            <span class="dot-live"></span>
             <span data-live-status>LIVE · синхр. только что</span>
           </div>
 
@@ -4562,285 +5147,373 @@
     <!-- ======================================================== -->
     <div id="view-pulse" class="tab-view active">
 
-      <!-- Bento Grid (Kristi Kamlylova Develop Benchmark) -->
-      <div class="develop-grid">
-        
-        <!-- ================= LEFT COLUMN (63%) ================= -->
-        <div class="develop-left-col">
-          
-          <!-- Row 1: Editorial Hybrid KPI Block (Linear/Vercel style) -->
-          <div class="develop-editorial-kpis" style="position: relative; display: grid; grid-template-columns: 1.35fr 1fr; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 28px; margin-bottom: 8px;">
-            <button class="card-ai-ask" onclick="openAiAsk('Что значит дефицит плана?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
-            <!-- Hero — без рамки -->
-            <div style="padding-right: 36px;">
-              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-                <div class="kpi-hero-label" style="margin-bottom: 0;">Главный KPI &bull; Октябрь 2026</div>
-                <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-              </div>
-              <div class="kpi-hero kpi-hero-live" id="metricFactVal">0 ₽</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-                <div class="develop-pill pill-pos">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
-                  <span id="metricFactBadge">0.0%</span>
-                  <span class="pill-sub">к плану</span>
-                </div>
-                <svg class="develop-sparkline" viewBox="0 0 120 40" style="width: 100px; height: 32px;">
-                  <defs>
-                    <linearGradient id="splineFactWon" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.45"/>
-                      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M 0,35 Q 20,32 35,28 T 70,18 T 100,8 T 120,4 L 120,40 L 0,40 Z" fill="url(#splineFactWon)"/>
-                  <path d="M 0,35 Q 20,32 35,28 T 70,18 T 100,8 T 120,4" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </div>
+      <!-- BLOCK 3: BENTO GRID (TIER-1 LINEAR/VERCEL 12-COLUMN BENCHMARK) -->
+      <div class="bento-grid">
 
-            <!-- Plan — без рамки, с divider слева -->
-            <div style="padding-left: 36px; border-left: 1px solid rgba(255,255,255,0.06);">
-              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-                <div class="kpi-hero-label" style="margin-bottom: 0;">Таргет &bull; План месяца</div>
-                <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-              </div>
-              <div class="kpi-secondary" id="metricPlanVal">5 000 000 ₽</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-                <div class="develop-pill pill-neg" id="metricDeficitPill">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-                  <span id="metricDeficitVal">-5.0M ₽</span>
-                  <span class="pill-sub">дефицит плана</span>
-                </div>
-                <svg class="develop-sparkline" viewBox="0 0 120 40" style="width: 100px; height: 32px;">
-                  <defs>
-                    <linearGradient id="splineTarget" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#fb7185" stop-opacity="0.35"/>
-                      <stop offset="100%" stop-color="#fb7185" stop-opacity="0"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M 0,15 Q 30,8 55,20 T 90,12 T 120,25 L 120,40 L 0,40 Z" fill="url(#splineTarget)"/>
-                  <path d="M 0,15 Q 30,8 55,20 T 90,12 T 120,25" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
+        <!-- Row 1: 4x KPI Cards (3 cols each) -->
+        <!-- Card 1: Revenue Fact -->
+        <div class="kpi-card kpi-card--violet bento-span-3">
+          <div class="kpi-card-header">
+            <span class="kpi-card-label">ВЫРУЧКА ФАКТ</span>
+            <div class="revops-dropdown" id="dropdownPulsePeriodFact">
+              <button class="develop-dropdown kpi-card-badge" onclick="toggleRevopsDropdown('dropdownPulsePeriodFact', event)" style="cursor: pointer;">
+                <span class="dropdown-label" id="lblPulsePeriodFact">Октябрь 2026</span>
+                <svg width="8" height="5" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectPulsePeriod('month', 'Октябрь 2026')">Октябрь 2026 (Текущий)</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('prev_month', 'Сентябрь 2026')">Сентябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('7d', 'За последние 7 дней')">7 дней (Оперативный)</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('today', 'Сегодня')">Сегодня</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('year', 'Весь 2026 год (YTD)')">2026 Год целиком</div>
               </div>
             </div>
           </div>
-
-          <!-- Row 2: Dissection (Bar Chart) -->
-          <div class="develop-card" style="position: relative;">
-            <button class="card-ai-ask" onclick="openAiAsk('В чем разрыв факт vs план по месяцам?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
-            <div class="develop-card-header">
-              <div class="develop-title-group">
-                <span class="develop-card-title">Динамика выручки и активности</span>
-                <div class="develop-legend">
-                  <span class="legend-circle dot-purple"></span><span>Выручка</span>
-                  <span class="legend-circle dot-pink" style="margin-left: 12px;"></span><span>План</span>
-                </div>
-              </div>
-              <span class="develop-dropdown">По месяцам <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-            </div>
-            <div style="height: 230px; position: relative; width: 100%;">
-              <canvas id="developDissectionChart"></canvas>
-              <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
-            </div>
+          <div class="kpi-card-value" id="heroRevenue">0 ₽</div>
+          <div class="kpi-card-meta">
+            <span class="kpi-delta kpi-delta--neutral" id="heroRevenueDelta">
+              <span id="metricFactBadge">0.0%</span> к плану vs прошлый мес.
+            </span>
           </div>
-
-          <!-- Row 3: 2 Sub-Cards: Transactions & Investments -->
-          <div class="develop-sub-pair">
-            <!-- Left: Transactions (Аудит звонков) -->
-            <div class="develop-card">
-              <div class="develop-card-header">
-                <span class="develop-card-title">Последние звонки</span>
-                <span class="develop-dropdown" id="pulseRecentCallsCount" onclick="switchTab('audit')">Все (0) <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-              </div>
-              <div class="develop-tx-list" id="pulseRecentCallsList">
-                <div style="padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
-                  <div style="font-size: 1.8rem; margin-bottom: 6px; opacity: 0.5;">🎙️</div>
-                  <strong style="color: #fff; font-size: 0.88rem; display: block; margin-bottom: 2px;">Нет звонков</strong>
-                  <div style="font-size: 0.72rem; color: var(--text-secondary);">Ожидание поступления звонков из телефонии CRM через n8n</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Right: Investments (Воронка продаж SSOT) -->
-            <div class="develop-card">
-              <div class="develop-card-header">
-                <span class="develop-card-title">Воронка продаж SSOT</span>
-                <span class="develop-dropdown" onclick="switchTab('rop')">Октябрь <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-              </div>
-              <div class="develop-inv-list" id="pulseFunnelList">
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">1. Квалификация</span>
-                    <span class="develop-inv-val" id="funnelVal1">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill1" style="width: 0%; background: #7c3aed;"></div></div>
-                </div>
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">2. Встреча проведена / Zoom</span>
-                    <span class="develop-inv-val" id="funnelVal2">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill2" style="width: 0%; background: #8b5cf6;"></div></div>
-                </div>
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">3. Коммерческое предложение</span>
-                    <span class="develop-inv-val" id="funnelVal3">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill3" style="width: 0%; background: #00d4ff;"></div></div>
-                </div>
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">4. Согласование договора</span>
-                    <span class="develop-inv-val" id="funnelVal4">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill4" style="width: 0%; background: #f36594;"></div></div>
-                </div>
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">5. Оплата (Closed-Won)</span>
-                    <span class="develop-inv-val" id="funnelVal5">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill5" style="width: 0%; background: #34d399;"></div></div>
-                </div>
-              </div>
-            </div>
+          <div class="kpi-sparkline">
+            <canvas id="sparkRevenue" height="32"></canvas>
           </div>
-
+          <!-- Compatibility elements for deals.js -->
+          <span id="kpiFactPeriodLabel" style="display:none;">Главный KPI &bull; Октябрь 2026</span>
+          <span id="metricFactVal" style="display:none;">0 ₽</span>
         </div>
 
-        <!-- ================= RIGHT COLUMN (37%) ================= -->
-        <div class="develop-right-col">
-          
-          <!-- Card 1: Active cards (Credit Card mockup for SSOT) -->
-          <div class="develop-card">
-            <div class="develop-card-header" style="margin-bottom: 12px;">
-              <span class="develop-card-title">Статус интеграций</span>
-              <a href="javascript:void(0)" onclick="switchTab('settings')" class="develop-subtle-link">Все шлюзы ↗</a>
-            </div>
-            <div class="develop-bank-card">
-              <div class="bank-card-top-row">
-                <span class="bank-card-chip-title" style="display: flex; align-items: center; gap: 8px;">
-                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
-                  amoCRM &amp; Bitrix24 SSOT
-                </span>
-                <span class="bank-card-exp">LIVE SYNC</span>
-              </div>
-              <div class="bank-card-bal-lbl" style="margin-top: 10px;">Взвешенный прогноз SSOT</div>
-              <div class="bank-card-balance" id="metricSsotVal">0 ₽</div>
-              <div class="bank-card-bottom-row" style="margin-top: 4px; padding-top: 8px; border-top: 1px solid rgba(124, 58, 237, 0.20);">
-                <span style="font-size: 0.70rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                  <svg width="12" height="12" fill="none" stroke="#10b981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                  amoCRM API v4 &bull; Bitrix24 Webhook
-                </span>
-                <span style="font-size: 0.70rem; color: #a78bfa; font-weight: 600;">200 OK</span>
+        <!-- Card 2: Pipeline in Progress -->
+        <div class="kpi-card kpi-card--amber bento-span-3">
+          <div class="kpi-card-header">
+            <span class="kpi-card-label">ПАЙПЛАЙН В РАБОТЕ</span>
+            <span class="kpi-card-badge">SSOT ВЗВЕШЕННЫЙ</span>
+          </div>
+          <div class="kpi-card-value" id="heroPipeline">0 ₽</div>
+          <div class="kpi-card-meta">
+            <span class="kpi-delta kpi-delta--neutral" id="heroPipelineDelta">Взвешенный прогноз сделок</span>
+          </div>
+          <div class="kpi-sparkline">
+            <canvas id="sparkPipeline" height="32"></canvas>
+          </div>
+          <span id="metricPipeVal" style="display:none;">0 ₽</span>
+        </div>
+
+        <!-- Card 3: Call Quality -->
+        <div class="kpi-card kpi-card--cyan bento-span-3">
+          <div class="kpi-card-header">
+            <span class="kpi-card-label">КАЧЕСТВО ЗВОНКОВ</span>
+            <span class="kpi-card-badge">13 КРИТЕРИЕВ</span>
+          </div>
+          <div class="kpi-card-value" id="heroQuality">0%</div>
+          <div class="kpi-card-meta">
+            <span class="kpi-delta kpi-delta--neutral" id="heroQualityDelta">Средний балл стандартов ОП</span>
+          </div>
+          <div class="kpi-sparkline">
+            <canvas id="sparkQuality" height="32"></canvas>
+          </div>
+        </div>
+
+        <!-- Card 4: Plan Deficit / Target -->
+        <div class="kpi-card kpi-card--rose bento-span-3">
+          <div class="kpi-card-header">
+            <span class="kpi-card-label">ДЕФИЦИТ ДО ПЛАНА</span>
+            <div class="revops-dropdown" id="dropdownPulsePeriodPlan">
+              <button class="develop-dropdown kpi-card-badge" onclick="toggleRevopsDropdown('dropdownPulsePeriodPlan', event)" style="cursor: pointer;">
+                <span class="dropdown-label" id="lblPulsePeriodPlan">План 5.0M ₽</span>
+                <svg width="8" height="5" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectPulsePeriod('month', 'Октябрь 2026')">Октябрь 2026 (Текущий)</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('prev_month', 'Сентябрь 2026')">Сентябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('7d', 'За последние 7 дней')">7 дней (Оперативный)</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('today', 'Сегодня')">Сегодня</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('year', 'Весь 2026 год (YTD)')">2026 Год целиком</div>
               </div>
             </div>
           </div>
-
-          <!-- Card 2: Categories Donut & Spending Rings -->
-          <div class="develop-card">
-            <div class="develop-card-header">
-              <span class="develop-card-title">Категории звонков</span>
-              <span class="develop-dropdown">Октябрь <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-            </div>
-            <div class="develop-donut-container">
-              <div class="donut-chart-box">
-                <canvas id="developDonutChart"></canvas>
-                <div class="donut-center-badge">
-                  <span class="donut-center-num" id="donutCenterNum">0%</span>
-                  <span class="donut-center-sub" id="donutCenterSub">0 звонков</span>
-                </div>
-              </div>
-              <div class="donut-legend-list">
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #8b5cf6;"></span><span>Эталонные звонки (0%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #6366f1;"></span><span>Встреча назначена (0%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #38bdf8;"></span><span>Следующий шаг (0%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f59e0b;"></span><span>Риск срыва сделки (0%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f43f5e;"></span><span>Fake Yes сливы (0%)</span></div>
-              </div>
-            </div>
-
-            <div class="develop-divider"></div>
-
-            <div class="develop-card-header" style="margin-bottom: 10px;">
-              <span class="develop-card-title" style="font-size: 0.82rem;">Нормативы конверсии</span>
-              <span class="develop-dropdown">13 критериев <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-            </div>
-
-            <div class="spending-rings-flex">
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-purple" id="ringFillWon" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValWon">0%</span>
-                </div>
-                <span class="spending-ring-title">Эталон</span>
-              </div>
-
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-pink" id="ringFillNs" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValNs">0%</span>
-                </div>
-                <span class="spending-ring-title">Next Step</span>
-              </div>
-
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-cyan" id="ringFillDoc" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValDoc">0%</span>
-                </div>
-                <span class="spending-ring-title">Договор</span>
-              </div>
-
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-green" id="ringFillPay" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValPay">0%</span>
-                </div>
-                <span class="spending-ring-title">Оплата</span>
-              </div>
-
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-violet" id="ringFillPlan" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValPlan">0%</span>
-                </div>
-                <span class="spending-ring-title">План</span>
-              </div>
-            </div>
+          <div class="kpi-card-value" id="heroSla">0 ₽</div>
+          <div class="kpi-card-meta">
+            <span class="kpi-delta kpi-delta--down" id="metricDeficitPill">
+              <span id="metricDeficitVal">-5.0M ₽</span>
+              <span class="pill-sub" style="font-size: 0.72rem; margin-left: 4px;">дефицит плана</span>
+            </span>
           </div>
+          <div class="kpi-sparkline">
+            <canvas id="sparkSla" height="32"></canvas>
+          </div>
+          <span id="kpiPlanPeriodLabel" style="display:none;">Таргет &bull; План месяца</span>
+          <span id="metricPlanVal" style="display:none;">5 000 000 ₽</span>
+        </div>
 
-          <!-- Card 3: Income & Expenses (Wave Chart) -->
-          <div class="develop-card" style="position: relative;">
-            <button class="card-ai-ask" onclick="openAiAsk('Какова динамика сходимости SSOT и тренда?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
-            <div class="develop-card-header">
-              <span class="develop-card-title">Прогноз и тренд выручки</span>
+        <!-- Row 2: Dissection (Bar Chart, 8 cols) -->
+        <div class="develop-card bento-span-8" style="position: relative;">
+          <button class="card-ai-ask" onclick="openAiAsk('В чем разрыв факт vs план по месяцам?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
+          <div class="develop-card-header">
+            <div class="develop-title-group">
+              <span class="develop-card-title">Динамика выручки и активности</span>
               <div class="develop-legend">
-                <span class="legend-circle dot-purple"></span><span>SSOT Факт</span>
-                <span class="legend-circle dot-pink" style="margin-left: 8px;"></span><span>Базовый тренд</span>
+                <span class="legend-circle dot-purple"></span><span>Выручка</span>
+                <span class="legend-circle dot-pink" style="margin-left: 12px;"></span><span>План</span>
               </div>
             </div>
-            <div style="height: 180px; position: relative; width: 100%;">
-              <canvas id="developSplineChart"></canvas>
-              <div class="develop-floating-tooltip">
-                <span id="metricSsotTooltip">0 ₽ SSOT</span>
+            <div class="revops-dropdown" id="dropdownDissectionScale">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownDissectionScale', event)">
+                <span class="dropdown-label" id="lblDissectionScale">По месяцам</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectDissectionScale('months', 'По месяцам')">По месяцам (Год 2026)</div>
+                <div class="revops-dropdown-item" onclick="selectDissectionScale('weeks', 'По неделям')">По неделям (Октябрь)</div>
+                <div class="revops-dropdown-item" onclick="selectDissectionScale('days', 'По дням')">По дням (Последние 7 дней)</div>
               </div>
+            </div>
+          </div>
+          <div style="height: 230px; position: relative; width: 100%;">
+            <canvas id="developDissectionChart"></canvas>
+            <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Funnel List (SSOT Воронка, 4 cols) -->
+        <div class="develop-card bento-span-4" style="position: relative;">
+          <div class="develop-card-header">
+            <span class="develop-card-title">Воронка продаж SSOT</span>
+            <div class="revops-dropdown" id="dropdownFunnelPeriod">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownFunnelPeriod', event)">
+                <span class="dropdown-label" id="lblFunnelPeriod">Октябрь</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectFunnelPeriod('2026-10', 'Октябрь 2026')">Октябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectFunnelPeriod('2026-09', 'Сентябрь 2026')">Сентябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectFunnelPeriod('ytd', 'Весь 2026 год')">Весь 2026 год (YTD)</div>
+                <div class="revops-dropdown-item" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; color: #a78bfa;" onclick="switchTab('rop')">Открыть Пульт РОПа &rarr;</div>
               </div>
-              <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
+            </div>
+          </div>
+          <div class="develop-inv-list" id="pulseFunnelList">
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">1. Квалификация</span>
+                <span class="develop-inv-val" id="funnelVal1">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill1" style="width: 0%; background: #7c3aed;"></div></div>
+            </div>
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">2. Встреча проведена / Zoom</span>
+                <span class="develop-inv-val" id="funnelVal2">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill2" style="width: 0%; background: #8b5cf6;"></div></div>
+            </div>
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">3. Коммерческое предложение</span>
+                <span class="develop-inv-val" id="funnelVal3">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill3" style="width: 0%; background: #00d4ff;"></div></div>
+            </div>
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">4. Согласование договора</span>
+                <span class="develop-inv-val" id="funnelVal4">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill4" style="width: 0%; background: #f36594;"></div></div>
+            </div>
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">5. Оплата (Closed-Won)</span>
+                <span class="develop-inv-val" id="funnelVal5">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill5" style="width: 0%; background: #34d399;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Recent Calls (6 cols) -->
+        <div class="develop-card bento-span-6" style="position: relative;">
+          <div class="develop-card-header">
+            <span class="develop-card-title">Последние звонки</span>
+            <div class="revops-dropdown" id="dropdownRecentCallsFilter">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownRecentCallsFilter', event)">
+                <span class="dropdown-label" id="lblRecentCallsFilter">Все (0)</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="filterRecentCalls('all', 'Все звонки')">Все звонки (<span id="pulseRecentCallsCount">0</span>)</div>
+                <div class="revops-dropdown-item" onclick="filterRecentCalls('fails', 'Только сбои (<60%)')">Только сбои (&lt; 60%)</div>
+                <div class="revops-dropdown-item" onclick="filterRecentCalls('won', 'Эталоны (>=85%)')">Эталоны (&ge; 85%)</div>
+                <div class="revops-dropdown-item" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; color: #a78bfa;" onclick="switchTab('audit')">Открыть Аудит звонков &rarr;</div>
+              </div>
+            </div>
+          </div>
+          <div class="develop-tx-list" id="pulseRecentCallsList">
+            <div class="empty-state" style="margin: 4px 0;">
+              <div class="empty-state-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+              </div>
+              <div class="empty-state-title">Нет входящих звонков</div>
+              <div class="empty-state-desc">Ожидание поступления звонков из телефонии CRM через n8n</div>
+              <span class="empty-state-badge"><span class="badge-dot"></span>Ожидание телефонии</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Integration Status (3 cols) -->
+        <div class="develop-card bento-span-3" style="position: relative;">
+          <div class="develop-card-header" style="margin-bottom: 12px;">
+            <span class="develop-card-title">Статус интеграций</span>
+            <a href="javascript:void(0)" onclick="switchTab('settings')" class="develop-subtle-link">Все шлюзы ↗</a>
+          </div>
+          <div class="develop-bank-card">
+            <div class="bank-card-top-row">
+              <span class="bank-card-chip-title" style="display: flex; align-items: center; gap: 8px;">
+                <span class="dot-live"></span>
+                amoCRM &amp; Bitrix24 SSOT
+              </span>
+              <span class="bank-card-exp">LIVE SYNC</span>
+            </div>
+            <div class="bank-card-bal-lbl" style="margin-top: 10px;">Взвешенный прогноз SSOT</div>
+            <div class="bank-card-balance" id="metricSsotVal">0 ₽</div>
+            <div class="bank-card-bottom-row" style="margin-top: 4px; padding-top: 8px; border-top: 1px solid rgba(124, 58, 237, 0.20);">
+              <span style="font-size: 0.70rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <svg width="12" height="12" fill="none" stroke="#10b981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                amoCRM API v4 &bull; Bitrix24 Webhook
+              </span>
+              <span style="font-size: 0.70rem; color: #a78bfa; font-weight: 600;">200 OK</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Categories Donut & Rings (3 cols) -->
+        <div class="develop-card bento-span-3" style="position: relative;">
+          <div class="develop-card-header">
+            <span class="develop-card-title">Категории звонков</span>
+            <div class="revops-dropdown" id="dropdownDonutPeriod">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownDonutPeriod', event)">
+                <span class="dropdown-label" id="lblDonutPeriod">Октябрь</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectDonutPeriod('month', 'Октябрь')">Октябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectDonutPeriod('30d', 'За 30 дней')">За 30 дней</div>
+                <div class="revops-dropdown-item" onclick="selectDonutPeriod('7d', 'За 7 дней')">За 7 дней</div>
+                <div class="revops-dropdown-item" onclick="selectDonutPeriod('all', 'Все время')">Все время (All-Time)</div>
+              </div>
+            </div>
+          </div>
+          <div class="develop-donut-container">
+            <div class="donut-chart-box">
+              <canvas id="developDonutChart"></canvas>
+              <div class="donut-center-badge">
+                <span class="donut-center-num" id="donutCenterNum">0%</span>
+                <span class="donut-center-sub" id="donutCenterSub">0 звонков</span>
+              </div>
+            </div>
+            <div class="donut-legend-list">
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #8b5cf6;"></span><span>Эталонные звонки (0%)</span></div>
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #6366f1;"></span><span>Встреча назначена (0%)</span></div>
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #38bdf8;"></span><span>Следующий шаг (0%)</span></div>
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f59e0b;"></span><span>Риск срыва сделки (0%)</span></div>
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f43f5e;"></span><span>Fake Yes сливы (0%)</span></div>
             </div>
           </div>
 
+          <div class="develop-divider"></div>
+
+          <div class="develop-card-header" style="margin-bottom: 10px;">
+            <span class="develop-card-title" style="font-size: 0.82rem;">Нормативы конверсии</span>
+            <div class="revops-dropdown" id="dropdownCriteriaScope">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownCriteriaScope', event)">
+                <span class="dropdown-label" id="lblCriteriaScope">13 критериев</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectCriteriaScope('all13', '13 критериев')">13 критериев B2B-аудита</div>
+                <div class="revops-dropdown-item" onclick="selectCriteriaScope('core5', '5 ключевых этапов')">5 ключевых этапов сделки</div>
+                <div class="revops-dropdown-item" onclick="selectCriteriaScope('risks', 'Критические точки риска')">Критические точки риска</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="spending-rings-flex">
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-purple" id="ringFillWon" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValWon">0%</span>
+              </div>
+              <span class="spending-ring-title">Эталон</span>
+            </div>
+
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-pink" id="ringFillNs" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValNs">0%</span>
+              </div>
+              <span class="spending-ring-title">Next Step</span>
+            </div>
+
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-cyan" id="ringFillDoc" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValDoc">0%</span>
+              </div>
+              <span class="spending-ring-title">Договор</span>
+            </div>
+
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-green" id="ringFillPay" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValPay">0%</span>
+              </div>
+              <span class="spending-ring-title">Оплата</span>
+            </div>
+
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-violet" id="ringFillPlan" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValPlan">0%</span>
+              </div>
+              <span class="spending-ring-title">План</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 4: Spline Trend Wave Chart (12 cols) -->
+        <div class="develop-card bento-span-12" style="position: relative;">
+          <button class="card-ai-ask" onclick="openAiAsk('Какова динамика сходимости SSOT и тренда?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
+          <div class="develop-card-header">
+            <span class="develop-card-title">Прогноз и тренд выручки</span>
+            <div class="develop-legend">
+              <span class="legend-circle dot-purple"></span><span>SSOT Факт</span>
+              <span class="legend-circle dot-pink" style="margin-left: 8px;"></span><span>Базовый тренд</span>
+            </div>
+          </div>
+          <div style="height: 180px; position: relative; width: 100%;">
+            <canvas id="developSplineChart"></canvas>
+            <div class="develop-floating-tooltip">
+              <span id="metricSsotTooltip">0 ₽ SSOT</span>
+            </div>
+            <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
+          </div>
         </div>
 
       </div>
 
       <!-- Compact Autonomous Trio AI Crew Link -->
       <a href="javascript:void(0)" onclick="switchTab('settings')"
+         title="Перейти к мониторингу 3 агентов (DevOps QA Healer, CCO Auditor, Workflow Guardian)"
          style="display: inline-flex; align-items: center; gap: 8px;
-                font-size: 0.72rem; color: var(--text-muted);
-                margin-top: 24px; text-decoration: none;">
-        <span class="status-dot dot-won" style="width: 5px; height: 5px;"></span>
-        AI Crew работает · 3 агента онлайн · все системы штатно
+                font-size: 0.74rem; color: var(--text-secondary);
+                margin-top: 24px; text-decoration: none; cursor: pointer; transition: color 0.15s ease;">
+        <span class="dot-live"></span>
+        <span>AI Crew: <strong style="color: #fff;">3 агента онлайн</strong> (DevOps · CCO · Guardian) · все системы штатно &rarr;</span>
       </a>
 
 
@@ -5161,10 +5834,16 @@
         </div>
 
         <!-- Zero State Placeholder for Podium -->
-        <div id="ropPedestalEmpty" style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.08); border-radius: 12px; margin-top: 14px;">
-          <div style="font-size: 2rem; margin-bottom: 8px;">🏆</div>
-          <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 4px;">Пьедестал рейтинга пуст (Нулевое состояние)</strong>
-          <div style="font-size: 0.74rem; color: var(--text-secondary);">Ожидание звонков менеджеров для автоматического расчёта рейтинга и зон риска</div>
+        <div id="ropPedestalEmpty" class="empty-state" style="margin-top: 14px;">
+          <div class="empty-state-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="7"/>
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+            </svg>
+          </div>
+          <div class="empty-state-title">Пьедестал рейтинга пуст</div>
+          <div class="empty-state-desc">Ожидание звонков менеджеров для автоматического расчёта рейтинга и зон риска</div>
+          <span class="empty-state-badge"><span class="badge-dot"></span>Ожидание звонков CRM</span>
         </div>
       </div>
 
@@ -8660,15 +9339,15 @@
     </div>
   </div>
 
-  <!-- Javascript Modules (v20.4 Modular Architecture) -->
-  <script src="js/core.js?v=20.4"></script>
-  <script src="js/calls.js?v=20.4"></script>
-  <script src="js/charts.js?v=20.4"></script>
-  <script src="js/deals.js?v=20.4"></script>
-  <script src="js/admin.js?v=20.5"></script>
-  <script src="js/settings.js?v=20.4"></script>
-  <script src="js/analyst.js?v=20.4"></script>
-  <script src="app.js?v=20.5"></script>
+  <!-- Javascript Modules (v20.6 Tier-1 UI Redesign Architecture) -->
+  <script src="js/core.js?v=20.6-tier1"></script>
+  <script src="js/calls.js?v=20.6-tier1"></script>
+  <script src="js/charts.js?v=20.6-tier1"></script>
+  <script src="js/deals.js?v=20.6-tier1"></script>
+  <script src="js/admin.js?v=20.6-tier1"></script>
+  <script src="js/settings.js?v=20.6-tier1"></script>
+  <script src="js/analyst.js?v=20.6-tier1"></script>
+  <script src="app.js?v=20.6-tier1"></script>
 
 
   <!-- Global Command Palette Modal (Ctrl+K / Cmd+K) -->
