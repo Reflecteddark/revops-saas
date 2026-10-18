@@ -3,6 +3,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/tg-proxy/:path*", "destination": "https://api.telegram.org/:path*" },
     { "source": "/app", "destination": "/apps/web" },
     { "source": "/app/", "destination": "/apps/web" },
     { "source": "/app/app.js", "destination": "/apps/web/app.js" },
