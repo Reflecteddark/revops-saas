@@ -155,3 +155,7 @@ if APP_JS.exists():
     def serve_app_js():
         return FileResponse(APP_JS, media_type="application/javascript")
 
+WEB_JS_DIR = BASE_DIR / "apps" / "web" / "js"
+if WEB_JS_DIR.exists():
+    app.mount("/js", StaticFiles(directory=str(WEB_JS_DIR)), name="js")
+
