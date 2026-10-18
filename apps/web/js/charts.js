@@ -127,6 +127,38 @@ let developDissectionChartInstance = null;
 let developDonutChartInstance = null;
 let developSplineChartInstance = null;
 
+// Chart Zero-State Blur Overlay
+function applyChartZeroOverlay(canvasId, wrapperId) {
+  let canvas = document.getElementById(canvasId);
+  if (!canvas && (canvasId === 'monteCarloChart' || canvasId === 'mcChart')) {
+    canvas = document.getElementById('mcChart') || document.getElementById('monteCarloChart');
+  }
+  if (!canvas) return;
+  const wrapper = wrapperId ? document.getElementById(wrapperId) : canvas.parentElement;
+  if (!wrapper) return;
+  const old = wrapper.querySelector('.chart-zero-overlay');
+  if (old) old.remove();
+  const hasData = (typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA) && CALLS_DATA.length > 0);
+  if (hasData) {
+    canvas.style.filter = '';
+    canvas.style.pointerEvents = '';
+    return;
+  }
+  canvas.style.filter = 'blur(5px)';
+  canvas.style.pointerEvents = 'none';
+  const overlay = document.createElement('div');
+  overlay.className = 'chart-zero-overlay';
+  overlay.innerHTML = `
+    <div class="chart-zero-inner">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      <span>Данные появятся после первого звонка из CRM</span>
+    </div>`;
+  wrapper.style.position = 'relative';
+  wrapper.appendChild(overlay);
+}
+
 function initDevelopDissectionChart() {
   const ctx = document.getElementById('developDissectionChart');
   if (!ctx) return;
@@ -148,7 +180,7 @@ function initDevelopDissectionChart() {
       datasets: [
         {
           label: 'Выручка',
-          data: isZero ? Array(12).fill(0) : [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
+          data: [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
           backgroundColor: revGrad,
           hoverBackgroundColor: '#c4b5fd',
           borderRadius: 6,
@@ -158,7 +190,7 @@ function initDevelopDissectionChart() {
         },
         {
           label: 'План',
-          data: isZero ? Array(12).fill(0) : [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830],
+          data: [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830],
           backgroundColor: isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.10)',
           hoverBackgroundColor: isLight ? 'rgba(15, 23, 42, 0.22)' : 'rgba(255, 255, 255, 0.20)',
           borderRadius: 6,
@@ -210,6 +242,7 @@ function initDevelopDissectionChart() {
   });
 
   initSparklines();
+  applyChartZeroOverlay('developDissectionChart', null);
 }
 
 // ==========================================================================
@@ -274,8 +307,8 @@ function initDevelopDonutChart() {
       labels: ['Эталонные звонки', 'Встреча назначена', 'Следующий шаг взят', 'Риск срыва сделки', 'Fake Yes сливы'],
       datasets: [
         {
-          data: isZero ? [1] : [34, 25, 17, 12, 6],
-          backgroundColor: isZero ? ['rgba(255, 255, 255, 0.05)'] : ['#8b5cf6', '#6366f1', '#38bdf8', '#f59e0b', '#f43f5e'],
+          data: [34, 25, 17, 12, 6],
+          backgroundColor: ['#8b5cf6', '#6366f1', '#38bdf8', '#f59e0b', '#f43f5e'],
           borderWidth: 2,
           borderColor: isLight ? '#ffffff' : '#0b0b10',
           hoverOffset: 3
@@ -307,6 +340,8 @@ function initDevelopDonutChart() {
       }
     }
   });
+
+  applyChartZeroOverlay('developDonutChart', null);
 }
 
 function initDevelopSplineChart() {
@@ -334,7 +369,7 @@ function initDevelopSplineChart() {
       datasets: [
         {
           label: 'SSOT Факт',
-          data: isZero ? [0, 0, 0, 0, 0, 0, 0] : [240, 310, 460, 380, 540, 470, 610],
+          data: [240, 310, 460, 380, 540, 470, 610],
           borderColor: '#7c3aed',
           backgroundColor: grad1,
           borderWidth: 2.2,
@@ -348,7 +383,7 @@ function initDevelopSplineChart() {
         },
         {
           label: 'Базовый тренд',
-          data: isZero ? [0, 0, 0, 0, 0, 0, 0] : [310, 420, 390, 520, 460, 590, 540],
+          data: [310, 420, 390, 520, 460, 590, 540],
           borderColor: isLight ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.22)',
           borderDash: [4, 4],
           borderWidth: 1.5,
@@ -407,6 +442,8 @@ function initDevelopSplineChart() {
       }
     }
   });
+
+  applyChartZeroOverlay('developSplineChart', null);
 }
 
 window.getThemeMode = getThemeMode;
@@ -509,6 +546,7 @@ function initMonteCarloChart() {
   });
 
   runMonteCarloSimulation(false);
+  applyChartZeroOverlay('monteCarloChart', null);
 }
 
 function runMonteCarloSimulation(notify = false) {
@@ -1193,8 +1231,8 @@ function updateDevelopBentoCharts() {
   // Dissection Chart
   if (typeof developDissectionChartInstance !== 'undefined' && developDissectionChartInstance) {
     if (total === 0) {
-      developDissectionChartInstance.data.datasets[0].data = Array(12).fill(0);
-      developDissectionChartInstance.data.datasets[1].data = Array(12).fill(0);
+      developDissectionChartInstance.data.datasets[0].data = [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950];
+      developDissectionChartInstance.data.datasets[1].data = [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830];
     }
     developDissectionChartInstance.update('none');
   }
@@ -1235,6 +1273,10 @@ function updateDevelopBentoCharts() {
 
   const syncBadge = document.getElementById('syncStatusBadge');
   if (syncBadge) syncBadge.textContent = `${total} СИНХРОНИЗИРОВАНО`;
+
+  applyChartZeroOverlay('developDonutChart', null);
+  applyChartZeroOverlay('developSplineChart', null);
+  applyChartZeroOverlay('developDissectionChart', null);
 }
 
 
@@ -1452,4 +1494,5 @@ window.selectCriteriaScope = selectCriteriaScope;
 window.filterRecentCalls = filterRecentCalls;
 window.selectFunnelPeriod = selectFunnelPeriod;
 window.initSparklines = initSparklines;
+window.applyChartZeroOverlay = applyChartZeroOverlay;
 
