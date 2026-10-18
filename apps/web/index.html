@@ -4584,6 +4584,46 @@
       width: 100% !important;
       height: 32px !important;
     }
+
+    /* ==========================================================================
+       BLOCK 3: BENTO GRID (TIER-1 ASYMMETRIC 12-COLUMN LAYOUT)
+       ========================================================================== */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 24px;
+    }
+    .bento-span-3  { grid-column: span 3; }
+    .bento-span-4  { grid-column: span 4; }
+    .bento-span-5  { grid-column: span 5; }
+    .bento-span-6  { grid-column: span 6; }
+    .bento-span-7  { grid-column: span 7; }
+    .bento-span-8  { grid-column: span 8; }
+    .bento-span-12 { grid-column: span 12; }
+
+    @media (max-width: 1200px) {
+      .bento-span-3  { grid-column: span 6; }
+      .bento-span-4  { grid-column: span 12; }
+      .bento-span-6  { grid-column: span 12; }
+      .bento-span-8  { grid-column: span 12; }
+    }
+    @media (max-width: 768px) {
+      .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .bento-span-3,
+      .bento-span-4,
+      .bento-span-5,
+      .bento-span-6,
+      .bento-span-7,
+      .bento-span-8,
+      .bento-span-12 {
+        grid-column: span 1;
+      }
+    }
   </style>
 </head>
 <body>
@@ -4845,10 +4885,12 @@
     <!-- ======================================================== -->
     <div id="view-pulse" class="tab-view active">
 
-      <!-- BLOCK 2: 4 HERO KPI CARDS (TIER-1 LINEAR/VERCEL VISUAL WEIGHT) -->
-      <div class="kpi-hero-grid">
+      <!-- BLOCK 3: BENTO GRID (TIER-1 LINEAR/VERCEL 12-COLUMN BENCHMARK) -->
+      <div class="bento-grid">
+
+        <!-- Row 1: 4x KPI Cards (3 cols each) -->
         <!-- Card 1: Revenue Fact -->
-        <div class="kpi-card kpi-card--violet">
+        <div class="kpi-card kpi-card--violet bento-span-3">
           <div class="kpi-card-header">
             <span class="kpi-card-label">ВЫРУЧКА ФАКТ</span>
             <div class="revops-dropdown" id="dropdownPulsePeriodFact">
@@ -4880,7 +4922,7 @@
         </div>
 
         <!-- Card 2: Pipeline in Progress -->
-        <div class="kpi-card kpi-card--amber">
+        <div class="kpi-card kpi-card--amber bento-span-3">
           <div class="kpi-card-header">
             <span class="kpi-card-label">ПАЙПЛАЙН В РАБОТЕ</span>
             <span class="kpi-card-badge">SSOT ВЗВЕШЕННЫЙ</span>
@@ -4896,7 +4938,7 @@
         </div>
 
         <!-- Card 3: Call Quality -->
-        <div class="kpi-card kpi-card--cyan">
+        <div class="kpi-card kpi-card--cyan bento-span-3">
           <div class="kpi-card-header">
             <span class="kpi-card-label">КАЧЕСТВО ЗВОНКОВ</span>
             <span class="kpi-card-badge">13 КРИТЕРИЕВ</span>
@@ -4911,7 +4953,7 @@
         </div>
 
         <!-- Card 4: Plan Deficit / Target -->
-        <div class="kpi-card kpi-card--rose">
+        <div class="kpi-card kpi-card--rose bento-span-3">
           <div class="kpi-card-header">
             <span class="kpi-card-label">ДЕФИЦИТ ДО ПЛАНА</span>
             <div class="revops-dropdown" id="dropdownPulsePeriodPlan">
@@ -4941,273 +4983,255 @@
           <span id="kpiPlanPeriodLabel" style="display:none;">Таргет &bull; План месяца</span>
           <span id="metricPlanVal" style="display:none;">5 000 000 ₽</span>
         </div>
-      </div>
 
-      <!-- Bento Grid (Kristi Kamlylova Develop Benchmark) -->
-      <div class="develop-grid">
-        
-        <!-- ================= LEFT COLUMN (63%) ================= -->
-        <div class="develop-left-col">
-
-          <!-- Row 2: Dissection (Bar Chart) -->
-          <div class="develop-card" style="position: relative;">
-            <button class="card-ai-ask" onclick="openAiAsk('В чем разрыв факт vs план по месяцам?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
-            <div class="develop-card-header">
-              <div class="develop-title-group">
-                <span class="develop-card-title">Динамика выручки и активности</span>
-                <div class="develop-legend">
-                  <span class="legend-circle dot-purple"></span><span>Выручка</span>
-                  <span class="legend-circle dot-pink" style="margin-left: 12px;"></span><span>План</span>
-                </div>
-              </div>
-              <div class="revops-dropdown" id="dropdownDissectionScale">
-                <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownDissectionScale', event)">
-                  <span class="dropdown-label" id="lblDissectionScale">По месяцам</span>
-                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                </button>
-                <div class="revops-dropdown-menu">
-                  <div class="revops-dropdown-item active" onclick="selectDissectionScale('months', 'По месяцам')">📊 По месяцам (Год 2026)</div>
-                  <div class="revops-dropdown-item" onclick="selectDissectionScale('weeks', 'По неделям')">📈 По неделям (Октябрь)</div>
-                  <div class="revops-dropdown-item" onclick="selectDissectionScale('days', 'По дням')">📉 По дням (Последние 7 дней)</div>
-                </div>
+        <!-- Row 2: Dissection (Bar Chart, 8 cols) -->
+        <div class="develop-card bento-span-8" style="position: relative;">
+          <button class="card-ai-ask" onclick="openAiAsk('В чем разрыв факт vs план по месяцам?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
+          <div class="develop-card-header">
+            <div class="develop-title-group">
+              <span class="develop-card-title">Динамика выручки и активности</span>
+              <div class="develop-legend">
+                <span class="legend-circle dot-purple"></span><span>Выручка</span>
+                <span class="legend-circle dot-pink" style="margin-left: 12px;"></span><span>План</span>
               </div>
             </div>
-            <div style="height: 230px; position: relative; width: 100%;">
-              <canvas id="developDissectionChart"></canvas>
-              <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
-            </div>
-          </div>
-
-          <!-- Row 3: 2 Sub-Cards: Transactions & Investments -->
-          <div class="develop-sub-pair">
-            <!-- Left: Transactions (Аудит звонков) -->
-            <div class="develop-card">
-              <div class="develop-card-header">
-                <span class="develop-card-title">Последние звонки</span>
-                <div class="revops-dropdown" id="dropdownRecentCallsFilter">
-                  <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownRecentCallsFilter', event)">
-                    <span class="dropdown-label" id="lblRecentCallsFilter">Все (0)</span>
-                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <div class="revops-dropdown-menu">
-                    <div class="revops-dropdown-item active" onclick="filterRecentCalls('all', 'Все звонки')">🎙️ Все звонки (<span id="pulseRecentCallsCount">0</span>)</div>
-                    <div class="revops-dropdown-item" onclick="filterRecentCalls('fails', 'Только сбои (<60%)')">⚠️ Только сбои (&lt; 60%)</div>
-                    <div class="revops-dropdown-item" onclick="filterRecentCalls('won', 'Эталоны (>=85%)')">🏆 Эталоны (&ge; 85%)</div>
-                    <div class="revops-dropdown-item" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; color: #a78bfa;" onclick="switchTab('audit')">📋 Открыть Аудит звонков &rarr;</div>
-                  </div>
-                </div>
-              </div>
-              <div class="develop-tx-list" id="pulseRecentCallsList">
-                <div style="padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
-                  <div style="font-size: 1.8rem; margin-bottom: 6px; opacity: 0.5;">🎙️</div>
-                  <strong style="color: #fff; font-size: 0.88rem; display: block; margin-bottom: 2px;">Нет звонков</strong>
-                  <div style="font-size: 0.72rem; color: var(--text-secondary);">Ожидание поступления звонков из телефонии CRM через n8n</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Right: Investments (Воронка продаж SSOT) -->
-            <div class="develop-card">
-              <div class="develop-card-header">
-                <span class="develop-card-title">Воронка продаж SSOT</span>
-                <div class="revops-dropdown" id="dropdownFunnelPeriod">
-                  <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownFunnelPeriod', event)">
-                    <span class="dropdown-label" id="lblFunnelPeriod">Октябрь</span>
-                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <div class="revops-dropdown-menu">
-                    <div class="revops-dropdown-item active" onclick="selectFunnelPeriod('2026-10', 'Октябрь 2026')">🗂️ Октябрь 2026</div>
-                    <div class="revops-dropdown-item" onclick="selectFunnelPeriod('2026-09', 'Сентябрь 2026')">🗂️ Сентябрь 2026</div>
-                    <div class="revops-dropdown-item" onclick="selectFunnelPeriod('ytd', 'Весь 2026 год')">🗂️ Весь 2026 год (YTD)</div>
-                    <div class="revops-dropdown-item" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; color: #a78bfa;" onclick="switchTab('rop')">🚀 Открыть Пульт РОПа &rarr;</div>
-                  </div>
-                </div>
-              </div>
-              <div class="develop-inv-list" id="pulseFunnelList">
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">1. Квалификация</span>
-                    <span class="develop-inv-val" id="funnelVal1">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill1" style="width: 0%; background: #7c3aed;"></div></div>
-                </div>
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">2. Встреча проведена / Zoom</span>
-                    <span class="develop-inv-val" id="funnelVal2">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill2" style="width: 0%; background: #8b5cf6;"></div></div>
-                </div>
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">3. Коммерческое предложение</span>
-                    <span class="develop-inv-val" id="funnelVal3">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill3" style="width: 0%; background: #00d4ff;"></div></div>
-                </div>
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">4. Согласование договора</span>
-                    <span class="develop-inv-val" id="funnelVal4">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill4" style="width: 0%; background: #f36594;"></div></div>
-                </div>
-                <div class="develop-inv-item">
-                  <div class="develop-inv-top">
-                    <span class="develop-inv-name">5. Оплата (Closed-Won)</span>
-                    <span class="develop-inv-val" id="funnelVal5">0 ₽</span>
-                  </div>
-                  <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill5" style="width: 0%; background: #34d399;"></div></div>
-                </div>
+            <div class="revops-dropdown" id="dropdownDissectionScale">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownDissectionScale', event)">
+                <span class="dropdown-label" id="lblDissectionScale">По месяцам</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectDissectionScale('months', 'По месяцам')">По месяцам (Год 2026)</div>
+                <div class="revops-dropdown-item" onclick="selectDissectionScale('weeks', 'По неделям')">По неделям (Октябрь)</div>
+                <div class="revops-dropdown-item" onclick="selectDissectionScale('days', 'По дням')">По дням (Последние 7 дней)</div>
               </div>
             </div>
           </div>
-
+          <div style="height: 230px; position: relative; width: 100%;">
+            <canvas id="developDissectionChart"></canvas>
+            <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
+          </div>
         </div>
 
-        <!-- ================= RIGHT COLUMN (37%) ================= -->
-        <div class="develop-right-col">
-          
-          <!-- Card 1: Active cards (Credit Card mockup for SSOT) -->
-          <div class="develop-card">
-            <div class="develop-card-header" style="margin-bottom: 12px;">
-              <span class="develop-card-title">Статус интеграций</span>
-              <a href="javascript:void(0)" onclick="switchTab('settings')" class="develop-subtle-link">Все шлюзы ↗</a>
-            </div>
-            <div class="develop-bank-card">
-              <div class="bank-card-top-row">
-                <span class="bank-card-chip-title" style="display: flex; align-items: center; gap: 8px;">
-                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
-                  amoCRM &amp; Bitrix24 SSOT
-                </span>
-                <span class="bank-card-exp">LIVE SYNC</span>
+        <!-- Row 2: Funnel List (SSOT Воронка, 4 cols) -->
+        <div class="develop-card bento-span-4" style="position: relative;">
+          <div class="develop-card-header">
+            <span class="develop-card-title">Воронка продаж SSOT</span>
+            <div class="revops-dropdown" id="dropdownFunnelPeriod">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownFunnelPeriod', event)">
+                <span class="dropdown-label" id="lblFunnelPeriod">Октябрь</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectFunnelPeriod('2026-10', 'Октябрь 2026')">Октябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectFunnelPeriod('2026-09', 'Сентябрь 2026')">Сентябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectFunnelPeriod('ytd', 'Весь 2026 год')">Весь 2026 год (YTD)</div>
+                <div class="revops-dropdown-item" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; color: #a78bfa;" onclick="switchTab('rop')">Открыть Пульт РОПа &rarr;</div>
               </div>
-              <div class="bank-card-bal-lbl" style="margin-top: 10px;">Взвешенный прогноз SSOT</div>
-              <div class="bank-card-balance" id="metricSsotVal">0 ₽</div>
-              <div class="bank-card-bottom-row" style="margin-top: 4px; padding-top: 8px; border-top: 1px solid rgba(124, 58, 237, 0.20);">
-                <span style="font-size: 0.70rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                  <svg width="12" height="12" fill="none" stroke="#10b981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                  amoCRM API v4 &bull; Bitrix24 Webhook
-                </span>
-                <span style="font-size: 0.70rem; color: #a78bfa; font-weight: 600;">200 OK</span>
+            </div>
+          </div>
+          <div class="develop-inv-list" id="pulseFunnelList">
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">1. Квалификация</span>
+                <span class="develop-inv-val" id="funnelVal1">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill1" style="width: 0%; background: #7c3aed;"></div></div>
+            </div>
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">2. Встреча проведена / Zoom</span>
+                <span class="develop-inv-val" id="funnelVal2">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill2" style="width: 0%; background: #8b5cf6;"></div></div>
+            </div>
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">3. Коммерческое предложение</span>
+                <span class="develop-inv-val" id="funnelVal3">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill3" style="width: 0%; background: #00d4ff;"></div></div>
+            </div>
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">4. Согласование договора</span>
+                <span class="develop-inv-val" id="funnelVal4">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill4" style="width: 0%; background: #f36594;"></div></div>
+            </div>
+            <div class="develop-inv-item">
+              <div class="develop-inv-top">
+                <span class="develop-inv-name">5. Оплата (Closed-Won)</span>
+                <span class="develop-inv-val" id="funnelVal5">0 ₽</span>
+              </div>
+              <div class="develop-inv-track"><div class="develop-inv-fill" id="funnelFill5" style="width: 0%; background: #34d399;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Recent Calls (6 cols) -->
+        <div class="develop-card bento-span-6" style="position: relative;">
+          <div class="develop-card-header">
+            <span class="develop-card-title">Последние звонки</span>
+            <div class="revops-dropdown" id="dropdownRecentCallsFilter">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownRecentCallsFilter', event)">
+                <span class="dropdown-label" id="lblRecentCallsFilter">Все (0)</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="filterRecentCalls('all', 'Все звонки')">Все звонки (<span id="pulseRecentCallsCount">0</span>)</div>
+                <div class="revops-dropdown-item" onclick="filterRecentCalls('fails', 'Только сбои (<60%)')">Только сбои (&lt; 60%)</div>
+                <div class="revops-dropdown-item" onclick="filterRecentCalls('won', 'Эталоны (>=85%)')">Эталоны (&ge; 85%)</div>
+                <div class="revops-dropdown-item" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; color: #a78bfa;" onclick="switchTab('audit')">Открыть Аудит звонков &rarr;</div>
+              </div>
+            </div>
+          </div>
+          <div class="develop-tx-list" id="pulseRecentCallsList">
+            <div style="padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 8px; opacity: 0.4; display: block;"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              <strong style="color: #fff; font-size: 0.88rem; display: block; margin-bottom: 2px;">Нет звонков</strong>
+              <div style="font-size: 0.72rem; color: var(--text-secondary);">Ожидание поступления звонков из телефонии CRM через n8n</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Integration Status (3 cols) -->
+        <div class="develop-card bento-span-3" style="position: relative;">
+          <div class="develop-card-header" style="margin-bottom: 12px;">
+            <span class="develop-card-title">Статус интеграций</span>
+            <a href="javascript:void(0)" onclick="switchTab('settings')" class="develop-subtle-link">Все шлюзы ↗</a>
+          </div>
+          <div class="develop-bank-card">
+            <div class="bank-card-top-row">
+              <span class="bank-card-chip-title" style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+                amoCRM &amp; Bitrix24 SSOT
+              </span>
+              <span class="bank-card-exp">LIVE SYNC</span>
+            </div>
+            <div class="bank-card-bal-lbl" style="margin-top: 10px;">Взвешенный прогноз SSOT</div>
+            <div class="bank-card-balance" id="metricSsotVal">0 ₽</div>
+            <div class="bank-card-bottom-row" style="margin-top: 4px; padding-top: 8px; border-top: 1px solid rgba(124, 58, 237, 0.20);">
+              <span style="font-size: 0.70rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <svg width="12" height="12" fill="none" stroke="#10b981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                amoCRM API v4 &bull; Bitrix24 Webhook
+              </span>
+              <span style="font-size: 0.70rem; color: #a78bfa; font-weight: 600;">200 OK</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Categories Donut & Rings (3 cols) -->
+        <div class="develop-card bento-span-3" style="position: relative;">
+          <div class="develop-card-header">
+            <span class="develop-card-title">Категории звонков</span>
+            <div class="revops-dropdown" id="dropdownDonutPeriod">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownDonutPeriod', event)">
+                <span class="dropdown-label" id="lblDonutPeriod">Октябрь</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectDonutPeriod('month', 'Октябрь')">Октябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectDonutPeriod('30d', 'За 30 дней')">За 30 дней</div>
+                <div class="revops-dropdown-item" onclick="selectDonutPeriod('7d', 'За 7 дней')">За 7 дней</div>
+                <div class="revops-dropdown-item" onclick="selectDonutPeriod('all', 'Все время')">Все время (All-Time)</div>
+              </div>
+            </div>
+          </div>
+          <div class="develop-donut-container">
+            <div class="donut-chart-box">
+              <canvas id="developDonutChart"></canvas>
+              <div class="donut-center-badge">
+                <span class="donut-center-num" id="donutCenterNum">0%</span>
+                <span class="donut-center-sub" id="donutCenterSub">0 звонков</span>
+              </div>
+            </div>
+            <div class="donut-legend-list">
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #8b5cf6;"></span><span>Эталонные звонки (0%)</span></div>
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #6366f1;"></span><span>Встреча назначена (0%)</span></div>
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #38bdf8;"></span><span>Следующий шаг (0%)</span></div>
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f59e0b;"></span><span>Риск срыва сделки (0%)</span></div>
+              <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f43f5e;"></span><span>Fake Yes сливы (0%)</span></div>
+            </div>
+          </div>
+
+          <div class="develop-divider"></div>
+
+          <div class="develop-card-header" style="margin-bottom: 10px;">
+            <span class="develop-card-title" style="font-size: 0.82rem;">Нормативы конверсии</span>
+            <div class="revops-dropdown" id="dropdownCriteriaScope">
+              <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownCriteriaScope', event)">
+                <span class="dropdown-label" id="lblCriteriaScope">13 критериев</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectCriteriaScope('all13', '13 критериев')">13 критериев B2B-аудита</div>
+                <div class="revops-dropdown-item" onclick="selectCriteriaScope('core5', '5 ключевых этапов')">5 ключевых этапов сделки</div>
+                <div class="revops-dropdown-item" onclick="selectCriteriaScope('risks', 'Критические точки риска')">Критические точки риска</div>
               </div>
             </div>
           </div>
 
-          <!-- Card 2: Categories Donut & Spending Rings -->
-          <div class="develop-card">
-            <div class="develop-card-header">
-              <span class="develop-card-title">Категории звонков</span>
-              <div class="revops-dropdown" id="dropdownDonutPeriod">
-                <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownDonutPeriod', event)">
-                  <span class="dropdown-label" id="lblDonutPeriod">Октябрь</span>
-                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                </button>
-                <div class="revops-dropdown-menu">
-                  <div class="revops-dropdown-item active" onclick="selectDonutPeriod('month', 'Октябрь')">🍩 Октябрь 2026</div>
-                  <div class="revops-dropdown-item" onclick="selectDonutPeriod('30d', 'За 30 дней')">🍩 За 30 дней</div>
-                  <div class="revops-dropdown-item" onclick="selectDonutPeriod('7d', 'За 7 дней')">🍩 За 7 дней</div>
-                  <div class="revops-dropdown-item" onclick="selectDonutPeriod('all', 'Все время')">🍩 Все время (All-Time)</div>
-                </div>
+          <div class="spending-rings-flex">
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-purple" id="ringFillWon" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValWon">0%</span>
               </div>
-            </div>
-            <div class="develop-donut-container">
-              <div class="donut-chart-box">
-                <canvas id="developDonutChart"></canvas>
-                <div class="donut-center-badge">
-                  <span class="donut-center-num" id="donutCenterNum">0%</span>
-                  <span class="donut-center-sub" id="donutCenterSub">0 звонков</span>
-                </div>
-              </div>
-              <div class="donut-legend-list">
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #8b5cf6;"></span><span>Эталонные звонки (0%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #6366f1;"></span><span>Встреча назначена (0%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #38bdf8;"></span><span>Следующий шаг (0%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f59e0b;"></span><span>Риск срыва сделки (0%)</span></div>
-                <div class="donut-legend-item"><span class="legend-color-dot" style="background: #f43f5e;"></span><span>Fake Yes сливы (0%)</span></div>
-              </div>
+              <span class="spending-ring-title">Эталон</span>
             </div>
 
-            <div class="develop-divider"></div>
-
-            <div class="develop-card-header" style="margin-bottom: 10px;">
-              <span class="develop-card-title" style="font-size: 0.82rem;">Нормативы конверсии</span>
-              <div class="revops-dropdown" id="dropdownCriteriaScope">
-                <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownCriteriaScope', event)">
-                  <span class="dropdown-label" id="lblCriteriaScope">13 критериев</span>
-                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                </button>
-                <div class="revops-dropdown-menu">
-                  <div class="revops-dropdown-item active" onclick="selectCriteriaScope('all13', '13 критериев')">🎯 13 критериев B2B-аудита</div>
-                  <div class="revops-dropdown-item" onclick="selectCriteriaScope('core5', '5 ключевых этапов')">⚡ 5 ключевых этапов сделки</div>
-                  <div class="revops-dropdown-item" onclick="selectCriteriaScope('risks', 'Критические точки риска')">⚠️ Критические точки риска</div>
-                </div>
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-pink" id="ringFillNs" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValNs">0%</span>
               </div>
+              <span class="spending-ring-title">Next Step</span>
             </div>
 
-            <div class="spending-rings-flex">
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-purple" id="ringFillWon" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValWon">0%</span>
-                </div>
-                <span class="spending-ring-title">Эталон</span>
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-cyan" id="ringFillDoc" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValDoc">0%</span>
               </div>
+              <span class="spending-ring-title">Договор</span>
+            </div>
 
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-pink" id="ringFillNs" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValNs">0%</span>
-                </div>
-                <span class="spending-ring-title">Next Step</span>
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-green" id="ringFillPay" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValPay">0%</span>
               </div>
+              <span class="spending-ring-title">Оплата</span>
+            </div>
 
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-cyan" id="ringFillDoc" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValDoc">0%</span>
-                </div>
-                <span class="spending-ring-title">Договор</span>
+            <div class="spending-ring-box">
+              <div class="spending-ring-svg">
+                <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-violet" id="ringFillPlan" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                <span class="spending-ring-val" id="ringValPlan">0%</span>
               </div>
-
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-green" id="ringFillPay" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValPay">0%</span>
-                </div>
-                <span class="spending-ring-title">Оплата</span>
-              </div>
-
-              <div class="spending-ring-box">
-                <div class="spending-ring-svg">
-                  <svg viewBox="0 0 36 36"><path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill ring-violet" id="ringFillPlan" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
-                  <span class="spending-ring-val" id="ringValPlan">0%</span>
-                </div>
-                <span class="spending-ring-title">План</span>
-              </div>
+              <span class="spending-ring-title">План</span>
             </div>
           </div>
+        </div>
 
-          <!-- Card 3: Income & Expenses (Wave Chart) -->
-          <div class="develop-card" style="position: relative;">
-            <button class="card-ai-ask" onclick="openAiAsk('Какова динамика сходимости SSOT и тренда?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
-            <div class="develop-card-header">
-              <span class="develop-card-title">Прогноз и тренд выручки</span>
-              <div class="develop-legend">
-                <span class="legend-circle dot-purple"></span><span>SSOT Факт</span>
-                <span class="legend-circle dot-pink" style="margin-left: 8px;"></span><span>Базовый тренд</span>
-              </div>
-            </div>
-            <div style="height: 180px; position: relative; width: 100%;">
-              <canvas id="developSplineChart"></canvas>
-              <div class="develop-floating-tooltip">
-                <span id="metricSsotTooltip">0 ₽ SSOT</span>
-              </div>
-              </div>
-              <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
+        <!-- Row 4: Spline Trend Wave Chart (12 cols) -->
+        <div class="develop-card bento-span-12" style="position: relative;">
+          <button class="card-ai-ask" onclick="openAiAsk('Какова динамика сходимости SSOT и тренда?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
+          <div class="develop-card-header">
+            <span class="develop-card-title">Прогноз и тренд выручки</span>
+            <div class="develop-legend">
+              <span class="legend-circle dot-purple"></span><span>SSOT Факт</span>
+              <span class="legend-circle dot-pink" style="margin-left: 8px;"></span><span>Базовый тренд</span>
             </div>
           </div>
-
+          <div style="height: 180px; position: relative; width: 100%;">
+            <canvas id="developSplineChart"></canvas>
+            <div class="develop-floating-tooltip">
+              <span id="metricSsotTooltip">0 ₽ SSOT</span>
+            </div>
+            <div class="chart-timestamp" data-chart-ts style="position: absolute; right: 0; bottom: -20px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.3);">обновлено только что</div>
+          </div>
         </div>
 
       </div>
