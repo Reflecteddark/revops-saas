@@ -813,14 +813,70 @@ function updateAllChartsTheme(mode) {
 
 
 // ==========================================================================
-// TOAST NOTIFICATION
+// BLOCK 5: SEQUENTIAL TOAST NOTIFICATION QUEUE (TIER-1)
 // ==========================================================================
-function showToast(title, desc) {
+const _toastQueue = [];
+let _isToastShowing = false;
+let _toastHideTimeout = null;
+
+function showToast(title, desc, type = 'info', duration = 3000) {
+  _toastQueue.push({
+    title: title || '',
+    desc: desc || '',
+    type: type || 'info',
+    duration: duration || 3000
+  });
+  if (!_isToastShowing) {
+    _processToastQueue();
+  }
+}
+
+function _processToastQueue() {
+  if (_toastQueue.length === 0) {
+    _isToastShowing = false;
+    return;
+  }
+  _isToastShowing = true;
+  const item = _toastQueue.shift();
   const box = document.getElementById('toastBox');
-  document.getElementById('toastTitle').textContent = title;
-  document.getElementById('toastDesc').textContent = desc;
+  if (!box) {
+    _isToastShowing = false;
+    return;
+  }
+
+  const titleEl = document.getElementById('toastTitle');
+  const descEl = document.getElementById('toastDesc');
+  const icon = box.querySelector('svg');
+
+  if (titleEl) titleEl.textContent = item.title;
+  if (descEl) descEl.textContent = item.desc;
+
+  // Reset classes and set typed styling
+  box.classList.remove('toast-leaving', 'toast--success', 'toast--error', 'toast--warn', 'toast--info');
+  const typeClass = 'toast--' + (['success', 'error', 'warn', 'info'].includes(item.type) ? item.type : 'info');
+  box.classList.add(typeClass);
+
+  if (icon) {
+    const strokeColors = {
+      success: '#10b981',
+      error: '#f43f5e',
+      warn: '#f59e0b',
+      info: '#a78bfa'
+    };
+    icon.setAttribute('stroke', strokeColors[item.type] || '#a78bfa');
+  }
+
   box.style.display = 'block';
-  setTimeout(() => { box.style.display = 'none'; }, 3500);
+
+  clearTimeout(_toastHideTimeout);
+  _toastHideTimeout = setTimeout(() => {
+    box.classList.add('toast-leaving');
+    setTimeout(() => {
+      box.style.display = 'none';
+      box.classList.remove('toast-leaving');
+      _processToastQueue();
+    }, 220);
+  }, item.duration);
 }
 
 
