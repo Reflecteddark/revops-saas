@@ -10,5 +10,5 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr /R ":8000.*LISTENING"') do (
 )
 
 taskkill /F /FI "WINDOWTITLE eq RevOps SaaS Backend*" >nul 2>&1
-echo [✓] Сервер остановлен.
+echo [OK] Сервер остановлен.
 exit /b 0
