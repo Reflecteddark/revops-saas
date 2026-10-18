@@ -29,7 +29,8 @@ from .routers import (
     insights_router,
     webhooks_router,
     monitoring_router,
-    admin_router
+    admin_router,
+    settings_router
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -78,6 +79,7 @@ app.include_router(diagnostics_router.router, prefix="/api/v1")
 app.include_router(radar_router.router, prefix="/api/v1")
 app.include_router(calls_router.router, prefix="/api/v1")
 app.include_router(admin_router.router, prefix="/api/v1")
+app.include_router(settings_router.router, prefix="/api/v1")
 
 
 # Real-time WebSocket Endpoint

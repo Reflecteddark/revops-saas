@@ -4167,6 +4167,79 @@
     html[data-theme="light"] .score-num {
       color: #09090b !important;
     }
+
+    /* RevOps Settings Control Center & Toggle Switches (V20.2) */
+    .setting-switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .setting-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .setting-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.16);
+      transition: .24s ease-in-out;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+    .setting-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: #fff;
+      transition: .24s ease-in-out;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .setting-switch input:checked + .setting-slider {
+      background-color: #10b981;
+      border-color: #10b981;
+    }
+    .setting-switch input:checked + .setting-slider:before {
+      transform: translateX(18px);
+    }
+    .module-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color .2s, background .2s;
+    }
+    .module-card:hover {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(255,255,255,0.035);
+    }
+    .cfg-inline-input {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: #fff;
+      padding: 4px 8px;
+      font-size: 0.78rem;
+      font-family: 'JetBrains Mono', monospace;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .cfg-inline-input:focus {
+      outline: none;
+      border-color: #10b981;
+      background: rgba(0,0,0,0.5);
+    }
   </style>
 </head>
 <body>
@@ -6145,6 +6218,250 @@
     <!-- TAB 9: ПАСПОРТ, E2E КОНТУР & НАСТРОЙКИ                    -->
     <!-- ======================================================== -->
     <div id="view-settings" class="tab-view">
+
+      <!-- =====================================================================
+           28 PARAMETERS & BUSINESS CONFIGURATION CONTROL CENTER (V20.2 SSOT)
+           Интерактивное управление параметрами из листов: ⚙️ Настройки, 📋 Паспорт, ⚙️ Модули_Интеграции
+           ===================================================================== -->
+      <div class="bento-card" style="margin-bottom: 24px; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 8px 32px rgba(16, 185, 129, 0.08);">
+        
+        <!-- Header & Top Save Bar -->
+        <div class="bento-card-header" style="flex-wrap: wrap; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="title-icon" style="color: #10b981; background: rgba(16,185,129,0.12); padding: 8px; border-radius: 8px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+            </span>
+            <div>
+              <span class="bento-card-title" style="font-size: 1.15rem; font-weight: 800; color: #fff;">
+                Центр Управления Параметрами RevOps &bull; 28 Заполняемых Полей
+              </span>
+              <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
+                Сквозная синхронизация: Google Таблица &harr; FastAPI &harr; Личный кабинет &bull; Листы <code>⚙️ Настройки</code> и <code>⚙️ Модули_Интеграции</code>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+            <span id="settingsSyncStatus" class="badge-won" style="padding: 6px 12px; font-size: 0.72rem;">
+              <span class="status-dot dot-won"></span> СИНХРОНИЗИРОВАНО
+            </span>
+            <button id="btnReloadSettings" class="btn btn-secondary" onclick="fetchAndPopulateSettings(true)" style="padding: 7px 14px; font-size: 0.78rem;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>Обновить</span>
+            </button>
+            <button id="btnSaveSettingsTop" class="btn btn-primary" onclick="submitSystemSettingsForm()" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700; padding: 7px 18px; font-size: 0.8rem; box-shadow: 0 4px 14px rgba(16,185,129,0.3);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>Сохранить в Таблицу</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5 Interactive Sections Container -->
+        <div style="display: flex; flex-direction: column; gap: 24px; padding-top: 18px;">
+
+          <!-- 1. Бизнес-цели, Период и Казначейство -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
+            <div style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+              <span>🎯 1. Бизнес-цели, Период Анализа и План Выручки (Ячейки B3..B9)</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+              <!-- План выручки -->
+              <div>
+                <label style="display: block; font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">
+                  ПЛАН ВЫРУЧКИ НА МЕСЯЦ (₽):
+                </label>
+                <div style="position: relative;">
+                  <input type="number" id="cfgMonthlyTarget" class="auth-input" style="font-size: 1.15rem; font-weight: 800; color: #34d399; width: 100%; padding-right: 40px;" value="5000000" step="100000">
+                  <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 700;">₽</span>
+                </div>
+                <!-- Presets -->
+                <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border: 1px solid var(--border-subtle);" onclick="setTargetPreset(3000000)">3 млн</button>
+                  <button type="button" class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border: 1px solid var(--border-subtle);" onclick="setTargetPreset(5000000)">5 млн</button>
+                  <button type="button" class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border: 1px solid var(--border-subtle);" onclick="setTargetPreset(10000000)">10 млн</button>
+                  <button type="button" class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border: 1px solid var(--border-subtle);" onclick="setTargetPreset(15000000)">15 млн</button>
+                </div>
+              </div>
+
+              <!-- Период: Начало и Конец (DatePicker) -->
+              <div>
+                <label style="display: block; font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">
+                  ОТЧЕТНЫЙ ПЕРИОД (DATEPICKER):
+                </label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="date" id="cfgPeriodStart" class="auth-input" style="font-size: 0.84rem; padding: 8px 10px; width: 50%;" value="2026-10-01">
+                  <span style="color: var(--text-muted);">&mdash;</span>
+                  <input type="date" id="cfgPeriodEnd" class="auth-input" style="font-size: 0.84rem; padding: 8px 10px; width: 50%;" value="2026-10-31">
+                </div>
+                <div style="display: flex; gap: 6px; margin-top: 6px;">
+                  <button type="button" class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border: 1px solid var(--border-subtle);" onclick="setPeriodPreset('current')">Текущий месяц</button>
+                  <button type="button" class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border: 1px solid var(--border-subtle);" onclick="setPeriodPreset('prev')">Прошлый месяц</button>
+                  <button type="button" class="btn btn-ghost" style="padding: 3px 8px; font-size: 0.68rem; border: 1px solid var(--border-subtle);" onclick="setPeriodPreset('q4')">4 Квартал</button>
+                </div>
+              </div>
+
+              <!-- Название организации и Валюта -->
+              <div>
+                <label style="display: block; font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">
+                  ОРГАНИЗАЦИЯ И ВАЛЮТА:
+                </label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="cfgCompanyName" class="auth-input" style="font-size: 0.84rem; flex: 2;" value="Самозанятый">
+                  <select id="cfgCurrency" class="auth-input" style="font-size: 0.84rem; flex: 1;">
+                    <option value="RUB (₽)">RUB (₽)</option>
+                    <option value="USD ($)">USD ($)</option>
+                    <option value="EUR (€)">EUR (€)</option>
+                    <option value="KZT (₸)">KZT (₸)</option>
+                  </select>
+                </div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 6px;">
+                  Tenant UUID: <code>TNT-001</code> &bull; Hardware RBAC: Active
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Этапы воронки, Win % и нормативы SLA (часы) -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
+            <div style="font-size: 0.82rem; font-weight: 800; color: #a78bfa; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+              <span>⏱️ 2. Воронка продаж: SLA нормативы переходов и Win-вероятности (Ячейки C12..D18)</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">7 этапов &bull; Стандарт SSOT</span>
+            </div>
+
+            <div class="table-container" style="max-height: 280px; overflow-y: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.78rem;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); text-align: left;">
+                    <th style="padding: 8px;">#</th>
+                    <th style="padding: 8px;">Этап воронки</th>
+                    <th style="padding: 8px; width: 140px;">SLA норматив (ч)</th>
+                    <th style="padding: 8px; width: 140px;">Вероятность (Win %)</th>
+                    <th style="padding: 8px;">Влияние на прогноз</th>
+                  </tr>
+                </thead>
+                <tbody id="cfgStagesTableBody">
+                  <!-- Populated dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. Штатное расписание и Лимиты емкости (Capacity) -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
+            <div style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+              <span>👥 3. Штатное расписание и Лимиты емкости менеджеров (Capacity Planning B21..D24)</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">Лимит открытых сделок без потери конверсии</span>
+            </div>
+
+            <div class="table-container">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.78rem;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); text-align: left;">
+                    <th style="padding: 8px;">ID сотрудника</th>
+                    <th style="padding: 8px;">ФИО сотрудника</th>
+                    <th style="padding: 8px;">Роль в отделе</th>
+                    <th style="padding: 8px; width: 160px;">Лимит открытых сделок</th>
+                    <th style="padding: 8px;">Статус емкости</th>
+                  </tr>
+                </thead>
+                <tbody id="cfgManagersTableBody">
+                  <!-- Populated dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 4. Причины срыва и Telegram Интеграция -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+            <!-- Причины срыва сделок -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
+              <div style="font-size: 0.82rem; font-weight: 800; color: #fb7185; text-transform: uppercase; margin-bottom: 12px;">
+                🚨 4.1. Справочник причин срыва (L1..L4)
+              </div>
+              <div class="table-container">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.76rem;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); text-align: left;">
+                      <th style="padding: 6px;">Код</th>
+                      <th style="padding: 6px;">Причина отказа</th>
+                      <th style="padding: 6px; width: 120px;">Шанс возврата (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cfgLossReasonsTableBody">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Telegram Интеграция -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
+              <div style="font-size: 0.82rem; font-weight: 800; color: #60a5fa; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>🤖 4.2. Telegram Bot API & Маршруты алертов</span>
+                <span id="cfgTgStatusBadge" class="badge-won" style="font-size: 0.68rem;">🟢 ACTIVE</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                  <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 3px;">ЧАТ РОПа (ROP_CHAT_ID):</label>
+                  <input type="text" id="cfgRopChatId" class="auth-input" style="font-size: 0.82rem; width: 100%;" value="-1001234567890">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 3px;">ЧАТ СОБСТВЕННИКА (CEO_CHAT_ID):</label>
+                  <input type="text" id="cfgCeoChatId" class="auth-input" style="font-size: 0.82rem; width: 100%;" value="-1009876543210">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 3px;">ОБЩИЙ ЧАТ КОМАНДЫ (TEAM_CHAT_ID):</label>
+                  <input type="text" id="cfgTeamChatId" class="auth-input" style="font-size: 0.82rem; width: 100%;" value="-1005554443332">
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle);">
+                  <span style="font-size: 0.74rem; color: var(--text-secondary);">Фоновый диспетчер алертов:</span>
+                  <label class="setting-switch">
+                    <input type="checkbox" id="cfgDispatcherStatus" checked>
+                    <span class="setting-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. 19 Модулей интеграции CRM (⚙️ Модули_Интеграции) -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 800; color: #34d399; text-transform: uppercase;">
+                  ⚙️ 5. 19 Модулей интеграции с CRM (Лист ⚙️ Модули_Интеграции)
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                  Индивидуальные тумблеры управления поведением ИИ-аудитора и синхронизации с amoCRM / Битрикс24
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem; border: 1px solid var(--border-subtle);" onclick="toggleAllModules(true)">Включить все</button>
+                <button type="button" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem; border: 1px solid var(--border-subtle);" onclick="toggleAllModules(false)">Выключить все</button>
+              </div>
+            </div>
+
+            <!-- Grid of 19 Modules -->
+            <div id="cfgModulesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+
+          <!-- Bottom Save Actions -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 0 6px 0; border-top: 1px solid var(--border-subtle);">
+            <button class="btn btn-secondary" onclick="fetchAndPopulateSettings(true)" style="padding: 9px 18px;">
+              Отменить изменения
+            </button>
+            <button id="btnSaveSettingsBottom" class="btn btn-primary" onclick="submitSystemSettingsForm()" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 800; padding: 10px 24px; font-size: 0.85rem; box-shadow: 0 4px 16px rgba(16,185,129,0.35);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>Сохранить все 28 параметров в Google Таблицу</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
 
       
       <!-- Autonomous Trio AI Crew Widget (V20.2) -->
