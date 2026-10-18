@@ -159,9 +159,29 @@ function applyChartZeroOverlay(canvasId, wrapperId) {
   wrapper.appendChild(overlay);
 }
 
+// Safe Chart Destruction Helper (prevents Chart.js v4 "Canvas is already in use" errors)
+function safeDestroyChart(instance, canvasElementOrId) {
+  if (instance && typeof instance.destroy === 'function') {
+    try { instance.destroy(); } catch (e) {}
+  }
+  const el = typeof canvasElementOrId === 'string'
+    ? document.getElementById(canvasElementOrId)
+    : canvasElementOrId;
+  if (el && typeof Chart !== 'undefined' && Chart.getChart) {
+    try {
+      const existing = Chart.getChart(el);
+      if (existing && typeof existing.destroy === 'function') {
+        existing.destroy();
+      }
+    } catch (e) {}
+  }
+}
+
 function initDevelopDissectionChart() {
   const ctx = document.getElementById('developDissectionChart');
   if (!ctx) return;
+  safeDestroyChart(developDissectionChartInstance, ctx);
+  developDissectionChartInstance = null;
   const isLight = getThemeMode() === 'light';
   const c2d = ctx.getContext('2d');
 
@@ -298,6 +318,8 @@ function initSparklines() {
 function initDevelopDonutChart() {
   const ctx = document.getElementById('developDonutChart');
   if (!ctx) return;
+  safeDestroyChart(developDonutChartInstance, ctx);
+  developDonutChartInstance = null;
   const isLight = getThemeMode() === 'light'; // FIX: объявлена переменная isLight
 
   const isZero = CALLS_DATA.length === 0;
@@ -347,6 +369,8 @@ function initDevelopDonutChart() {
 function initDevelopSplineChart() {
   const ctx = document.getElementById('developSplineChart');
   if (!ctx) return;
+  safeDestroyChart(developSplineChartInstance, ctx);
+  developSplineChartInstance = null;
   const isLight = getThemeMode() === 'light';
   const c2d = ctx.getContext('2d');
   let grad1 = 'rgba(124, 58, 237, 0.20)';
@@ -484,13 +508,11 @@ function recalcExpress() {
 // ==========================================================================
 let mcChartInstance = null;
 function initMonteCarloChart() {
-  const ctx = document.getElementById('mcChart');
+  const ctx = document.getElementById('mcChart') || document.getElementById('monteCarloChart');
   if (!ctx) return;
 
-  if (mcChartInstance) {
-    mcChartInstance.destroy();
-    mcChartInstance = null;
-  }
+  safeDestroyChart(mcChartInstance, ctx);
+  mcChartInstance = null;
 
   mcChartInstance = new Chart(ctx, {
     type: 'bar',
@@ -744,10 +766,8 @@ function initRepPerformanceChart() {
   const repMetrics = getDynamicRepMetrics();
   const m = repMetrics['pipe'];
 
-  if (repPerfChartInstance) {
-    repPerfChartInstance.destroy();
-    repPerfChartInstance = null;
-  }
+  safeDestroyChart(repPerfChartInstance, ctx);
+  repPerfChartInstance = null;
 
   repPerfChartInstance = new Chart(ctx, {
     type: 'bar',
@@ -873,9 +893,12 @@ function getDynamicRadarData(repName = 'all') {
   return sums.map(s => Math.round((s / n) * 100));
 }
 
-function initSpeechRadarChart() {
+function initSpeechRadarChart(repName = 'all') {
   const ctx = document.getElementById('speechRadarChart');
   if (!ctx) return;
+
+  safeDestroyChart(speechRadarChartInstance, ctx);
+  speechRadarChartInstance = null;
 
   speechRadarChartInstance = new Chart(ctx, {
     type: 'radar',
@@ -892,8 +915,8 @@ function initSpeechRadarChart() {
           fill: false
         },
         {
-          label: 'Факт выполнения, %',
-          data: getDynamicRadarData('all'),
+          label: (repName === 'all' ? 'Факт выполнения, %' : `Факт ${repName}, %`),
+          data: getDynamicRadarData(repName || 'all'),
           borderColor: '#7c3aed',
           backgroundColor: 'rgba(124, 58, 237, 0.22)',
           borderWidth: 2,
@@ -1495,4 +1518,5 @@ window.filterRecentCalls = filterRecentCalls;
 window.selectFunnelPeriod = selectFunnelPeriod;
 window.initSparklines = initSparklines;
 window.applyChartZeroOverlay = applyChartZeroOverlay;
+window.safeDestroyChart = safeDestroyChart;
 
