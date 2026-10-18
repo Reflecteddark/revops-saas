@@ -4661,6 +4661,58 @@
       border-color: rgba(124, 58, 237, 0.5) !important;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(124, 58, 237, 0.2) !important;
     }
+
+    /* ==========================================================================
+       BLOCK 6: TIER-1 TYPOGRAPHY & NUMERIC HIERARCHY (LINEAR / VERCEL BENCHMARK)
+       ========================================================================== */
+    /* Hero KPI 2.2rem hierarchy */
+    .kpi-card-value,
+    .kpi-hero-val,
+    .hero-stat-value {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 2.2rem !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.04em !important;
+      line-height: 1.1 !important;
+      font-variant-numeric: tabular-nums !important;
+    }
+
+    /* Tighter section & card headers */
+    .develop-card-title,
+    .section-title,
+    .bento-card-header h2,
+    .bento-card-header h3 {
+      letter-spacing: -0.03em !important;
+      font-weight: 700 !important;
+      line-height: 1.25 !important;
+    }
+
+    /* Tabular numeric alignment for all financial & percentage metrics */
+    .font-mono,
+    .num-mono,
+    .metric-value,
+    .kpi-hero,
+    .kpi-secondary,
+    .bank-card-balance,
+    .develop-tx-val,
+    .develop-inv-val,
+    .step-amount-val,
+    .donut-center-num,
+    .spending-ring-val,
+    .kpi-delta,
+    .metric-delta,
+    .rate-badge {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-variant-numeric: tabular-nums !important;
+      letter-spacing: -0.02em !important;
+    }
+
+    /* Compact high-density table cells with tabular figures */
+    .data-table td,
+    .call-table td,
+    .payroll-table td {
+      font-variant-numeric: tabular-nums !important;
+    }
   </style>
 </head>
 <body>
