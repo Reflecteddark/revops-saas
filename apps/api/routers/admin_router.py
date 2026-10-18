@@ -1410,6 +1410,27 @@ def toggle_feature_flag(req: FeatureToggleRequest):
         with open(FEATURES_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
+        # Synchronize custom_features across all candidate tenants_registry.json paths
+        candidate_reg_paths = [
+            ENTERPRISE_OS_DIR / "tenants_registry.json",
+            ENTERPRISE_OS_DIR / "multitenant_revops" / "tenants_registry.json",
+        ]
+        seen_paths = set()
+        for rp in candidate_reg_paths:
+            if rp and rp.exists() and str(rp.resolve()) not in seen_paths:
+                seen_paths.add(str(rp.resolve()))
+                try:
+                    with open(rp, "r", encoding="utf-8") as rf:
+                        reg_data = json.load(rf)
+                    for t in reg_data.get("tenants", []):
+                        if "custom_features" not in t:
+                            t["custom_features"] = {}
+                        t["custom_features"][req.code] = req.enabled
+                    with open(rp, "w", encoding="utf-8") as rf:
+                        json.dump(reg_data, rf, indent=2, ensure_ascii=False)
+                except Exception as e:
+                    logger.warning(f"Failed to sync custom_features to {rp}: {e}")
+
         feat_name = features[req.code].get("name", req.code)
         state_str = "ВКЛЮЧЁН 🟢" if req.enabled else "ВЫКЛЮЧЕН ⚪"
         append_console_log(f"Опция [{req.code}] {feat_name}: {state_str}", "info")
