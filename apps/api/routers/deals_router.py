@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from ..websocket_manager import manager
+from ..tenant_registry import get_tenant_spreadsheet_id
 
 logger = logging.getLogger("deals_router")
 
@@ -27,12 +28,8 @@ class FixNextStepPayload(BaseModel):
     next_step_date: Optional[str] = None
 
 
-# In-memory cache for live deals from Google Sheets (TTL: 15s)
-_DEALS_CACHE: Dict[str, Any] = {
-    "timestamp": 0,
-    "deals": [],
-    "lookup": {}
-}
+# In-memory cache for live deals from Google Sheets keyed by tenant_id (TTL: 15s)
+_DEALS_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 def get_service_account_path() -> Optional[Path]:
@@ -75,25 +72,29 @@ def parse_amount(val: Any) -> float:
         return 300000.0
 
 
-def fetch_deals_from_sheets(limit: int = 100) -> List[Dict[str, Any]]:
+def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> List[Dict[str, Any]]:
+    clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
-    if _DEALS_CACHE["deals"] and (now - _DEALS_CACHE["timestamp"] < 15):
-        return _DEALS_CACHE["deals"]
+    cached = _DEALS_CACHE.get(clean_tenant)
+    if cached and (now - cached.get("timestamp", 0) < 15):
+        return cached.get("deals", [])
 
     sa_path = get_service_account_path()
     if not sa_path:
-        logger.warning("service_account.json not found for deals fetch")
-        return _DEALS_CACHE["deals"]
+        logger.warning(f"service_account.json not found for deals fetch (tenant: {clean_tenant})")
+        return cached.get("deals", []) if cached else []
 
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
-        sheet_id = os.getenv("REVOPS_SPREADSHEET_ID", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk")
+        sheet_id = get_tenant_spreadsheet_id(clean_tenant)
         ss = gc.open_by_key(sheet_id)
         ws = ss.worksheet("raw_deals")
         rows = ws.get_all_values()
         if len(rows) < 2:
-            return _DEALS_CACHE["deals"]
+            empty_res: List[Dict[str, Any]] = []
+            _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
+            return empty_res
 
         deals = []
         lookup = {}
@@ -119,7 +120,7 @@ def fetch_deals_from_sheets(limit: int = 100) -> List[Dict[str, Any]]:
             deal_obj = {
                 "id": deal_id,
                 "deal_id": deal_id,
-                "org_id": "TNT-001",
+                "org_id": clean_tenant,
                 "crm_deal_id": deal_id,
                 "crm_source": source,
                 "title": title,
@@ -147,18 +148,21 @@ def fetch_deals_from_sheets(limit: int = 100) -> List[Dict[str, Any]]:
                 lookup[f"BX_{num_only}"] = deal_obj
                 lookup[f"AMO_{num_only}"] = deal_obj
 
-        _DEALS_CACHE["timestamp"] = now
-        _DEALS_CACHE["deals"] = deals
-        _DEALS_CACHE["lookup"] = lookup
+        _DEALS_CACHE[clean_tenant] = {
+            "timestamp": now,
+            "deals": deals,
+            "lookup": lookup
+        }
         return deals
     except Exception as e:
-        logger.error(f"Error reading raw_deals from Google Sheets: {e}")
-        return _DEALS_CACHE["deals"]
+        logger.error(f"Error reading raw_deals from Google Sheets for tenant {clean_tenant}: {e}")
+        return _DEALS_CACHE.get(clean_tenant, {}).get("deals", [])
 
 
-def get_deals_lookup() -> Dict[str, Dict[str, Any]]:
-    fetch_deals_from_sheets()
-    return _DEALS_CACHE.get("lookup", {})
+def get_deals_lookup(tenant_id: str = "TNT-001") -> Dict[str, Dict[str, Any]]:
+    clean_tenant = (tenant_id or "TNT-001").strip().upper()
+    fetch_deals_from_sheets(tenant_id=clean_tenant)
+    return _DEALS_CACHE.get(clean_tenant, {}).get("lookup", {})
 
 
 @router.get("")
@@ -169,8 +173,9 @@ def list_deals(
     org_id: str = "TNT-001",
     tenant_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Returns active CRM deals directly from raw_deals Google Sheets."""
-    all_deals = fetch_deals_from_sheets()
+    """Returns active CRM deals directly from raw_deals Google Sheets for given tenant."""
+    effective_tenant = tenant_id or org_id or "TNT-001"
+    all_deals = fetch_deals_from_sheets(tenant_id=effective_tenant)
     results = all_deals
     if stage:
         results = [d for d in results if d["stage"] == stage]
@@ -178,6 +183,7 @@ def list_deals(
         results = [d for d in results if d["sla_risk"]]
     return {
         "status": "ok",
+        "tenant_id": effective_tenant,
         "source": "google_sheets_raw_deals",
         "deals": results,
         "total": len(results),

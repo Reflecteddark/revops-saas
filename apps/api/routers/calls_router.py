@@ -20,6 +20,7 @@ from packages.database.session import get_db
 from ..auth import get_current_user
 from ..schemas import SpeechEvaluationRequest
 from ..websocket_manager import manager
+from ..tenant_registry import get_tenant_spreadsheet_id
 from .deals_router import get_deals_lookup
 
 logger = logging.getLogger("calls_router")
@@ -50,11 +51,8 @@ class CallIngestPayload(BaseModel):
     tenant_id: str = "TNT-001"
 
 
-# In-memory cache for live calls from Google Sheets (TTL: 15s)
-_CALLS_CACHE: Dict[str, Any] = {
-    "timestamp": 0,
-    "calls": []
-}
+# In-memory cache for live calls from Google Sheets keyed by tenant_id (TTL: 15s)
+_CALLS_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 def get_service_account_path() -> Optional[Path]:
@@ -72,32 +70,36 @@ def get_service_account_path() -> Optional[Path]:
     return None
 
 
-def fetch_calls_from_sheets(limit: int = 50) -> List[Dict[str, Any]]:
+def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> List[Dict[str, Any]]:
+    clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
-    if _CALLS_CACHE["calls"] and (now - _CALLS_CACHE["timestamp"] < 15):
-        return _CALLS_CACHE["calls"]
+    cached = _CALLS_CACHE.get(clean_tenant)
+    if cached and (now - cached.get("timestamp", 0) < 15):
+        return cached.get("calls", [])
 
     sa_path = get_service_account_path()
     if not sa_path:
-        logger.warning("service_account.json not found, skipping Google Sheets fetch")
-        return []
+        logger.warning(f"service_account.json not found, skipping Google Sheets fetch (tenant: {clean_tenant})")
+        return cached.get("calls", []) if cached else []
 
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
-        sheet_id = os.getenv("REVOPS_SPREADSHEET_ID", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk")
+        sheet_id = get_tenant_spreadsheet_id(clean_tenant)
         ss = gc.open_by_key(sheet_id)
         ws = ss.worksheet("raw_calls")
         rows = ws.get_all_values()
         if len(rows) < 2:
-            return []
+            empty_calls: List[Dict[str, Any]] = []
+            _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": empty_calls}
+            return empty_calls
 
         calls = []
         deals_map = {}
         try:
-            deals_map = get_deals_lookup()
+            deals_map = get_deals_lookup(tenant_id=clean_tenant)
         except Exception as ex:
-            logger.warning(f"Could not load deals lookup: {ex}")
+            logger.warning(f"Could not load deals lookup for {clean_tenant}: {ex}")
 
         # Header is row 0; iterate backwards to get the most recent calls first
         data_rows = rows[1:]
@@ -284,13 +286,15 @@ def get_dashboard_calls_data(
 ):
     """
     Public dashboard endpoint: pulls real audited calls from Google Sheets (raw_calls)
-    or SQLite cache, formatted for the web dashboard.
+    for specified client tenant, formatted for the web dashboard.
     """
-    calls = fetch_calls_from_sheets(limit=limit)
+    effective_tenant = (tenant_id or "TNT-001").strip().upper()
+    calls = fetch_calls_from_sheets(tenant_id=effective_tenant, limit=limit)
     if not calls:
-        return {"status": "ok", "source": "fallback", "count": 0, "calls": []}
+        return {"status": "ok", "tenant_id": effective_tenant, "source": "fallback", "count": 0, "calls": []}
     return {
         "status": "ok",
+        "tenant_id": effective_tenant,
         "source": "google_sheets",
         "count": len(calls),
         "calls": calls
@@ -383,12 +387,15 @@ async def ingest_call_from_n8n(
 
 
 @router.post("/sync_sheets")
-def force_sync_from_sheets():
-    """Forces an immediate pull from Google Sheets raw_calls."""
-    _CALLS_CACHE["timestamp"] = 0
-    calls = fetch_calls_from_sheets(limit=100)
+def force_sync_from_sheets(tenant_id: str = Query("TNT-001")):
+    """Forces an immediate pull from Google Sheets raw_calls for given tenant."""
+    clean_tenant = (tenant_id or "TNT-001").strip().upper()
+    if clean_tenant in _CALLS_CACHE:
+        _CALLS_CACHE[clean_tenant]["timestamp"] = 0
+    calls = fetch_calls_from_sheets(tenant_id=clean_tenant, limit=100)
     return {
         "status": "ok",
+        "tenant_id": clean_tenant,
         "count": len(calls),
         "calls": calls
     }

@@ -4,6 +4,89 @@ const REVOPS_API_BASE = (typeof window !== 'undefined' && (window.location.hostn
 
 let CALLS_DATA = [];
 
+function getActiveTenantId() {
+  try {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTenant = urlParams.get('tenant') || urlParams.get('tenant_id');
+      if (urlTenant && urlTenant.trim()) return urlTenant.trim().toUpperCase();
+
+      const stored = localStorage.getItem('revops_active_tenant');
+      if (stored && stored.trim()) return stored.trim().toUpperCase();
+
+      const rawSession = localStorage.getItem('revops_auth_session');
+      if (rawSession) {
+        const sess = JSON.parse(rawSession);
+        if (sess && sess.tenant) {
+          const match = sess.tenant.match(/TNT-[A-Z0-9_-]+/i);
+          if (match) return match[0].toUpperCase();
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Tenant] Error resolving active tenant:', e);
+  }
+  return 'TNT-001';
+}
+
+async function onTenantSelected(tenantId) {
+  if (!tenantId) return;
+  const cleanId = tenantId.trim().toUpperCase();
+  try {
+    localStorage.setItem('revops_active_tenant', cleanId);
+    if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+      const url = new URL(window.location);
+      url.searchParams.set('tenant', cleanId);
+      window.history.replaceState({}, '', url);
+    }
+  } catch (e) {}
+
+  const selector = document.getElementById('headerTenantSelector');
+  if (selector && selector.value !== cleanId) {
+    selector.value = cleanId;
+  }
+
+  if (typeof showToast === 'function') {
+    showToast('Переключение клиента', `Загрузка данных тенанта ${cleanId}...`);
+  }
+
+  // Re-fetch data for the newly selected tenant
+  if (typeof fetchLiveCallsData === 'function') {
+    await fetchLiveCallsData(true);
+  }
+  if (typeof fetchAndPopulateSettings === 'function') {
+    await fetchAndPopulateSettings(false);
+  }
+}
+
+async function initTenantsSelector() {
+  const selector = document.getElementById('headerTenantSelector');
+  if (!selector) return;
+
+  const currentId = getActiveTenantId();
+  try {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants`);
+    if (res.ok) {
+      const list = await res.json();
+      if (Array.isArray(list) && list.length > 0) {
+        selector.innerHTML = '';
+        list.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.tenant_id;
+          opt.textContent = `${t.tenant_id} • ${t.tenant_name}`;
+          opt.style.background = '#0f172a';
+          opt.style.color = t.is_template ? '#34d399' : '#fff';
+          selector.appendChild(opt);
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('[Tenant] Could not fetch tenants list:', e.message);
+  }
+
+  selector.value = currentId;
+}
+
 function getCallAmount(c) {
   if (!c) return 300000;
   if (typeof c.amount_num === 'number' && c.amount_num > 0) return c.amount_num;
@@ -2534,6 +2617,7 @@ function getPlaybookDiff(call) {
       }
 
       // initCustomCursor();
+      initTenantsSelector();
       initWebSocketListener();
       fetchLiveCallsData(false);
       fetchAndPopulateSettings(false);
@@ -2850,7 +2934,8 @@ function getPlaybookDiff(call) {
 
     async function fetchLiveCallsData(showFeedback = false) {
       try {
-        const res = await fetch(`${REVOPS_API_BASE}/api/v1/calls/data?tenant_id=TNT-001`);
+        const tenantId = getActiveTenantId();
+        const res = await fetch(`${REVOPS_API_BASE}/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`);
         if (!res.ok) throw new Error('API status ' + res.status);
         const data = await res.json();
         if (data && Array.isArray(data.calls)) {
@@ -2860,7 +2945,7 @@ function getPlaybookDiff(call) {
           tickLiveStatus();
           updateChartTimestamps();
           if (showFeedback && typeof showToast === 'function') {
-            showToast('Google Таблица', data.calls.length > 0 ? `Синхронизировано ${data.calls.length} звонков из raw_calls` : 'Таблица raw_calls очищена (0 звонков)');
+            showToast('Google Таблица', data.calls.length > 0 ? `Синхронизировано ${data.calls.length} звонков (${tenantId})` : `Таблица raw_calls очищена (${tenantId}: 0 звонков)`);
           }
           return true;
         }
@@ -2876,11 +2961,12 @@ function getPlaybookDiff(call) {
       const wsHost = (typeof window !== 'undefined' && window.location.hostname.includes('ai-rop.ru') && !window.location.hostname.startsWith('report.'))
         ? 'report.ai-rop.ru'
         : window.location.host;
-      const wsUrl = `${protocol}//${wsHost}/ws/org/TNT-001`;
+      const tenantId = getActiveTenantId();
+      const wsUrl = `${protocol}//${wsHost}/ws/org/${encodeURIComponent(tenantId)}`;
       try {
         liveWs = new WebSocket(wsUrl);
         liveWs.onopen = () => {
-          console.log('[Live WS] Connected to live pipeline stream');
+          console.log(`[Live WS] Connected to live pipeline stream (${tenantId})`);
         };
         liveWs.onmessage = (event) => {
           try {
@@ -4236,7 +4322,8 @@ async function fetchAndPopulateSettings(forceToast = false) {
     syncBadge.className = 'badge-risk';
   }
   try {
-    const res = await fetch(`${REVOPS_API_BASE}/api/v1/settings?tenant_id=TNT-001`);
+    const tenantId = getActiveTenantId();
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/settings?tenant_id=${encodeURIComponent(tenantId)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     SYSTEM_SETTINGS = data;
@@ -4463,8 +4550,9 @@ async function submitSystemSettingsForm() {
       modules.push({ code, name: code, status: isChecked });
     });
 
+    const activeTenantId = getActiveTenantId();
     const payload = {
-      tenant_id: 'TNT-001',
+      tenant_id: activeTenantId,
       general: {
         company_name: company,
         currency: currency,
@@ -4484,7 +4572,7 @@ async function submitSystemSettingsForm() {
       modules: modules.length ? modules : null
     };
 
-    const res = await fetch(`${REVOPS_API_BASE}/api/v1/settings?tenant_id=TNT-001`, {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/settings?tenant_id=${encodeURIComponent(activeTenantId)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

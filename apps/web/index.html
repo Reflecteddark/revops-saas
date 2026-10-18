@@ -4443,6 +4443,17 @@
         </div>
 
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <!-- Multi-Tenant Fleet Switcher (Instant One-Click Client Switch) -->
+          <div class="tenant-selector-container" style="display: flex; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; background: rgba(115, 82, 255, 0.12); border: 1px solid rgba(115, 82, 255, 0.35); font-size: 0.74rem;">
+              <span style="font-size: 0.8rem;" title="Текущий клиент">🏢</span>
+              <select id="headerTenantSelector" onchange="onTenantSelected(this.value)" style="background: transparent; color: #c4b5fd; font-weight: 600; border: none; outline: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.74rem;">
+                <option value="TNT-001" style="background: #0f172a; color: #fff;">TNT-001 • Самозанятый</option>
+                <option value="TNT-CLEAN-001" style="background: #0f172a; color: #34d399;">TNT-CLEAN-001 • Чистый шаблон</option>
+              </select>
+            </div>
+          </div>
+
           <!-- Live Status Indicator (Tier-1 SaaS) -->
           <div style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 99px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #34d399;">
             <span class="status-dot dot-won" style="animation: livePulse 4.5s infinite; width: 6px; height: 6px;"></span>

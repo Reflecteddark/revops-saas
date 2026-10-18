@@ -15,16 +15,14 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from ..websocket_manager import manager
+from ..tenant_registry import get_tenant_spreadsheet_id
 
 logger = logging.getLogger("settings_router")
 
 router = APIRouter(prefix="/settings", tags=["Settings & Business Parameters"])
 
-# In-memory settings cache (TTL: 15s)
-_SETTINGS_CACHE: Dict[str, Any] = {
-    "timestamp": 0,
-    "data": None
-}
+# In-memory settings cache keyed by tenant_id (TTL: 15s)
+_SETTINGS_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 def get_service_account_path() -> Optional[Path]:
@@ -98,20 +96,22 @@ class SettingsPayload(BaseModel):
     modules: Optional[List[ModuleToggle]] = None
 
 
-def fetch_settings_from_sheets() -> Dict[str, Any]:
+def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> Dict[str, Any]:
+    clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
-    if _SETTINGS_CACHE["data"] and (now - _SETTINGS_CACHE["timestamp"] < 15):
-        return _SETTINGS_CACHE["data"]
+    cached = _SETTINGS_CACHE.get(clean_tenant)
+    if cached and (now - cached.get("timestamp", 0) < 15):
+        return cached.get("data", get_fallback_settings())
 
     sa_path = get_service_account_path()
     if not sa_path:
-        logger.warning("service_account.json not found for settings fetch")
+        logger.warning(f"service_account.json not found for settings fetch (tenant: {clean_tenant})")
         return get_fallback_settings()
 
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
-        sheet_id = os.getenv("REVOPS_SPREADSHEET_ID", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk")
+        sheet_id = get_tenant_spreadsheet_id(clean_tenant)
         ss = gc.open_by_key(sheet_id)
 
         ws_settings = ss.worksheet("⚙️ Настройки")
@@ -247,8 +247,10 @@ def fetch_settings_from_sheets() -> Dict[str, Any]:
             "modules": modules or get_fallback_settings()["modules"]
         }
 
-        _SETTINGS_CACHE["data"] = result
-        _SETTINGS_CACHE["timestamp"] = now
+        _SETTINGS_CACHE[clean_tenant] = {
+            "data": result,
+            "timestamp": now
+        }
         return result
 
     except Exception as e:
@@ -331,7 +333,7 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
-        sheet_id = os.getenv("REVOPS_SPREADSHEET_ID", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk")
+        sheet_id = get_tenant_spreadsheet_id(payload.tenant_id)
         ss = gc.open_by_key(sheet_id)
 
         ws_settings = ss.worksheet("⚙️ Настройки")
@@ -403,12 +405,14 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
             except Exception as e:
                 logger.error(f"Failed to batch update modules: {e}")
 
-        # Invalidate in-memory cache
-        _SETTINGS_CACHE["timestamp"] = 0
+        # Invalidate in-memory cache for this tenant
+        clean_tenant = payload.tenant_id.strip().upper()
+        if clean_tenant in _SETTINGS_CACHE:
+            _SETTINGS_CACHE[clean_tenant]["timestamp"] = 0
         return True
 
     except Exception as e:
-        logger.error(f"Error saving settings to Google Sheets: {e}")
+        logger.error(f"Error saving settings to Google Sheets for tenant {payload.tenant_id}: {e}")
         return False
 
 
@@ -421,9 +425,9 @@ def get_settings(
     tenant_id: str = Query("TNT-001")
 ):
     """
-    Returns 28 business configuration parameters from Google Sheets (⚙️ Настройки).
+    Returns 28 business configuration parameters from Google Sheets (⚙️ Настройки) for given tenant.
     """
-    return fetch_settings_from_sheets()
+    return fetch_settings_from_sheets(tenant_id=tenant_id)
 
 
 @router.post("")
@@ -435,7 +439,7 @@ async def save_settings(
     and broadcasts the update to all active web clients via WebSocket.
     """
     success = save_settings_to_sheets(payload)
-    fresh_settings = fetch_settings_from_sheets()
+    fresh_settings = fetch_settings_from_sheets(tenant_id=payload.tenant_id)
 
     # Broadcast to open web dashboard tabs via WebSocket
     await manager.broadcast(payload.tenant_id, {
