@@ -1260,7 +1260,7 @@ def execute_agent_action(req: AgentActionRequest):
     a1_args = ["--tenant", tenant, "--dry-run", "--no-report"]
     a3_args = ["--balance", "--tenant", tenant] if action == "balance" else ["--audit", "--tenant", tenant]
     a4_args = ["--mode=audit", "--tenant", tenant] if action == "audit" else ["--mode=self_test", "--tenant", tenant]
-    a2_args = ["--tenant", tenant, "--pipeline"] if action == "pipeline" else (["--tenant", tenant, "--forecast"] if action == "forecast" else ["--tenant", tenant, "--summary"])
+    a2_args = ["--tenant", tenant, "--summary", "--send"] if action in ("send_telegram", "send") else (["--tenant", tenant, "--pipeline"] if action == "pipeline" else (["--tenant", tenant, "--forecast"] if action == "forecast" else ["--tenant", tenant, "--summary"]))
 
     agent_scripts = {
         "a6": (MY_AI_CREW_DIR / "system_health_advisor.py", a6_args, "Агент 6: Architecture Advisor (Аудит архитектуры L0–L3.5)"),
