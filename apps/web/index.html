@@ -4388,6 +4388,86 @@
       background: rgba(124, 58, 237, 0.1);
       color: #6d28d9;
     }
+
+    /* ==========================================================================
+       BLOCK 1: SIDEBAR COLLAPSED ICON-ONLY NAVIGATION (TIER-1 LINEAR/VERCEL)
+       ========================================================================== */
+    .mp-sidebar {
+      width: 64px !important;
+      transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      overflow: hidden !important;
+    }
+
+    .mp-sidebar:hover,
+    .mp-sidebar.expanded {
+      width: 220px !important;
+    }
+
+    /* Скрывать текст в collapsed */
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-label,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-sidebar-section-title,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-group-title,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-brand-text,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-sidebar-toggle,
+    .mp-sidebar:not(:hover):not(.expanded) .badge-lost,
+    .mp-sidebar:not(:hover):not(.expanded) .badge-info,
+    .mp-sidebar:not(:hover):not(.expanded) .badge-won,
+    .mp-sidebar:not(:hover):not(.expanded) .badge-subtle,
+    .mp-sidebar:not(:hover):not(.expanded) .sidebar-tool-search-wrap,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-sidebar-search,
+    .mp-sidebar:not(:hover):not(.expanded) .mp-sidebar-footer {
+      opacity: 0 !important;
+      width: 0 !important;
+      max-width: 0 !important;
+      height: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      transition: opacity 0.15s ease !important;
+      pointer-events: none !important;
+    }
+
+    /* Иконка — всегда видна */
+    .mp-nav-icon,
+    .mp-nav-item-icon {
+      flex-shrink: 0 !important;
+      width: 18px !important;
+      height: 18px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-item {
+      position: relative !important;
+      justify-content: center !important;
+      padding: 10px 0 !important;
+    }
+
+    /* Tooltip при collapsed */
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-item::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(14, 18, 28, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 1000;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+    .mp-sidebar:not(:hover):not(.expanded) .mp-nav-item:hover::after {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -4489,15 +4569,15 @@
       <!-- Nav Items: 1. Оперативное управление -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Оперативное управление</div>
-        <button id="sb-pulse" class="mp-nav-item active" onclick="switchTab('pulse')">
+        <button id="sb-pulse" class="mp-nav-item active" onclick="switchTab('pulse')" data-tooltip="Пульс выручки">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
           <span class="mp-nav-label">1. Пульс выручки</span>
         </button>
-        <button id="sb-express" class="mp-nav-item" onclick="switchTab('express')">
+        <button id="sb-express" class="mp-nav-item" onclick="switchTab('express')" data-tooltip="Экспресс 3 цифры">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
           <span class="mp-nav-label">2. Экспресс 3 цифры</span>
         </button>
-        <button id="sb-rop" class="mp-nav-item" onclick="switchTab('rop')">
+        <button id="sb-rop" class="mp-nav-item" onclick="switchTab('rop')" data-tooltip="Пульт РОПа 15 мин">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span>
           <span class="mp-nav-label">3. Пульт РОПа 15 мин</span>
         </button>
@@ -4506,15 +4586,15 @@
       <!-- Nav Items: 2. Речевой ИИ & Аудит -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Речевой ИИ & Аудит</div>
-        <button id="sb-audit" class="mp-nav-item" onclick="switchTab('audit')">
+        <button id="sb-audit" class="mp-nav-item" onclick="switchTab('audit')" data-tooltip="ИИ-Аудит звонков">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 19v4m-4 0h8"/></svg></span>
           <span class="mp-nav-label">4. ИИ-Аудит звонков</span>
         </button>
-        <button id="sb-impact" class="mp-nav-item" onclick="switchTab('impact')">
+        <button id="sb-impact" class="mp-nav-item" onclick="switchTab('impact')" data-tooltip="AI Impact & Детектор">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
           <span class="mp-nav-label">5. AI Impact & Детектор</span>
         </button>
-        <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')">
+        <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')" data-tooltip="Навыки & Payroll">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
           <span class="mp-nav-label">6. Навыки & Payroll</span>
         </button>
@@ -4523,15 +4603,15 @@
       <!-- Nav Items: 3. Финансы & Аналитика -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Финансы & Аналитика</div>
-        <button id="sb-analyst" class="mp-nav-item" onclick="switchTab('analyst')">
+        <button id="sb-analyst" class="mp-nav-item" onclick="switchTab('analyst')" data-tooltip="ИИ Аналитик (CCO)">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12L2.1 12a10.1 10.1 0 0 0 9.9 10z"/></svg></span>
           <span class="mp-nav-label">7. ИИ Аналитик (CCO)</span>
         </button>
-        <button id="sb-leaks" class="mp-nav-item" onclick="switchTab('leaks')">
+        <button id="sb-leaks" class="mp-nav-item" onclick="switchTab('leaks')" data-tooltip="Диагностика утечек">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></span>
           <span class="mp-nav-label">8. Диагностика утечек</span>
         </button>
-        <button id="sb-montecarlo" class="mp-nav-item" onclick="switchTab('montecarlo')">
+        <button id="sb-montecarlo" class="mp-nav-item" onclick="switchTab('montecarlo')" data-tooltip="Монте-Карло 3.0">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/></svg></span>
           <span class="mp-nav-label">9. Монте-Карло 3.0</span>
         </button>
@@ -4540,19 +4620,19 @@
       <!-- Nav Items: 4. Система & Интеграции -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Система & Интеграции</div>
-        <button id="sb-settings" class="mp-nav-item" onclick="switchTab('settings')">
+        <button id="sb-settings" class="mp-nav-item" onclick="switchTab('settings')" data-tooltip="Паспорт & E2E">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
           <span class="mp-nav-label">10. Паспорт & E2E</span>
         </button>
-        <button id="sb-admin" class="mp-nav-item" onclick="switchTab('admin')" style="display: none;">
+        <button id="sb-admin" class="mp-nav-item" onclick="switchTab('admin')" style="display: none;" data-tooltip="Админ-кабинет">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 10 7 12"/><line x1="12" y1="12" x2="16" y2="12"/></svg></span>
           <span class="mp-nav-label">11. Админ-кабинет</span>
         </button>
-        <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item">
+        <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item" data-tooltip="Битрикс24 REST">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
           <span class="mp-nav-label">Битрикс24 REST &nearr;</span>
         </a>
-        <a href="https://revopsofficial.amocrm.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item">
+        <a href="https://revopsofficial.amocrm.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item" data-tooltip="amoCRM API v4">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></span>
           <span class="mp-nav-label">amoCRM API v4 &nearr;</span>
         </a>

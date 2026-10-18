@@ -449,10 +449,10 @@ function toggleSidebar() {
     const isOpen = sb.classList.contains('mobile-open');
     if (backdrop) backdrop.classList.toggle('active', isOpen);
   } else {
-    sb.classList.toggle('collapsed');
-    const isCollapsed = sb.classList.contains('collapsed');
-    localStorage.setItem('revops_sidebar_collapsed', isCollapsed ? '1' : '0');
-    if (mcChartInstance) {
+    sb.classList.toggle('expanded');
+    const isExpanded = sb.classList.contains('expanded');
+    localStorage.setItem('revops_sidebar_expanded', isExpanded ? '1' : '0');
+    if (typeof mcChartInstance !== 'undefined' && mcChartInstance) {
       setTimeout(() => mcChartInstance.resize(), 260);
     }
   }
