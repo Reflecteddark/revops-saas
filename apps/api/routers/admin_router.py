@@ -338,6 +338,7 @@ def get_admin_system_status():
     sa_info = get_sheets_service_account_status()
 
     # Scheduled Tasks
+    fastapi_task = get_task_scheduler_status("RevOps_FastAPI_Backend")
     daily_sync_task = get_task_scheduler_status("RevOps_Daily_Sheets_AutoSync")
     healer_task = get_task_scheduler_status("RevOps_DevOps_QA_Healer")
     n8n_task = get_task_scheduler_status("JobHunter_N8N")
@@ -363,12 +364,14 @@ def get_admin_system_status():
             "pid": pid,
             "memory_mb": mem_mb,
             "status_label": "🟢 АКТИВЕН (Port 8000)",
+            "task_status": fastapi_task.get("status_label", "🟢 АКТИВЕН"),
             "docs_url": "http://127.0.0.1:8000/docs"
         },
         "n8n": n8n_info,
         "cloudflare_tunnel": tunnel_info,
         "google_sheets": sa_info,
         "tasks": {
+            "fastapi_backend": fastapi_task,
             "daily_sync": daily_sync_task,
             "devops_healer": healer_task,
             "n8n_runner": n8n_task
@@ -496,6 +499,15 @@ def execute_fleet_action(req: FleetActionRequest):
             append_console_log("Cloudflare Tunnel остановлен", "warning")
             return {"success": True, "message": "Туннель остановлен"}
         except Exception as e:
+            return {"success": False, "message": str(e)}
+
+    elif action in ("start_fastapi", "restart_fastapi"):
+        try:
+            subprocess.run(["schtasks.exe", "/Run", "/TN", "RevOps_FastAPI_Backend"], capture_output=True, timeout=5)
+            append_console_log("FastAPI Backend отправлен на запуск через Task Scheduler (RevOps_FastAPI_Backend)", "info")
+            return {"success": True, "message": "FastAPI Backend запущен через Task Scheduler"}
+        except Exception as e:
+            append_console_log(f"Ошибка FastAPI: {e}", "error")
             return {"success": False, "message": str(e)}
 
     raise HTTPException(status_code=400, detail=f"Неизвестное действие флота: {action}")
