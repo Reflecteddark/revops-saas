@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Образец ИИ-Аудита 50 звонков // RevOps OS</title>
+    <link rel="stylesheet" href="css/fonts.css">
+    <link rel="stylesheet" href="css/fontawesome.min.css">
+    <link rel="stylesheet" href="css/tailwind.min.css">
+    <style>
+        body { font-family: 'Inter', -apple-system, sans-serif; }
+    </style>
+    <!-- Yandex.Metrika counter (152-ФЗ РФ Compliant) -->
+    <script type="text/javascript">
+       (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+       m[i].l=1*new Date();
+       for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+       k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+       (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+       ym(113329268, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true,
+            webvisor:true,
+            params: { ip_anonymization: true }
+       });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/113329268" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen py-10 px-4 sm:px-6">
+    <!-- Плавающая кнопка Назад -->
+    <a href="/" onclick="goBack(event)" class="fixed top-3 left-3 sm:top-5 sm:left-5 z-50 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:text-white text-xs sm:text-sm font-semibold border border-slate-700/90 hover:border-slate-500 shadow-2xl backdrop-blur-md transition-all group cursor-pointer" title="Назад на главную страницу">
+        <i class="fas fa-arrow-left text-xs text-emerald-400 group-hover:-translate-x-1 transition-transform"></i>
+        <span>Назад на сайт</span>
+    </a>
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Top Nav -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-800">
+            <a href="/" onclick="goBack(event)" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold border border-slate-700 transition w-fit">
+                <i class="fas fa-arrow-left text-emerald-400"></i>
+                <span>Вернуться на главную ai-rop.ru</span>
+            </a>
+            <a href="samples/Образец_ИИ_Аудита_50_Звонков_RevOps_OS.pdf" download class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 hover:from-emerald-400 hover:to-cyan-400 transition w-fit">
+                <i class="fas fa-download"></i> Скачать PDF (образцовый отчет 50 звонков)
+            </a>
+        </div>
+
+        <!-- Document Preview Card -->
+        <div class="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-10 shadow-2xl space-y-8">
+            <!-- Header -->
+            <div class="border-b border-slate-800 pb-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 font-mono text-xs font-semibold mb-3 border border-cyan-500/20">
+                    // ДЕМОНСТРАЦИОННЫЙ ОБРАЗЕЦ ИИ-АУДИТА 50 ЗВОНКОВ
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Экспресс-Аудит 50 звонков отдела B2B-продаж</h1>
+                <p class="text-slate-400 text-xs sm:text-sm mt-1">Клиент: ООО «ПромСнаб-Сервис» • Ниша: Промышленное оборудование • Выборка: 50 реальных аудиозаписей • Октябрь 2026</p>
+            </div>
+
+            <!-- Key Findings Box -->
+            <div class="p-5 sm:p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200">
+                <div class="flex items-center gap-2 font-bold text-rose-300 text-sm sm:text-base mb-2">
+                    <i class="fas fa-triangle-exclamation text-rose-400"></i>
+                    <span>В 19 ИЗ 50 ЗВОНКОВ (38%) ВЫЯВЛЕН КРИТИЧЕСКИЙ СЛИВ СДЕЛКИ</span>
+                </div>
+                <ul class="text-xs sm:text-sm space-y-1.5 text-slate-300">
+                    <li>• Сумма чека в разобранных диалогах: <strong>14 850 000 ₽</strong></li>
+                    <li>• Сумма под критическим риском слива: <strong class="text-rose-400">4 620 000 ₽</strong> (31.1% от общего объема переговоров)</li>
+                    <li>• Сдано чистой маржи необоснованными скидками: <strong class="text-rose-400">410 000 ₽</strong> (в 18 диалогах менеджеры сдали от 5% до 12% скидки в первые 3 минуты).</li>
+                    <li>• Главная причина слива: отсутствие фиксации Следующего Шага (Next Step) и капитуляция перед возражением «Дорого».</li>
+                </ul>
+            </div>
+
+            <!-- 4 KPI Badges -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
+                    <div class="text-2xl font-extrabold text-white font-mono">50</div>
+                    <div class="text-[10px] text-slate-400 uppercase font-mono mt-1">Звонков оцифровано</div>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
+                    <div class="text-2xl font-extrabold text-amber-400 font-mono">64.2 / 100</div>
+                    <div class="text-[10px] text-slate-400 uppercase font-mono mt-1">Средний балл качества</div>
+                </div>
+                <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-center">
+                    <div class="text-2xl font-extrabold text-rose-400 font-mono">19 (38%)</div>
+                    <div class="text-[10px] text-rose-300 uppercase font-mono mt-1">Сливов без Next Step</div>
+                </div>
+                <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-center">
+                    <div class="text-2xl font-extrabold text-rose-400 font-mono">4.62M ₽</div>
+                    <div class="text-[10px] text-rose-300 uppercase font-mono mt-1">Касса под угрозой</div>
+                </div>
+            </div>
+
+            <!-- Team Scoreboard -->
+            <div>
+                <h3 class="text-lg font-bold text-white mb-3">1. Рейтинг менеджеров отдела по результатам 50 звонков</h3>
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-950 text-slate-400 font-mono">
+                            <tr>
+                                <th class="p-3">Сотрудник</th>
+                                <th class="p-3">Звонков</th>
+                                <th class="p-3">Ср. балл качества</th>
+                                <th class="p-3">Сливов Next Step</th>
+                                <th class="p-3">Сдано скидками</th>
+                                <th class="p-3">Выручка в риске</th>
+                                <th class="p-3 text-right">Конверсия в шаг</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/80 text-slate-300">
+                            <tr class="bg-emerald-500/5">
+                                <td class="p-3 font-bold text-white">🏆 1. Елена С. (Старший)</td>
+                                <td class="p-3 font-mono">16</td>
+                                <td class="p-3 text-emerald-400 font-bold">88.5 / 100</td>
+                                <td class="p-3 text-emerald-400">1 (6%)</td>
+                                <td class="p-3 font-mono">0 ₽</td>
+                                <td class="p-3 font-mono text-emerald-400">120 000 ₽</td>
+                                <td class="p-3 font-mono text-emerald-400 font-bold text-right">93.8%</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-medium text-white">2. Дмитрий В. (Менеджер)</td>
+                                <td class="p-3 font-mono">14</td>
+                                <td class="p-3 text-amber-400 font-bold">71.2 / 100</td>
+                                <td class="p-3 text-amber-400">3 (21%)</td>
+                                <td class="p-3 font-mono">50 000 ₽</td>
+                                <td class="p-3 font-mono text-amber-400">650 000 ₽</td>
+                                <td class="p-3 font-mono text-amber-400 font-bold text-right">78.6%</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-medium text-white">3. Алексей К. (Менеджер)</td>
+                                <td class="p-3 font-mono">12</td>
+                                <td class="p-3 text-rose-400 font-bold">54.0 / 100</td>
+                                <td class="p-3 text-rose-400">6 (50%)</td>
+                                <td class="p-3 font-mono text-rose-400">180 000 ₽</td>
+                                <td class="p-3 font-mono text-rose-400">1 850 000 ₽</td>
+                                <td class="p-3 font-mono text-rose-400 font-bold text-right">50.0%</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-medium text-white">4. Михаил Т. (Стажер)</td>
+                                <td class="p-3 font-mono">8</td>
+                                <td class="p-3 text-rose-400 font-bold">41.0 / 100</td>
+                                <td class="p-3 text-rose-400">5 (62%)</td>
+                                <td class="p-3 font-mono text-rose-400">180 000 ₽</td>
+                                <td class="p-3 font-mono text-rose-400">2 000 000 ₽</td>
+                                <td class="p-3 font-mono text-rose-400 font-bold text-right">37.5%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Matrix -->
+            <div>
+                <h3 class="text-lg font-bold text-white mb-3">2. Сводный срез соблюдения 13 стандартов RevOps на массиве 50 звонков</h3>
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-950 text-slate-400 font-mono">
+                            <tr>
+                                <th class="p-3">Критерий оценки ИИ</th>
+                                <th class="p-3">Соблюдение в звонках</th>
+                                <th class="p-3">Статус этапа</th>
+                                <th class="p-3 text-right">Финансовый вывод ИИ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/80 text-slate-300">
+                            <tr>
+                                <td class="p-3 font-medium text-white">1. Приветствие по регламенту и представление компании</td>
+                                <td class="p-3 text-emerald-400 font-bold">47 из 50 (94%)</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[10px]">Норма</span></td>
+                                <td class="p-3 text-right text-slate-400">Регламент закреплен у всей команды</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-medium text-white">2. Квалификация клиента (ЛПР, бюджет, сроки)</td>
+                                <td class="p-3 text-amber-400 font-bold">29 из 50 (58%)</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono text-[10px]">Зона риска</span></td>
+                                <td class="p-3 text-right text-slate-400">В 42% КП высылается без понимания ЛПР</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-medium text-white">3. Выявление глубинного запроса и задач производства</td>
+                                <td class="p-3 text-amber-400 font-bold">26 из 50 (52%)</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono text-[10px]">Зона риска</span></td>
+                                <td class="p-3 text-right text-slate-400">Менеджеры сразу называют цены без выявления болей</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-medium text-white">4. Презентация через ценность и окупаемость (ROI)</td>
+                                <td class="p-3 text-amber-400 font-bold">30 из 50 (60%)</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono text-[10px]">Зона риска</span></td>
+                                <td class="p-3 text-right text-slate-400">Слабая аргументация срока окупаемости агрегата</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-medium text-white">5. Отработка возражения «Дорого»</td>
+                                <td class="p-3 text-rose-400 font-bold">7 из 25 (28%) ❌</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono text-[10px]">КРИТИЧНО</span></td>
+                                <td class="p-3 text-right text-rose-400 font-bold">В 18 диалогах — сдача 410 000 ₽ маржи скидкой</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-medium text-white">6. Фиксация дедлайна и Следующего Шага (Next Step)</td>
+                                <td class="p-3 text-rose-400 font-bold">31 из 50 (62%) ❌</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono text-[10px]">КРИТИЧНО</span></td>
+                                <td class="p-3 text-right text-rose-400 font-bold">В 19 звонках — слив сделок фразами «сами наберите»</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-medium text-white">7. Заполнение полей CRM и дисциплина задач</td>
+                                <td class="p-3 text-amber-400 font-bold">27 из 50 (54%)</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono text-[10px]">Зона риска</span></td>
+                                <td class="p-3 text-right text-slate-400">Сделки зависают в «Думает» без даты перезвона</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Contrast Cases -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
+                    <div class="flex items-center justify-between font-bold text-emerald-300 text-sm mb-2">
+                        <span>🏆 ЭТАЛОН: Звонок #14 (Елена)</span>
+                        <span class="font-mono">850 000 ₽ • 94/100</span>
+                    </div>
+                    <div class="space-y-1 text-slate-300 mb-3">
+                        <p><strong class="text-cyan-400">[02:40] Клиент:</strong> «Нам предлагают насос аналогичной мощности на 70 000 ₽ дешевле.»</p>
+                        <p><strong class="text-emerald-400">[02:51] Елена:</strong> «Понимаю, цена важна. Но наш комплект включает усиленную муфту и гарантию сервиса за 4 часа. Давайте во вторник в 14:00 я подключу инженера в Zoom и мы покажем расчет экономии на простое.»</p>
+                        <p><strong class="text-cyan-400">[03:15] Клиент:</strong> «Хорошо, давайте во вторник в 14:00.»</p>
+                    </div>
+                    <div class="pt-2 border-t border-emerald-500/30 font-bold text-emerald-300">
+                        ✓ Вердикт ИИ: Защищена маржа компании, назначена онлайн-демонстрация.
+                    </div>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs">
+                    <div class="flex items-center justify-between font-bold text-rose-300 text-sm mb-2">
+                        <span>🚨 АНТИКЕЙС: Звонок #31 (Алексей)</span>
+                        <span class="font-mono">1 200 000 ₽ • 28/100</span>
+                    </div>
+                    <div class="space-y-1 text-slate-300 mb-3">
+                        <p><strong class="text-cyan-400">[03:14] Клиент:</strong> «1,2 миллиона сейчас дороговато для нашего цеха.»</p>
+                        <p><strong class="text-rose-400">[03:22] Алексей:</strong> «Ну... если дорого, мы согласуем скидку 10%. Вы подумайте тогда, а на следующей неделе созвонимся.»</p>
+                        <p><strong class="text-cyan-400">[03:31] Клиент:</strong> «Хорошо, если что — мы сами наберем. До свидания.»</p>
+                    </div>
+                    <div class="pt-2 border-t border-rose-500/30 font-bold text-rose-300">
+                        ✗ Вердикт ИИ: Сдано 120 000 ₽ маржи, диалог похоронен фразой «сами наберем».
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instant CTA -->
+            <div class="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center">
+                <h4 class="text-base sm:text-lg font-bold text-white mb-2">Хотите увидеть такой аудит 50 звонков по вашей команде?</h4>
+                <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto mb-4">
+                    Пришлите вчерашние аудиозаписи или передайте выгрузку. Через 20 минут основатель RevOps OS Дмитрий Федотов выдаст персональную карту сливов (0 ₽).
+                </p>
+                <div class="flex flex-wrap gap-3 justify-center">
+                    <a href="/#cta" class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg transition">
+                        Оставить заявку на бесплатный аудит 50 звонков (0 ₽)
+                    </a>
+                    <a href="https://t.me/dm1918" target="_blank" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl text-xs sm:text-sm border border-slate-700 transition flex items-center gap-1.5">
+                        <i class="fab fa-telegram text-cyan-400"></i> Отправить звонки в Telegram
+                    </a>
+                    <a href="/" onclick="goBack(event)" class="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white font-semibold rounded-xl text-xs sm:text-sm border border-slate-700 transition flex items-center gap-1.5">
+                        <i class="fas fa-arrow-left text-emerald-400"></i> Назад на главную
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING SCROLL-TO-TOP BUTTON -->
+    <button type="button" id="scrollToTopBtn" aria-label="Вернуться наверх" class="fixed bottom-6 right-6 z-40 p-3 rounded-2xl bg-slate-900/90 hover:bg-emerald-500 text-slate-300 hover:text-slate-950 border border-slate-700/80 shadow-2xl transition-all duration-300 opacity-0 pointer-events-none translate-y-4 hover:scale-105 active:scale-95 flex items-center gap-2 group backdrop-blur-xl">
+        <i class="fas fa-arrow-up text-sm group-hover:-translate-y-0.5 transition-transform"></i>
+        <span class="text-xs font-bold font-mono pr-1 hidden sm:inline">Наверх</span>
+    </button>
+
+    <!-- Universal Back Navigation & Scroll Logic -->
+    <script>
+        function goBack(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            var targetUrl = (window.location.protocol === 'file:') ? 'index.html' : '/';
+            var ref = document.referrer;
+            var isFromOurSite = ref && (ref.indexOf(window.location.host) !== -1 || ref.indexOf('ai-rop.ru') !== -1);
+            if (window.history.length > 1 && isFromOurSite) {
+                window.history.back();
+                setTimeout(function() {
+                    if (window.location.pathname.indexOf('sample') !== -1 || window.location.href.indexOf('sample') !== -1) {
+                        window.location.href = targetUrl;
+                    }
+                }, 250);
+            } else {
+                window.location.href = targetUrl;
+            }
+        }
+
+        (function() {
+            const btn = document.getElementById('scrollToTopBtn');
+            if (!btn) return;
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 300) {
+                    btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                    btn.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+                } else {
+                    btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+                    btn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+                }
+            }, { passive: true });
+            btn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Недельный Аудит Отдела Продаж // RevOps Enterprise OS</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 10mm 12mm;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #0f172a;
+    background: #ffffff;
+    font-size: 11px;
+    line-height: 1.35;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page {
+    width: 100%;
+    height: 277mm;
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .page:last-child {
+    page-break-after: avoid;
+  }
+  
+  .header {
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .brand-title {
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: -0.3px;
+    color: #0f172a;
+    text-transform: uppercase;
+  }
+  .brand-subtitle {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+  .header-badge {
+    background: #15803d;
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-align: right;
+  }
+  
+  .meta-strip {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 7px 12px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+  }
+  .meta-item b {
+    color: #0f172a;
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .kpi-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .kpi-card.danger {
+    background: #fff1f2;
+    border-color: #fecdd3;
+  }
+  .kpi-card.success {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+  .kpi-val {
+    font-size: 16px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .kpi-val.danger { color: #e11d48; }
+  .kpi-val.success { color: #16a34a; }
+  .kpi-desc {
+    font-size: 8.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748b;
+    margin-top: 2px;
+  }
+
+  .section-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+    font-size: 10px;
+  }
+  th {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 9.5px;
+  }
+  th:first-child { border-radius: 6px 0 0 0; }
+  th:last-child { border-radius: 0 6px 0 0; text-align: right; }
+  td {
+    padding: 5.5px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .tr-highlight td { background: #eff6ff !important; font-weight: 700; }
+
+  .case-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .case-box {
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 9.5px;
+  }
+  .case-box.good {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid #16a34a;
+  }
+  .case-box.bad {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-left: 4px solid #e11d48;
+  }
+  .case-title {
+    font-weight: 800;
+    font-size: 10.5px;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .case-title.good { color: #166534; }
+  .case-title.bad { color: #9f1239; }
+
+  .plan-list {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+  }
+  .plan-item {
+    font-size: 10px;
+    color: #1e3a8a;
+    margin-bottom: 5px;
+    line-height: 1.35;
+  }
+  .plan-item:last-child { margin-bottom: 0; }
+  .plan-item b { color: #172554; }
+
+  .footer-cta {
+    background: #0f172a;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cta-text b {
+    font-size: 11.5px;
+    color: #38bdf8;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .cta-text p {
+    font-size: 9.5px;
+    color: #cbd5e1;
+  }
+  .cta-badge {
+    background: #10b981;
+    color: #022c22;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .page-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 6px;
+    font-size: 8.5px;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+
+<!-- СТРАНИЦА 1 -->
+<div class="page">
+  <div>
+    <div class="header">
+      <div>
+        <div class="brand-title">RevOps Enterprise OS V18.0 │ Недельный Аудит Отдела Продаж</div>
+        <div class="brand-subtitle">Сквозной срез 7 дней • 100% звонков из телефонии и CRM • Оцифровка утечек кассы</div>
+      </div>
+      <div class="header-badge">
+        НЕДЕЛЬНЫЙ ДАЙДЖЕСТ<br>
+        <span style="color:#e2e8f0; font-weight:normal;">100% Звонков Оцифровано</span>
+      </div>
+    </div>
+
+    <div class="meta-strip">
+      <div class="meta-item">Компания: <b>ООО «СпецМаш-Холдинг»</b></div>
+      <div class="meta-item">Период: <b>05.10.2026 – 11.10.2026 (7 дней)</b></div>
+      <div class="meta-item">Менеджеров в отделе: <b>4 сотрудника</b></div>
+      <div class="meta-item">CRM: <b>amoCRM Enterprise</b></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-val">128</div>
+        <div class="kpi-desc">Всего звонков</div>
+      </div>
+      <div class="kpi-card success">
+        <div class="kpi-val success">68.4 / 100</div>
+        <div class="kpi-desc">Средний балл качества</div>
+      </div>
+      <div class="kpi-card danger">
+        <div class="kpi-val danger">34 сделки (26%)</div>
+        <div class="kpi-desc">Слито без Next Step</div>
+      </div>
+      <div class="kpi-card danger">
+        <div class="kpi-val danger">1 840 000 ₽</div>
+        <div class="kpi-desc">Замороженная выручка</div>
+      </div>
+    </div>
+
+    <div class="section-title">1. Рейтинг менеджеров отдела продаж за неделю</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Сотрудник</th>
+          <th>Звонков</th>
+          <th>Ср. балл качества</th>
+          <th>Сливов Next Step</th>
+          <th>Потери выручки</th>
+          <th style="text-align:right;">Конверсия в шаг</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="tr-highlight">
+          <td><b>1. Елена С. (Старший менеджер)</b></td>
+          <td>38</td>
+          <td style="color:#15803d; font-weight:700;">88.5 / 100</td>
+          <td style="color:#15803d;">2 (5%)</td>
+          <td>120 000 ₽</td>
+          <td style="text-align:right; color:#15803d; font-weight:700;">94.7%</td>
+        </tr>
+        <tr>
+          <td>2. Дмитрий В. (Менеджер B2B)</td>
+          <td>34</td>
+          <td style="color:#b45309; font-weight:700;">71.2 / 100</td>
+          <td style="color:#b45309;">7 (20%)</td>
+          <td>380 000 ₽</td>
+          <td style="text-align:right;">79.4%</td>
+        </tr>
+        <tr>
+          <td>3. Алексей К. (Менеджер)</td>
+          <td>31</td>
+          <td style="color:#b91c1c; font-weight:700;">58.0 / 100</td>
+          <td style="color:#b91c1c; font-weight:700;">11 (35%)</td>
+          <td style="color:#b91c1c; font-weight:700;">640 000 ₽</td>
+          <td style="text-align:right; color:#b91c1c; font-weight:700;">64.5%</td>
+        </tr>
+        <tr>
+          <td>4. Михаил Т. (Стажер)</td>
+          <td>25</td>
+          <td style="color:#b91c1c; font-weight:700;">44.1 / 100</td>
+          <td style="color:#b91c1c; font-weight:700;">14 (56%)</td>
+          <td style="color:#b91c1c; font-weight:700;">700 000 ₽</td>
+          <td style="text-align:right; color:#b91c1c; font-weight:700;">44.0%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title">2. Контрастный разбор недели: Эталон диалога vs Антикейс слива</div>
+    <div class="case-container">
+      <div class="case-box good">
+        <div class="case-title good">
+          <span>🏆 ЭТАЛОН НЕДЕЛИ: Елена С. (96/100)</span>
+          <span>Чек: 450 000 ₽</span>
+        </div>
+        <p><b>Диалог #B24-CALL-8:</b> Четкая квалификация бюджета и сроков поставки до КП. При возражении «дорого» перевела фокус на экономию ресурса агрегата и зафиксировала онлайн-демонстрацию во вторник в 12:00.</p>
+      </div>
+      <div class="case-box bad">
+        <div class="case-title bad">
+          <span>🚨 АНТИКЕЙС (СЛИВ): Алексей К. (32/100)</span>
+          <span>Слит чек: 480 000 ₽</span>
+        </div>
+        <p><b>Диалог #B24-CALL-2:</b> Сдал 48 000 ₽ маржи скидкой в первые 3 минуты. Не задал ни одного вопроса о задачах цеха. Отпустил клиента фразой «сами наберите». Клиент ушел к конкурентам.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <div>RevOps Enterprise OS V18.0 • Недельный дайджест ОП • Конфиденциально</div>
+    <div>Страница 1 из 2</div>
+  </div>
+</div>
+
+<!-- СТРАНИЦА 2 -->
+<div class="page">
+  <div>
+    <div class="header">
+      <div>
+        <div class="brand-title">RevOps Enterprise OS V18.0 │ Программа Коррекции и План РОПа</div>
+        <div class="brand-subtitle">Устранение системных узких мест • Регламенты речи • Возврат упущенной кассы</div>
+      </div>
+      <div class="header-badge" style="background:#0284c7;">
+        РЕКОМЕНДАЦИИ ИИ<br>
+        <span style="color:#e2e8f0; font-weight:normal;">План на следующую неделю</span>
+      </div>
+    </div>
+
+    <div class="section-title">3. Анализ 7 ключевых речевых сбоев за прошедшую неделю</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Уязвимый этап сценария диалога</th>
+          <th>Доля брака в звонках</th>
+          <th>К чему приводит</th>
+          <th style="text-align:right;">Решение ИИ-Супервайзера</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1. Завершение диалога без точного Next Step</td>
+          <td style="color:#b91c1c; font-weight:700;">26.5% звонков</td>
+          <td>Клиент остывает, сделка висит в статусе «Думает»</td>
+          <td style="text-align:right;">Запрет закрытия задачи без даты зума/звонка</td>
+        </tr>
+        <tr>
+          <td>2. Преждевременная сдача скидки (демпинг)</td>
+          <td style="color:#b91c1c; font-weight:700;">18.0% звонков</td>
+          <td>Потеря от 5% до 12% чистой маржи компании</td>
+          <td style="text-align:right;">Введение таблицы ценностных отличий</td>
+        </tr>
+        <tr>
+          <td>3. Пропуск выявления болей и критериев выбора</td>
+          <td style="color:#b45309; font-weight:700;">34.2% звонков</td>
+          <td>КП отправляется «вслепую» и не открывается</td>
+          <td style="text-align:right;">Чек-лист квалификации из 3 обязательных вопросов</td>
+        </tr>
+        <tr>
+          <td>4. Забытые лиды (нет контакта > 48 часов)</td>
+          <td style="color:#b91c1c; font-weight:700;">14 сделок</td>
+          <td>Прямой уход к более быстрым конкурентам</td>
+          <td style="text-align:right;">Авто-алерт РОПу в Telegram на 24-й час</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title">4. Повестка РОПа на понедельничную планерку (15 минут)</div>
+    <div class="plan-list">
+      <div class="plan-item"><b>09:00 — Разбор цифр недели:</b> Озвучить общую сумму замороженной кассы (1 840 000 ₽) и показать разницу в конверсии между Еленой (94.7%) и стажерами (44%).</div>
+      <div class="plan-item"><b>09:15 — Прослушивание эталона Елены:</b> Включить аудиозапись #B24-CALL-8 на громкой связи. Закрепить технику защиты цены.</div>
+      <div class="plan-item"><b>09:30 — Введение жесткого правила Next Step:</b> С этого понедельника ни одна сделка не переводится на следующий этап без согласованного времени звонка в календаре.</div>
+      <div class="plan-item"><b>11:00 — Индивидуальный коучинг стажера Михаила:</b> 20 минут разбора скрипта квалификации.</div>
+    </div>
+
+    <div class="footer-cta">
+      <div class="cta-text">
+        <b>Хотите получать такой еженедельный дайджест по вашей CRM?</b>
+        <p>Подключение RevOps OS занимает 1 рабочий день. 100% звонков и сделок будут под вашим непрерывным контролем без ручного прослушивания.</p>
+      </div>
+      <div class="cta-badge">
+        TG: @dm1918 • ai-rop.ru
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <div>Основатель: Дмитрий Федотов (Самозанятый, ИНН 500114099491) • Telegram: @dm1918 • Сайт: ai-rop.ru</div>
+    <div>Страница 2 из 2</div>
+  </div>
+</div>
+
+</body>
+</html>

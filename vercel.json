@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/app", "destination": "/apps/web/index.html" },
+    { "source": "/app/", "destination": "/apps/web/index.html" },
+    { "source": "/app/app.js", "destination": "/apps/web/app.js" },
+    { "source": "/app/js/:path*", "destination": "/apps/web/js/:path*" },
+    { "source": "/js/:path*", "destination": "/apps/web/js/:path*" },
+    { "source": "/app.js", "destination": "/apps/web/app.js" },
+    { "source": "/", "destination": "/apps/landing/index.html" },
+    { "source": "/:path*", "destination": "/apps/landing/:path*" }
+  ]
+}

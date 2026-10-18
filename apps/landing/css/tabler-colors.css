@@ -1,0 +1,122 @@
+/* ==========================================================================
+   TABLER COLOR UTILITIES — "Deep Black + Deep Violet" (ai-rop.ru)
+   Утилитарные классы в стиле Tabler (.bg-*, .text-*, .border-*) для
+   двух основных тонов: Глубокий чёрный и Фиолетовый глубокий.
+   Подключать ПОСЛЕ css/tabler-theme.css.
+
+   Полноценная тема: утилиты адаптированы под переключение
+   html[data-theme="dark"] (по умолчанию) / html[data-theme="light"].
+   ========================================================================== */
+
+:root {
+  /* Глубокий чёрный (с фиолетовым подтоном) */
+  --color-black-deep: #0b0918;
+  --color-black-void: #060512;
+  --color-black-soft: #131024;
+
+  /* Фиолетовый глубокий */
+  --color-violet-deep: #4a1d96;
+  --color-violet-core: #5932c4;
+  --color-violet-bright: #6740c2;
+  --color-violet-light: #9b7bff;
+  --color-violet-pale: #ece9f7;
+}
+
+/* ---------- Поверхности тем (переключаются через data-theme на <html>) ---------- */
+html:not([data-theme]) body,
+html[data-theme="dark"] body {
+  background-color: var(--color-black-void);
+  color: var(--color-violet-pale);
+}
+html[data-theme="light"] body {
+  background-color: #f4f2fa;
+  color: #0b0918;
+}
+
+.theme-surface { background-color: var(--tblr-bg-surface, #0b0918); }
+.theme-panel   { background-color: var(--tblr-bg-surface-secondary, #131024); }
+.theme-border  { border-color: var(--tblr-border-color, #221c3a); }
+
+/* ---------- Фоны ---------- */
+.bg-black-deep { background-color: #0b0918 !important; color: #ece9f7; }
+.bg-black-void { background-color: #060512 !important; color: #ece9f7; }
+.bg-black-soft { background-color: #131024 !important; color: #ece9f7; }
+.bg-violet-deep { background-color: #4a1d96 !important; color: #ffffff; }
+.bg-violet-core { background-color: #5932c4 !important; color: #ffffff; }
+.bg-violet-bright { background-color: #6740c2 !important; color: #ffffff; }
+.bg-violet-light { background-color: #9b7bff !important; color: #0b0918; }
+.bg-violet-pale { background-color: #ece9f7 !important; color: #0b0918; }
+
+/* ---------- Текст (адаптивен к теме) ---------- */
+.text-on-theme { color: var(--tblr-body-color, #ece9f7); }
+.text-muted-theme { color: var(--tblr-secondary, #9b93b8); }
+.text-black-deep { color: #0b0918 !important; }
+.text-violet-deep { color: #4a1d96 !important; }
+.text-violet-core { color: #5932c4 !important; }
+.text-violet-bright { color: #6740c2 !important; }
+.text-violet-light { color: #9b7bff !important; }
+html[data-theme="light"] .text-violet-light { color: #5932c4 !important; }
+
+/* ---------- Границы ---------- */
+.border-black-deep { border-color: #0b0918 !important; }
+.border-violet-deep { border-color: #4a1d96 !important; }
+.border-violet-core { border-color: #5932c4 !important; }
+.border-violet-light { border-color: #9b7bff !important; }
+
+/* ---------- Градиент бренда (чёрный → фиолетовый глубокий) ---------- */
+.bg-brand-gradient {
+  background-image: linear-gradient(135deg, #060512 0%, #0b0918 45%, #4a1d96 100%) !important;
+  color: #ffffff;
+}
+
+/* ---------- Hover-варианты кнопок ---------- */
+.btn-violet-deep {
+  background-color: #4a1d96;
+  border-color: #4a1d96;
+  color: #ffffff;
+}
+.btn-violet-deep:hover,
+.btn-violet-deep:focus {
+  background-color: #3a1776;
+  border-color: #3a1776;
+  color: #ffffff;
+}
+
+.btn-black-deep {
+  background-color: #0b0918;
+  border-color: #0b0918;
+  color: #ece9f7;
+}
+.btn-black-deep:hover,
+.btn-black-deep:focus {
+  background-color: #131024;
+  border-color: #4a1d96;
+  color: #ffffff;
+}
+
+/* В светлой теме кнопка «глубокий чёрный» остаётся чёрной, но с фиолетовым фокусом */
+html[data-theme="light"] .btn-black-deep {
+  background-color: #0b0918;
+  color: #ece9f7;
+}
+
+/* ---------- Переключатель темы (виден в обеих темах) ---------- */
+#theme-toggle {
+  background-color: rgba(155, 123, 255, 0.12) !important;
+  border: 1px solid rgba(155, 123, 255, 0.35) !important;
+  color: #9b7bff !important;
+}
+#theme-toggle:hover {
+  background-color: rgba(89, 50, 196, 0.35) !important;
+  border-color: #5932c4 !important;
+  color: #ffffff !important;
+}
+html[data-theme="light"] #theme-toggle {
+  background-color: #f7f5fc !important;
+  border: 1px solid #e4e0f2 !important;
+  color: #4a1d96 !important;
+}
+html[data-theme="light"] #theme-toggle:hover {
+  background-color: #ece9f7 !important;
+  border-color: #4a1d96 !important;
+}

@@ -1,0 +1,289 @@
+/* ==========================================================================
+   TABLER UI THEME OVERRIDE — "Deep Black + Deep Violet" (полноценная тема)
+   https://github.com/tabler/tabler
+   Основные тона: Глубокий чёрный (#0B0918) и Фиолетовый глубокий (#4A1D96 / #5932C4)
+   Подключается ПОСЛЕ tabler CSS (см. css/tabler-colors.css для палитры).
+
+   Режимы:
+   - По умолчанию сайт работает в тёмной теме (глубокий чёрный).
+   - html[data-theme="light"]  — светлая тема (фиолетовые акценты).
+   - html.dark-first без JS    — тёмная тема через prefers-color-scheme.
+   Атрибут data-bs-theme синхронизируется с <html> скриптом theme-switch.js.
+   ========================================================================== */
+
+/* ---------- Тёмная тема по умолчанию (deep black) ---------- */
+:root,
+html[data-theme="dark"],
+html.dark-first:not([data-theme]) {
+  /* --- Глубокий чёрный как основа --- */
+  --tblr-body-bg: #060512;
+  --tblr-bg-surface: #0b0918;
+  --tblr-bg-surface-secondary: #131024;
+  --tblr-bg-forms: #0e0b1c;
+  --tblr-card-bg: #0b0918;
+
+  --tblr-border-color: #221c3a;
+  --tblr-card-border-color: #221c3a;
+
+  /* --- Фиолетовый глубокий — акцент на чёрном --- */
+  --tblr-primary: #5932c4;
+  --tblr-primary-darken: #4a1d96;
+  --tblr-link-color: #9b7bff;
+  --tblr-link-hover-color: #b7a1ff;
+
+  --tblr-primary-rgb: 89, 50, 196;
+  --tblr-link-color-rgb: 155, 123, 255;
+  --tblr-link-hover-color-rgb: 183, 161, 255;
+
+  /* --- Текст --- */
+  --tblr-body-color: #ece9f7;
+  --tblr-secondary: #9b93b8;
+
+  color-scheme: dark;
+}
+
+/* ---------- Светлая тема (по переключателю) ---------- */
+html[data-theme="light"] {
+  /* --- Tabler/Bootstrap primary = Фиолетовый глубокий --- */
+  --tblr-primary: #4a1d96;
+  --tblr-primary-fg: #ffffff;
+  --tblr-primary-darken: #3a1776;
+  --tblr-link-color: #4a1d96;
+  --tblr-link-hover-color: #5932c4;
+
+  --tblr-primary-rgb: 74, 29, 150;
+  --tblr-link-color-rgb: 74, 29, 150;
+  --tblr-link-hover-color-rgb: 89, 50, 196;
+
+  /* --- Акцентные оттенки фиолетовой гаммы --- */
+  --tblr-purple: #5932c4;
+  --tblr-indigo: #40347e;
+  --tblr-violet: #6740c2;
+
+  /* --- Поверхности: светлая база с фиолетовым подтоном --- */
+  --tblr-bg-surface: #ffffff;
+  --tblr-bg-forms: #f7f5fc;
+  --tblr-body-bg: #f4f2fa;
+  --tblr-border-color: #e4e0f2;
+  --tblr-card-border-color: #e4e0f2;
+
+  /* --- Текст: почти-чёрный с фиолетовым подтоном --- */
+  --tblr-body-color: #0b0918;
+  --tblr-secondary: #0b0918;
+
+  color-scheme: light;
+}
+
+/* Синхронизация с data-bs-theme (ставится скриптом theme-switch.js на <html>) */
+[data-bs-theme="light"] {
+  --tblr-primary: #4a1d96;
+  --tblr-primary-fg: #ffffff;
+  --tblr-primary-darken: #3a1776;
+  --tblr-link-color: #4a1d96;
+  --tblr-link-hover-color: #5932c4;
+  --tblr-primary-rgb: 74, 29, 150;
+  --tblr-link-color-rgb: 74, 29, 150;
+  --tblr-link-hover-color-rgb: 89, 50, 196;
+  --tblr-bg-surface: #ffffff;
+  --tblr-bg-forms: #f7f5fc;
+  --tblr-body-bg: #f4f2fa;
+  --tblr-border-color: #e4e0f2;
+  --tblr-card-border-color: #e4e0f2;
+  --tblr-body-color: #0b0918;
+  --tblr-secondary: #0b0918;
+  color-scheme: light;
+}
+
+[data-bs-theme="dark"] {
+  /* --- Глубокий чёрный как основа тёмной темы --- */
+  --tblr-body-bg: #060512;
+  --tblr-bg-surface: #0b0918;
+  --tblr-bg-surface-secondary: #131024;
+  --tblr-bg-forms: #0e0b1c;
+  --tblr-card-bg: #0b0918;
+
+  --tblr-border-color: #221c3a;
+  --tblr-card-border-color: #221c3a;
+
+  /* --- Фиолетовый глубокий — акцент на чёрном --- */
+  --tblr-primary: #5932c4;
+  --tblr-primary-darken: #4a1d96;
+  --tblr-link-color: #9b7bff;
+  --tblr-link-hover-color: #b7a1ff;
+
+  --tblr-primary-rgb: 89, 50, 196;
+  --tblr-link-color-rgb: 155, 123, 255;
+  --tblr-link-hover-color-rgb: 183, 161, 255;
+
+  /* --- Текст --- */
+  --tblr-body-color: #ece9f7;
+  --tblr-secondary: #9b93b8;
+}
+
+/* ---------- Компоненты: кнопки, бейджи, алерты (в тёмной теме) ---------- */
+html:not([data-theme="light"]) .btn-primary {
+  --tblr-btn-bg: var(--tblr-primary);
+  --tblr-btn-border-color: var(--tblr-primary);
+  --tblr-btn-hover-bg: var(--tblr-primary-darken);
+  --tblr-btn-hover-border-color: var(--tblr-primary-darken);
+  --tblr-btn-active-bg: #3a1776;
+  --tblr-btn-active-border-color: #3a1776;
+  box-shadow: 0 4px 14px rgba(74, 29, 150, 0.35);
+}
+
+html:not([data-theme="light"]) .badge.bg-primary,
+html:not([data-theme="light"]) .bg-primary {
+  background-color: #4a1d96 !important;
+}
+
+html:not([data-theme="light"]) .text-primary {
+  color: #4a1d96 !important;
+}
+
+html:not([data-theme="light"]) .alert-primary {
+  --tblr-alert-color: #4a1d96;
+  background-color: rgba(74, 29, 150, 0.08);
+  border-color: rgba(74, 29, 150, 0.25);
+  color: #341466;
+}
+
+/* ---------- Форма: фокус в фирмовом фиолетовом ---------- */
+.form-control:focus,
+.form-select:focus {
+  border-color: #6740c2;
+  box-shadow: 0 0 0 0.25rem rgba(74, 29, 150, 0.2);
+}
+
+/* ---------- Навигация: глубокий чёрный ---------- */
+.navbar,
+.page-wrapper .navbar {
+  background-color: #0b0918;
+}
+
+html:not([data-theme="light"]) .nav-pills .nav-link.active,
+html:not([data-theme="light"]) .nav-pills .nav-item.show .nav-link {
+  background-color: #4a1d96;
+  color: #fff;
+}
+
+html:not([data-theme="light"]) .nav-link {
+  color: #4a1d96;
+}
+
+html:not([data-theme="light"]) .nav-tabs .nav-link.active {
+  color: #4a1d96;
+  border-bottom-color: #4a1d96;
+}
+
+html:not([data-theme="light"]) .dropdown-item.active,
+html:not([data-theme="light"]) .dropdown-item:active {
+  background-color: #4a1d96;
+}
+
+/* ---------- Прогресс, чекбоксы, радио, переключатели ---------- */
+html:not([data-theme="light"]) .progress-bar {
+  background-color: #4a1d96;
+}
+
+html:not([data-theme="light"]) .form-check-input:checked {
+  background-color: #4a1d96;
+  border-color: #4a1d96;
+}
+
+.form-check-input:focus {
+  border-color: #6740c2;
+  box-shadow: 0 0 0 0.25rem rgba(74, 29, 150, 0.2);
+}
+
+/* ---------- Пагинация ---------- */
+html:not([data-theme="light"]) .page-link {
+  color: #4a1d96;
+}
+
+html:not([data-theme="light"]) .page-item.active .page-link {
+  background-color: #4a1d96;
+  border-color: #4a1d96;
+  color: #fff;
+}
+
+/* ---------- Таблицы ---------- */
+html:not([data-theme="light"]) .table thead th {
+  color: #ece9f7;
+  border-bottom-color: #221c3a;
+}
+
+/* ---------- Тёмная тема: мягкое фиолетовое свечение карточек ---------- */
+[data-bs-theme="dark"] .card,
+html:not([data-theme="light"]) .card {
+  box-shadow: 0 0 0 1px rgba(89, 50, 196, 0.12), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+[data-bs-theme="dark"] .btn-primary,
+html:not([data-theme="light"]) .btn-primary {
+  box-shadow: 0 4px 18px rgba(89, 50, 196, 0.45);
+}
+
+/* ==========================================================================
+   СВЕТЛАЯ ТЕМА — переопределение компонентов (var-based + явные цвета)
+   ========================================================================== */
+html[data-theme="light"] .bg-primary,
+html[data-theme="light"] .badge.bg-primary,
+[data-bs-theme="light"] .bg-primary,
+[data-bs-theme="light"] .badge.bg-primary {
+  background-color: var(--tblr-primary, #4a1d96) !important;
+}
+
+html[data-theme="light"] .text-primary,
+[data-bs-theme="light"] .text-primary {
+  color: var(--tblr-primary, #4a1d96) !important;
+}
+
+html[data-theme="light"] .nav-link,
+[data-bs-theme="light"] .nav-link {
+  color: var(--tblr-primary, #4a1d96);
+}
+
+html[data-theme="light"] .page-link,
+[data-bs-theme="light"] .page-link {
+  color: var(--tblr-primary, #4a1d96);
+}
+
+html[data-theme="light"] .table thead th,
+[data-bs-theme="light"] .table thead th {
+  color: var(--tblr-body-color, #0b0918);
+  border-bottom-color: var(--tblr-border-color, #e4e0f2);
+}
+
+html[data-theme="light"] .alert-primary,
+[data-bs-theme="light"] .alert-primary {
+  background-color: rgba(74, 29, 150, 0.08);
+  border-color: rgba(74, 29, 150, 0.25);
+  color: #341466;
+}
+
+html[data-theme="light"] body,
+[data-bs-theme="light"] body {
+  background-color: var(--tblr-body-bg, #f4f2fa);
+  color: var(--tblr-body-color, #0b0918);
+}
+
+html[data-theme="light"] .form-control,
+html[data-theme="light"] .form-select,
+[data-bs-theme="light"] .form-control,
+[data-bs-theme="light"] .form-select {
+  background-color: var(--tblr-bg-forms, #f7f5fc);
+  color: var(--tblr-body-color, #0b0918);
+  border-color: var(--tblr-border-color, #e4e0f2);
+}
+
+html[data-theme="light"] .card,
+[data-bs-theme="light"] .card {
+  background-color: var(--tblr-card-bg, #ffffff);
+  color: var(--tblr-body-color, #0b0918);
+}
+
+/* Переключатель темы: иконки sun/moon */
+.theme-toggle .icon-moon { display: none; }
+.theme-toggle .icon-sun  { display: inline-block; }
+html[data-theme="light"] .theme-toggle .icon-moon { display: inline-block; }
+html[data-theme="light"] .theme-toggle .icon-sun  { display: none; }

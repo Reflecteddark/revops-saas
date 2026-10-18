@@ -159,3 +159,17 @@ WEB_JS_DIR = BASE_DIR / "apps" / "web" / "js"
 if WEB_JS_DIR.exists():
     app.mount("/js", StaticFiles(directory=str(WEB_JS_DIR)), name="js")
 
+# Mount Marketing Landing (apps/landing)
+LANDING_DIR = BASE_DIR / "apps" / "landing"
+LANDING_HTML = LANDING_DIR / "index.html"
+if LANDING_HTML.exists():
+    @app.get("/landing", response_class=HTMLResponse)
+    def serve_landing():
+        with open(LANDING_HTML, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+
+    for folder in ["css", "images", "fonts", "audio", "samples", "webfonts"]:
+        sub_dir = LANDING_DIR / folder
+        if sub_dir.exists():
+            app.mount(f"/{folder}", StaticFiles(directory=str(sub_dir)), name=f"landing_{folder}")
+

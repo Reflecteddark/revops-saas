@@ -80,3 +80,25 @@ git branch -M main
 git remote add origin https://github.com/<YOUR-USERNAME>/<YOUR-NEW-REPO>.git
 git push -u origin main
 ```
+
+---
+
+## 🏛️ Единая Monorepo-Архитектура (SSOT)
+
+Весь проект (бэкенд, промо-лендинг и личный кабинет) управляется из **одного** репозитория:
+
+```
+revops-saas/
+├── apps/
+│   ├── api/             # FastAPI Core Backend (CRM коннекторы, база, вебхуки, сокеты)
+│   ├── landing/         # Продающий промо-лендинг ai-rop.ru (index.html, offer, css, images, ...)
+│   └── web/             # Личный кабинет / Дашборд ai-rop.ru/app/ (app.js, js/*.js)
+├── vercel.json          # Маршрутизация Vercel для ai-rop.ru
+└── scripts/
+    └── sync_to_landing_mirror.py # Утилита синхронизации с переходным зеркалом
+```
+
+### Маршрутизация на проде (ai-rop.ru):
+- `https://ai-rop.ru/` → Промо-лендинг (`apps/landing/index.html`)
+- `https://ai-rop.ru/app/` → Личный кабинет (`apps/web/index.html`)
+- `https://report.ai-rop.ru/` → Cloudflare Tunnel к FastAPI (`apps/api/`)

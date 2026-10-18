@@ -1,0 +1,458 @@
+/* ==========================================================================
+   REVOPS DARK LUXE BENTO DESIGN SYSTEM (ai-rop.ru) — ПОЛНОЦЕННАЯ ТЕМА
+   Тёмная тема (глубокий чёрный + фиолетовый глубокий) — по умолчанию.
+   Светлая тема включается атрибутом html[data-theme="light"]
+   (переключатель в шапке, выбор сохраняется в localStorage).
+   ========================================================================== */
+
+:root {
+  --bg-void: #06070a;
+  --bg-canvas: #090c14;
+  --bg-card: #0d111d;
+  --bg-card-hover: #141a2a;
+  --bg-card-featured: rgba(28, 20, 56, 0.88);
+  --bg-glass: rgba(255, 255, 255, 0.04);
+  
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-subtle-hover: rgba(124, 58, 237, 0.45);
+  --border-glow-p50: linear-gradient(135deg, rgba(89, 50, 196, 0.6), rgba(155, 123, 255, 0.35), rgba(89, 50, 196, 0.6));
+  
+  /* Фиолетовый глубокий — основной акцент (в тон css/tabler-theme.css) */
+  --accent-purple: #5932c4;
+  --accent-purple-deep: #4a1d96;
+  --accent-purple-glow: rgba(89, 50, 196, 0.4);
+  /* Cyan-акцент убран: палитра ограничена глубоким чёрным и фиолетовым */
+  --accent-cyan: #9b7bff;
+  --accent-cyan-glow: rgba(155, 123, 255, 0.3);
+  --accent-emerald: #10b981;
+  --accent-rose: #f43f5e;
+  --accent-amber: #f59e0b;
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Body & Layout Overrides */
+
+html[data-theme="dark"] {
+  background-color: var(--bg-void) !important;
+  color-scheme: dark;
+}
+html[data-theme="dark"] body,
+html[data-theme="dark"] body {
+  background-color: var(--bg-void) !important;
+  color: var(--text-primary) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* Dark Dot Pattern with Neon Violet Flecks */
+
+html[data-theme="dark"] .bg-dot-pattern {
+  background-image: radial-gradient(rgba(89, 50, 196, 0.16) 1.2px, transparent 1.2px) !important;
+  background-size: 24px 24px !important;
+}
+
+
+/* Sections Background Harmonization */
+
+html[data-theme="dark"] section.bg-white,
+html[data-theme="dark"] div.bg-white,
+html[data-theme="dark"] header.bg-white:not(:has(#theme-toggle)),
+html[data-theme="dark"] header.bg-white\/95:not(:has(#theme-toggle)) {
+  background-color: var(--bg-void) !important;
+}
+html[data-theme="dark"] section.bg-slate-50,
+html[data-theme="dark"] section.bg-slate-50\/80,
+html[data-theme="dark"] section.bg-slate-100 {
+  background-color: var(--bg-canvas) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+
+/* Fixed Header in Deep Frosted Dark Glass */
+
+html[data-theme="dark"] header:not(:has(#theme-toggle)) {
+  background: rgba(6, 7, 10, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+
+
+/* Bento Cards & Glass Panels (Attio / Raycast / Clay Luxury Aesthetic) */
+
+html[data-theme="dark"] .bento-card,
+html[data-theme="dark"] .glass-card,
+html[data-theme="dark"] .rounded-3xl.bg-slate-50,
+html[data-theme="dark"] .rounded-2xl.bg-slate-50,
+html[data-theme="dark"] .rounded-3xl.bg-white,
+html[data-theme="dark"] .rounded-2xl.bg-white {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 8px 24px -2px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  transition: all 0.25s var(--ease-spring) !important;
+}
+html[data-theme="dark"] .bento-card:hover,
+html[data-theme="dark"] .glass-card:hover,
+html[data-theme="dark"] .rounded-3xl.bg-slate-50:hover,
+html[data-theme="dark"] .rounded-2xl.bg-slate-50:hover,
+html[data-theme="dark"] .rounded-3xl.bg-white:hover,
+html[data-theme="dark"] .rounded-2xl.bg-white:hover {
+  background: var(--bg-card-hover) !important;
+  border-color: rgba(124, 58, 237, 0.5) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.16), 0 14px 36px -4px rgba(89, 50, 196, 0.25) !important;
+  transform: translateY(-2px) !important;
+}
+html[data-theme="dark"] .glass-panel {
+  background: rgba(10, 12, 16, 0.88) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6) !important;
+}
+
+
+/* Featured / Highlighted Tier Cards (Comparison & Pricing) */
+
+html[data-theme="dark"] .bg-violet-100\/50,
+html[data-theme="dark"] .bg-violet-50\/70,
+html[data-theme="dark"] .bg-violet-100\/70 {
+  background: var(--bg-card-featured) !important;
+  border-color: #5932c4 !important;
+  box-shadow: 0 0 35px rgba(89, 50, 196, 0.35), 0 12px 32px -4px rgba(0, 0, 0, 0.5) !important;
+}
+
+
+/* Typography Overrides */
+
+html[data-theme="dark"] .text-slate-900,
+html[data-theme="dark"] .text-slate-800 {
+  color: var(--text-primary) !important;
+}
+html[data-theme="dark"] .text-slate-700,
+html[data-theme="dark"] .text-slate-600 {
+  color: var(--text-secondary) !important;
+}
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+
+
+/* High-Contrast Violet Glowing Text */
+
+html[data-theme="dark"] .text-violet-600,
+html[data-theme="dark"] .text-violet-700 {
+  color: #a78bfa !important;
+}
+html[data-theme="dark"] .text-violet-800,
+html[data-theme="dark"] .text-violet-900,
+html[data-theme="dark"] .text-violet-950 {
+  color: #c4b5fd !important;
+}
+
+
+/* Borders */
+
+html[data-theme="dark"] .border-slate-200,
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .border-slate-300,
+html[data-theme="dark"] .border-slate-800 {
+  border-color: var(--border-subtle) !important;
+}
+html[data-theme="dark"] .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html[data-theme="dark"] .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-subtle) !important;
+}
+
+
+/* Badges & Chip Components */
+
+html[data-theme="dark"] .bg-slate-100,
+html[data-theme="dark"] .bg-slate-200 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--border-subtle) !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .bg-violet-50 {
+  background-color: rgba(89, 50, 196, 0.15) !important;
+  border-color: rgba(89, 50, 196, 0.35) !important;
+  color: #c4b5fd !important;
+}
+html[data-theme="dark"] .bg-sky-50 {
+  background-color: rgba(155, 123, 255, 0.12) !important;
+  border-color: rgba(155, 123, 255, 0.3) !important;
+  color: #38bdf8 !important;
+}
+html[data-theme="dark"] .bg-purple-50 {
+  background-color: rgba(168, 85, 247, 0.12) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+  color: #c084fc !important;
+}
+html[data-theme="dark"] .bg-red-50,
+html[data-theme="dark"] .bg-red-50\/20,
+html[data-theme="dark"] .bg-red-50\/50,
+html[data-theme="dark"] .bg-red-100 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+html[data-theme="dark"] .text-red-600,
+html[data-theme="dark"] .text-red-700 {
+  color: #fb7185 !important;
+}
+html[data-theme="dark"] .bg-amber-50,
+html[data-theme="dark"] .bg-amber-50\/15,
+html[data-theme="dark"] .bg-amber-50\/70,
+html[data-theme="dark"] .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+html[data-theme="dark"] .text-amber-700,
+html[data-theme="dark"] .text-amber-800 {
+  color: #fbbf24 !important;
+}
+html[data-theme="dark"] .bg-emerald-50,
+html[data-theme="dark"] .bg-emerald-50\/10,
+html[data-theme="dark"] .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+html[data-theme="dark"] .text-emerald-700,
+html[data-theme="dark"] .text-emerald-800,
+html[data-theme="dark"] .text-emerald-600 {
+  color: #34d399 !important;
+}
+
+
+/* Primary Neon Buttons */
+
+html[data-theme="dark"] .bg-violet-500 {
+  background: linear-gradient(135deg, #5932c4 0%, #6038f7 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 24px rgba(89, 50, 196, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+html[data-theme="dark"] .bg-violet-500:hover,
+html[data-theme="dark"] .hover\:bg-violet-400:hover {
+  background: linear-gradient(135deg, #8466ff 0%, #714af9 100%) !important;
+  box-shadow: 0 0 36px rgba(89, 50, 196, 0.65) !important;
+}
+
+
+/* Form Inputs & Interactive Controls */
+
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="tel"],
+html[data-theme="dark"] input[type="email"],
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background-color: rgba(14, 17, 24, 0.95) !important;
+  color: #f8fafc !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 0.75rem !important;
+}
+html[data-theme="dark"] input[type="text"]:focus,
+html[data-theme="dark"] input[type="tel"]:focus,
+html[data-theme="dark"] input[type="email"]:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] textarea:focus {
+  border-color: #5932c4 !important;
+  box-shadow: 0 0 0 3px rgba(89, 50, 196, 0.3) !important;
+}
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #64748b !important;
+}
+
+
+/* Range Sliders with Cyber Glow */
+
+html[data-theme="dark"] input[type=range] {
+  background: #181c28 !important;
+}
+html[data-theme="dark"] input[type=range]::-webkit-slider-runnable-track {
+  background: #181c28 !important;
+}
+html[data-theme="dark"] input[type=range]::-webkit-slider-thumb {
+  background: #5932c4 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 16px rgba(89, 50, 196, 0.8) !important;
+}
+html[data-theme="dark"] input[type=range]::-moz-range-track {
+  background: #181c28 !important;
+}
+html[data-theme="dark"] input[type=range]::-moz-range-thumb {
+  background: #5932c4 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 16px rgba(89, 50, 196, 0.8) !important;
+}
+
+
+/* Audio Player Waveform in Cyber Cyan / Violet */
+
+html[data-theme="dark"] .wave-bar {
+  background: linear-gradient(180deg, #00d4ff 0%, #5932c4 100%) !important;
+  border-radius: 9999px !important;
+}
+
+
+/* FAQ Accordion Details / Summary */
+
+html[data-theme="dark"] details {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 1rem !important;
+  transition: all 0.25s ease !important;
+}
+html[data-theme="dark"] details:hover {
+  border-color: rgba(89, 50, 196, 0.35) !important;
+}
+html[data-theme="dark"] details[open] {
+  border-color: rgba(89, 50, 196, 0.5) !important;
+  box-shadow: 0 8px 24px -2px rgba(89, 50, 196, 0.15) !important;
+}
+
+
+/* CTA Bottom Section */
+
+html[data-theme="dark"] #cta {
+  background: radial-gradient(circle at 50% 0%, rgba(89, 50, 196, 0.24) 0%, rgba(6, 7, 10, 1) 75%) !important;
+  border-top: 1px solid var(--border-subtle) !important;
+}
+
+
+/* Custom Scrollbar */
+
+html[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #06070a !important;
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 4px;
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(89, 50, 196, 0.5) !important;
+}
+
+
+/* Glow Utilities */
+
+html[data-theme="dark"] .glow-emerald {
+  box-shadow: 0 0 40px -5px rgba(89, 50, 196, 0.35) !important;
+}
+html[data-theme="dark"] .glow-cyan {
+  box-shadow: 0 0 40px -5px rgba(155, 123, 255, 0.35) !important;
+}
+html[data-theme="dark"] .glow-rose {
+  box-shadow: 0 0 40px -5px rgba(244, 63, 94, 0.35) !important;
+}
+/* ==========================================================================
+   UI / UX CONTRAST & BUTTON POLISH (HIGH READABILITY GUARDS)
+   ========================================================================== */
+
+/* High-contrast solid white secondary buttons (Hero & modals) */
+html[data-theme="dark"] a.bg-white,
+html[data-theme="dark"] a.bg-white span,
+html[data-theme="dark"] button.bg-white:not(.track-btn):not([class*="niche-btn"]) {
+  color: #0f172a !important;
+}
+html[data-theme="dark"] a.bg-white i,
+html[data-theme="dark"] button.bg-white i {
+  color: #7c3aed !important;
+}
+
+/* Audio Demo Unselected Track Tabs & Niche Tabs */
+html[data-theme="dark"] .track-btn:not(.active),
+html[data-theme="dark"] .niche-btn:not(.active) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+html[data-theme="dark"] .track-btn:not(.active):hover,
+html[data-theme="dark"] .niche-btn:not(.active):hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Audio Player Progress Container & Dialogue Speech Bubbles */
+html[data-theme="dark"] #progressContainer {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+html[data-theme="dark"] .rounded-xl.bg-slate-50 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Pain Points / Revenue Leak Cards (High-Contrast Cyber Danger Theme) */
+html[data-theme="dark"] #pain-points .bento-card {
+  background: linear-gradient(180deg, #101422 0%, #0a0d17 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 10px 28px -4px rgba(0, 0, 0, 0.55) !important;
+}
+html[data-theme="dark"] #pain-points .bento-card:hover {
+  border-color: rgba(244, 63, 94, 0.45) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.15), 0 16px 36px -4px rgba(244, 63, 94, 0.22) !important;
+  transform: translateY(-2px) !important;
+}
+html[data-theme="dark"] #pain-points .font-mono.text-red-500,
+html[data-theme="dark"] #pain-points .font-mono.text-red-600 {
+  color: #ff4757 !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Solution Framework (4 Pillars) High-End Bento Styling */
+html[data-theme="dark"] #solution-framework .glass-card {
+  background: linear-gradient(180deg, #101422 0%, #0a0d17 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 10px 28px -4px rgba(0, 0, 0, 0.55) !important;
+}
+html[data-theme="dark"] #solution-framework .glass-card:hover {
+  border-color: rgba(124, 58, 237, 0.5) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.18), 0 16px 36px -4px rgba(89, 50, 196, 0.25) !important;
+  transform: translateY(-2px) !important;
+}
+html[data-theme="dark"] #solution-framework .w-12.h-12 {
+  background: rgba(124, 58, 237, 0.15) !important;
+  border: 1px solid rgba(124, 58, 237, 0.35) !important;
+  color: #c4b5fd !important;
+}
+html[data-theme="dark"] #solution-framework .w-12.h-12.bg-red-50 {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #fca5a5 !important;
+}
+
+/* High-Contrast Secondary Slate-900 CTA Buttons in Dark Mode */
+html[data-theme="dark"] a.bg-slate-900,
+html[data-theme="dark"] button.bg-slate-900 {
+  background: linear-gradient(135deg, rgba(89, 50, 196, 0.25) 0%, rgba(124, 58, 237, 0.15) 100%) !important;
+  border: 1px solid rgba(124, 58, 237, 0.45) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 20px rgba(89, 50, 196, 0.25) !important;
+}
+html[data-theme="dark"] a.bg-slate-900:hover,
+html[data-theme="dark"] button.bg-slate-900:hover {
+  background: linear-gradient(135deg, rgba(89, 50, 196, 0.4) 0%, rgba(124, 58, 237, 0.3) 100%) !important;
+  border-color: rgba(124, 58, 237, 0.75) !important;
+  box-shadow: 0 6px 28px rgba(89, 50, 196, 0.4) !important;
+}
+
+/* Form Unselected Tariff Buttons */
+html[data-theme="dark"] button[id^="tariffBtn_"]:not([class*="border-violet-500"]) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}

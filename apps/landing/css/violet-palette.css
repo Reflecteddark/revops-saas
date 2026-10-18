@@ -1,0 +1,1186 @@
+.bg-violet-50 { --tw-bg-opacity: 1; background-color: rgb(245 243 255 / var(--tw-bg-opacity, 1)); }
+.text-violet-50 { --tw-text-opacity: 1; color: rgb(245 243 255 / var(--tw-text-opacity, 1)); }
+.border-violet-50 { --tw-border-opacity: 1; border-color: rgb(245 243 255 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-50:hover { --tw-bg-opacity: 1; background-color: rgb(245 243 255 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-50:hover { --tw-text-opacity: 1; color: rgb(245 243 255 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-50:hover { --tw-border-opacity: 1; border-color: rgb(245 243 255 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-50:focus { --tw-border-opacity: 1; border-color: rgb(245 243 255 / var(--tw-border-opacity, 1)); }
+.bg-violet-100 { --tw-bg-opacity: 1; background-color: rgb(237 233 254 / var(--tw-bg-opacity, 1)); }
+.text-violet-100 { --tw-text-opacity: 1; color: rgb(237 233 254 / var(--tw-text-opacity, 1)); }
+.border-violet-100 { --tw-border-opacity: 1; border-color: rgb(237 233 254 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-100:hover { --tw-bg-opacity: 1; background-color: rgb(237 233 254 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-100:hover { --tw-text-opacity: 1; color: rgb(237 233 254 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-100:hover { --tw-border-opacity: 1; border-color: rgb(237 233 254 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-100:focus { --tw-border-opacity: 1; border-color: rgb(237 233 254 / var(--tw-border-opacity, 1)); }
+.bg-violet-200 { --tw-bg-opacity: 1; background-color: rgb(221 214 254 / var(--tw-bg-opacity, 1)); }
+.text-violet-200 { --tw-text-opacity: 1; color: rgb(221 214 254 / var(--tw-text-opacity, 1)); }
+.border-violet-200 { --tw-border-opacity: 1; border-color: rgb(221 214 254 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-200:hover { --tw-bg-opacity: 1; background-color: rgb(221 214 254 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-200:hover { --tw-text-opacity: 1; color: rgb(221 214 254 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-200:hover { --tw-border-opacity: 1; border-color: rgb(221 214 254 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-200:focus { --tw-border-opacity: 1; border-color: rgb(221 214 254 / var(--tw-border-opacity, 1)); }
+.bg-violet-300 { --tw-bg-opacity: 1; background-color: rgb(196 181 253 / var(--tw-bg-opacity, 1)); }
+.text-violet-300 { --tw-text-opacity: 1; color: rgb(196 181 253 / var(--tw-text-opacity, 1)); }
+.border-violet-300 { --tw-border-opacity: 1; border-color: rgb(196 181 253 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-300:hover { --tw-bg-opacity: 1; background-color: rgb(196 181 253 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-300:hover { --tw-text-opacity: 1; color: rgb(196 181 253 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-300:hover { --tw-border-opacity: 1; border-color: rgb(196 181 253 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-300:focus { --tw-border-opacity: 1; border-color: rgb(196 181 253 / var(--tw-border-opacity, 1)); }
+.bg-violet-400 { --tw-bg-opacity: 1; background-color: rgb(167 139 250 / var(--tw-bg-opacity, 1)); }
+.text-violet-400 { --tw-text-opacity: 1; color: rgb(167 139 250 / var(--tw-text-opacity, 1)); }
+.border-violet-400 { --tw-border-opacity: 1; border-color: rgb(167 139 250 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-400:hover { --tw-bg-opacity: 1; background-color: rgb(167 139 250 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-400:hover { --tw-text-opacity: 1; color: rgb(167 139 250 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-400:hover { --tw-border-opacity: 1; border-color: rgb(167 139 250 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-400:focus { --tw-border-opacity: 1; border-color: rgb(167 139 250 / var(--tw-border-opacity, 1)); }
+.bg-violet-500 { --tw-bg-opacity: 1; background-color: rgb(139 92 246 / var(--tw-bg-opacity, 1)); }
+.text-violet-500 { --tw-text-opacity: 1; color: rgb(139 92 246 / var(--tw-text-opacity, 1)); }
+.border-violet-500 { --tw-border-opacity: 1; border-color: rgb(139 92 246 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-500:hover { --tw-bg-opacity: 1; background-color: rgb(139 92 246 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-500:hover { --tw-text-opacity: 1; color: rgb(139 92 246 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-500:hover { --tw-border-opacity: 1; border-color: rgb(139 92 246 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-500:focus { --tw-border-opacity: 1; border-color: rgb(139 92 246 / var(--tw-border-opacity, 1)); }
+.bg-violet-600 { --tw-bg-opacity: 1; background-color: rgb(124 58 237 / var(--tw-bg-opacity, 1)); }
+.text-violet-600 { --tw-text-opacity: 1; color: rgb(124 58 237 / var(--tw-text-opacity, 1)); }
+.border-violet-600 { --tw-border-opacity: 1; border-color: rgb(124 58 237 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-600:hover { --tw-bg-opacity: 1; background-color: rgb(124 58 237 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-600:hover { --tw-text-opacity: 1; color: rgb(124 58 237 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-600:hover { --tw-border-opacity: 1; border-color: rgb(124 58 237 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-600:focus { --tw-border-opacity: 1; border-color: rgb(124 58 237 / var(--tw-border-opacity, 1)); }
+.bg-violet-700 { --tw-bg-opacity: 1; background-color: rgb(109 40 217 / var(--tw-bg-opacity, 1)); }
+.text-violet-700 { --tw-text-opacity: 1; color: rgb(109 40 217 / var(--tw-text-opacity, 1)); }
+.border-violet-700 { --tw-border-opacity: 1; border-color: rgb(109 40 217 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-700:hover { --tw-bg-opacity: 1; background-color: rgb(109 40 217 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-700:hover { --tw-text-opacity: 1; color: rgb(109 40 217 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-700:hover { --tw-border-opacity: 1; border-color: rgb(109 40 217 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-700:focus { --tw-border-opacity: 1; border-color: rgb(109 40 217 / var(--tw-border-opacity, 1)); }
+.bg-violet-800 { --tw-bg-opacity: 1; background-color: rgb(91 33 182 / var(--tw-bg-opacity, 1)); }
+.text-violet-800 { --tw-text-opacity: 1; color: rgb(91 33 182 / var(--tw-text-opacity, 1)); }
+.border-violet-800 { --tw-border-opacity: 1; border-color: rgb(91 33 182 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-800:hover { --tw-bg-opacity: 1; background-color: rgb(91 33 182 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-800:hover { --tw-text-opacity: 1; color: rgb(91 33 182 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-800:hover { --tw-border-opacity: 1; border-color: rgb(91 33 182 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-800:focus { --tw-border-opacity: 1; border-color: rgb(91 33 182 / var(--tw-border-opacity, 1)); }
+.bg-violet-900 { --tw-bg-opacity: 1; background-color: rgb(76 29 149 / var(--tw-bg-opacity, 1)); }
+.text-violet-900 { --tw-text-opacity: 1; color: rgb(76 29 149 / var(--tw-text-opacity, 1)); }
+.border-violet-900 { --tw-border-opacity: 1; border-color: rgb(76 29 149 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-900:hover { --tw-bg-opacity: 1; background-color: rgb(76 29 149 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-900:hover { --tw-text-opacity: 1; color: rgb(76 29 149 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-900:hover { --tw-border-opacity: 1; border-color: rgb(76 29 149 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-900:focus { --tw-border-opacity: 1; border-color: rgb(76 29 149 / var(--tw-border-opacity, 1)); }
+.bg-violet-950 { --tw-bg-opacity: 1; background-color: rgb(46 16 101 / var(--tw-bg-opacity, 1)); }
+.text-violet-950 { --tw-text-opacity: 1; color: rgb(46 16 101 / var(--tw-text-opacity, 1)); }
+.border-violet-950 { --tw-border-opacity: 1; border-color: rgb(46 16 101 / var(--tw-border-opacity, 1)); }
+.hover\:bg-violet-950:hover { --tw-bg-opacity: 1; background-color: rgb(46 16 101 / var(--tw-bg-opacity, 1)); }
+.hover\:text-violet-950:hover { --tw-text-opacity: 1; color: rgb(46 16 101 / var(--tw-text-opacity, 1)); }
+.hover\:border-violet-950:hover { --tw-border-opacity: 1; border-color: rgb(46 16 101 / var(--tw-border-opacity, 1)); }
+.focus\:border-violet-950:focus { --tw-border-opacity: 1; border-color: rgb(46 16 101 / var(--tw-border-opacity, 1)); }
+.bg-violet-50\/5 { background-color: rgba(245, 243, 255, 0.05); }
+.border-violet-50\/5 { border-color: rgba(245, 243, 255, 0.05); }
+.text-violet-50\/5 { color: rgba(245, 243, 255, 0.05); }
+.shadow-violet-50\/5 { --tw-shadow-color: rgba(245, 243, 255, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/5:hover { --tw-shadow-color: rgba(245, 243, 255, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/5:hover { --tw-shadow-color: rgba(245, 243, 255, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/5 { --tw-ring-color: rgba(245, 243, 255, 0.05); }
+.focus\:ring-violet-50\/5:focus { --tw-ring-color: rgba(245, 243, 255, 0.05); }
+.bg-violet-50\/10 { background-color: rgba(245, 243, 255, 0.1); }
+.border-violet-50\/10 { border-color: rgba(245, 243, 255, 0.1); }
+.text-violet-50\/10 { color: rgba(245, 243, 255, 0.1); }
+.shadow-violet-50\/10 { --tw-shadow-color: rgba(245, 243, 255, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/10:hover { --tw-shadow-color: rgba(245, 243, 255, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/10:hover { --tw-shadow-color: rgba(245, 243, 255, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/10 { --tw-ring-color: rgba(245, 243, 255, 0.1); }
+.focus\:ring-violet-50\/10:focus { --tw-ring-color: rgba(245, 243, 255, 0.1); }
+.bg-violet-50\/15 { background-color: rgba(245, 243, 255, 0.15); }
+.border-violet-50\/15 { border-color: rgba(245, 243, 255, 0.15); }
+.text-violet-50\/15 { color: rgba(245, 243, 255, 0.15); }
+.shadow-violet-50\/15 { --tw-shadow-color: rgba(245, 243, 255, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/15:hover { --tw-shadow-color: rgba(245, 243, 255, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/15:hover { --tw-shadow-color: rgba(245, 243, 255, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/15 { --tw-ring-color: rgba(245, 243, 255, 0.15); }
+.focus\:ring-violet-50\/15:focus { --tw-ring-color: rgba(245, 243, 255, 0.15); }
+.bg-violet-50\/20 { background-color: rgba(245, 243, 255, 0.2); }
+.border-violet-50\/20 { border-color: rgba(245, 243, 255, 0.2); }
+.text-violet-50\/20 { color: rgba(245, 243, 255, 0.2); }
+.shadow-violet-50\/20 { --tw-shadow-color: rgba(245, 243, 255, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/20:hover { --tw-shadow-color: rgba(245, 243, 255, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/20:hover { --tw-shadow-color: rgba(245, 243, 255, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/20 { --tw-ring-color: rgba(245, 243, 255, 0.2); }
+.focus\:ring-violet-50\/20:focus { --tw-ring-color: rgba(245, 243, 255, 0.2); }
+.bg-violet-50\/25 { background-color: rgba(245, 243, 255, 0.25); }
+.border-violet-50\/25 { border-color: rgba(245, 243, 255, 0.25); }
+.text-violet-50\/25 { color: rgba(245, 243, 255, 0.25); }
+.shadow-violet-50\/25 { --tw-shadow-color: rgba(245, 243, 255, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/25:hover { --tw-shadow-color: rgba(245, 243, 255, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/25:hover { --tw-shadow-color: rgba(245, 243, 255, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/25 { --tw-ring-color: rgba(245, 243, 255, 0.25); }
+.focus\:ring-violet-50\/25:focus { --tw-ring-color: rgba(245, 243, 255, 0.25); }
+.bg-violet-50\/30 { background-color: rgba(245, 243, 255, 0.3); }
+.border-violet-50\/30 { border-color: rgba(245, 243, 255, 0.3); }
+.text-violet-50\/30 { color: rgba(245, 243, 255, 0.3); }
+.shadow-violet-50\/30 { --tw-shadow-color: rgba(245, 243, 255, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/30:hover { --tw-shadow-color: rgba(245, 243, 255, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/30:hover { --tw-shadow-color: rgba(245, 243, 255, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/30 { --tw-ring-color: rgba(245, 243, 255, 0.3); }
+.focus\:ring-violet-50\/30:focus { --tw-ring-color: rgba(245, 243, 255, 0.3); }
+.bg-violet-50\/40 { background-color: rgba(245, 243, 255, 0.4); }
+.border-violet-50\/40 { border-color: rgba(245, 243, 255, 0.4); }
+.text-violet-50\/40 { color: rgba(245, 243, 255, 0.4); }
+.shadow-violet-50\/40 { --tw-shadow-color: rgba(245, 243, 255, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/40:hover { --tw-shadow-color: rgba(245, 243, 255, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/40:hover { --tw-shadow-color: rgba(245, 243, 255, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/40 { --tw-ring-color: rgba(245, 243, 255, 0.4); }
+.focus\:ring-violet-50\/40:focus { --tw-ring-color: rgba(245, 243, 255, 0.4); }
+.bg-violet-50\/50 { background-color: rgba(245, 243, 255, 0.5); }
+.border-violet-50\/50 { border-color: rgba(245, 243, 255, 0.5); }
+.text-violet-50\/50 { color: rgba(245, 243, 255, 0.5); }
+.shadow-violet-50\/50 { --tw-shadow-color: rgba(245, 243, 255, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/50:hover { --tw-shadow-color: rgba(245, 243, 255, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/50:hover { --tw-shadow-color: rgba(245, 243, 255, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/50 { --tw-ring-color: rgba(245, 243, 255, 0.5); }
+.focus\:ring-violet-50\/50:focus { --tw-ring-color: rgba(245, 243, 255, 0.5); }
+.bg-violet-50\/60 { background-color: rgba(245, 243, 255, 0.6); }
+.border-violet-50\/60 { border-color: rgba(245, 243, 255, 0.6); }
+.text-violet-50\/60 { color: rgba(245, 243, 255, 0.6); }
+.shadow-violet-50\/60 { --tw-shadow-color: rgba(245, 243, 255, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/60:hover { --tw-shadow-color: rgba(245, 243, 255, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/60:hover { --tw-shadow-color: rgba(245, 243, 255, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/60 { --tw-ring-color: rgba(245, 243, 255, 0.6); }
+.focus\:ring-violet-50\/60:focus { --tw-ring-color: rgba(245, 243, 255, 0.6); }
+.bg-violet-50\/70 { background-color: rgba(245, 243, 255, 0.7); }
+.border-violet-50\/70 { border-color: rgba(245, 243, 255, 0.7); }
+.text-violet-50\/70 { color: rgba(245, 243, 255, 0.7); }
+.shadow-violet-50\/70 { --tw-shadow-color: rgba(245, 243, 255, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/70:hover { --tw-shadow-color: rgba(245, 243, 255, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/70:hover { --tw-shadow-color: rgba(245, 243, 255, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/70 { --tw-ring-color: rgba(245, 243, 255, 0.7); }
+.focus\:ring-violet-50\/70:focus { --tw-ring-color: rgba(245, 243, 255, 0.7); }
+.bg-violet-50\/80 { background-color: rgba(245, 243, 255, 0.8); }
+.border-violet-50\/80 { border-color: rgba(245, 243, 255, 0.8); }
+.text-violet-50\/80 { color: rgba(245, 243, 255, 0.8); }
+.shadow-violet-50\/80 { --tw-shadow-color: rgba(245, 243, 255, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/80:hover { --tw-shadow-color: rgba(245, 243, 255, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/80:hover { --tw-shadow-color: rgba(245, 243, 255, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/80 { --tw-ring-color: rgba(245, 243, 255, 0.8); }
+.focus\:ring-violet-50\/80:focus { --tw-ring-color: rgba(245, 243, 255, 0.8); }
+.bg-violet-50\/90 { background-color: rgba(245, 243, 255, 0.9); }
+.border-violet-50\/90 { border-color: rgba(245, 243, 255, 0.9); }
+.text-violet-50\/90 { color: rgba(245, 243, 255, 0.9); }
+.shadow-violet-50\/90 { --tw-shadow-color: rgba(245, 243, 255, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-50\/90:hover { --tw-shadow-color: rgba(245, 243, 255, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-50\/90:hover { --tw-shadow-color: rgba(245, 243, 255, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-50\/90 { --tw-ring-color: rgba(245, 243, 255, 0.9); }
+.focus\:ring-violet-50\/90:focus { --tw-ring-color: rgba(245, 243, 255, 0.9); }
+.bg-violet-100\/5 { background-color: rgba(237, 233, 254, 0.05); }
+.border-violet-100\/5 { border-color: rgba(237, 233, 254, 0.05); }
+.text-violet-100\/5 { color: rgba(237, 233, 254, 0.05); }
+.shadow-violet-100\/5 { --tw-shadow-color: rgba(237, 233, 254, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/5:hover { --tw-shadow-color: rgba(237, 233, 254, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/5:hover { --tw-shadow-color: rgba(237, 233, 254, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/5 { --tw-ring-color: rgba(237, 233, 254, 0.05); }
+.focus\:ring-violet-100\/5:focus { --tw-ring-color: rgba(237, 233, 254, 0.05); }
+.bg-violet-100\/10 { background-color: rgba(237, 233, 254, 0.1); }
+.border-violet-100\/10 { border-color: rgba(237, 233, 254, 0.1); }
+.text-violet-100\/10 { color: rgba(237, 233, 254, 0.1); }
+.shadow-violet-100\/10 { --tw-shadow-color: rgba(237, 233, 254, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/10:hover { --tw-shadow-color: rgba(237, 233, 254, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/10:hover { --tw-shadow-color: rgba(237, 233, 254, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/10 { --tw-ring-color: rgba(237, 233, 254, 0.1); }
+.focus\:ring-violet-100\/10:focus { --tw-ring-color: rgba(237, 233, 254, 0.1); }
+.bg-violet-100\/15 { background-color: rgba(237, 233, 254, 0.15); }
+.border-violet-100\/15 { border-color: rgba(237, 233, 254, 0.15); }
+.text-violet-100\/15 { color: rgba(237, 233, 254, 0.15); }
+.shadow-violet-100\/15 { --tw-shadow-color: rgba(237, 233, 254, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/15:hover { --tw-shadow-color: rgba(237, 233, 254, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/15:hover { --tw-shadow-color: rgba(237, 233, 254, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/15 { --tw-ring-color: rgba(237, 233, 254, 0.15); }
+.focus\:ring-violet-100\/15:focus { --tw-ring-color: rgba(237, 233, 254, 0.15); }
+.bg-violet-100\/20 { background-color: rgba(237, 233, 254, 0.2); }
+.border-violet-100\/20 { border-color: rgba(237, 233, 254, 0.2); }
+.text-violet-100\/20 { color: rgba(237, 233, 254, 0.2); }
+.shadow-violet-100\/20 { --tw-shadow-color: rgba(237, 233, 254, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/20:hover { --tw-shadow-color: rgba(237, 233, 254, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/20:hover { --tw-shadow-color: rgba(237, 233, 254, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/20 { --tw-ring-color: rgba(237, 233, 254, 0.2); }
+.focus\:ring-violet-100\/20:focus { --tw-ring-color: rgba(237, 233, 254, 0.2); }
+.bg-violet-100\/25 { background-color: rgba(237, 233, 254, 0.25); }
+.border-violet-100\/25 { border-color: rgba(237, 233, 254, 0.25); }
+.text-violet-100\/25 { color: rgba(237, 233, 254, 0.25); }
+.shadow-violet-100\/25 { --tw-shadow-color: rgba(237, 233, 254, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/25:hover { --tw-shadow-color: rgba(237, 233, 254, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/25:hover { --tw-shadow-color: rgba(237, 233, 254, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/25 { --tw-ring-color: rgba(237, 233, 254, 0.25); }
+.focus\:ring-violet-100\/25:focus { --tw-ring-color: rgba(237, 233, 254, 0.25); }
+.bg-violet-100\/30 { background-color: rgba(237, 233, 254, 0.3); }
+.border-violet-100\/30 { border-color: rgba(237, 233, 254, 0.3); }
+.text-violet-100\/30 { color: rgba(237, 233, 254, 0.3); }
+.shadow-violet-100\/30 { --tw-shadow-color: rgba(237, 233, 254, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/30:hover { --tw-shadow-color: rgba(237, 233, 254, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/30:hover { --tw-shadow-color: rgba(237, 233, 254, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/30 { --tw-ring-color: rgba(237, 233, 254, 0.3); }
+.focus\:ring-violet-100\/30:focus { --tw-ring-color: rgba(237, 233, 254, 0.3); }
+.bg-violet-100\/40 { background-color: rgba(237, 233, 254, 0.4); }
+.border-violet-100\/40 { border-color: rgba(237, 233, 254, 0.4); }
+.text-violet-100\/40 { color: rgba(237, 233, 254, 0.4); }
+.shadow-violet-100\/40 { --tw-shadow-color: rgba(237, 233, 254, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/40:hover { --tw-shadow-color: rgba(237, 233, 254, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/40:hover { --tw-shadow-color: rgba(237, 233, 254, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/40 { --tw-ring-color: rgba(237, 233, 254, 0.4); }
+.focus\:ring-violet-100\/40:focus { --tw-ring-color: rgba(237, 233, 254, 0.4); }
+.bg-violet-100\/50 { background-color: rgba(237, 233, 254, 0.5); }
+.border-violet-100\/50 { border-color: rgba(237, 233, 254, 0.5); }
+.text-violet-100\/50 { color: rgba(237, 233, 254, 0.5); }
+.shadow-violet-100\/50 { --tw-shadow-color: rgba(237, 233, 254, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/50:hover { --tw-shadow-color: rgba(237, 233, 254, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/50:hover { --tw-shadow-color: rgba(237, 233, 254, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/50 { --tw-ring-color: rgba(237, 233, 254, 0.5); }
+.focus\:ring-violet-100\/50:focus { --tw-ring-color: rgba(237, 233, 254, 0.5); }
+.bg-violet-100\/60 { background-color: rgba(237, 233, 254, 0.6); }
+.border-violet-100\/60 { border-color: rgba(237, 233, 254, 0.6); }
+.text-violet-100\/60 { color: rgba(237, 233, 254, 0.6); }
+.shadow-violet-100\/60 { --tw-shadow-color: rgba(237, 233, 254, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/60:hover { --tw-shadow-color: rgba(237, 233, 254, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/60:hover { --tw-shadow-color: rgba(237, 233, 254, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/60 { --tw-ring-color: rgba(237, 233, 254, 0.6); }
+.focus\:ring-violet-100\/60:focus { --tw-ring-color: rgba(237, 233, 254, 0.6); }
+.bg-violet-100\/70 { background-color: rgba(237, 233, 254, 0.7); }
+.border-violet-100\/70 { border-color: rgba(237, 233, 254, 0.7); }
+.text-violet-100\/70 { color: rgba(237, 233, 254, 0.7); }
+.shadow-violet-100\/70 { --tw-shadow-color: rgba(237, 233, 254, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/70:hover { --tw-shadow-color: rgba(237, 233, 254, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/70:hover { --tw-shadow-color: rgba(237, 233, 254, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/70 { --tw-ring-color: rgba(237, 233, 254, 0.7); }
+.focus\:ring-violet-100\/70:focus { --tw-ring-color: rgba(237, 233, 254, 0.7); }
+.bg-violet-100\/80 { background-color: rgba(237, 233, 254, 0.8); }
+.border-violet-100\/80 { border-color: rgba(237, 233, 254, 0.8); }
+.text-violet-100\/80 { color: rgba(237, 233, 254, 0.8); }
+.shadow-violet-100\/80 { --tw-shadow-color: rgba(237, 233, 254, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/80:hover { --tw-shadow-color: rgba(237, 233, 254, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/80:hover { --tw-shadow-color: rgba(237, 233, 254, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/80 { --tw-ring-color: rgba(237, 233, 254, 0.8); }
+.focus\:ring-violet-100\/80:focus { --tw-ring-color: rgba(237, 233, 254, 0.8); }
+.bg-violet-100\/90 { background-color: rgba(237, 233, 254, 0.9); }
+.border-violet-100\/90 { border-color: rgba(237, 233, 254, 0.9); }
+.text-violet-100\/90 { color: rgba(237, 233, 254, 0.9); }
+.shadow-violet-100\/90 { --tw-shadow-color: rgba(237, 233, 254, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-100\/90:hover { --tw-shadow-color: rgba(237, 233, 254, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-100\/90:hover { --tw-shadow-color: rgba(237, 233, 254, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-100\/90 { --tw-ring-color: rgba(237, 233, 254, 0.9); }
+.focus\:ring-violet-100\/90:focus { --tw-ring-color: rgba(237, 233, 254, 0.9); }
+.bg-violet-200\/5 { background-color: rgba(221, 214, 254, 0.05); }
+.border-violet-200\/5 { border-color: rgba(221, 214, 254, 0.05); }
+.text-violet-200\/5 { color: rgba(221, 214, 254, 0.05); }
+.shadow-violet-200\/5 { --tw-shadow-color: rgba(221, 214, 254, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/5:hover { --tw-shadow-color: rgba(221, 214, 254, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/5:hover { --tw-shadow-color: rgba(221, 214, 254, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/5 { --tw-ring-color: rgba(221, 214, 254, 0.05); }
+.focus\:ring-violet-200\/5:focus { --tw-ring-color: rgba(221, 214, 254, 0.05); }
+.bg-violet-200\/10 { background-color: rgba(221, 214, 254, 0.1); }
+.border-violet-200\/10 { border-color: rgba(221, 214, 254, 0.1); }
+.text-violet-200\/10 { color: rgba(221, 214, 254, 0.1); }
+.shadow-violet-200\/10 { --tw-shadow-color: rgba(221, 214, 254, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/10:hover { --tw-shadow-color: rgba(221, 214, 254, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/10:hover { --tw-shadow-color: rgba(221, 214, 254, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/10 { --tw-ring-color: rgba(221, 214, 254, 0.1); }
+.focus\:ring-violet-200\/10:focus { --tw-ring-color: rgba(221, 214, 254, 0.1); }
+.bg-violet-200\/15 { background-color: rgba(221, 214, 254, 0.15); }
+.border-violet-200\/15 { border-color: rgba(221, 214, 254, 0.15); }
+.text-violet-200\/15 { color: rgba(221, 214, 254, 0.15); }
+.shadow-violet-200\/15 { --tw-shadow-color: rgba(221, 214, 254, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/15:hover { --tw-shadow-color: rgba(221, 214, 254, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/15:hover { --tw-shadow-color: rgba(221, 214, 254, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/15 { --tw-ring-color: rgba(221, 214, 254, 0.15); }
+.focus\:ring-violet-200\/15:focus { --tw-ring-color: rgba(221, 214, 254, 0.15); }
+.bg-violet-200\/20 { background-color: rgba(221, 214, 254, 0.2); }
+.border-violet-200\/20 { border-color: rgba(221, 214, 254, 0.2); }
+.text-violet-200\/20 { color: rgba(221, 214, 254, 0.2); }
+.shadow-violet-200\/20 { --tw-shadow-color: rgba(221, 214, 254, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/20:hover { --tw-shadow-color: rgba(221, 214, 254, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/20:hover { --tw-shadow-color: rgba(221, 214, 254, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/20 { --tw-ring-color: rgba(221, 214, 254, 0.2); }
+.focus\:ring-violet-200\/20:focus { --tw-ring-color: rgba(221, 214, 254, 0.2); }
+.bg-violet-200\/25 { background-color: rgba(221, 214, 254, 0.25); }
+.border-violet-200\/25 { border-color: rgba(221, 214, 254, 0.25); }
+.text-violet-200\/25 { color: rgba(221, 214, 254, 0.25); }
+.shadow-violet-200\/25 { --tw-shadow-color: rgba(221, 214, 254, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/25:hover { --tw-shadow-color: rgba(221, 214, 254, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/25:hover { --tw-shadow-color: rgba(221, 214, 254, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/25 { --tw-ring-color: rgba(221, 214, 254, 0.25); }
+.focus\:ring-violet-200\/25:focus { --tw-ring-color: rgba(221, 214, 254, 0.25); }
+.bg-violet-200\/30 { background-color: rgba(221, 214, 254, 0.3); }
+.border-violet-200\/30 { border-color: rgba(221, 214, 254, 0.3); }
+.text-violet-200\/30 { color: rgba(221, 214, 254, 0.3); }
+.shadow-violet-200\/30 { --tw-shadow-color: rgba(221, 214, 254, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/30:hover { --tw-shadow-color: rgba(221, 214, 254, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/30:hover { --tw-shadow-color: rgba(221, 214, 254, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/30 { --tw-ring-color: rgba(221, 214, 254, 0.3); }
+.focus\:ring-violet-200\/30:focus { --tw-ring-color: rgba(221, 214, 254, 0.3); }
+.bg-violet-200\/40 { background-color: rgba(221, 214, 254, 0.4); }
+.border-violet-200\/40 { border-color: rgba(221, 214, 254, 0.4); }
+.text-violet-200\/40 { color: rgba(221, 214, 254, 0.4); }
+.shadow-violet-200\/40 { --tw-shadow-color: rgba(221, 214, 254, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/40:hover { --tw-shadow-color: rgba(221, 214, 254, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/40:hover { --tw-shadow-color: rgba(221, 214, 254, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/40 { --tw-ring-color: rgba(221, 214, 254, 0.4); }
+.focus\:ring-violet-200\/40:focus { --tw-ring-color: rgba(221, 214, 254, 0.4); }
+.bg-violet-200\/50 { background-color: rgba(221, 214, 254, 0.5); }
+.border-violet-200\/50 { border-color: rgba(221, 214, 254, 0.5); }
+.text-violet-200\/50 { color: rgba(221, 214, 254, 0.5); }
+.shadow-violet-200\/50 { --tw-shadow-color: rgba(221, 214, 254, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/50:hover { --tw-shadow-color: rgba(221, 214, 254, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/50:hover { --tw-shadow-color: rgba(221, 214, 254, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/50 { --tw-ring-color: rgba(221, 214, 254, 0.5); }
+.focus\:ring-violet-200\/50:focus { --tw-ring-color: rgba(221, 214, 254, 0.5); }
+.bg-violet-200\/60 { background-color: rgba(221, 214, 254, 0.6); }
+.border-violet-200\/60 { border-color: rgba(221, 214, 254, 0.6); }
+.text-violet-200\/60 { color: rgba(221, 214, 254, 0.6); }
+.shadow-violet-200\/60 { --tw-shadow-color: rgba(221, 214, 254, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/60:hover { --tw-shadow-color: rgba(221, 214, 254, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/60:hover { --tw-shadow-color: rgba(221, 214, 254, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/60 { --tw-ring-color: rgba(221, 214, 254, 0.6); }
+.focus\:ring-violet-200\/60:focus { --tw-ring-color: rgba(221, 214, 254, 0.6); }
+.bg-violet-200\/70 { background-color: rgba(221, 214, 254, 0.7); }
+.border-violet-200\/70 { border-color: rgba(221, 214, 254, 0.7); }
+.text-violet-200\/70 { color: rgba(221, 214, 254, 0.7); }
+.shadow-violet-200\/70 { --tw-shadow-color: rgba(221, 214, 254, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/70:hover { --tw-shadow-color: rgba(221, 214, 254, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/70:hover { --tw-shadow-color: rgba(221, 214, 254, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/70 { --tw-ring-color: rgba(221, 214, 254, 0.7); }
+.focus\:ring-violet-200\/70:focus { --tw-ring-color: rgba(221, 214, 254, 0.7); }
+.bg-violet-200\/80 { background-color: rgba(221, 214, 254, 0.8); }
+.border-violet-200\/80 { border-color: rgba(221, 214, 254, 0.8); }
+.text-violet-200\/80 { color: rgba(221, 214, 254, 0.8); }
+.shadow-violet-200\/80 { --tw-shadow-color: rgba(221, 214, 254, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/80:hover { --tw-shadow-color: rgba(221, 214, 254, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/80:hover { --tw-shadow-color: rgba(221, 214, 254, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/80 { --tw-ring-color: rgba(221, 214, 254, 0.8); }
+.focus\:ring-violet-200\/80:focus { --tw-ring-color: rgba(221, 214, 254, 0.8); }
+.bg-violet-200\/90 { background-color: rgba(221, 214, 254, 0.9); }
+.border-violet-200\/90 { border-color: rgba(221, 214, 254, 0.9); }
+.text-violet-200\/90 { color: rgba(221, 214, 254, 0.9); }
+.shadow-violet-200\/90 { --tw-shadow-color: rgba(221, 214, 254, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-200\/90:hover { --tw-shadow-color: rgba(221, 214, 254, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-200\/90:hover { --tw-shadow-color: rgba(221, 214, 254, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-200\/90 { --tw-ring-color: rgba(221, 214, 254, 0.9); }
+.focus\:ring-violet-200\/90:focus { --tw-ring-color: rgba(221, 214, 254, 0.9); }
+.bg-violet-300\/5 { background-color: rgba(196, 181, 253, 0.05); }
+.border-violet-300\/5 { border-color: rgba(196, 181, 253, 0.05); }
+.text-violet-300\/5 { color: rgba(196, 181, 253, 0.05); }
+.shadow-violet-300\/5 { --tw-shadow-color: rgba(196, 181, 253, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/5:hover { --tw-shadow-color: rgba(196, 181, 253, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/5:hover { --tw-shadow-color: rgba(196, 181, 253, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/5 { --tw-ring-color: rgba(196, 181, 253, 0.05); }
+.focus\:ring-violet-300\/5:focus { --tw-ring-color: rgba(196, 181, 253, 0.05); }
+.bg-violet-300\/10 { background-color: rgba(196, 181, 253, 0.1); }
+.border-violet-300\/10 { border-color: rgba(196, 181, 253, 0.1); }
+.text-violet-300\/10 { color: rgba(196, 181, 253, 0.1); }
+.shadow-violet-300\/10 { --tw-shadow-color: rgba(196, 181, 253, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/10:hover { --tw-shadow-color: rgba(196, 181, 253, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/10:hover { --tw-shadow-color: rgba(196, 181, 253, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/10 { --tw-ring-color: rgba(196, 181, 253, 0.1); }
+.focus\:ring-violet-300\/10:focus { --tw-ring-color: rgba(196, 181, 253, 0.1); }
+.bg-violet-300\/15 { background-color: rgba(196, 181, 253, 0.15); }
+.border-violet-300\/15 { border-color: rgba(196, 181, 253, 0.15); }
+.text-violet-300\/15 { color: rgba(196, 181, 253, 0.15); }
+.shadow-violet-300\/15 { --tw-shadow-color: rgba(196, 181, 253, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/15:hover { --tw-shadow-color: rgba(196, 181, 253, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/15:hover { --tw-shadow-color: rgba(196, 181, 253, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/15 { --tw-ring-color: rgba(196, 181, 253, 0.15); }
+.focus\:ring-violet-300\/15:focus { --tw-ring-color: rgba(196, 181, 253, 0.15); }
+.bg-violet-300\/20 { background-color: rgba(196, 181, 253, 0.2); }
+.border-violet-300\/20 { border-color: rgba(196, 181, 253, 0.2); }
+.text-violet-300\/20 { color: rgba(196, 181, 253, 0.2); }
+.shadow-violet-300\/20 { --tw-shadow-color: rgba(196, 181, 253, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/20:hover { --tw-shadow-color: rgba(196, 181, 253, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/20:hover { --tw-shadow-color: rgba(196, 181, 253, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/20 { --tw-ring-color: rgba(196, 181, 253, 0.2); }
+.focus\:ring-violet-300\/20:focus { --tw-ring-color: rgba(196, 181, 253, 0.2); }
+.bg-violet-300\/25 { background-color: rgba(196, 181, 253, 0.25); }
+.border-violet-300\/25 { border-color: rgba(196, 181, 253, 0.25); }
+.text-violet-300\/25 { color: rgba(196, 181, 253, 0.25); }
+.shadow-violet-300\/25 { --tw-shadow-color: rgba(196, 181, 253, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/25:hover { --tw-shadow-color: rgba(196, 181, 253, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/25:hover { --tw-shadow-color: rgba(196, 181, 253, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/25 { --tw-ring-color: rgba(196, 181, 253, 0.25); }
+.focus\:ring-violet-300\/25:focus { --tw-ring-color: rgba(196, 181, 253, 0.25); }
+.bg-violet-300\/30 { background-color: rgba(196, 181, 253, 0.3); }
+.border-violet-300\/30 { border-color: rgba(196, 181, 253, 0.3); }
+.text-violet-300\/30 { color: rgba(196, 181, 253, 0.3); }
+.shadow-violet-300\/30 { --tw-shadow-color: rgba(196, 181, 253, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/30:hover { --tw-shadow-color: rgba(196, 181, 253, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/30:hover { --tw-shadow-color: rgba(196, 181, 253, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/30 { --tw-ring-color: rgba(196, 181, 253, 0.3); }
+.focus\:ring-violet-300\/30:focus { --tw-ring-color: rgba(196, 181, 253, 0.3); }
+.bg-violet-300\/40 { background-color: rgba(196, 181, 253, 0.4); }
+.border-violet-300\/40 { border-color: rgba(196, 181, 253, 0.4); }
+.text-violet-300\/40 { color: rgba(196, 181, 253, 0.4); }
+.shadow-violet-300\/40 { --tw-shadow-color: rgba(196, 181, 253, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/40:hover { --tw-shadow-color: rgba(196, 181, 253, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/40:hover { --tw-shadow-color: rgba(196, 181, 253, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/40 { --tw-ring-color: rgba(196, 181, 253, 0.4); }
+.focus\:ring-violet-300\/40:focus { --tw-ring-color: rgba(196, 181, 253, 0.4); }
+.bg-violet-300\/50 { background-color: rgba(196, 181, 253, 0.5); }
+.border-violet-300\/50 { border-color: rgba(196, 181, 253, 0.5); }
+.text-violet-300\/50 { color: rgba(196, 181, 253, 0.5); }
+.shadow-violet-300\/50 { --tw-shadow-color: rgba(196, 181, 253, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/50:hover { --tw-shadow-color: rgba(196, 181, 253, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/50:hover { --tw-shadow-color: rgba(196, 181, 253, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/50 { --tw-ring-color: rgba(196, 181, 253, 0.5); }
+.focus\:ring-violet-300\/50:focus { --tw-ring-color: rgba(196, 181, 253, 0.5); }
+.bg-violet-300\/60 { background-color: rgba(196, 181, 253, 0.6); }
+.border-violet-300\/60 { border-color: rgba(196, 181, 253, 0.6); }
+.text-violet-300\/60 { color: rgba(196, 181, 253, 0.6); }
+.shadow-violet-300\/60 { --tw-shadow-color: rgba(196, 181, 253, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/60:hover { --tw-shadow-color: rgba(196, 181, 253, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/60:hover { --tw-shadow-color: rgba(196, 181, 253, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/60 { --tw-ring-color: rgba(196, 181, 253, 0.6); }
+.focus\:ring-violet-300\/60:focus { --tw-ring-color: rgba(196, 181, 253, 0.6); }
+.bg-violet-300\/70 { background-color: rgba(196, 181, 253, 0.7); }
+.border-violet-300\/70 { border-color: rgba(196, 181, 253, 0.7); }
+.text-violet-300\/70 { color: rgba(196, 181, 253, 0.7); }
+.shadow-violet-300\/70 { --tw-shadow-color: rgba(196, 181, 253, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/70:hover { --tw-shadow-color: rgba(196, 181, 253, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/70:hover { --tw-shadow-color: rgba(196, 181, 253, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/70 { --tw-ring-color: rgba(196, 181, 253, 0.7); }
+.focus\:ring-violet-300\/70:focus { --tw-ring-color: rgba(196, 181, 253, 0.7); }
+.bg-violet-300\/80 { background-color: rgba(196, 181, 253, 0.8); }
+.border-violet-300\/80 { border-color: rgba(196, 181, 253, 0.8); }
+.text-violet-300\/80 { color: rgba(196, 181, 253, 0.8); }
+.shadow-violet-300\/80 { --tw-shadow-color: rgba(196, 181, 253, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/80:hover { --tw-shadow-color: rgba(196, 181, 253, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/80:hover { --tw-shadow-color: rgba(196, 181, 253, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/80 { --tw-ring-color: rgba(196, 181, 253, 0.8); }
+.focus\:ring-violet-300\/80:focus { --tw-ring-color: rgba(196, 181, 253, 0.8); }
+.bg-violet-300\/90 { background-color: rgba(196, 181, 253, 0.9); }
+.border-violet-300\/90 { border-color: rgba(196, 181, 253, 0.9); }
+.text-violet-300\/90 { color: rgba(196, 181, 253, 0.9); }
+.shadow-violet-300\/90 { --tw-shadow-color: rgba(196, 181, 253, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-300\/90:hover { --tw-shadow-color: rgba(196, 181, 253, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-300\/90:hover { --tw-shadow-color: rgba(196, 181, 253, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-300\/90 { --tw-ring-color: rgba(196, 181, 253, 0.9); }
+.focus\:ring-violet-300\/90:focus { --tw-ring-color: rgba(196, 181, 253, 0.9); }
+.bg-violet-400\/5 { background-color: rgba(167, 139, 250, 0.05); }
+.border-violet-400\/5 { border-color: rgba(167, 139, 250, 0.05); }
+.text-violet-400\/5 { color: rgba(167, 139, 250, 0.05); }
+.shadow-violet-400\/5 { --tw-shadow-color: rgba(167, 139, 250, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/5:hover { --tw-shadow-color: rgba(167, 139, 250, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/5:hover { --tw-shadow-color: rgba(167, 139, 250, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/5 { --tw-ring-color: rgba(167, 139, 250, 0.05); }
+.focus\:ring-violet-400\/5:focus { --tw-ring-color: rgba(167, 139, 250, 0.05); }
+.bg-violet-400\/10 { background-color: rgba(167, 139, 250, 0.1); }
+.border-violet-400\/10 { border-color: rgba(167, 139, 250, 0.1); }
+.text-violet-400\/10 { color: rgba(167, 139, 250, 0.1); }
+.shadow-violet-400\/10 { --tw-shadow-color: rgba(167, 139, 250, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/10:hover { --tw-shadow-color: rgba(167, 139, 250, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/10:hover { --tw-shadow-color: rgba(167, 139, 250, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/10 { --tw-ring-color: rgba(167, 139, 250, 0.1); }
+.focus\:ring-violet-400\/10:focus { --tw-ring-color: rgba(167, 139, 250, 0.1); }
+.bg-violet-400\/15 { background-color: rgba(167, 139, 250, 0.15); }
+.border-violet-400\/15 { border-color: rgba(167, 139, 250, 0.15); }
+.text-violet-400\/15 { color: rgba(167, 139, 250, 0.15); }
+.shadow-violet-400\/15 { --tw-shadow-color: rgba(167, 139, 250, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/15:hover { --tw-shadow-color: rgba(167, 139, 250, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/15:hover { --tw-shadow-color: rgba(167, 139, 250, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/15 { --tw-ring-color: rgba(167, 139, 250, 0.15); }
+.focus\:ring-violet-400\/15:focus { --tw-ring-color: rgba(167, 139, 250, 0.15); }
+.bg-violet-400\/20 { background-color: rgba(167, 139, 250, 0.2); }
+.border-violet-400\/20 { border-color: rgba(167, 139, 250, 0.2); }
+.text-violet-400\/20 { color: rgba(167, 139, 250, 0.2); }
+.shadow-violet-400\/20 { --tw-shadow-color: rgba(167, 139, 250, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/20:hover { --tw-shadow-color: rgba(167, 139, 250, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/20:hover { --tw-shadow-color: rgba(167, 139, 250, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/20 { --tw-ring-color: rgba(167, 139, 250, 0.2); }
+.focus\:ring-violet-400\/20:focus { --tw-ring-color: rgba(167, 139, 250, 0.2); }
+.bg-violet-400\/25 { background-color: rgba(167, 139, 250, 0.25); }
+.border-violet-400\/25 { border-color: rgba(167, 139, 250, 0.25); }
+.text-violet-400\/25 { color: rgba(167, 139, 250, 0.25); }
+.shadow-violet-400\/25 { --tw-shadow-color: rgba(167, 139, 250, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/25:hover { --tw-shadow-color: rgba(167, 139, 250, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/25:hover { --tw-shadow-color: rgba(167, 139, 250, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/25 { --tw-ring-color: rgba(167, 139, 250, 0.25); }
+.focus\:ring-violet-400\/25:focus { --tw-ring-color: rgba(167, 139, 250, 0.25); }
+.bg-violet-400\/30 { background-color: rgba(167, 139, 250, 0.3); }
+.border-violet-400\/30 { border-color: rgba(167, 139, 250, 0.3); }
+.text-violet-400\/30 { color: rgba(167, 139, 250, 0.3); }
+.shadow-violet-400\/30 { --tw-shadow-color: rgba(167, 139, 250, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/30:hover { --tw-shadow-color: rgba(167, 139, 250, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/30:hover { --tw-shadow-color: rgba(167, 139, 250, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/30 { --tw-ring-color: rgba(167, 139, 250, 0.3); }
+.focus\:ring-violet-400\/30:focus { --tw-ring-color: rgba(167, 139, 250, 0.3); }
+.bg-violet-400\/40 { background-color: rgba(167, 139, 250, 0.4); }
+.border-violet-400\/40 { border-color: rgba(167, 139, 250, 0.4); }
+.text-violet-400\/40 { color: rgba(167, 139, 250, 0.4); }
+.shadow-violet-400\/40 { --tw-shadow-color: rgba(167, 139, 250, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/40:hover { --tw-shadow-color: rgba(167, 139, 250, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/40:hover { --tw-shadow-color: rgba(167, 139, 250, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/40 { --tw-ring-color: rgba(167, 139, 250, 0.4); }
+.focus\:ring-violet-400\/40:focus { --tw-ring-color: rgba(167, 139, 250, 0.4); }
+.bg-violet-400\/50 { background-color: rgba(167, 139, 250, 0.5); }
+.border-violet-400\/50 { border-color: rgba(167, 139, 250, 0.5); }
+.text-violet-400\/50 { color: rgba(167, 139, 250, 0.5); }
+.shadow-violet-400\/50 { --tw-shadow-color: rgba(167, 139, 250, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/50:hover { --tw-shadow-color: rgba(167, 139, 250, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/50:hover { --tw-shadow-color: rgba(167, 139, 250, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/50 { --tw-ring-color: rgba(167, 139, 250, 0.5); }
+.focus\:ring-violet-400\/50:focus { --tw-ring-color: rgba(167, 139, 250, 0.5); }
+.bg-violet-400\/60 { background-color: rgba(167, 139, 250, 0.6); }
+.border-violet-400\/60 { border-color: rgba(167, 139, 250, 0.6); }
+.text-violet-400\/60 { color: rgba(167, 139, 250, 0.6); }
+.shadow-violet-400\/60 { --tw-shadow-color: rgba(167, 139, 250, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/60:hover { --tw-shadow-color: rgba(167, 139, 250, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/60:hover { --tw-shadow-color: rgba(167, 139, 250, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/60 { --tw-ring-color: rgba(167, 139, 250, 0.6); }
+.focus\:ring-violet-400\/60:focus { --tw-ring-color: rgba(167, 139, 250, 0.6); }
+.bg-violet-400\/70 { background-color: rgba(167, 139, 250, 0.7); }
+.border-violet-400\/70 { border-color: rgba(167, 139, 250, 0.7); }
+.text-violet-400\/70 { color: rgba(167, 139, 250, 0.7); }
+.shadow-violet-400\/70 { --tw-shadow-color: rgba(167, 139, 250, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/70:hover { --tw-shadow-color: rgba(167, 139, 250, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/70:hover { --tw-shadow-color: rgba(167, 139, 250, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/70 { --tw-ring-color: rgba(167, 139, 250, 0.7); }
+.focus\:ring-violet-400\/70:focus { --tw-ring-color: rgba(167, 139, 250, 0.7); }
+.bg-violet-400\/80 { background-color: rgba(167, 139, 250, 0.8); }
+.border-violet-400\/80 { border-color: rgba(167, 139, 250, 0.8); }
+.text-violet-400\/80 { color: rgba(167, 139, 250, 0.8); }
+.shadow-violet-400\/80 { --tw-shadow-color: rgba(167, 139, 250, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/80:hover { --tw-shadow-color: rgba(167, 139, 250, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/80:hover { --tw-shadow-color: rgba(167, 139, 250, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/80 { --tw-ring-color: rgba(167, 139, 250, 0.8); }
+.focus\:ring-violet-400\/80:focus { --tw-ring-color: rgba(167, 139, 250, 0.8); }
+.bg-violet-400\/90 { background-color: rgba(167, 139, 250, 0.9); }
+.border-violet-400\/90 { border-color: rgba(167, 139, 250, 0.9); }
+.text-violet-400\/90 { color: rgba(167, 139, 250, 0.9); }
+.shadow-violet-400\/90 { --tw-shadow-color: rgba(167, 139, 250, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-400\/90:hover { --tw-shadow-color: rgba(167, 139, 250, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-400\/90:hover { --tw-shadow-color: rgba(167, 139, 250, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-400\/90 { --tw-ring-color: rgba(167, 139, 250, 0.9); }
+.focus\:ring-violet-400\/90:focus { --tw-ring-color: rgba(167, 139, 250, 0.9); }
+.bg-violet-500\/5 { background-color: rgba(139, 92, 246, 0.05); }
+.border-violet-500\/5 { border-color: rgba(139, 92, 246, 0.05); }
+.text-violet-500\/5 { color: rgba(139, 92, 246, 0.05); }
+.shadow-violet-500\/5 { --tw-shadow-color: rgba(139, 92, 246, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/5:hover { --tw-shadow-color: rgba(139, 92, 246, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/5:hover { --tw-shadow-color: rgba(139, 92, 246, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/5 { --tw-ring-color: rgba(139, 92, 246, 0.05); }
+.focus\:ring-violet-500\/5:focus { --tw-ring-color: rgba(139, 92, 246, 0.05); }
+.bg-violet-500\/10 { background-color: rgba(139, 92, 246, 0.1); }
+.border-violet-500\/10 { border-color: rgba(139, 92, 246, 0.1); }
+.text-violet-500\/10 { color: rgba(139, 92, 246, 0.1); }
+.shadow-violet-500\/10 { --tw-shadow-color: rgba(139, 92, 246, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/10:hover { --tw-shadow-color: rgba(139, 92, 246, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/10:hover { --tw-shadow-color: rgba(139, 92, 246, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/10 { --tw-ring-color: rgba(139, 92, 246, 0.1); }
+.focus\:ring-violet-500\/10:focus { --tw-ring-color: rgba(139, 92, 246, 0.1); }
+.bg-violet-500\/15 { background-color: rgba(139, 92, 246, 0.15); }
+.border-violet-500\/15 { border-color: rgba(139, 92, 246, 0.15); }
+.text-violet-500\/15 { color: rgba(139, 92, 246, 0.15); }
+.shadow-violet-500\/15 { --tw-shadow-color: rgba(139, 92, 246, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/15:hover { --tw-shadow-color: rgba(139, 92, 246, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/15:hover { --tw-shadow-color: rgba(139, 92, 246, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/15 { --tw-ring-color: rgba(139, 92, 246, 0.15); }
+.focus\:ring-violet-500\/15:focus { --tw-ring-color: rgba(139, 92, 246, 0.15); }
+.bg-violet-500\/20 { background-color: rgba(139, 92, 246, 0.2); }
+.border-violet-500\/20 { border-color: rgba(139, 92, 246, 0.2); }
+.text-violet-500\/20 { color: rgba(139, 92, 246, 0.2); }
+.shadow-violet-500\/20 { --tw-shadow-color: rgba(139, 92, 246, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/20:hover { --tw-shadow-color: rgba(139, 92, 246, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/20:hover { --tw-shadow-color: rgba(139, 92, 246, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/20 { --tw-ring-color: rgba(139, 92, 246, 0.2); }
+.focus\:ring-violet-500\/20:focus { --tw-ring-color: rgba(139, 92, 246, 0.2); }
+.bg-violet-500\/25 { background-color: rgba(139, 92, 246, 0.25); }
+.border-violet-500\/25 { border-color: rgba(139, 92, 246, 0.25); }
+.text-violet-500\/25 { color: rgba(139, 92, 246, 0.25); }
+.shadow-violet-500\/25 { --tw-shadow-color: rgba(139, 92, 246, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/25:hover { --tw-shadow-color: rgba(139, 92, 246, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/25:hover { --tw-shadow-color: rgba(139, 92, 246, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/25 { --tw-ring-color: rgba(139, 92, 246, 0.25); }
+.focus\:ring-violet-500\/25:focus { --tw-ring-color: rgba(139, 92, 246, 0.25); }
+.bg-violet-500\/30 { background-color: rgba(139, 92, 246, 0.3); }
+.border-violet-500\/30 { border-color: rgba(139, 92, 246, 0.3); }
+.text-violet-500\/30 { color: rgba(139, 92, 246, 0.3); }
+.shadow-violet-500\/30 { --tw-shadow-color: rgba(139, 92, 246, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/30:hover { --tw-shadow-color: rgba(139, 92, 246, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/30:hover { --tw-shadow-color: rgba(139, 92, 246, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/30 { --tw-ring-color: rgba(139, 92, 246, 0.3); }
+.focus\:ring-violet-500\/30:focus { --tw-ring-color: rgba(139, 92, 246, 0.3); }
+.bg-violet-500\/40 { background-color: rgba(139, 92, 246, 0.4); }
+.border-violet-500\/40 { border-color: rgba(139, 92, 246, 0.4); }
+.text-violet-500\/40 { color: rgba(139, 92, 246, 0.4); }
+.shadow-violet-500\/40 { --tw-shadow-color: rgba(139, 92, 246, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/40:hover { --tw-shadow-color: rgba(139, 92, 246, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/40:hover { --tw-shadow-color: rgba(139, 92, 246, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/40 { --tw-ring-color: rgba(139, 92, 246, 0.4); }
+.focus\:ring-violet-500\/40:focus { --tw-ring-color: rgba(139, 92, 246, 0.4); }
+.bg-violet-500\/50 { background-color: rgba(139, 92, 246, 0.5); }
+.border-violet-500\/50 { border-color: rgba(139, 92, 246, 0.5); }
+.text-violet-500\/50 { color: rgba(139, 92, 246, 0.5); }
+.shadow-violet-500\/50 { --tw-shadow-color: rgba(139, 92, 246, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/50:hover { --tw-shadow-color: rgba(139, 92, 246, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/50:hover { --tw-shadow-color: rgba(139, 92, 246, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/50 { --tw-ring-color: rgba(139, 92, 246, 0.5); }
+.focus\:ring-violet-500\/50:focus { --tw-ring-color: rgba(139, 92, 246, 0.5); }
+.bg-violet-500\/60 { background-color: rgba(139, 92, 246, 0.6); }
+.border-violet-500\/60 { border-color: rgba(139, 92, 246, 0.6); }
+.text-violet-500\/60 { color: rgba(139, 92, 246, 0.6); }
+.shadow-violet-500\/60 { --tw-shadow-color: rgba(139, 92, 246, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/60:hover { --tw-shadow-color: rgba(139, 92, 246, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/60:hover { --tw-shadow-color: rgba(139, 92, 246, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/60 { --tw-ring-color: rgba(139, 92, 246, 0.6); }
+.focus\:ring-violet-500\/60:focus { --tw-ring-color: rgba(139, 92, 246, 0.6); }
+.bg-violet-500\/70 { background-color: rgba(139, 92, 246, 0.7); }
+.border-violet-500\/70 { border-color: rgba(139, 92, 246, 0.7); }
+.text-violet-500\/70 { color: rgba(139, 92, 246, 0.7); }
+.shadow-violet-500\/70 { --tw-shadow-color: rgba(139, 92, 246, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/70:hover { --tw-shadow-color: rgba(139, 92, 246, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/70:hover { --tw-shadow-color: rgba(139, 92, 246, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/70 { --tw-ring-color: rgba(139, 92, 246, 0.7); }
+.focus\:ring-violet-500\/70:focus { --tw-ring-color: rgba(139, 92, 246, 0.7); }
+.bg-violet-500\/80 { background-color: rgba(139, 92, 246, 0.8); }
+.border-violet-500\/80 { border-color: rgba(139, 92, 246, 0.8); }
+.text-violet-500\/80 { color: rgba(139, 92, 246, 0.8); }
+.shadow-violet-500\/80 { --tw-shadow-color: rgba(139, 92, 246, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/80:hover { --tw-shadow-color: rgba(139, 92, 246, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/80:hover { --tw-shadow-color: rgba(139, 92, 246, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/80 { --tw-ring-color: rgba(139, 92, 246, 0.8); }
+.focus\:ring-violet-500\/80:focus { --tw-ring-color: rgba(139, 92, 246, 0.8); }
+.bg-violet-500\/90 { background-color: rgba(139, 92, 246, 0.9); }
+.border-violet-500\/90 { border-color: rgba(139, 92, 246, 0.9); }
+.text-violet-500\/90 { color: rgba(139, 92, 246, 0.9); }
+.shadow-violet-500\/90 { --tw-shadow-color: rgba(139, 92, 246, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-500\/90:hover { --tw-shadow-color: rgba(139, 92, 246, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-500\/90:hover { --tw-shadow-color: rgba(139, 92, 246, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-500\/90 { --tw-ring-color: rgba(139, 92, 246, 0.9); }
+.focus\:ring-violet-500\/90:focus { --tw-ring-color: rgba(139, 92, 246, 0.9); }
+.bg-violet-600\/5 { background-color: rgba(124, 58, 237, 0.05); }
+.border-violet-600\/5 { border-color: rgba(124, 58, 237, 0.05); }
+.text-violet-600\/5 { color: rgba(124, 58, 237, 0.05); }
+.shadow-violet-600\/5 { --tw-shadow-color: rgba(124, 58, 237, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/5:hover { --tw-shadow-color: rgba(124, 58, 237, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/5:hover { --tw-shadow-color: rgba(124, 58, 237, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/5 { --tw-ring-color: rgba(124, 58, 237, 0.05); }
+.focus\:ring-violet-600\/5:focus { --tw-ring-color: rgba(124, 58, 237, 0.05); }
+.bg-violet-600\/10 { background-color: rgba(124, 58, 237, 0.1); }
+.border-violet-600\/10 { border-color: rgba(124, 58, 237, 0.1); }
+.text-violet-600\/10 { color: rgba(124, 58, 237, 0.1); }
+.shadow-violet-600\/10 { --tw-shadow-color: rgba(124, 58, 237, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/10:hover { --tw-shadow-color: rgba(124, 58, 237, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/10:hover { --tw-shadow-color: rgba(124, 58, 237, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/10 { --tw-ring-color: rgba(124, 58, 237, 0.1); }
+.focus\:ring-violet-600\/10:focus { --tw-ring-color: rgba(124, 58, 237, 0.1); }
+.bg-violet-600\/15 { background-color: rgba(124, 58, 237, 0.15); }
+.border-violet-600\/15 { border-color: rgba(124, 58, 237, 0.15); }
+.text-violet-600\/15 { color: rgba(124, 58, 237, 0.15); }
+.shadow-violet-600\/15 { --tw-shadow-color: rgba(124, 58, 237, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/15:hover { --tw-shadow-color: rgba(124, 58, 237, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/15:hover { --tw-shadow-color: rgba(124, 58, 237, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/15 { --tw-ring-color: rgba(124, 58, 237, 0.15); }
+.focus\:ring-violet-600\/15:focus { --tw-ring-color: rgba(124, 58, 237, 0.15); }
+.bg-violet-600\/20 { background-color: rgba(124, 58, 237, 0.2); }
+.border-violet-600\/20 { border-color: rgba(124, 58, 237, 0.2); }
+.text-violet-600\/20 { color: rgba(124, 58, 237, 0.2); }
+.shadow-violet-600\/20 { --tw-shadow-color: rgba(124, 58, 237, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/20:hover { --tw-shadow-color: rgba(124, 58, 237, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/20:hover { --tw-shadow-color: rgba(124, 58, 237, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/20 { --tw-ring-color: rgba(124, 58, 237, 0.2); }
+.focus\:ring-violet-600\/20:focus { --tw-ring-color: rgba(124, 58, 237, 0.2); }
+.bg-violet-600\/25 { background-color: rgba(124, 58, 237, 0.25); }
+.border-violet-600\/25 { border-color: rgba(124, 58, 237, 0.25); }
+.text-violet-600\/25 { color: rgba(124, 58, 237, 0.25); }
+.shadow-violet-600\/25 { --tw-shadow-color: rgba(124, 58, 237, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/25:hover { --tw-shadow-color: rgba(124, 58, 237, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/25:hover { --tw-shadow-color: rgba(124, 58, 237, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/25 { --tw-ring-color: rgba(124, 58, 237, 0.25); }
+.focus\:ring-violet-600\/25:focus { --tw-ring-color: rgba(124, 58, 237, 0.25); }
+.bg-violet-600\/30 { background-color: rgba(124, 58, 237, 0.3); }
+.border-violet-600\/30 { border-color: rgba(124, 58, 237, 0.3); }
+.text-violet-600\/30 { color: rgba(124, 58, 237, 0.3); }
+.shadow-violet-600\/30 { --tw-shadow-color: rgba(124, 58, 237, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/30:hover { --tw-shadow-color: rgba(124, 58, 237, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/30:hover { --tw-shadow-color: rgba(124, 58, 237, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/30 { --tw-ring-color: rgba(124, 58, 237, 0.3); }
+.focus\:ring-violet-600\/30:focus { --tw-ring-color: rgba(124, 58, 237, 0.3); }
+.bg-violet-600\/40 { background-color: rgba(124, 58, 237, 0.4); }
+.border-violet-600\/40 { border-color: rgba(124, 58, 237, 0.4); }
+.text-violet-600\/40 { color: rgba(124, 58, 237, 0.4); }
+.shadow-violet-600\/40 { --tw-shadow-color: rgba(124, 58, 237, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/40:hover { --tw-shadow-color: rgba(124, 58, 237, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/40:hover { --tw-shadow-color: rgba(124, 58, 237, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/40 { --tw-ring-color: rgba(124, 58, 237, 0.4); }
+.focus\:ring-violet-600\/40:focus { --tw-ring-color: rgba(124, 58, 237, 0.4); }
+.bg-violet-600\/50 { background-color: rgba(124, 58, 237, 0.5); }
+.border-violet-600\/50 { border-color: rgba(124, 58, 237, 0.5); }
+.text-violet-600\/50 { color: rgba(124, 58, 237, 0.5); }
+.shadow-violet-600\/50 { --tw-shadow-color: rgba(124, 58, 237, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/50:hover { --tw-shadow-color: rgba(124, 58, 237, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/50:hover { --tw-shadow-color: rgba(124, 58, 237, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/50 { --tw-ring-color: rgba(124, 58, 237, 0.5); }
+.focus\:ring-violet-600\/50:focus { --tw-ring-color: rgba(124, 58, 237, 0.5); }
+.bg-violet-600\/60 { background-color: rgba(124, 58, 237, 0.6); }
+.border-violet-600\/60 { border-color: rgba(124, 58, 237, 0.6); }
+.text-violet-600\/60 { color: rgba(124, 58, 237, 0.6); }
+.shadow-violet-600\/60 { --tw-shadow-color: rgba(124, 58, 237, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/60:hover { --tw-shadow-color: rgba(124, 58, 237, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/60:hover { --tw-shadow-color: rgba(124, 58, 237, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/60 { --tw-ring-color: rgba(124, 58, 237, 0.6); }
+.focus\:ring-violet-600\/60:focus { --tw-ring-color: rgba(124, 58, 237, 0.6); }
+.bg-violet-600\/70 { background-color: rgba(124, 58, 237, 0.7); }
+.border-violet-600\/70 { border-color: rgba(124, 58, 237, 0.7); }
+.text-violet-600\/70 { color: rgba(124, 58, 237, 0.7); }
+.shadow-violet-600\/70 { --tw-shadow-color: rgba(124, 58, 237, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/70:hover { --tw-shadow-color: rgba(124, 58, 237, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/70:hover { --tw-shadow-color: rgba(124, 58, 237, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/70 { --tw-ring-color: rgba(124, 58, 237, 0.7); }
+.focus\:ring-violet-600\/70:focus { --tw-ring-color: rgba(124, 58, 237, 0.7); }
+.bg-violet-600\/80 { background-color: rgba(124, 58, 237, 0.8); }
+.border-violet-600\/80 { border-color: rgba(124, 58, 237, 0.8); }
+.text-violet-600\/80 { color: rgba(124, 58, 237, 0.8); }
+.shadow-violet-600\/80 { --tw-shadow-color: rgba(124, 58, 237, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/80:hover { --tw-shadow-color: rgba(124, 58, 237, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/80:hover { --tw-shadow-color: rgba(124, 58, 237, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/80 { --tw-ring-color: rgba(124, 58, 237, 0.8); }
+.focus\:ring-violet-600\/80:focus { --tw-ring-color: rgba(124, 58, 237, 0.8); }
+.bg-violet-600\/90 { background-color: rgba(124, 58, 237, 0.9); }
+.border-violet-600\/90 { border-color: rgba(124, 58, 237, 0.9); }
+.text-violet-600\/90 { color: rgba(124, 58, 237, 0.9); }
+.shadow-violet-600\/90 { --tw-shadow-color: rgba(124, 58, 237, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-600\/90:hover { --tw-shadow-color: rgba(124, 58, 237, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-600\/90:hover { --tw-shadow-color: rgba(124, 58, 237, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-600\/90 { --tw-ring-color: rgba(124, 58, 237, 0.9); }
+.focus\:ring-violet-600\/90:focus { --tw-ring-color: rgba(124, 58, 237, 0.9); }
+.bg-violet-700\/5 { background-color: rgba(109, 40, 217, 0.05); }
+.border-violet-700\/5 { border-color: rgba(109, 40, 217, 0.05); }
+.text-violet-700\/5 { color: rgba(109, 40, 217, 0.05); }
+.shadow-violet-700\/5 { --tw-shadow-color: rgba(109, 40, 217, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/5:hover { --tw-shadow-color: rgba(109, 40, 217, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/5:hover { --tw-shadow-color: rgba(109, 40, 217, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/5 { --tw-ring-color: rgba(109, 40, 217, 0.05); }
+.focus\:ring-violet-700\/5:focus { --tw-ring-color: rgba(109, 40, 217, 0.05); }
+.bg-violet-700\/10 { background-color: rgba(109, 40, 217, 0.1); }
+.border-violet-700\/10 { border-color: rgba(109, 40, 217, 0.1); }
+.text-violet-700\/10 { color: rgba(109, 40, 217, 0.1); }
+.shadow-violet-700\/10 { --tw-shadow-color: rgba(109, 40, 217, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/10:hover { --tw-shadow-color: rgba(109, 40, 217, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/10:hover { --tw-shadow-color: rgba(109, 40, 217, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/10 { --tw-ring-color: rgba(109, 40, 217, 0.1); }
+.focus\:ring-violet-700\/10:focus { --tw-ring-color: rgba(109, 40, 217, 0.1); }
+.bg-violet-700\/15 { background-color: rgba(109, 40, 217, 0.15); }
+.border-violet-700\/15 { border-color: rgba(109, 40, 217, 0.15); }
+.text-violet-700\/15 { color: rgba(109, 40, 217, 0.15); }
+.shadow-violet-700\/15 { --tw-shadow-color: rgba(109, 40, 217, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/15:hover { --tw-shadow-color: rgba(109, 40, 217, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/15:hover { --tw-shadow-color: rgba(109, 40, 217, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/15 { --tw-ring-color: rgba(109, 40, 217, 0.15); }
+.focus\:ring-violet-700\/15:focus { --tw-ring-color: rgba(109, 40, 217, 0.15); }
+.bg-violet-700\/20 { background-color: rgba(109, 40, 217, 0.2); }
+.border-violet-700\/20 { border-color: rgba(109, 40, 217, 0.2); }
+.text-violet-700\/20 { color: rgba(109, 40, 217, 0.2); }
+.shadow-violet-700\/20 { --tw-shadow-color: rgba(109, 40, 217, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/20:hover { --tw-shadow-color: rgba(109, 40, 217, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/20:hover { --tw-shadow-color: rgba(109, 40, 217, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/20 { --tw-ring-color: rgba(109, 40, 217, 0.2); }
+.focus\:ring-violet-700\/20:focus { --tw-ring-color: rgba(109, 40, 217, 0.2); }
+.bg-violet-700\/25 { background-color: rgba(109, 40, 217, 0.25); }
+.border-violet-700\/25 { border-color: rgba(109, 40, 217, 0.25); }
+.text-violet-700\/25 { color: rgba(109, 40, 217, 0.25); }
+.shadow-violet-700\/25 { --tw-shadow-color: rgba(109, 40, 217, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/25:hover { --tw-shadow-color: rgba(109, 40, 217, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/25:hover { --tw-shadow-color: rgba(109, 40, 217, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/25 { --tw-ring-color: rgba(109, 40, 217, 0.25); }
+.focus\:ring-violet-700\/25:focus { --tw-ring-color: rgba(109, 40, 217, 0.25); }
+.bg-violet-700\/30 { background-color: rgba(109, 40, 217, 0.3); }
+.border-violet-700\/30 { border-color: rgba(109, 40, 217, 0.3); }
+.text-violet-700\/30 { color: rgba(109, 40, 217, 0.3); }
+.shadow-violet-700\/30 { --tw-shadow-color: rgba(109, 40, 217, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/30:hover { --tw-shadow-color: rgba(109, 40, 217, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/30:hover { --tw-shadow-color: rgba(109, 40, 217, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/30 { --tw-ring-color: rgba(109, 40, 217, 0.3); }
+.focus\:ring-violet-700\/30:focus { --tw-ring-color: rgba(109, 40, 217, 0.3); }
+.bg-violet-700\/40 { background-color: rgba(109, 40, 217, 0.4); }
+.border-violet-700\/40 { border-color: rgba(109, 40, 217, 0.4); }
+.text-violet-700\/40 { color: rgba(109, 40, 217, 0.4); }
+.shadow-violet-700\/40 { --tw-shadow-color: rgba(109, 40, 217, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/40:hover { --tw-shadow-color: rgba(109, 40, 217, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/40:hover { --tw-shadow-color: rgba(109, 40, 217, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/40 { --tw-ring-color: rgba(109, 40, 217, 0.4); }
+.focus\:ring-violet-700\/40:focus { --tw-ring-color: rgba(109, 40, 217, 0.4); }
+.bg-violet-700\/50 { background-color: rgba(109, 40, 217, 0.5); }
+.border-violet-700\/50 { border-color: rgba(109, 40, 217, 0.5); }
+.text-violet-700\/50 { color: rgba(109, 40, 217, 0.5); }
+.shadow-violet-700\/50 { --tw-shadow-color: rgba(109, 40, 217, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/50:hover { --tw-shadow-color: rgba(109, 40, 217, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/50:hover { --tw-shadow-color: rgba(109, 40, 217, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/50 { --tw-ring-color: rgba(109, 40, 217, 0.5); }
+.focus\:ring-violet-700\/50:focus { --tw-ring-color: rgba(109, 40, 217, 0.5); }
+.bg-violet-700\/60 { background-color: rgba(109, 40, 217, 0.6); }
+.border-violet-700\/60 { border-color: rgba(109, 40, 217, 0.6); }
+.text-violet-700\/60 { color: rgba(109, 40, 217, 0.6); }
+.shadow-violet-700\/60 { --tw-shadow-color: rgba(109, 40, 217, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/60:hover { --tw-shadow-color: rgba(109, 40, 217, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/60:hover { --tw-shadow-color: rgba(109, 40, 217, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/60 { --tw-ring-color: rgba(109, 40, 217, 0.6); }
+.focus\:ring-violet-700\/60:focus { --tw-ring-color: rgba(109, 40, 217, 0.6); }
+.bg-violet-700\/70 { background-color: rgba(109, 40, 217, 0.7); }
+.border-violet-700\/70 { border-color: rgba(109, 40, 217, 0.7); }
+.text-violet-700\/70 { color: rgba(109, 40, 217, 0.7); }
+.shadow-violet-700\/70 { --tw-shadow-color: rgba(109, 40, 217, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/70:hover { --tw-shadow-color: rgba(109, 40, 217, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/70:hover { --tw-shadow-color: rgba(109, 40, 217, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/70 { --tw-ring-color: rgba(109, 40, 217, 0.7); }
+.focus\:ring-violet-700\/70:focus { --tw-ring-color: rgba(109, 40, 217, 0.7); }
+.bg-violet-700\/80 { background-color: rgba(109, 40, 217, 0.8); }
+.border-violet-700\/80 { border-color: rgba(109, 40, 217, 0.8); }
+.text-violet-700\/80 { color: rgba(109, 40, 217, 0.8); }
+.shadow-violet-700\/80 { --tw-shadow-color: rgba(109, 40, 217, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/80:hover { --tw-shadow-color: rgba(109, 40, 217, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/80:hover { --tw-shadow-color: rgba(109, 40, 217, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/80 { --tw-ring-color: rgba(109, 40, 217, 0.8); }
+.focus\:ring-violet-700\/80:focus { --tw-ring-color: rgba(109, 40, 217, 0.8); }
+.bg-violet-700\/90 { background-color: rgba(109, 40, 217, 0.9); }
+.border-violet-700\/90 { border-color: rgba(109, 40, 217, 0.9); }
+.text-violet-700\/90 { color: rgba(109, 40, 217, 0.9); }
+.shadow-violet-700\/90 { --tw-shadow-color: rgba(109, 40, 217, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-700\/90:hover { --tw-shadow-color: rgba(109, 40, 217, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-700\/90:hover { --tw-shadow-color: rgba(109, 40, 217, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-700\/90 { --tw-ring-color: rgba(109, 40, 217, 0.9); }
+.focus\:ring-violet-700\/90:focus { --tw-ring-color: rgba(109, 40, 217, 0.9); }
+.bg-violet-800\/5 { background-color: rgba(91, 33, 182, 0.05); }
+.border-violet-800\/5 { border-color: rgba(91, 33, 182, 0.05); }
+.text-violet-800\/5 { color: rgba(91, 33, 182, 0.05); }
+.shadow-violet-800\/5 { --tw-shadow-color: rgba(91, 33, 182, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/5:hover { --tw-shadow-color: rgba(91, 33, 182, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/5:hover { --tw-shadow-color: rgba(91, 33, 182, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/5 { --tw-ring-color: rgba(91, 33, 182, 0.05); }
+.focus\:ring-violet-800\/5:focus { --tw-ring-color: rgba(91, 33, 182, 0.05); }
+.bg-violet-800\/10 { background-color: rgba(91, 33, 182, 0.1); }
+.border-violet-800\/10 { border-color: rgba(91, 33, 182, 0.1); }
+.text-violet-800\/10 { color: rgba(91, 33, 182, 0.1); }
+.shadow-violet-800\/10 { --tw-shadow-color: rgba(91, 33, 182, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/10:hover { --tw-shadow-color: rgba(91, 33, 182, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/10:hover { --tw-shadow-color: rgba(91, 33, 182, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/10 { --tw-ring-color: rgba(91, 33, 182, 0.1); }
+.focus\:ring-violet-800\/10:focus { --tw-ring-color: rgba(91, 33, 182, 0.1); }
+.bg-violet-800\/15 { background-color: rgba(91, 33, 182, 0.15); }
+.border-violet-800\/15 { border-color: rgba(91, 33, 182, 0.15); }
+.text-violet-800\/15 { color: rgba(91, 33, 182, 0.15); }
+.shadow-violet-800\/15 { --tw-shadow-color: rgba(91, 33, 182, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/15:hover { --tw-shadow-color: rgba(91, 33, 182, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/15:hover { --tw-shadow-color: rgba(91, 33, 182, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/15 { --tw-ring-color: rgba(91, 33, 182, 0.15); }
+.focus\:ring-violet-800\/15:focus { --tw-ring-color: rgba(91, 33, 182, 0.15); }
+.bg-violet-800\/20 { background-color: rgba(91, 33, 182, 0.2); }
+.border-violet-800\/20 { border-color: rgba(91, 33, 182, 0.2); }
+.text-violet-800\/20 { color: rgba(91, 33, 182, 0.2); }
+.shadow-violet-800\/20 { --tw-shadow-color: rgba(91, 33, 182, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/20:hover { --tw-shadow-color: rgba(91, 33, 182, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/20:hover { --tw-shadow-color: rgba(91, 33, 182, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/20 { --tw-ring-color: rgba(91, 33, 182, 0.2); }
+.focus\:ring-violet-800\/20:focus { --tw-ring-color: rgba(91, 33, 182, 0.2); }
+.bg-violet-800\/25 { background-color: rgba(91, 33, 182, 0.25); }
+.border-violet-800\/25 { border-color: rgba(91, 33, 182, 0.25); }
+.text-violet-800\/25 { color: rgba(91, 33, 182, 0.25); }
+.shadow-violet-800\/25 { --tw-shadow-color: rgba(91, 33, 182, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/25:hover { --tw-shadow-color: rgba(91, 33, 182, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/25:hover { --tw-shadow-color: rgba(91, 33, 182, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/25 { --tw-ring-color: rgba(91, 33, 182, 0.25); }
+.focus\:ring-violet-800\/25:focus { --tw-ring-color: rgba(91, 33, 182, 0.25); }
+.bg-violet-800\/30 { background-color: rgba(91, 33, 182, 0.3); }
+.border-violet-800\/30 { border-color: rgba(91, 33, 182, 0.3); }
+.text-violet-800\/30 { color: rgba(91, 33, 182, 0.3); }
+.shadow-violet-800\/30 { --tw-shadow-color: rgba(91, 33, 182, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/30:hover { --tw-shadow-color: rgba(91, 33, 182, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/30:hover { --tw-shadow-color: rgba(91, 33, 182, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/30 { --tw-ring-color: rgba(91, 33, 182, 0.3); }
+.focus\:ring-violet-800\/30:focus { --tw-ring-color: rgba(91, 33, 182, 0.3); }
+.bg-violet-800\/40 { background-color: rgba(91, 33, 182, 0.4); }
+.border-violet-800\/40 { border-color: rgba(91, 33, 182, 0.4); }
+.text-violet-800\/40 { color: rgba(91, 33, 182, 0.4); }
+.shadow-violet-800\/40 { --tw-shadow-color: rgba(91, 33, 182, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/40:hover { --tw-shadow-color: rgba(91, 33, 182, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/40:hover { --tw-shadow-color: rgba(91, 33, 182, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/40 { --tw-ring-color: rgba(91, 33, 182, 0.4); }
+.focus\:ring-violet-800\/40:focus { --tw-ring-color: rgba(91, 33, 182, 0.4); }
+.bg-violet-800\/50 { background-color: rgba(91, 33, 182, 0.5); }
+.border-violet-800\/50 { border-color: rgba(91, 33, 182, 0.5); }
+.text-violet-800\/50 { color: rgba(91, 33, 182, 0.5); }
+.shadow-violet-800\/50 { --tw-shadow-color: rgba(91, 33, 182, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/50:hover { --tw-shadow-color: rgba(91, 33, 182, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/50:hover { --tw-shadow-color: rgba(91, 33, 182, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/50 { --tw-ring-color: rgba(91, 33, 182, 0.5); }
+.focus\:ring-violet-800\/50:focus { --tw-ring-color: rgba(91, 33, 182, 0.5); }
+.bg-violet-800\/60 { background-color: rgba(91, 33, 182, 0.6); }
+.border-violet-800\/60 { border-color: rgba(91, 33, 182, 0.6); }
+.text-violet-800\/60 { color: rgba(91, 33, 182, 0.6); }
+.shadow-violet-800\/60 { --tw-shadow-color: rgba(91, 33, 182, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/60:hover { --tw-shadow-color: rgba(91, 33, 182, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/60:hover { --tw-shadow-color: rgba(91, 33, 182, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/60 { --tw-ring-color: rgba(91, 33, 182, 0.6); }
+.focus\:ring-violet-800\/60:focus { --tw-ring-color: rgba(91, 33, 182, 0.6); }
+.bg-violet-800\/70 { background-color: rgba(91, 33, 182, 0.7); }
+.border-violet-800\/70 { border-color: rgba(91, 33, 182, 0.7); }
+.text-violet-800\/70 { color: rgba(91, 33, 182, 0.7); }
+.shadow-violet-800\/70 { --tw-shadow-color: rgba(91, 33, 182, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/70:hover { --tw-shadow-color: rgba(91, 33, 182, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/70:hover { --tw-shadow-color: rgba(91, 33, 182, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/70 { --tw-ring-color: rgba(91, 33, 182, 0.7); }
+.focus\:ring-violet-800\/70:focus { --tw-ring-color: rgba(91, 33, 182, 0.7); }
+.bg-violet-800\/80 { background-color: rgba(91, 33, 182, 0.8); }
+.border-violet-800\/80 { border-color: rgba(91, 33, 182, 0.8); }
+.text-violet-800\/80 { color: rgba(91, 33, 182, 0.8); }
+.shadow-violet-800\/80 { --tw-shadow-color: rgba(91, 33, 182, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/80:hover { --tw-shadow-color: rgba(91, 33, 182, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/80:hover { --tw-shadow-color: rgba(91, 33, 182, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/80 { --tw-ring-color: rgba(91, 33, 182, 0.8); }
+.focus\:ring-violet-800\/80:focus { --tw-ring-color: rgba(91, 33, 182, 0.8); }
+.bg-violet-800\/90 { background-color: rgba(91, 33, 182, 0.9); }
+.border-violet-800\/90 { border-color: rgba(91, 33, 182, 0.9); }
+.text-violet-800\/90 { color: rgba(91, 33, 182, 0.9); }
+.shadow-violet-800\/90 { --tw-shadow-color: rgba(91, 33, 182, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-800\/90:hover { --tw-shadow-color: rgba(91, 33, 182, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-800\/90:hover { --tw-shadow-color: rgba(91, 33, 182, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-800\/90 { --tw-ring-color: rgba(91, 33, 182, 0.9); }
+.focus\:ring-violet-800\/90:focus { --tw-ring-color: rgba(91, 33, 182, 0.9); }
+.bg-violet-900\/5 { background-color: rgba(76, 29, 149, 0.05); }
+.border-violet-900\/5 { border-color: rgba(76, 29, 149, 0.05); }
+.text-violet-900\/5 { color: rgba(76, 29, 149, 0.05); }
+.shadow-violet-900\/5 { --tw-shadow-color: rgba(76, 29, 149, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/5:hover { --tw-shadow-color: rgba(76, 29, 149, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/5:hover { --tw-shadow-color: rgba(76, 29, 149, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/5 { --tw-ring-color: rgba(76, 29, 149, 0.05); }
+.focus\:ring-violet-900\/5:focus { --tw-ring-color: rgba(76, 29, 149, 0.05); }
+.bg-violet-900\/10 { background-color: rgba(76, 29, 149, 0.1); }
+.border-violet-900\/10 { border-color: rgba(76, 29, 149, 0.1); }
+.text-violet-900\/10 { color: rgba(76, 29, 149, 0.1); }
+.shadow-violet-900\/10 { --tw-shadow-color: rgba(76, 29, 149, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/10:hover { --tw-shadow-color: rgba(76, 29, 149, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/10:hover { --tw-shadow-color: rgba(76, 29, 149, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/10 { --tw-ring-color: rgba(76, 29, 149, 0.1); }
+.focus\:ring-violet-900\/10:focus { --tw-ring-color: rgba(76, 29, 149, 0.1); }
+.bg-violet-900\/15 { background-color: rgba(76, 29, 149, 0.15); }
+.border-violet-900\/15 { border-color: rgba(76, 29, 149, 0.15); }
+.text-violet-900\/15 { color: rgba(76, 29, 149, 0.15); }
+.shadow-violet-900\/15 { --tw-shadow-color: rgba(76, 29, 149, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/15:hover { --tw-shadow-color: rgba(76, 29, 149, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/15:hover { --tw-shadow-color: rgba(76, 29, 149, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/15 { --tw-ring-color: rgba(76, 29, 149, 0.15); }
+.focus\:ring-violet-900\/15:focus { --tw-ring-color: rgba(76, 29, 149, 0.15); }
+.bg-violet-900\/20 { background-color: rgba(76, 29, 149, 0.2); }
+.border-violet-900\/20 { border-color: rgba(76, 29, 149, 0.2); }
+.text-violet-900\/20 { color: rgba(76, 29, 149, 0.2); }
+.shadow-violet-900\/20 { --tw-shadow-color: rgba(76, 29, 149, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/20:hover { --tw-shadow-color: rgba(76, 29, 149, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/20:hover { --tw-shadow-color: rgba(76, 29, 149, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/20 { --tw-ring-color: rgba(76, 29, 149, 0.2); }
+.focus\:ring-violet-900\/20:focus { --tw-ring-color: rgba(76, 29, 149, 0.2); }
+.bg-violet-900\/25 { background-color: rgba(76, 29, 149, 0.25); }
+.border-violet-900\/25 { border-color: rgba(76, 29, 149, 0.25); }
+.text-violet-900\/25 { color: rgba(76, 29, 149, 0.25); }
+.shadow-violet-900\/25 { --tw-shadow-color: rgba(76, 29, 149, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/25:hover { --tw-shadow-color: rgba(76, 29, 149, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/25:hover { --tw-shadow-color: rgba(76, 29, 149, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/25 { --tw-ring-color: rgba(76, 29, 149, 0.25); }
+.focus\:ring-violet-900\/25:focus { --tw-ring-color: rgba(76, 29, 149, 0.25); }
+.bg-violet-900\/30 { background-color: rgba(76, 29, 149, 0.3); }
+.border-violet-900\/30 { border-color: rgba(76, 29, 149, 0.3); }
+.text-violet-900\/30 { color: rgba(76, 29, 149, 0.3); }
+.shadow-violet-900\/30 { --tw-shadow-color: rgba(76, 29, 149, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/30:hover { --tw-shadow-color: rgba(76, 29, 149, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/30:hover { --tw-shadow-color: rgba(76, 29, 149, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/30 { --tw-ring-color: rgba(76, 29, 149, 0.3); }
+.focus\:ring-violet-900\/30:focus { --tw-ring-color: rgba(76, 29, 149, 0.3); }
+.bg-violet-900\/40 { background-color: rgba(76, 29, 149, 0.4); }
+.border-violet-900\/40 { border-color: rgba(76, 29, 149, 0.4); }
+.text-violet-900\/40 { color: rgba(76, 29, 149, 0.4); }
+.shadow-violet-900\/40 { --tw-shadow-color: rgba(76, 29, 149, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/40:hover { --tw-shadow-color: rgba(76, 29, 149, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/40:hover { --tw-shadow-color: rgba(76, 29, 149, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/40 { --tw-ring-color: rgba(76, 29, 149, 0.4); }
+.focus\:ring-violet-900\/40:focus { --tw-ring-color: rgba(76, 29, 149, 0.4); }
+.bg-violet-900\/50 { background-color: rgba(76, 29, 149, 0.5); }
+.border-violet-900\/50 { border-color: rgba(76, 29, 149, 0.5); }
+.text-violet-900\/50 { color: rgba(76, 29, 149, 0.5); }
+.shadow-violet-900\/50 { --tw-shadow-color: rgba(76, 29, 149, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/50:hover { --tw-shadow-color: rgba(76, 29, 149, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/50:hover { --tw-shadow-color: rgba(76, 29, 149, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/50 { --tw-ring-color: rgba(76, 29, 149, 0.5); }
+.focus\:ring-violet-900\/50:focus { --tw-ring-color: rgba(76, 29, 149, 0.5); }
+.bg-violet-900\/60 { background-color: rgba(76, 29, 149, 0.6); }
+.border-violet-900\/60 { border-color: rgba(76, 29, 149, 0.6); }
+.text-violet-900\/60 { color: rgba(76, 29, 149, 0.6); }
+.shadow-violet-900\/60 { --tw-shadow-color: rgba(76, 29, 149, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/60:hover { --tw-shadow-color: rgba(76, 29, 149, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/60:hover { --tw-shadow-color: rgba(76, 29, 149, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/60 { --tw-ring-color: rgba(76, 29, 149, 0.6); }
+.focus\:ring-violet-900\/60:focus { --tw-ring-color: rgba(76, 29, 149, 0.6); }
+.bg-violet-900\/70 { background-color: rgba(76, 29, 149, 0.7); }
+.border-violet-900\/70 { border-color: rgba(76, 29, 149, 0.7); }
+.text-violet-900\/70 { color: rgba(76, 29, 149, 0.7); }
+.shadow-violet-900\/70 { --tw-shadow-color: rgba(76, 29, 149, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/70:hover { --tw-shadow-color: rgba(76, 29, 149, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/70:hover { --tw-shadow-color: rgba(76, 29, 149, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/70 { --tw-ring-color: rgba(76, 29, 149, 0.7); }
+.focus\:ring-violet-900\/70:focus { --tw-ring-color: rgba(76, 29, 149, 0.7); }
+.bg-violet-900\/80 { background-color: rgba(76, 29, 149, 0.8); }
+.border-violet-900\/80 { border-color: rgba(76, 29, 149, 0.8); }
+.text-violet-900\/80 { color: rgba(76, 29, 149, 0.8); }
+.shadow-violet-900\/80 { --tw-shadow-color: rgba(76, 29, 149, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/80:hover { --tw-shadow-color: rgba(76, 29, 149, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/80:hover { --tw-shadow-color: rgba(76, 29, 149, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/80 { --tw-ring-color: rgba(76, 29, 149, 0.8); }
+.focus\:ring-violet-900\/80:focus { --tw-ring-color: rgba(76, 29, 149, 0.8); }
+.bg-violet-900\/90 { background-color: rgba(76, 29, 149, 0.9); }
+.border-violet-900\/90 { border-color: rgba(76, 29, 149, 0.9); }
+.text-violet-900\/90 { color: rgba(76, 29, 149, 0.9); }
+.shadow-violet-900\/90 { --tw-shadow-color: rgba(76, 29, 149, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-900\/90:hover { --tw-shadow-color: rgba(76, 29, 149, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-900\/90:hover { --tw-shadow-color: rgba(76, 29, 149, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-900\/90 { --tw-ring-color: rgba(76, 29, 149, 0.9); }
+.focus\:ring-violet-900\/90:focus { --tw-ring-color: rgba(76, 29, 149, 0.9); }
+.bg-violet-950\/5 { background-color: rgba(46, 16, 101, 0.05); }
+.border-violet-950\/5 { border-color: rgba(46, 16, 101, 0.05); }
+.text-violet-950\/5 { color: rgba(46, 16, 101, 0.05); }
+.shadow-violet-950\/5 { --tw-shadow-color: rgba(46, 16, 101, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/5:hover { --tw-shadow-color: rgba(46, 16, 101, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/5:hover { --tw-shadow-color: rgba(46, 16, 101, 0.05); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/5 { --tw-ring-color: rgba(46, 16, 101, 0.05); }
+.focus\:ring-violet-950\/5:focus { --tw-ring-color: rgba(46, 16, 101, 0.05); }
+.bg-violet-950\/10 { background-color: rgba(46, 16, 101, 0.1); }
+.border-violet-950\/10 { border-color: rgba(46, 16, 101, 0.1); }
+.text-violet-950\/10 { color: rgba(46, 16, 101, 0.1); }
+.shadow-violet-950\/10 { --tw-shadow-color: rgba(46, 16, 101, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/10:hover { --tw-shadow-color: rgba(46, 16, 101, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/10:hover { --tw-shadow-color: rgba(46, 16, 101, 0.1); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/10 { --tw-ring-color: rgba(46, 16, 101, 0.1); }
+.focus\:ring-violet-950\/10:focus { --tw-ring-color: rgba(46, 16, 101, 0.1); }
+.bg-violet-950\/15 { background-color: rgba(46, 16, 101, 0.15); }
+.border-violet-950\/15 { border-color: rgba(46, 16, 101, 0.15); }
+.text-violet-950\/15 { color: rgba(46, 16, 101, 0.15); }
+.shadow-violet-950\/15 { --tw-shadow-color: rgba(46, 16, 101, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/15:hover { --tw-shadow-color: rgba(46, 16, 101, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/15:hover { --tw-shadow-color: rgba(46, 16, 101, 0.15); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/15 { --tw-ring-color: rgba(46, 16, 101, 0.15); }
+.focus\:ring-violet-950\/15:focus { --tw-ring-color: rgba(46, 16, 101, 0.15); }
+.bg-violet-950\/20 { background-color: rgba(46, 16, 101, 0.2); }
+.border-violet-950\/20 { border-color: rgba(46, 16, 101, 0.2); }
+.text-violet-950\/20 { color: rgba(46, 16, 101, 0.2); }
+.shadow-violet-950\/20 { --tw-shadow-color: rgba(46, 16, 101, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/20:hover { --tw-shadow-color: rgba(46, 16, 101, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/20:hover { --tw-shadow-color: rgba(46, 16, 101, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/20 { --tw-ring-color: rgba(46, 16, 101, 0.2); }
+.focus\:ring-violet-950\/20:focus { --tw-ring-color: rgba(46, 16, 101, 0.2); }
+.bg-violet-950\/25 { background-color: rgba(46, 16, 101, 0.25); }
+.border-violet-950\/25 { border-color: rgba(46, 16, 101, 0.25); }
+.text-violet-950\/25 { color: rgba(46, 16, 101, 0.25); }
+.shadow-violet-950\/25 { --tw-shadow-color: rgba(46, 16, 101, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/25:hover { --tw-shadow-color: rgba(46, 16, 101, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/25:hover { --tw-shadow-color: rgba(46, 16, 101, 0.25); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/25 { --tw-ring-color: rgba(46, 16, 101, 0.25); }
+.focus\:ring-violet-950\/25:focus { --tw-ring-color: rgba(46, 16, 101, 0.25); }
+.bg-violet-950\/30 { background-color: rgba(46, 16, 101, 0.3); }
+.border-violet-950\/30 { border-color: rgba(46, 16, 101, 0.3); }
+.text-violet-950\/30 { color: rgba(46, 16, 101, 0.3); }
+.shadow-violet-950\/30 { --tw-shadow-color: rgba(46, 16, 101, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/30:hover { --tw-shadow-color: rgba(46, 16, 101, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/30:hover { --tw-shadow-color: rgba(46, 16, 101, 0.3); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/30 { --tw-ring-color: rgba(46, 16, 101, 0.3); }
+.focus\:ring-violet-950\/30:focus { --tw-ring-color: rgba(46, 16, 101, 0.3); }
+.bg-violet-950\/40 { background-color: rgba(46, 16, 101, 0.4); }
+.border-violet-950\/40 { border-color: rgba(46, 16, 101, 0.4); }
+.text-violet-950\/40 { color: rgba(46, 16, 101, 0.4); }
+.shadow-violet-950\/40 { --tw-shadow-color: rgba(46, 16, 101, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/40:hover { --tw-shadow-color: rgba(46, 16, 101, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/40:hover { --tw-shadow-color: rgba(46, 16, 101, 0.4); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/40 { --tw-ring-color: rgba(46, 16, 101, 0.4); }
+.focus\:ring-violet-950\/40:focus { --tw-ring-color: rgba(46, 16, 101, 0.4); }
+.bg-violet-950\/50 { background-color: rgba(46, 16, 101, 0.5); }
+.border-violet-950\/50 { border-color: rgba(46, 16, 101, 0.5); }
+.text-violet-950\/50 { color: rgba(46, 16, 101, 0.5); }
+.shadow-violet-950\/50 { --tw-shadow-color: rgba(46, 16, 101, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/50:hover { --tw-shadow-color: rgba(46, 16, 101, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/50:hover { --tw-shadow-color: rgba(46, 16, 101, 0.5); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/50 { --tw-ring-color: rgba(46, 16, 101, 0.5); }
+.focus\:ring-violet-950\/50:focus { --tw-ring-color: rgba(46, 16, 101, 0.5); }
+.bg-violet-950\/60 { background-color: rgba(46, 16, 101, 0.6); }
+.border-violet-950\/60 { border-color: rgba(46, 16, 101, 0.6); }
+.text-violet-950\/60 { color: rgba(46, 16, 101, 0.6); }
+.shadow-violet-950\/60 { --tw-shadow-color: rgba(46, 16, 101, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/60:hover { --tw-shadow-color: rgba(46, 16, 101, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/60:hover { --tw-shadow-color: rgba(46, 16, 101, 0.6); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/60 { --tw-ring-color: rgba(46, 16, 101, 0.6); }
+.focus\:ring-violet-950\/60:focus { --tw-ring-color: rgba(46, 16, 101, 0.6); }
+.bg-violet-950\/70 { background-color: rgba(46, 16, 101, 0.7); }
+.border-violet-950\/70 { border-color: rgba(46, 16, 101, 0.7); }
+.text-violet-950\/70 { color: rgba(46, 16, 101, 0.7); }
+.shadow-violet-950\/70 { --tw-shadow-color: rgba(46, 16, 101, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/70:hover { --tw-shadow-color: rgba(46, 16, 101, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/70:hover { --tw-shadow-color: rgba(46, 16, 101, 0.7); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/70 { --tw-ring-color: rgba(46, 16, 101, 0.7); }
+.focus\:ring-violet-950\/70:focus { --tw-ring-color: rgba(46, 16, 101, 0.7); }
+.bg-violet-950\/80 { background-color: rgba(46, 16, 101, 0.8); }
+.border-violet-950\/80 { border-color: rgba(46, 16, 101, 0.8); }
+.text-violet-950\/80 { color: rgba(46, 16, 101, 0.8); }
+.shadow-violet-950\/80 { --tw-shadow-color: rgba(46, 16, 101, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/80:hover { --tw-shadow-color: rgba(46, 16, 101, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/80:hover { --tw-shadow-color: rgba(46, 16, 101, 0.8); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/80 { --tw-ring-color: rgba(46, 16, 101, 0.8); }
+.focus\:ring-violet-950\/80:focus { --tw-ring-color: rgba(46, 16, 101, 0.8); }
+.bg-violet-950\/90 { background-color: rgba(46, 16, 101, 0.9); }
+.border-violet-950\/90 { border-color: rgba(46, 16, 101, 0.9); }
+.text-violet-950\/90 { color: rgba(46, 16, 101, 0.9); }
+.shadow-violet-950\/90 { --tw-shadow-color: rgba(46, 16, 101, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.hover\:shadow-violet-950\/90:hover { --tw-shadow-color: rgba(46, 16, 101, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.group-hover\:shadow-violet-950\/90:hover { --tw-shadow-color: rgba(46, 16, 101, 0.9); --tw-shadow: var(--tw-shadow-colored); }
+.ring-violet-950\/90 { --tw-ring-color: rgba(46, 16, 101, 0.9); }
+.focus\:ring-violet-950\/90:focus { --tw-ring-color: rgba(46, 16, 101, 0.9); }
+.from-violet-50 { --tw-gradient-from: #f5f3ff var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-50 { --tw-gradient-to: #f5f3ff var(--tw-gradient-to-position); }
+.via-violet-50 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #f5f3ff var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-100 { --tw-gradient-from: #ede9fe var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-100 { --tw-gradient-to: #ede9fe var(--tw-gradient-to-position); }
+.via-violet-100 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #ede9fe var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-200 { --tw-gradient-from: #ddd6fe var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-200 { --tw-gradient-to: #ddd6fe var(--tw-gradient-to-position); }
+.via-violet-200 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #ddd6fe var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-300 { --tw-gradient-from: #c4b5fd var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-300 { --tw-gradient-to: #c4b5fd var(--tw-gradient-to-position); }
+.via-violet-300 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #c4b5fd var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-400 { --tw-gradient-from: #a78bfa var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-400 { --tw-gradient-to: #a78bfa var(--tw-gradient-to-position); }
+.via-violet-400 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #a78bfa var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-500 { --tw-gradient-from: #8b5cf6 var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-500 { --tw-gradient-to: #8b5cf6 var(--tw-gradient-to-position); }
+.via-violet-500 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #8b5cf6 var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-600 { --tw-gradient-from: #7c3aed var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-600 { --tw-gradient-to: #7c3aed var(--tw-gradient-to-position); }
+.via-violet-600 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #7c3aed var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-700 { --tw-gradient-from: #6d28d9 var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-700 { --tw-gradient-to: #6d28d9 var(--tw-gradient-to-position); }
+.via-violet-700 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #6d28d9 var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-800 { --tw-gradient-from: #5b21b6 var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-800 { --tw-gradient-to: #5b21b6 var(--tw-gradient-to-position); }
+.via-violet-800 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #5b21b6 var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-900 { --tw-gradient-from: #4c1d95 var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-900 { --tw-gradient-to: #4c1d95 var(--tw-gradient-to-position); }
+.via-violet-900 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #4c1d95 var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.from-violet-950 { --tw-gradient-from: #2e1065 var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-950 { --tw-gradient-to: #2e1065 var(--tw-gradient-to-position); }
+.via-violet-950 { --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #2e1065 var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.border-t-violet-500 { border-top-color: #8b5cf6; }
+.group-open\:bg-violet-50[open] { background-color: #f5f3ff; }
+.group-open\:text-violet-600[open] { color: #7c3aed; }
+.from-violet-500\/10 { --tw-gradient-from: rgba(139, 92, 246, 0.1) var(--tw-gradient-from-position); --tw-gradient-to: rgba(139, 92, 246, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-violet-100\/40 { --tw-gradient-to: rgba(237, 233, 254, 0.4) var(--tw-gradient-to-position); }
+.to-violet-500\/10 { --tw-gradient-to: rgba(139, 92, 246, 0.1) var(--tw-gradient-to-position); }
+
+/* Layout & Text Bounds Safety */
+.truncate {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+.overflow-hidden {
+    overflow: hidden !important;
+}
+.break-words {
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+}

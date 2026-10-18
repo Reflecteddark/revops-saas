@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Публичный Договор-Оферта на сервис RevOps OS (Все тарифы)</title>
+    <link rel="stylesheet" href="css/fonts.css">
+    <link rel="stylesheet" href="css/fontawesome.min.css">
+    <link rel="stylesheet" href="css/tailwind.min.css">
+    <!-- Полноценная тема «Глубокий чёрный + Фиолетовый глубокий» (как на главной) -->
+    <link rel="stylesheet" href="css/dark-theme.css?v=20261017-full-theme">
+    <link rel="stylesheet" href="css/tabler-colors.css?v=20261017-full-theme">
+
+    <!-- Тема по умолчанию: тёмная (глубокий чёрный), синхронизирована с главной -->
+    <script>
+        (function () {
+            var t = 'dark';
+            try { t = localStorage.getItem('revops-theme') || 'dark'; } catch (e) {}
+            if (t !== 'light' && t !== 'dark') t = 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            document.documentElement.setAttribute('data-bs-theme', t);
+        })();
+    </script>
+    <!-- Синхронизация темы между страницами -->
+    <script>
+        window.addEventListener('storage', function (e) {
+            if (e.key === 'revops-theme' && (e.newValue === 'light' || e.newValue === 'dark')) {
+                document.documentElement.setAttribute('data-theme', e.newValue);
+                document.documentElement.setAttribute('data-bs-theme', e.newValue);
+            }
+        });
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0b0f19; color: #cbd5e1; }
+        .glass-card { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(51, 65, 85, 0.5); }
+    </style>
+    <!-- Yandex.Metrika counter (152-ФЗ РФ Compliant) -->
+    <script type="text/javascript">
+       (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+       m[i].l=1*new Date();
+       for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+       k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+       (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+       ym(113329268, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true,
+            webvisor:true,
+            params: { ip_anonymization: true }
+       });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/113329268" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <!-- Плавающая кнопка Назад (на мобильных и десктопах) -->
+    <a href="/" onclick="goBack(event)" class="no-print fixed top-3 left-3 sm:top-5 sm:left-5 z-50 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:text-white text-xs sm:text-sm font-semibold border border-slate-700/90 hover:border-slate-500 shadow-2xl backdrop-blur-md transition-all group cursor-pointer" title="Назад на главную страницу">
+        <i class="fas fa-arrow-left text-xs text-emerald-400 group-hover:-translate-x-1 transition-transform"></i>
+        <span>Назад на сайт</span>
+    </a>
+
+    <div class="max-w-4xl mx-auto glass-card rounded-2xl p-6 sm:p-10 shadow-2xl">
+        
+        <!-- Верхняя панель навигации -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800 mb-8">
+            <div class="flex items-center gap-3">
+                <a href="/" onclick="goBack(event)" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold border border-slate-700 transition group" title="Вернуться на главную">
+                    <i class="fas fa-arrow-left text-xs text-emerald-400 group-hover:-translate-x-0.5 transition-transform"></i>
+                    <span>На главную</span>
+                </a>
+                <a href="/" class="flex items-center gap-2 text-white font-bold text-base hover:text-emerald-400 transition">
+                    <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 text-sm font-black">AI</span>
+                    <span>RevOps OS Pro</span>
+                </a>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5 text-xs">
+                <button type="button" onclick="window.print()" class="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 font-medium transition flex items-center gap-1.5" title="Печать">
+                    <i class="fas fa-print text-cyan-400 text-[11px]"></i> Печать
+                </button>
+                <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">152-ФЗ РФ</span>
+                <span class="text-slate-400 hidden sm:inline">Редакция: 02.10.2026 г.</span>
+            </div>
+        </div>
+
+        <!-- Заголовок -->
+        <div class="text-center mb-8">
+            <span class="text-xs uppercase font-bold tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">Официальный документ</span>
+            <h1 class="text-2xl sm:text-3xl font-black text-white mt-3 mb-2">ПУБЛИЧНЫЙ ДОГОВОР-ОФЕРТА</h1>
+            <p class="text-sm text-slate-400">на предоставление удаленного доступа к программному сервису ИИ-супервизии продаж «RevOps OS» (ai-rop.ru)</p>
+        </div>
+
+        <!-- Преамбула с переключателем статуса -->
+        <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800 mb-8 text-xs sm:text-sm leading-relaxed text-slate-300">
+            <p class="mb-3">
+                Настоящий документ является публичной офертой <strong>Исполнителя (Федотова Дмитрия)</strong>, основателя сервиса <strong>ai-rop.ru</strong>, 
+                адресованной юридическим лицам и индивидуальным предпринимателям РФ (далее — «Заказчик»), заключить договор на оказание услуг и предоставление доступа к сервису RevOps OS на изложенных ниже условиях.
+            </p>
+            <div class="p-3.5 bg-slate-950/80 rounded-lg border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div>
+                    <span class="font-bold text-white">Правовой статус исполнителя:</span>
+                    <div class="text-slate-400 mt-0.5">Официальный статус: <strong class="text-emerald-400">Плательщик налога на профессиональный доход (Самозанятый)</strong> по 422-ФЗ РФ</div>
+                </div>
+                <div class="text-slate-400 shrink-0">
+                    ИНН: <span class="font-mono text-white">731303201073</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. Предмет -->
+        <div class="mb-8">
+            <h2 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+                <span class="text-emerald-400">1.</span> Предмет договора
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-2">
+                1.1. Исполнитель обязуется предоставить Заказчику удаленный облачный доступ к программному комплексу «RevOps OS», обеспечивающему 100% оцифровку, распознавание речи, оценку звонков менеджеров по 13 критериям B2B и отправку оперативных алертов в Telegram, а Заказчик обязуется принять и оплатить доступ в соответствии с выбранным Тарифным планом.
+            </p>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                1.2. Подключение осуществляется через официальные API к amoCRM или Битрикс24 Заказчика в течение 1 рабочего дня.
+            </p>
+        </div>
+
+        <!-- 2. Сетка Тарифов -->
+        <div class="mb-8">
+            <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <span class="text-emerald-400">2.</span> Тарифные планы и стоимость услуг
+            </h2>
+            
+            <div class="overflow-x-auto rounded-xl border border-slate-800">
+                <table class="w-full text-left text-xs sm:text-sm">
+                    <thead class="bg-slate-900/90 text-slate-300 font-bold border-b border-slate-800">
+                        <tr>
+                            <th class="p-3.5">Тарифный план</th>
+                            <th class="p-3.5">Стоимость</th>
+                            <th class="p-3.5">Объем ОП</th>
+                            <th class="p-3.5">Включенный функционал</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                        <tr class="bg-emerald-950/10 hover:bg-emerald-950/20">
+                            <td class="p-3.5 font-bold text-white">
+                                7-дневный Пилот
+                                <span class="block text-[11px] text-emerald-400 font-normal">Тест с гарантией</span>
+                            </td>
+                            <td class="p-3.5 font-bold text-emerald-400 font-mono">14 900 ₽<br><span class="text-[10px] text-slate-400 font-normal">разово за 7 дней</span></td>
+                            <td class="p-3.5">до 10 чел</td>
+                            <td class="p-3.5 text-xs">100% аудит звонков за неделю, алерты за 60 сек, дайджест в 09:00, PDF-карта сливов, <strong class="text-emerald-300">100% гарантия возврата денег</strong>.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-900/40">
+                            <td class="p-3.5 font-bold text-white">Тариф «RevOps Pro»<br><span class="text-[11px] text-cyan-400 font-normal">Хит продаж // Выбор РОПов</span></td>
+                            <td class="p-3.5 font-bold text-slate-200 font-mono">29 900 ₽ / мес<br><span class="text-[10px] text-slate-500 font-normal">23 920 ₽ при оплате за год</span></td>
+                            <td class="p-3.5">до 10 чел</td>
+                            <td class="p-3.5 text-xs">100% аудит всех звонков, интеграция с 1 CRM (amo/Б24), утренний дайджест РОПу в Telegram, базовый чек-лист 13 критериев.</td>
+                        </tr>
+                        <tr class="bg-indigo-950/10 hover:bg-indigo-950/20">
+                            <td class="p-3.5 font-bold text-white">
+                                Тариф «Рост» (Scale)
+                                <span class="block text-[11px] text-indigo-400 font-normal">Самый популярный</span>
+                            </td>
+                            <td class="p-3.5 font-bold text-indigo-400 font-mono">59 000 ₽ / мес<br><span class="text-[10px] text-slate-500 font-normal">47 200 ₽ при оплате за год</span></td>
+                            <td class="p-3.5">до 15 чел</td>
+                            <td class="p-3.5 text-xs">Все из «Старт» + мгновенные Telegram-алерты за 60 сек на срыв сделок, отработка «Дорого», кастомный чеклист, еженедельный спринт с RevOps-экспертом.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-900/40">
+                            <td class="p-3.5 font-bold text-white">Тариф «Корпоративный»</td>
+                            <td class="p-3.5 font-bold text-cyan-400 font-mono">89 000 ₽ / мес<br><span class="text-[10px] text-slate-500 font-normal">71 200 ₽ при оплате за год</span></td>
+                            <td class="p-3.5">от 10+ чел</td>
+                            <td class="p-3.5 text-xs">Все из «Рост» + персональный выделенный RevOps-аналитик, выделенный сервер 152-ФЗ, интеграция с несколькими CRM/филиалами, SLA 99.9%.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">
+                * НДС не облагается в связи с применением Исполнителем специального налогового режима НПД (ст. 2 422-ФЗ) либо УСН (п. 2 ст. 346.11 НК РФ). При оплате за 12 месяцев предоставляется скидка 20%.
+            </p>
+        </div>
+
+        <!-- 3. Гарантия возврата -->
+        <div class="mb-8 bg-emerald-950/20 rounded-xl p-5 border border-emerald-500/30">
+            <h2 class="text-base font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                <i class="fas fa-shield-halved"></i> 3. Безусловная 100% гарантия возврата по Пилоту (Money-Back Guarantee)
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-2">
+                3.1. Для Тарифа «7-дневный Пилотный спринт» действует 100% безусловная гарантия окупаемости.
+            </p>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                3.2. Если по итогам 7 дней система не обнаружит упущенную выручку или Заказчик сочтет результаты пилота неудовлетворительными, <strong>Исполнитель возвращает 100% уплаченной суммы (14 900 ₽) на расчетный счет Заказчика в течение 3 банковских дней</strong> по первому запросу в Telegram (<a href="https://t.me/dm1918" class="text-emerald-400 underline">@dm1918</a>) или на email, без штрафов и удержаний.
+            </p>
+        </div>
+
+        <!-- 4. Порядок оплаты и отчетность -->
+        <div class="mb-8">
+            <h2 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+                <span class="text-emerald-400">4.</span> Порядок расчетов и закрывающие документы
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-2">
+                4.1. Оплата производится Заказчиком в форме 100% предоплаты безналичным переводом на расчетный счет или корпоративной картой.
+            </p>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-2">
+                4.2. <strong>При расчетах в статусе Самозанятого (НПД):</strong> Исполнитель в день зачисления оплаты формирует фискальный чек через сервис ФНС «Мой налог» с указанием ИНН Заказчика. На основании чека Заказчик в полном объеме учитывает расходы для налога на прибыль / УСН (п. 8 ст. 15 422-ФЗ).
+            </p>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                4.3. <strong>При расчетах в статусе ИП:</strong> Исполнитель выставляет счет и ежемесячный Акт сдачи-приемки через систему ЭДО (Диадок / СБИС) или на email.
+            </p>
+        </div>
+
+        <!-- 5. 152-ФЗ Безопасность и Поручение на обработку ПДн -->
+        <div class="mb-8">
+            <h2 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+                <span class="text-emerald-400">5.</span> Поручение на обработку персональных данных и безопасность (152-ФЗ РФ)
+            </h2>
+            <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 mb-3 text-emerald-300 text-xs sm:text-sm">
+                <i class="fas fa-shield-halved mr-1.5"></i>
+                <strong>Юридический статус сторон по ч. 3 ст. 6 Федерального закона № 152-ФЗ:</strong>
+                Заказчик выступает Оператором персональных данных, а Исполнитель — лицом, осуществляющим обработку персональных данных по поручению Оператора.
+            </div>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-2">
+                5.1. <strong>Предмет поручения:</strong> Заказчик поручает, а Исполнитель принимает на себя обязательства осуществлять обработку персональных данных (аудиозаписи звонков менеджеров, их текстовые стенограммы, метаданные вызовов, ФИО и телефоны контактных лиц) исключительно в целях автоматизированного контроля качества диалогов, выявления нарушений скриптов и формирования аналитических отчетов для руководства Заказчика.
+            </p>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-2">
+                5.2. <strong>Гарантии Заказчика:</strong> Заказчик гарантирует, что им соблюдены все требования законодательства РФ в части уведомления абонентов о фиксации и записи телефонных разговоров (в том числе посредством голосового информирования «В целях контроля качества разговор записывается»), а также получены необходимые согласия сотрудников Заказчика на контроль качества их трудовой деятельности. В соответствии с ч. 4 и ч. 5 ст. 6 152-ФЗ РФ, ответственность перед субъектами персональных данных за законность сбора данных несет Заказчик.
+            </p>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-2">
+                5.3. <strong>Прямой отказ от обработки биометрических данных (ст. 11 152-ФЗ):</strong> Стороны прямо признают и соглашаются, что передаваемые аудиозаписи телефонных разговоров используются <em>исключительно для семантического (текстового) анализа качества ведения переговоров</em> и <strong>НЕ используются для установления или идентификации личности субъекта (аутентификации по голосу)</strong>, в связи с чем не являются биометрическими персональными данными в значении ст. 11 Федерального закона № 152-ФЗ и Федерального закона № 572-ФЗ.
+            </p>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-2">
+                5.4. <strong>Обязанности Исполнителя по обеспечению безопасности:</strong> Исполнитель обязуется соблюдать конфиденциальность персональных данных, обеспечивать их безопасность при обработке в соответствии со ст. 19 152-ФЗ РФ, не передавать данные третьим лицам без поручения Заказчика и применять алгоритмы криптографической токенизации и маскирования (PIISanitizer) перед аналитическим инференсом.
+            </p>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-2">
+                5.5. <strong>Локализация и уничтожение данных:</strong> Первичный сбор, систематизация и хранение данных осуществляются на вычислительных мощностях в дата-центрах на территории Российской Федерации (Selectel, Yandex Cloud, Москва / Санкт-Петербург) в соответствии с ч. 5 ст. 18 152-ФЗ. По истечении срока действия договора или по первому письменному требованию Заказчика переданные аудиозаписи подлежат полному удалению или обезличиванию.
+            </p>
+        </div>
+
+        <!-- 6. Реквизиты Сторон -->
+        <div class="pt-6 border-t border-slate-800">
+            <h2 class="text-base font-bold text-white mb-4">6. Реквизиты Исполнителя</h2>
+            
+            <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs sm:text-sm">
+                <span class="font-bold text-emerald-400 block mb-3 text-sm flex items-center gap-2">
+                    <i class="fas fa-shield-halved"></i> РЕКВИЗИТЫ ДЛЯ БЕЗНАЛИЧНЫХ РАСЧЕТОВ (422-ФЗ РФ):
+                </span>
+                <p class="leading-relaxed text-slate-300">
+                    <strong>Исполнитель:</strong> Федотов Дмитрий Валерьевич<br>
+                    <strong>Статус:</strong> Плательщик налога на профессиональный доход (Самозанятый)<br>
+                    <strong>ИНН:</strong> <span class="font-mono text-white font-bold">731303201073</span><br>
+                    <strong>Банк:</strong> Филиал № 6318 Банка ВТБ (ПАО)<br>
+                    <strong>Расчетный счет:</strong> <span class="font-mono text-white">40817810635184001277</span><br>
+                    <strong>БИК:</strong> <span class="font-mono text-white">043601968</span><br>
+                    <strong>К/с:</strong> <span class="font-mono text-white">30101810422023601968</span><br>
+                    <strong>Официальный закрывающий документ:</strong> Электронный чек ФНС РФ (п. 1 ст. 15 Федерального закона № 422-ФЗ) + Акт сдачи-приемки<br>
+                    <strong>Telegram:</strong> <a href="https://t.me/dm1918" class="text-emerald-400 underline">@dm1918</a> • <strong>Email:</strong> <a href="mailto:info@ai-rop.ru" class="text-emerald-400 underline">info@ai-rop.ru</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Блок возврата на сайт и связи с основателем -->
+        <div class="mt-10 p-5 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="text-left">
+                <div class="text-sm font-bold text-white mb-0.5">Остались вопросы по оферте или тарифам?</div>
+                <div class="text-xs text-slate-400">Основатель сервиса Дмитрий Федотов на связи лично в мессенджере.</div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+                <a href="/" onclick="goBack(event)" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition">
+                    <i class="fas fa-arrow-left text-emerald-400"></i>
+                    <span>Вернуться на сайт</span>
+                </a>
+                <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition">
+                    <i class="fas fa-print text-cyan-400"></i>
+                    <span>Печать / В PDF</span>
+                </button>
+                <a href="https://t.me/dm1918" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-md shadow-emerald-500/20">
+                    <i class="fab fa-telegram"></i>
+                    <span>Написать Дмитрию</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-slate-900 text-center text-xs text-slate-500">
+            <div class="flex items-center justify-center gap-4 mb-2">
+                <a href="/" class="hover:text-slate-300 underline">Главная</a>
+                <a href="/pilot-roadmap.html" class="hover:text-slate-300 underline">Дорожная карта пилота</a>
+                <a href="/privacy.html" class="hover:text-slate-300 underline">Политика 152-ФЗ</a>
+            </div>
+            &copy; 2026 RevOps OS Pro (ai-rop.ru). Все права защищены.
+        </div>
+    </div>
+
+    <!-- COOKIE CONSENT BANNER (152-ФЗ РФ) -->
+    <div id="cookieBanner" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 p-4 rounded-2xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl transition-all duration-500 transform translate-y-20 opacity-0 pointer-events-none">
+        <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 text-base">
+                <i class="fas fa-cookie-bite"></i>
+            </div>
+            <div class="flex-1">
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Мы используем cookie и сервисы аналитики для защиты данных по <a href="privacy.html" class="text-emerald-400 underline hover:text-emerald-300 font-medium">152-ФЗ РФ</a>.
+                </p>
+                <div class="mt-3 flex items-center gap-2">
+                    <button type="button" id="acceptCookieBtn" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-md shadow-emerald-500/20">
+                        Принять все
+                    </button>
+                    <a href="privacy.html" class="px-3 py-2 text-slate-400 hover:text-white text-xs transition underline">
+                        Подробнее
+                    </a>
+                </div>
+            </div>
+            <button type="button" id="closeCookieBtn" class="text-slate-500 hover:text-white p-1 text-xs" title="Закрыть">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <script>
+        (function() {
+            const banner = document.getElementById('cookieBanner');
+            const acceptBtn = document.getElementById('acceptCookieBtn');
+            const closeBtn = document.getElementById('closeCookieBtn');
+            const CONSENT_KEY = 'revops_cookie_consent_v1';
+            if (!banner) return;
+            try {
+                if (!localStorage.getItem(CONSENT_KEY)) {
+                    setTimeout(() => {
+                        banner.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+                        banner.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                    }, 1200);
+                }
+            } catch(e) {}
+            function acceptConsent() {
+                try { localStorage.setItem(CONSENT_KEY, 'true'); } catch(e) {}
+                banner.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+                banner.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            }
+            if (acceptBtn) acceptBtn.addEventListener('click', acceptConsent);
+            if (closeBtn) closeBtn.addEventListener('click', acceptConsent);
+        })();
+
+        // Universal Back Navigation Logic
+        function goBack(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            var targetUrl = (window.location.protocol === 'file:') ? 'index.html' : '/';
+            var ref = document.referrer;
+            var isFromOurSite = ref && (ref.indexOf(window.location.host) !== -1 || ref.indexOf('ai-rop.ru') !== -1);
+            if (window.history.length > 1 && isFromOurSite) {
+                window.history.back();
+                setTimeout(function() {
+                    if (window.location.pathname.indexOf('offer') !== -1 || window.location.href.indexOf('offer') !== -1) {
+                        window.location.href = targetUrl;
+                    }
+                }, 250);
+            } else {
+                window.location.href = targetUrl;
+            }
+        }
+    </script>
+
+    <!-- FLOATING SCROLL-TO-TOP BUTTON -->
+    <button type="button" id="scrollToTopBtn" aria-label="Вернуться наверх" class="fixed bottom-6 right-6 z-40 p-3 rounded-2xl bg-slate-900/90 hover:bg-emerald-500 text-slate-300 hover:text-slate-950 border border-slate-700/80 shadow-2xl transition-all duration-300 opacity-0 pointer-events-none translate-y-4 hover:scale-105 active:scale-95 flex items-center gap-2 group backdrop-blur-xl">
+        <i class="fas fa-arrow-up text-sm group-hover:-translate-y-0.5 transition-transform"></i>
+        <span class="text-xs font-bold font-mono pr-1 hidden sm:inline">Наверх</span>
+    </button>
+    <script>
+        (function() {
+            const btn = document.getElementById('scrollToTopBtn');
+            if (!btn) return;
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 300) {
+                    btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                    btn.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+                } else {
+                    btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+                    btn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+                }
+            }, { passive: true });
+            btn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        })();
+    </script>
+</body>
+</html>
