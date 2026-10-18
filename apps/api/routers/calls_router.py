@@ -20,6 +20,7 @@ from packages.database.session import get_db
 from ..auth import get_current_user
 from ..schemas import SpeechEvaluationRequest
 from ..websocket_manager import manager
+from .deals_router import get_deals_lookup
 
 logger = logging.getLogger("calls_router")
 
@@ -92,6 +93,12 @@ def fetch_calls_from_sheets(limit: int = 50) -> List[Dict[str, Any]]:
             return []
 
         calls = []
+        deals_map = {}
+        try:
+            deals_map = get_deals_lookup()
+        except Exception as ex:
+            logger.warning(f"Could not load deals lookup: {ex}")
+
         # Header is row 0; iterate backwards to get the most recent calls first
         data_rows = rows[1:]
         for r in reversed(data_rows):
@@ -100,6 +107,21 @@ def fetch_calls_from_sheets(limit: int = 50) -> List[Dict[str, Any]]:
             call_id = r[0]
             deal_id = r[1] if len(r) > 1 and r[1] else "Deal-N"
             manager_name = r[2] if len(r) > 2 and r[2] else "Менеджер"
+
+            # Match against real deals
+            deal_meta = None
+            clean_deal_id = str(deal_id).upper().strip()
+            if clean_deal_id in deals_map:
+                deal_meta = deals_map[clean_deal_id]
+            else:
+                num_only = re.sub(r"\D", "", clean_deal_id)
+                if num_only and num_only in deals_map:
+                    deal_meta = deals_map[num_only]
+
+            deal_title = deal_meta["title"] if deal_meta else f"Сделка {deal_id} ({manager_name})"
+            deal_amount_str = deal_meta["amount_str"] if deal_meta else "300 000 ₽"
+            deal_amount_num = deal_meta["amount"] if deal_meta else 300000.0
+            deal_stage = deal_meta["stage"] if deal_meta else "1. Первичный контакт"
 
             # Duration parsing
             dur_sec = 120
@@ -127,17 +149,17 @@ def fetch_calls_from_sheets(limit: int = 50) -> List[Dict[str, Any]]:
             elif next_step == 0:
                 status = "risk"
                 status_label = "СЛИВ (НЕТ NEXT STEP)"
-                risk_amt = "500 000 ₽"
+                risk_amt = deal_amount_str
             else:
                 status = "risk" if score < 8 else "won"
                 status_label = "СЛИВ" if score < 8 else "ЭТАЛОН"
-                risk_amt = "500 000 ₽" if score < 8 else "0 ₽"
+                risk_amt = deal_amount_str if score < 8 else "0 ₽"
 
             error_sum = r[21] if len(r) > 21 else ""
             rec = r[22] if len(r) > 22 else ""
             transcript = r[30] if len(r) > 30 else ""
 
-            # Client name heuristic from transcript or deal
+            # Client name heuristic from transcript or deal title
             client_name = "Клиент"
             if transcript:
                 first_lines = transcript.split("\n")[:4]
@@ -145,16 +167,21 @@ def fetch_calls_from_sheets(limit: int = 50) -> List[Dict[str, Any]]:
                     if "Клиент:" in line or "Клиент :" in line:
                         client_name = line.split(":", 1)[1].strip()[:35]
                         break
+            if client_name == "Клиент" and deal_meta and "Сделка" in deal_title:
+                parts = deal_title.split(":", 1)
+                if len(parts) > 1:
+                    client_name = parts[1].strip()[:35]
 
             calls.append({
                 "id": call_id,
                 "deal_id": deal_id,
-                "deal_title": f"Сделка {deal_id} ({manager_name})",
+                "deal_title": deal_title,
                 "client": client_name,
                 "manager": manager_name,
-                "stage": "Первичный контакт",
+                "stage": deal_stage,
                 "duration": duration_str,
-                "amount": "500 000 ₽",
+                "amount": deal_amount_str,
+                "amount_num": deal_amount_num,
                 "score": score,
                 "status": status,
                 "status_label": status_label,

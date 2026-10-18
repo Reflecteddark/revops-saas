@@ -5517,8 +5517,8 @@
             <div style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">
               Финансовый мост выручки (Revenue Bridge To-Be)
             </div>
-            <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
-              От факта 500 000 ₽ к целевой кассе 3 550 000 ₽
+            <h2 id="lossBridgeTitle" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              От факта 0 ₽ к целевой кассе 5 000 000 ₽
             </h2>
           </div>
           <span class="badge-won">ROI 50% &bull; ОКУПАЕМОСТЬ 20 ДНЕЙ</span>
@@ -5536,7 +5536,7 @@
           </div>
           <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">+</div>
           <div style="text-align: center;">
-            <div style="font-size: 0.72rem; color: var(--text-muted);">Возврат 30% утечек ОП</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Возврат 35% утечек ОП (To-Be)</div>
             <div id="lossBridgeLeaks" style="font-size: 1.3rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace;">+0 ₽</div>
           </div>
           <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">→</div>
@@ -5554,107 +5554,107 @@
             <div style="font-size: 0.7rem; font-weight: 700; color: #fb7185; text-transform: uppercase; letter-spacing: 0.08em;">
               СТУПЕНЧАТАЯ ВОРОНКА УТЕЧЕК ВЫРУЧКИ (FUNNEL LOSS STEPPER)
             </div>
-            <h2 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin-top: 2px;">
-              От валового таргета 5 000 000 ₽ к защищенной кассе SSOT 2 375 000 ₽
+            <h2 id="lossFunnelTitle" style="font-size: 1.2rem; font-weight: 800; color: #fff; margin-top: 2px;">
+              От валового таргета 5 000 000 ₽ к защищенной кассе SSOT
             </h2>
           </div>
-          <span class="delta-badge delta-neg"><span class="delta-dot"></span>-2 625 000 ₽ СУММАРНЫЙ ДЕФИЦИТ</span>
+          <span id="lossFunnelDeficitBadge" class="delta-badge delta-neg"><span class="delta-dot"></span>0 ₽ СУММАРНЫЙ ДЕФИЦИТ</span>
         </div>
 
         <div class="stepper-container">
           <!-- Step 1: Gross Target -->
           <div class="funnel-step">
-            <div class="funnel-step-bar" style="width: 100%; background: linear-gradient(90deg, #38bdf8, #00d4ff);"></div>
+            <div id="lossStepGrossBar" class="funnel-step-bar" style="width: 100%; background: linear-gradient(90deg, #38bdf8, #00d4ff);"></div>
             <div class="funnel-step-content">
               <div class="step-left">
                 <div class="step-num-badge">1</div>
                 <div>
                   <div class="step-title-text">Целевой план продаж (Точка Б компании)</div>
-                  <div class="step-desc-text">План месяца 100% &bull; Нормативная планка выручки</div>
+                  <div id="lossStepGrossSub" class="step-desc-text">План месяца 100% &bull; Нормативная планка выручки</div>
                 </div>
               </div>
               <div class="step-right">
                 <span class="delta-badge delta-cyan">100.0% БАЗА</span>
-                <span class="step-amount-val" style="color: #38bdf8;">5 000 000 ₽</span>
+                <span id="lossStepGrossAmt" class="step-amount-val" style="color: #38bdf8;">5 000 000 ₽</span>
               </div>
             </div>
           </div>
 
           <!-- Step 2: Next Step Leaks -->
           <div class="funnel-step">
-            <div class="funnel-step-bar" style="width: 77.5%; background: linear-gradient(90deg, #f43f5e, #fb7185);"></div>
+            <div id="lossStepNsBar" class="funnel-step-bar" style="width: 77.5%; background: linear-gradient(90deg, #f43f5e, #fb7185);"></div>
             <div class="funnel-step-content">
               <div class="step-left">
                 <div class="step-num-badge" style="background: rgba(244,63,94,0.2); border-color: rgba(244,63,94,0.4); color: #fca5a5;">2</div>
                 <div>
-                  <div class="step-title-text">Утечка: Звонки без жесткого Next Step (30% звонков)</div>
-                  <div class="step-desc-text">3 сделки из 10 ушли в «подумаем» без фиксированного слота созвона</div>
+                  <div class="step-title-text">Утечка: Звонки без жесткого Next Step</div>
+                  <div id="lossStepNsDesc" class="step-desc-text">Сделки ушли в «подумаем» без фиксированного слота созвона</div>
                 </div>
               </div>
               <div class="step-right">
-                <span class="delta-badge delta-neg"><span class="delta-dot"></span>-1 125 000 ₽</span>
-                <span class="step-amount-val" style="color: #fb7185;">3 875 000 ₽</span>
+                <span id="lossStepNsDelta" class="delta-badge delta-neg"><span class="delta-dot"></span>-0 ₽</span>
+                <span id="lossStepNsAmt" class="step-amount-val" style="color: #fb7185;">0 ₽</span>
               </div>
             </div>
           </div>
 
           <!-- Step 3: SLA КП Overdue -->
           <div class="funnel-step">
-            <div class="funnel-step-bar" style="width: 68.5%; background: linear-gradient(90deg, #fbbf24, #f59e0b);"></div>
+            <div id="lossStepSlaBar" class="funnel-step-bar" style="width: 68.5%; background: linear-gradient(90deg, #fbbf24, #f59e0b);"></div>
             <div class="funnel-step-content">
               <div class="step-left">
                 <div class="step-num-badge" style="background: rgba(251,191,36,0.2); border-color: rgba(251,191,36,0.4); color: #fde68a;">3</div>
                 <div>
-                  <div class="step-title-text">Утечка: Зависание на согласовании КП &gt; 48 часов</div>
-                  <div class="step-desc-text">Потеря темпа сделки и конверсии на этапе коммерческого предложения</div>
+                  <div class="step-title-text">Утечка: Брак квалификации и речевых стандартов (Score &lt; 8)</div>
+                  <div id="lossStepSlaDesc" class="step-desc-text">Потеря конверсии из-за непройденных чек-поинтов B2B-аудита</div>
                 </div>
               </div>
               <div class="step-right">
-                <span class="delta-badge delta-warn"><span class="delta-dot"></span>-450 000 ₽</span>
-                <span class="step-amount-val" style="color: #fbbf24;">3 425 000 ₽</span>
+                <span id="lossStepSlaDelta" class="delta-badge delta-warn"><span class="delta-dot"></span>-0 ₽</span>
+                <span id="lossStepSlaAmt" class="step-amount-val" style="color: #fbbf24;">0 ₽</span>
               </div>
             </div>
           </div>
 
           <!-- Step 4: Illusory Pipeline & Zombies -->
           <div class="funnel-step">
-            <div class="funnel-step-bar" style="width: 55%; background: linear-gradient(90deg, #ef4444, #dc2626);"></div>
+            <div id="lossStepFakeBar" class="funnel-step-bar" style="width: 55%; background: linear-gradient(90deg, #ef4444, #dc2626);"></div>
             <div class="funnel-step-content">
               <div class="step-left">
                 <div class="step-num-badge" style="background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #fca5a5;">4</div>
                 <div>
-                  <div class="step-title-text">Утечка: «Черный ящик» CRM &bull; Зомби-сделки</div>
-                  <div class="step-desc-text">Сделки с ложным движением без подтвержденного бюджета ЛПР</div>
+                  <div class="step-title-text">Утечка: «Черный ящик» CRM &bull; Ложное согласие (Fake Yes)</div>
+                  <div id="lossStepFakeDesc" class="step-desc-text">Слив клиента на «отправьте на почту» без выявления ЛПР</div>
                 </div>
               </div>
               <div class="step-right">
-                <span class="delta-badge delta-neg"><span class="delta-dot"></span>-675 000 ₽</span>
-                <span class="step-amount-val" style="color: #f87171;">2 750 000 ₽</span>
+                <span id="lossStepFakeDelta" class="delta-badge delta-neg"><span class="delta-dot"></span>-0 ₽</span>
+                <span id="lossStepFakeAmt" class="step-amount-val" style="color: #f87171;">0 ₽</span>
               </div>
             </div>
           </div>
 
           <!-- Step 5: DSO & Attrition -->
           <div class="funnel-step">
-            <div class="funnel-step-bar" style="width: 47.5%; background: linear-gradient(90deg, #a855f7, #7352ff);"></div>
+            <div id="lossStepDsoBar" class="funnel-step-bar" style="width: 47.5%; background: linear-gradient(90deg, #a855f7, #7352ff);"></div>
             <div class="funnel-step-content">
               <div class="step-left">
                 <div class="step-num-badge" style="background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.4); color: #d8b4fe;">5</div>
                 <div>
                   <div class="step-title-text">Утечка: Задержки оплат и риск дебиторки (DSO)</div>
-                  <div class="step-desc-text">Кассовый лаг между выставлением счёта и поступлением денег на р/с</div>
+                  <div id="lossStepDsoDesc" class="step-desc-text">Кассовый лаг между выставлением счёта и поступлением денег на р/с</div>
                 </div>
               </div>
               <div class="step-right">
-                <span class="delta-badge delta-purple"><span class="delta-dot"></span>-375 000 ₽</span>
-                <span class="step-amount-val" style="color: #c084fc;">2 375 000 ₽</span>
+                <span id="lossStepDsoDelta" class="delta-badge delta-purple"><span class="delta-dot"></span>-0 ₽</span>
+                <span id="lossStepDsoAmt" class="step-amount-val" style="color: #c084fc;">0 ₽</span>
               </div>
             </div>
           </div>
 
           <!-- Step 6: SSOT Safe Final -->
           <div class="funnel-step" style="border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.06);">
-            <div class="funnel-step-bar" style="width: 47.5%; background: linear-gradient(90deg, #10b981, #059669); opacity: 0.35;"></div>
+            <div id="lossStepSafeBar" class="funnel-step-bar" style="width: 47.5%; background: linear-gradient(90deg, #10b981, #059669); opacity: 0.35;"></div>
             <div class="funnel-step-content">
               <div class="step-left">
                 <div class="step-num-badge" style="background: #10b981; border-color: #34d399; color: #fff; display: flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -5665,7 +5665,7 @@
               </div>
               <div class="step-right">
                 <span class="delta-badge delta-pos"><span class="delta-dot"></span>SSOT ГАРАНТИЯ</span>
-                <span class="step-amount-val" style="color: #34d399; font-size: 1.25rem;">2 375 000 ₽</span>
+                <span id="lossStepSafeAmt" class="step-amount-val" style="color: #34d399; font-size: 1.25rem;">0 ₽</span>
               </div>
             </div>
           </div>
@@ -6086,7 +6086,7 @@
             <span class="bento-card-title">P10 (Пессимистичный)</span>
             <span class="badge-lost">90% ГАРАНТИЯ</span>
           </div>
-          <div class="metric-value" style="color: #fb7185;">1 863 250 ₽</div>
+          <div id="mcP10Val" class="metric-value" style="color: #fb7185;">0 ₽</div>
           <div class="metric-sub">Минимальная гарантированная планка</div>
         </div>
 
@@ -6095,7 +6095,7 @@
             <span class="bento-card-title">P50 (Медиана / Базовый)</span>
             <span class="badge-info">50% ВЕРОЯТНОСТЬ</span>
           </div>
-          <div class="metric-value" style="color: var(--accent-cyan);">2 578 250 ₽</div>
+          <div id="mcP50Val" class="metric-value" style="color: var(--accent-cyan);">0 ₽</div>
           <div class="metric-sub">Математическое ожидание кассы</div>
         </div>
 
@@ -6104,17 +6104,17 @@
             <span class="bento-card-title">P90 (Оптимистичный)</span>
             <span class="badge-won">С ИИ-ДОЖИМОМ</span>
           </div>
-          <div class="metric-value" style="color: #34d399;">3 213 650 ₽</div>
+          <div id="mcP90Val" class="metric-value" style="color: #34d399;">0 ₽</div>
           <div class="metric-sub">Таргет при реанимации базы</div>
         </div>
 
         <div class="bento-card stat-only">
           <div class="bento-card-header">
             <span class="bento-card-title">Вероятность выполнения плана</span>
-            <span class="badge-warn">СРЕДНИЙ РИСК</span>
+            <span id="mcTargetProbBadge" class="badge-warn">СРЕДНИЙ РИСК</span>
           </div>
-          <div class="metric-value" style="color: #fbbf24;">45.0%</div>
-          <div class="metric-sub">План 5 000 000 ₽ &bull; Требуется дожим</div>
+          <div id="mcTargetProbVal" class="metric-value" style="color: #fbbf24;">0.0%</div>
+          <div id="mcTargetProbSub" class="metric-sub">План 5 000 000 ₽ &bull; Требуется дожим</div>
         </div>
       </div>
 

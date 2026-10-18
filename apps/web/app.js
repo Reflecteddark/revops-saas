@@ -4,6 +4,55 @@ const REVOPS_API_BASE = (typeof window !== 'undefined' && (window.location.hostn
 
 let CALLS_DATA = [];
 
+function getCallAmount(c) {
+  if (!c) return 300000;
+  if (typeof c.amount_num === 'number' && c.amount_num > 0) return c.amount_num;
+  if (c.amount) {
+    const parsed = parseInt(String(c.amount).replace(/\D/g, ''), 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return 300000;
+}
+
+function getPlaybookDiff(call) {
+  if (!call) {
+    return {
+      defectQuote: '«Отправлю вам материалы на почту, если что перезвоните...»',
+      recommendScript: '«Чтобы не терять время, давайте во вторник в 12:00 на 15 минут в Zoom зафиксируем расчет окупаемости.»'
+    };
+  }
+  if (typeof PLAYBOOK_DIFFS !== 'undefined' && PLAYBOOK_DIFFS[call.id]) {
+    return PLAYBOOK_DIFFS[call.id];
+  }
+  
+  let defect = '';
+  if (call.error_summary && call.error_summary.length > 5) {
+    defect = `«${call.error_summary}»`;
+  } else if (call.next_step === 0) {
+    defect = '«Ну тогда посмотрите наше КП на почте, и если возникнут вопросы — наберите мне.»';
+  } else if (call.cr && call.cr[2] === 0) {
+    defect = '«Мы с вами все обсудили, передайте директору, пожалуйста, наше предложение.»';
+  } else if (call.cr && call.cr[4] === 0) {
+    defect = '«Да, я понимаю, у нас недешево, но зато мы на рынке уже 10 лет.»';
+  } else {
+    defect = '«Отправлю вам общую информацию на почту, ознакомьтесь.»';
+  }
+
+  let recommend = '';
+  if (call.recommendation && call.recommendation.length > 5) {
+    recommend = `«${call.recommendation}»`;
+  } else if (call.next_step === 0) {
+    recommend = '«Иван Иванович, чтобы вы не тратили время на чтение 20 страниц, давайте в среду в 14:00 на 10 минут выйдем в короткий Zoom — я открою ключевой слайд с финмоделью и отвечу на 2 главных вопроса.»';
+  } else {
+    recommend = '«Иван Иванович, давайте зафиксируем дату и время следующего контакта: в четверг в 11:00 созваниваемся для утверждения согласованной спецификации.»';
+  }
+
+  return {
+    defectQuote: defect,
+    recommendScript: recommend
+  };
+}
+
     // ==========================================================================
     // CRYPTOGRAPHIC AUTH ACCESS GATE LOGIC (SHA-256 & HMAC SESSION GUARD)
     // ==========================================================================
@@ -691,7 +740,7 @@ let CALLS_DATA = [];
                   Реплика менеджера (Дефект скрипта):
                 </div>
                 <div style="font-size: 0.76rem; color: #fca5a5; font-style: italic; line-height: 1.45;">
-                  ${PLAYBOOK_DIFFS[call.id]?.defectQuote || '«Отправлю вам материалы на почту, если что перезвоните...»'}
+                  ${getPlaybookDiff(call).defectQuote}
                 </div>
               </div>
               <div class="diff-col-recommend" style="padding: 10px; background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.2); border-radius: 6px;">
@@ -699,7 +748,7 @@ let CALLS_DATA = [];
                   AI-Рекомендация (Эталон B2B RevOps):
                 </div>
                 <div style="font-size: 0.76rem; color: #6ee7b7; font-weight: 500; line-height: 1.45;">
-                  ${PLAYBOOK_DIFFS[call.id]?.recommendScript || '«Чтобы не терять время, давайте во вторник в 12:00 на 15 минут в Zoom зафиксируем расчет окупаемости.»'}
+                  ${getPlaybookDiff(call).recommendScript}
                 </div>
               </div>
             </div>
@@ -1722,20 +1771,18 @@ let CALLS_DATA = [];
     // EXPRESS 3 NUMBERS CALCULATOR (TAB 2)
     // ==========================================================================
     function recalcExpress() {
-      const leads = parseInt(document.getElementById('rngLeadsExp').value, 10);
-      const check = parseInt(document.getElementById('rngCheckExp').value, 10);
-      const mgr = parseInt(document.getElementById('rngMgrExp').value, 10);
+      const leads = parseInt(document.getElementById('rngLeadsExp').value, 10) || 50;
+      const check = parseInt(document.getElementById('rngCheckExp').value, 10) || 300000;
+      const mgr = parseInt(document.getElementById('rngMgrExp').value, 10) || 4;
 
       document.getElementById('valLeadsExp').textContent = leads + ' шт';
       document.getElementById('valCheckExp').textContent = check.toLocaleString('ru-RU') + ' ₽';
       document.getElementById('valMgrExp').textContent = mgr + ' чел';
 
-      // Formulas from master dump:
-      // Lost = 340,000 baseline scaled
-      const baseRatio = (leads * check) / getMonthlyTarget();
-      const lost = Math.round(340000 * baseRatio);
-      const basePlan = Math.round(500000 * baseRatio * 1.204);
-      const optPlan = Math.round(500000 * baseRatio * 1.34);
+      const currentPipeline = leads * check;
+      const lost = Math.round(currentPipeline * 0.28);
+      const basePlan = Math.round(currentPipeline * 0.25);
+      const optPlan = Math.round(basePlan * 1.35);
 
       document.getElementById('expLostRev').textContent = lost.toLocaleString('ru-RU') + ' ₽';
       document.getElementById('expBasePlan').textContent = basePlan.toLocaleString('ru-RU') + ' ₽';
@@ -1750,22 +1797,24 @@ let CALLS_DATA = [];
       const ctx = document.getElementById('mcChart');
       if (!ctx) return;
 
-      const labels = ['1.2M', '1.5M', '1.86M (P10)', '2.2M', '2.58M (P50)', '2.9M', '3.21M (P90)', '3.6M', '4.0M', '4.5M', '5.0M'];
-      const dataValues = [40, 110, 290, 480, 620, 510, 310, 180, 95, 45, 20];
+      if (mcChartInstance) {
+        mcChartInstance.destroy();
+        mcChartInstance = null;
+      }
 
       mcChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: labels,
+          labels: ['1.2M', '1.5M', '1.86M (P10)', '2.2M', '2.58M (P50)', '2.9M', '3.21M (P90)', '3.6M', '4.0M', '4.5M', '5.0M'],
           datasets: [{
             label: 'Плотность вероятности (исходов из 10 000)',
-            data: dataValues,
+            data: [40, 110, 290, 480, 620, 510, 310, 180, 95, 45, 20],
             backgroundColor: function(context) {
               const idx = context.dataIndex;
               if (idx === 2) return 'rgba(244, 63, 94, 0.85)';   // P10 Rose
-              if (idx === 4) return 'rgba(139, 92, 246, 0.95)';  // P50 Violet Brand
-              if (idx === 6) return 'rgba(16, 185, 129, 0.88)';  // P90 Emerald
-              return 'rgba(255, 255, 255, 0.12)';                // Neutral Slate bars
+              if (idx === 5) return 'rgba(139, 92, 246, 0.95)';  // P50 Violet Brand
+              if (idx === 8) return 'rgba(16, 185, 129, 0.88)';  // P90 Emerald
+              return 'rgba(255, 255, 255, 0.12)';
             },
             borderRadius: 6,
             borderSkipped: false,
@@ -1805,28 +1854,121 @@ let CALLS_DATA = [];
           }
         }
       });
+
+      runMonteCarloSimulation(false);
     }
 
-    function updateSimulation(notify = true) {
+    function runMonteCarloSimulation(notify = false) {
       const rngL = document.getElementById('rngLeads');
       const rngQ = document.getElementById('rngQual');
       const rngC = document.getElementById('rngClose');
       if (!rngL || !rngQ || !rngC) return;
-      const leads = rngL.value;
-      const qual = rngQ.value;
-      const close = rngC.value;
 
-      document.getElementById('lblLeads').textContent = leads + ' шт';
-      document.getElementById('lblQual').textContent = qual + '%';
-      document.getElementById('lblClose').textContent = close + '%';
+      const leads = parseInt(rngL.value, 10) || 10;
+      const qualPct = parseInt(rngQ.value, 10) || 60;
+      const closePct = parseInt(rngC.value, 10) || 35;
 
-      const projected = Math.round(leads * (qual / 100) * (close / 100) * 500000);
-      document.getElementById('simVerdictText').textContent = 
-        `Прогноз кассы при входящем потоке ${leads} лидов: ${projected.toLocaleString('ru-RU')} ₽!`;
+      const lblL = document.getElementById('lblLeads');
+      const lblQ = document.getElementById('lblQual');
+      const lblC = document.getElementById('lblClose');
+      if (lblL) lblL.textContent = `${leads} шт`;
+      if (lblQ) lblQ.textContent = `${qualPct}%`;
+      if (lblC) lblC.textContent = `${closePct}%`;
+
+      let avgCheck = 300000;
+      if (CALLS_DATA && CALLS_DATA.length > 0) {
+        const totalAmt = CALLS_DATA.reduce((s, c) => s + getCallAmount(c), 0);
+        avgCheck = Math.round(totalAmt / CALLS_DATA.length) || 300000;
+      }
+      const monthlyTarget = getMonthlyTarget();
+
+      const pQual = qualPct / 100;
+      const pClose = closePct / 100;
+      const pOverall = pQual * pClose;
+      const expectedWins = leads * pOverall;
+      const variance = leads * pOverall * (1 - pOverall);
+      const stdDev = Math.sqrt(Math.max(variance, 0.3));
+
+      const meanRev = expectedWins * avgCheck;
+      const sigmaRev = stdDev * avgCheck;
+
+      const p10 = Math.max(0, Math.round(meanRev - 1.28 * sigmaRev));
+      const p50 = Math.round(meanRev);
+      const p90 = Math.round((meanRev + 1.28 * sigmaRev) * 1.15);
+
+      let probTarget = 0;
+      if (sigmaRev > 0) {
+        const z = (monthlyTarget - meanRev) / sigmaRev;
+        const cdf = 1.0 / (1.0 + Math.exp(-0.07056 * Math.pow(z, 3) - 1.5976 * z));
+        probTarget = Math.max(0.1, Math.min(99.9, Math.round((1.0 - cdf) * 1000) / 10));
+      } else {
+        probTarget = meanRev >= monthlyTarget ? 99.0 : 5.0;
+      }
+
+      const elP10 = document.getElementById('mcP10Val');
+      const elP50 = document.getElementById('mcP50Val');
+      const elP90 = document.getElementById('mcP90Val');
+      const elProb = document.getElementById('mcTargetProbVal');
+      const elSub = document.getElementById('mcTargetProbSub');
+      const elBadge = document.getElementById('mcTargetProbBadge');
+
+      if (elP10) elP10.textContent = `${p10.toLocaleString('ru-RU')} ₽`;
+      if (elP50) elP50.textContent = `${p50.toLocaleString('ru-RU')} ₽`;
+      if (elP90) elP90.textContent = `${p90.toLocaleString('ru-RU')} ₽`;
+      if (elProb) elProb.textContent = `${probTarget.toFixed(1)}%`;
+      if (elSub) elSub.innerHTML = `План ${monthlyTarget.toLocaleString('ru-RU')} ₽ &bull; ${probTarget >= 75 ? 'Твердо в плане' : (probTarget >= 40 ? 'Требуется дожим' : 'Высокий риск дефицита')}`;
+      if (elBadge) {
+        if (probTarget >= 75) {
+          elBadge.className = 'badge-won';
+          elBadge.textContent = 'ВЫСОКАЯ НАДЕЖНОСТЬ';
+        } else if (probTarget >= 40) {
+          elBadge.className = 'badge-warn';
+          elBadge.textContent = 'СРЕДНИЙ РИСК';
+        } else {
+          elBadge.className = 'badge-lost';
+          elBadge.textContent = 'КРИТИЧЕСКИЙ РИСК';
+        }
+      }
+
+      const minVal = Math.max(0, Math.round(meanRev - 2.5 * sigmaRev));
+      const maxVal = Math.round(meanRev + 2.5 * sigmaRev);
+      const step = Math.max(100000, Math.round((maxVal - minVal) / 10));
+
+      const labels = [];
+      const binValues = [];
+      const totalIterations = 10000;
+
+      for (let i = 0; i < 11; i++) {
+        const binCenter = minVal + i * step;
+        const binM = (binCenter / 1000000).toFixed(2) + 'M';
+        if (i === 2) labels.push(`${binM} (P10)`);
+        else if (i === 5) labels.push(`${binM} (P50)`);
+        else if (i === 8) labels.push(`${binM} (P90)`);
+        else labels.push(binM);
+
+        const zScore = sigmaRev > 0 ? (binCenter - meanRev) / sigmaRev : (i === 5 ? 0 : 3);
+        const density = Math.exp(-0.5 * zScore * zScore) / Math.sqrt(2 * Math.PI);
+        binValues.push(Math.round(density * totalIterations * (step / Math.max(sigmaRev, 1))));
+      }
+
+      if (typeof mcChartInstance !== 'undefined' && mcChartInstance) {
+        mcChartInstance.data.labels = labels;
+        mcChartInstance.data.datasets[0].data = binValues;
+        mcChartInstance.update();
+      }
+
+      const vText = document.getElementById('simVerdictText');
+      if (vText) {
+        vText.textContent = `При ${leads} лидах (квал ${qualPct}%, закрытие ${closePct}%, чек ${avgCheck.toLocaleString('ru-RU')} ₽) прогнозная касса: ${p50.toLocaleString('ru-RU')} ₽ (P10: ${p10.toLocaleString('ru-RU')} ₽, P90: ${p90.toLocaleString('ru-RU')} ₽).`;
+      }
 
       if (notify && typeof showToast === 'function') {
-        showToast('Монте-Карло пересчитан', `Прогноз выручки: ${projected.toLocaleString('ru-RU')} ₽`);
+        showToast('Монте-Карло 3.0', `Прогноз P50: ${p50.toLocaleString('ru-RU')} ₽ (P90: ${p90.toLocaleString('ru-RU')} ₽)`);
       }
+    }
+
+    function updateSimulation(notify = true) {
+      runMonteCarloSimulation(notify);
     }
 
     // ==========================================================================
@@ -1859,10 +2001,10 @@ let CALLS_DATA = [];
       reps.forEach((rep, idx) => {
         const repCalls = CALLS_DATA.filter(c => c.manager === rep);
         const count = repCalls.length || 1;
-        const totalPipe = repCalls.length * 500000;
+        const totalPipe = repCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
         const totalScore = repCalls.reduce((acc, c) => acc + (c.score || 0), 0);
         const nsCount = repCalls.filter(c => c.next_step === 1).length;
-        const riskAmt = repCalls.filter(c => c.status === 'risk').length * 500000;
+        const riskAmt = repCalls.filter(c => c.status === 'risk' || c.next_step === 0).reduce((acc, c) => acc + getCallAmount(c), 0);
 
         pipe.push(totalPipe);
         score.push(parseFloat((totalScore / count).toFixed(1)));
@@ -2270,9 +2412,10 @@ let CALLS_DATA = [];
 
       const calcTier = (calls) => {
         const count = calls.length;
-        const won = calls.filter(c => c.status === 'won').length;
-        const rate = count ? ((won / count) * 100).toFixed(1) + '%' : '0.0%';
-        const sumWon = won * 500000;
+        const wonCalls = calls.filter(c => c.status === 'won');
+        const countWon = wonCalls.length;
+        const rate = count ? ((countWon / count) * 100).toFixed(1) + '%' : '0.0%';
+        const sumWon = wonCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
         return { count, rate, sumWon };
       };
 
@@ -2795,40 +2938,35 @@ let CALLS_DATA = [];
       if (typeof updateSimulation === 'function') updateSimulation(false);
 
       // Recalculate Fact and SSOT from live data
-      let totalFact = 0;
-      CALLS_DATA.forEach(c => {
-        if (c.status === 'won') {
-          const rawAmt = c.amount ? parseInt(String(c.amount).replace(/\D/g, '')) : 500000;
-          totalFact += (rawAmt || 500000);
-        }
-      });
+      const wonCalls = CALLS_DATA.filter(c => c.status === 'won');
+      const totalFact = wonCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+      const computedSsot = CALLS_DATA.reduce((acc, c) => {
+        const amt = getCallAmount(c);
+        const weight = (c.score >= 10 && c.next_step === 1) ? 0.85 : (c.next_step === 1 ? 0.50 : 0.15);
+        return acc + Math.round(amt * weight);
+      }, 0);
 
       const factVal = document.getElementById('metricFactVal');
       if (factVal) animateCounter(factVal, totalFact, 900);
 
       const ssotVal = document.getElementById('metricSsotVal');
-      if (ssotVal) {
-        const computedSsot = CALLS_DATA.length * 250000;
-        animateCounter(ssotVal, computedSsot, 900);
-      }
+      if (ssotVal) animateCounter(ssotVal, computedSsot, 900);
 
+      const plan = getMonthlyTarget();
       const factBadge = document.getElementById('metricFactBadge');
       if (factBadge) {
-        const plan = 5000000;
-        const pct = ((totalFact / plan) * 100).toFixed(1);
+        const pct = plan > 0 ? ((totalFact / plan) * 100).toFixed(1) : '0.0';
         factBadge.textContent = `${pct}%`;
       }
 
       const defVal = document.getElementById('metricDeficitVal');
       if (defVal) {
-        const plan = 5000000;
         const diff = totalFact - plan;
         defVal.textContent = diff < 0 ? `-${(Math.abs(diff)/1000000).toFixed(1)}M ₽` : `+${(diff/1000000).toFixed(1)}M ₽`;
       }
 
       const ssotTip = document.getElementById('metricSsotTooltip');
       if (ssotTip) {
-        const computedSsot = CALLS_DATA.length * 250000;
         ssotTip.textContent = computedSsot > 0 ? `${(computedSsot / 1000000).toFixed(2)}M ₽ SSOT` : '0 ₽ SSOT';
       }
 
@@ -2870,9 +3008,9 @@ let CALLS_DATA = [];
       const totalCalls = CALLS_DATA.length;
       const avgScore = totalCalls ? (CALLS_DATA.reduce((s, c) => s + (c.score || 0), 0) / totalCalls) : 0;
       const nextStepCount = CALLS_DATA.filter(c => c.next_step === 1 || (c.cr && c.cr[0] === 1)).length;
-      const riskCalls = CALLS_DATA.filter(c => c.status === 'risk' || (c.score !== undefined && c.score < 8));
+      const riskCalls = CALLS_DATA.filter(c => c.status === 'risk' || (c.score !== undefined && c.score < 8) || c.next_step === 0);
       const riskCount = riskCalls.length;
-      const riskSum = riskCount * 500000;
+      const riskSum = riskCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
 
       if (aCalls) aCalls.textContent = `${totalCalls} шт`;
       if (aCallsBadge) aCallsBadge.textContent = totalCalls ? '100% ПОКРЫТИЕ' : '0% ПОКРЫТИЕ';
@@ -2940,15 +3078,121 @@ let CALLS_DATA = [];
       // Update Tab 6 AI Impact & Fake Yes Detector
       if (typeof renderAiImpactAndFakeYes === 'function') renderAiImpactAndFakeYes();
 
-      // Update Tab 5 Financial Bridge
+      // Update Tab 5 Financial Bridge & Stepper
+      renderFinancialBridgeAndLeaks(totalFact, computedSsot);
+    }
+
+    function renderFinancialBridgeAndLeaks(factAmt, ssotAmt) {
+      const plan = getMonthlyTarget();
+      const totalCalls = CALLS_DATA.length;
+
+      if (totalCalls === 0) {
+        const lbFact = document.getElementById('lossBridgeFact');
+        const lbSsot = document.getElementById('lossBridgeSsot');
+        const lbLeaks = document.getElementById('lossBridgeLeaks');
+        const lbTotal = document.getElementById('lossBridgeTotal');
+        if (lbFact) lbFact.textContent = '0 ₽';
+        if (lbSsot) lbSsot.textContent = '0 ₽';
+        if (lbLeaks) lbLeaks.textContent = '+0 ₽';
+        if (lbTotal) lbTotal.textContent = '0 ₽';
+        return;
+      }
+
+      // 1. Next Step leak
+      const nsLeakCalls = CALLS_DATA.filter(c => c.next_step === 0 || (c.cr && c.cr[0] === 0));
+      const nsLeakAmt = nsLeakCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+      const nsPct = Math.round((nsLeakCalls.length / totalCalls) * 100);
+
+      // 2. Low score speech leak
+      const scoreLeakCalls = CALLS_DATA.filter(c => c.score < 8);
+      const scoreLeakAmt = Math.round(scoreLeakCalls.reduce((acc, c) => acc + getCallAmount(c), 0) * 0.45);
+
+      // 3. Fake Yes / zombie leak
+      const fakeCalls = CALLS_DATA.filter(c => c.cr && c.cr[7] === 0 && (c.next_step === 0 || c.status === 'risk'));
+      const fakeLeakAmt = fakeCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+
+      // 4. DSO / Cash lag: 7.5% of total target
+      const dsoAmt = Math.round(plan * 0.075);
+
+      // Total Leaks & Recoverable To-Be (35% uplift)
+      const totalLeaks = nsLeakAmt + scoreLeakAmt + fakeLeakAmt + dsoAmt;
+      const recoverableLeaks = Math.round(totalLeaks * 0.35);
+      const safeSsot = Math.max(ssotAmt, Math.round(plan - totalLeaks * 0.65));
+      const totalToBe = factAmt + safeSsot + recoverableLeaks;
+
+      // Update Top Bridge
       const lbFact = document.getElementById('lossBridgeFact');
       const lbSsot = document.getElementById('lossBridgeSsot');
       const lbLeaks = document.getElementById('lossBridgeLeaks');
       const lbTotal = document.getElementById('lossBridgeTotal');
-      if (lbFact) lbFact.textContent = `${totalFact.toLocaleString('ru-RU')} ₽`;
-      if (lbSsot) lbSsot.textContent = totalCalls ? '2 375 000 ₽' : '0 ₽';
-      if (lbLeaks) lbLeaks.textContent = totalCalls ? '+675 000 ₽' : '+0 ₽';
-      if (lbTotal) lbTotal.textContent = totalCalls ? '3 550 000 ₽' : '0 ₽';
+      const lbTitle = document.getElementById('lossBridgeTitle');
+
+      if (lbFact) lbFact.textContent = `${factAmt.toLocaleString('ru-RU')} ₽`;
+      if (lbSsot) lbSsot.textContent = `${safeSsot.toLocaleString('ru-RU')} ₽`;
+      if (lbLeaks) lbLeaks.textContent = `+${recoverableLeaks.toLocaleString('ru-RU')} ₽`;
+      if (lbTotal) lbTotal.textContent = `${totalToBe.toLocaleString('ru-RU')} ₽`;
+      if (lbTitle) lbTitle.textContent = `От факта ${factAmt.toLocaleString('ru-RU')} ₽ к целевой кассе To-Be ${totalToBe.toLocaleString('ru-RU')} ₽`;
+
+      // Update Stepper
+      const fnTitle = document.getElementById('lossFunnelTitle');
+      const fnDefBadge = document.getElementById('lossFunnelDeficitBadge');
+      const grossAmtEl = document.getElementById('lossStepGrossAmt');
+      const grossSubEl = document.getElementById('lossStepGrossSub');
+
+      if (fnTitle) fnTitle.textContent = `От валового плана ${plan.toLocaleString('ru-RU')} ₽ к защищенной кассе SSOT`;
+      const deficit = Math.max(0, plan - safeSsot);
+      if (fnDefBadge) fnDefBadge.innerHTML = `<span class="delta-dot"></span>-${deficit.toLocaleString('ru-RU')} ₽ СУММАРНЫЙ ДЕФИЦИТ`;
+
+      if (grossAmtEl) grossAmtEl.textContent = `${plan.toLocaleString('ru-RU')} ₽`;
+      if (grossSubEl) grossSubEl.textContent = `План месяца 100% • Нормативная планка выручки`;
+
+      // Step 2: Next Step
+      const step2Rem = Math.max(0, plan - nsLeakAmt);
+      const s2Delta = document.getElementById('lossStepNsDelta');
+      const s2Amt = document.getElementById('lossStepNsAmt');
+      const s2Desc = document.getElementById('lossStepNsDesc');
+      const s2Bar = document.getElementById('lossStepNsBar');
+      if (s2Delta) s2Delta.innerHTML = `<span class="delta-dot"></span>-${nsLeakAmt.toLocaleString('ru-RU')} ₽`;
+      if (s2Amt) s2Amt.textContent = `${step2Rem.toLocaleString('ru-RU')} ₽`;
+      if (s2Desc) s2Desc.textContent = `${nsLeakCalls.length} из ${totalCalls} (${nsPct}%) звонков ушли без зафиксированного слота`;
+      if (s2Bar) s2Bar.style.width = `${Math.max(15, Math.round((step2Rem / plan) * 100))}%`;
+
+      // Step 3: Low Score Speech
+      const step3Rem = Math.max(0, step2Rem - scoreLeakAmt);
+      const s3Delta = document.getElementById('lossStepSlaDelta');
+      const s3Amt = document.getElementById('lossStepSlaAmt');
+      const s3Desc = document.getElementById('lossStepSlaDesc');
+      const s3Bar = document.getElementById('lossStepSlaBar');
+      if (s3Delta) s3Delta.innerHTML = `<span class="delta-dot"></span>-${scoreLeakAmt.toLocaleString('ru-RU')} ₽`;
+      if (s3Amt) s3Amt.textContent = `${step3Rem.toLocaleString('ru-RU')} ₽`;
+      if (s3Desc) s3Desc.textContent = `${scoreLeakCalls.length} звонков с баллами ниже 8/13 (брак квалификации)`;
+      if (s3Bar) s3Bar.style.width = `${Math.max(15, Math.round((step3Rem / plan) * 100))}%`;
+
+      // Step 4: Fake Yes
+      const step4Rem = Math.max(0, step3Rem - fakeLeakAmt);
+      const s4Delta = document.getElementById('lossStepFakeDelta');
+      const s4Amt = document.getElementById('lossStepFakeAmt');
+      const s4Desc = document.getElementById('lossStepFakeDesc');
+      const s4Bar = document.getElementById('lossStepFakeBar');
+      if (s4Delta) s4Delta.innerHTML = `<span class="delta-dot"></span>-${fakeLeakAmt.toLocaleString('ru-RU')} ₽`;
+      if (s4Amt) s4Amt.textContent = `${step4Rem.toLocaleString('ru-RU')} ₽`;
+      if (s4Desc) s4Desc.textContent = `${fakeCalls.length} сделок со сливом на почту без ЛПР (ложное согласие)`;
+      if (s4Bar) s4Bar.style.width = `${Math.max(15, Math.round((step4Rem / plan) * 100))}%`;
+
+      // Step 5: DSO
+      const step5Rem = Math.max(0, step4Rem - dsoAmt);
+      const s5Delta = document.getElementById('lossStepDsoDelta');
+      const s5Amt = document.getElementById('lossStepDsoAmt');
+      const s5Bar = document.getElementById('lossStepDsoBar');
+      if (s5Delta) s5Delta.innerHTML = `<span class="delta-dot"></span>-${dsoAmt.toLocaleString('ru-RU')} ₽`;
+      if (s5Amt) s5Amt.textContent = `${step5Rem.toLocaleString('ru-RU')} ₽`;
+      if (s5Bar) s5Bar.style.width = `${Math.max(15, Math.round((step5Rem / plan) * 100))}%`;
+
+      // Step 6: Safe Cash Final
+      const s6Amt = document.getElementById('lossStepSafeAmt');
+      const s6Bar = document.getElementById('lossStepSafeBar');
+      if (s6Amt) s6Amt.textContent = `${safeSsot.toLocaleString('ru-RU')} ₽`;
+      if (s6Bar) s6Bar.style.width = `${Math.max(15, Math.round((safeSsot / plan) * 100))}%`;
     }
 
     function renderPulseRecentCalls() {
@@ -2993,16 +3237,16 @@ let CALLS_DATA = [];
 
     function renderPulseFunnel() {
       const totalCalls = CALLS_DATA.length;
-      const countWon = CALLS_DATA.filter(c => c.status === 'won').length;
-      const countZoom = CALLS_DATA.filter(c => c.next_step === 1 || (c.cr && c.cr[0] === 1)).length;
-      const countOffer = CALLS_DATA.filter(c => c.cr && c.cr[7] === 1).length;
-      const countContract = CALLS_DATA.filter(c => c.cr && c.cr[11] === 1).length;
+      const wonCalls = CALLS_DATA.filter(c => c.status === 'won');
+      const zoomCalls = CALLS_DATA.filter(c => c.next_step === 1 || (c.cr && c.cr[0] === 1));
+      const offerCalls = CALLS_DATA.filter(c => c.cr && c.cr[7] === 1);
+      const contractCalls = CALLS_DATA.filter(c => c.cr && c.cr[11] === 1);
 
-      const val1 = totalCalls * 500000;
-      const val2 = countZoom * 500000;
-      const val3 = countOffer * 500000;
-      const val4 = countContract * 500000;
-      const val5 = countWon * 500000;
+      const val1 = CALLS_DATA.reduce((acc, c) => acc + getCallAmount(c), 0);
+      const val2 = zoomCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+      const val3 = offerCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+      const val4 = contractCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+      const val5 = wonCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
 
       const fVal1 = document.getElementById('funnelVal1');
       const fVal2 = document.getElementById('funnelVal2');
@@ -3016,7 +3260,7 @@ let CALLS_DATA = [];
       const fFill4 = document.getElementById('funnelFill4');
       const fFill5 = document.getElementById('funnelFill5');
 
-      const maxVal = Math.max(val1, 500000);
+      const maxVal = Math.max(val1, 300000);
       if (fVal1) fVal1.textContent = val1.toLocaleString('ru-RU') + ' ₽';
       if (fVal2) fVal2.textContent = val2.toLocaleString('ru-RU') + ' ₽';
       if (fVal3) fVal3.textContent = val3.toLocaleString('ru-RU') + ' ₽';
@@ -3207,10 +3451,12 @@ const PLAYBOOK_DIFFS = {
 };
 
 function copyPlaybookScript(callId) {
-  const diff = PLAYBOOK_DIFFS[callId];
-  if (!diff) return;
+  const call = CALLS_DATA.find(c => c.id === callId);
+  const diff = getPlaybookDiff(call);
+  if (!diff || !diff.recommendScript) return;
+  const scriptText = diff.recommendScript.replace(/[«»]/g, '');
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(diff.recommendScript).then(() => {
+    navigator.clipboard.writeText(scriptText).then(() => {
       showToast('AI Playbook', 'Эталонный скрипт дожима скопирован в буфер обмена РОПа!');
     }).catch(() => {
       showToast('AI Playbook', 'Скрипт готов к отправке');
