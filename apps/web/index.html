@@ -4786,6 +4786,103 @@
       background: #f59e0b;
       box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
     }
+
+    /* ==========================================================================
+       BLOCK 8: ANIMATED LIVE PULSE STATUS INDICATORS (TIER-1 LINEAR/VERCEL)
+       ========================================================================== */
+    @keyframes dotPulseLive {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+    @keyframes dotPulseWarn {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+      }
+    }
+    @keyframes dotPulseError {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(244, 63, 94, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+      }
+    }
+    @keyframes dotPulseViolet {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(124, 58, 237, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+      }
+    }
+
+    .dot-live {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      flex-shrink: 0;
+      animation: dotPulseLive 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .dot-warn {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f59e0b;
+      display: inline-block;
+      flex-shrink: 0;
+      animation: dotPulseWarn 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .dot-error {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f43f5e;
+      display: inline-block;
+      flex-shrink: 0;
+      animation: dotPulseError 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .dot-violet {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #7c3aed;
+      display: inline-block;
+      flex-shrink: 0;
+      animation: dotPulseViolet 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
   </style>
 </head>
 <body>
@@ -5003,7 +5100,7 @@
 
           <!-- Live Status Indicator (Tier-1 SaaS) -->
           <div style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 99px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #34d399;">
-            <span class="status-dot dot-won" style="animation: livePulse 4.5s infinite; width: 6px; height: 6px;"></span>
+            <span class="dot-live"></span>
             <span data-live-status>LIVE · синхр. только что</span>
           </div>
 
@@ -5274,7 +5371,7 @@
           <div class="develop-bank-card">
             <div class="bank-card-top-row">
               <span class="bank-card-chip-title" style="display: flex; align-items: center; gap: 8px;">
-                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+                <span class="dot-live"></span>
                 amoCRM &amp; Bitrix24 SSOT
               </span>
               <span class="bank-card-exp">LIVE SYNC</span>
@@ -5412,7 +5509,7 @@
          style="display: inline-flex; align-items: center; gap: 8px;
                 font-size: 0.74rem; color: var(--text-secondary);
                 margin-top: 24px; text-decoration: none; cursor: pointer; transition: color 0.15s ease;">
-        <span class="status-dot dot-won" style="width: 6px; height: 6px;"></span>
+        <span class="dot-live"></span>
         <span>AI Crew: <strong style="color: #fff;">3 агента онлайн</strong> (DevOps · CCO · Guardian) · все системы штатно &rarr;</span>
       </a>
 
