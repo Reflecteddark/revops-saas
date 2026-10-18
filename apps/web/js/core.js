@@ -486,12 +486,43 @@ const ALL_TABS = ['pulse', 'express', 'rop', 'audit', 'analyst', 'leaks', 'impac
 
 
 
+function syncHeroKpiCards() {
+  const defEl = document.getElementById('metricDeficitVal');
+  const heroSla = document.getElementById('heroSla');
+  if (defEl && heroSla) {
+    heroSla.textContent = defEl.textContent;
+  }
+  const heroQuality = document.getElementById('heroQuality');
+  if (heroQuality && typeof CALLS_DATA !== 'undefined') {
+    const count = CALLS_DATA.length;
+    if (count > 0) {
+      const avg = CALLS_DATA.reduce((s, c) => s + (c.score || 0), 0) / count;
+      heroQuality.textContent = Math.round((avg / 13) * 100) + '%';
+    } else {
+      heroQuality.textContent = '0%';
+    }
+  }
+}
+
 function animateCounter(el, target, duration = 900) {
   if (!el) return;
   const start = performance.now();
   const fmt = n => n.toLocaleString('ru-RU');
   const isInitial = !el.dataset.hasValue;
   el.dataset.hasValue = '1';
+
+  // Synchronize with Tier-1 Hero KPI cards
+  if (el.id === 'metricFactVal') {
+    const heroRev = document.getElementById('heroRevenue');
+    if (heroRev && heroRev !== el) {
+      animateCounter(heroRev, target, duration);
+    }
+  } else if (el.id === 'metricSsotVal') {
+    const heroPipe = document.getElementById('heroPipeline');
+    if (heroPipe && heroPipe !== el) {
+      animateCounter(heroPipe, target, duration);
+    }
+  }
 
   function tick(now) {
     const p = Math.min((now - start) / duration, 1);
@@ -510,6 +541,7 @@ function animateCounter(el, target, duration = 900) {
       el.style.transform = '';
       el.style.filter = '';
       el.style.opacity = '1';
+      syncHeroKpiCards();
     }
   }
   requestAnimationFrame(tick);
@@ -1106,6 +1138,7 @@ window.filterSidebarItems = filterSidebarItems;
 window.ALL_TABS = ALL_TABS;
 window.switchTab = switchTab;
 window.animateCounter = animateCounter;
+window.syncHeroKpiCards = syncHeroKpiCards;
 window.animateCardsIn = animateCardsIn;
 window.setAccentTheme = setAccentTheme;
 window.getThemeMode = getThemeMode;

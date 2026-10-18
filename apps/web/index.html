@@ -4468,6 +4468,122 @@
     .mp-sidebar:not(:hover):not(.expanded) .mp-nav-item:hover::after {
       opacity: 1;
     }
+
+    /* ==========================================================================
+       BLOCK 2: HERO KPI CARDS (TIER-1 LINEAR/VERCEL VISUAL WEIGHT)
+       ========================================================================== */
+    .kpi-hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1200px) {
+      .kpi-hero-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 640px) {
+      .kpi-hero-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-card {
+      background: #0a0a10;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 22px 24px 18px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Colored vertical accent indicator on left border */
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      bottom: 20%;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+    }
+    .kpi-card--violet::before { background: #7c3aed; box-shadow: 0 0 12px #7c3aed; }
+    .kpi-card--amber::before  { background: #f59e0b; box-shadow: 0 0 12px #f59e0b; }
+    .kpi-card--cyan::before   { background: #06b6d4; box-shadow: 0 0 12px #06b6d4; }
+    .kpi-card--rose::before   { background: #f43f5e; box-shadow: 0 0 12px #f43f5e; }
+
+    .kpi-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .kpi-card-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .kpi-card-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .kpi-card-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: #fff;
+      line-height: 1.1;
+      margin: 8px 0 6px;
+    }
+
+    .kpi-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      min-height: 20px;
+    }
+
+    .kpi-delta {
+      font-size: 0.72rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .kpi-delta--up    { color: #34d399; }
+    .kpi-delta--down  { color: #f87171; }
+    .kpi-delta--neutral { color: var(--text-muted); }
+
+    .kpi-sparkline {
+      height: 32px;
+      width: 100%;
+      opacity: 0.75;
+      margin-top: auto;
+    }
+    .kpi-sparkline canvas {
+      width: 100% !important;
+      height: 32px !important;
+    }
   </style>
 </head>
 <body>
@@ -4729,91 +4845,109 @@
     <!-- ======================================================== -->
     <div id="view-pulse" class="tab-view active">
 
+      <!-- BLOCK 2: 4 HERO KPI CARDS (TIER-1 LINEAR/VERCEL VISUAL WEIGHT) -->
+      <div class="kpi-hero-grid">
+        <!-- Card 1: Revenue Fact -->
+        <div class="kpi-card kpi-card--violet">
+          <div class="kpi-card-header">
+            <span class="kpi-card-label">ВЫРУЧКА ФАКТ</span>
+            <div class="revops-dropdown" id="dropdownPulsePeriodFact">
+              <button class="develop-dropdown kpi-card-badge" onclick="toggleRevopsDropdown('dropdownPulsePeriodFact', event)" style="cursor: pointer;">
+                <span class="dropdown-label" id="lblPulsePeriodFact">Октябрь 2026</span>
+                <svg width="8" height="5" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectPulsePeriod('month', 'Октябрь 2026')">Октябрь 2026 (Текущий)</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('prev_month', 'Сентябрь 2026')">Сентябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('7d', 'За последние 7 дней')">7 дней (Оперативный)</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('today', 'Сегодня')">Сегодня</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('year', 'Весь 2026 год (YTD)')">2026 Год целиком</div>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-card-value" id="heroRevenue">0 ₽</div>
+          <div class="kpi-card-meta">
+            <span class="kpi-delta kpi-delta--neutral" id="heroRevenueDelta">
+              <span id="metricFactBadge">0.0%</span> к плану vs прошлый мес.
+            </span>
+          </div>
+          <div class="kpi-sparkline">
+            <canvas id="sparkRevenue" height="32"></canvas>
+          </div>
+          <!-- Compatibility elements for deals.js -->
+          <span id="kpiFactPeriodLabel" style="display:none;">Главный KPI &bull; Октябрь 2026</span>
+          <span id="metricFactVal" style="display:none;">0 ₽</span>
+        </div>
+
+        <!-- Card 2: Pipeline in Progress -->
+        <div class="kpi-card kpi-card--amber">
+          <div class="kpi-card-header">
+            <span class="kpi-card-label">ПАЙПЛАЙН В РАБОТЕ</span>
+            <span class="kpi-card-badge">SSOT ВЗВЕШЕННЫЙ</span>
+          </div>
+          <div class="kpi-card-value" id="heroPipeline">0 ₽</div>
+          <div class="kpi-card-meta">
+            <span class="kpi-delta kpi-delta--neutral" id="heroPipelineDelta">Взвешенный прогноз сделок</span>
+          </div>
+          <div class="kpi-sparkline">
+            <canvas id="sparkPipeline" height="32"></canvas>
+          </div>
+          <span id="metricPipeVal" style="display:none;">0 ₽</span>
+        </div>
+
+        <!-- Card 3: Call Quality -->
+        <div class="kpi-card kpi-card--cyan">
+          <div class="kpi-card-header">
+            <span class="kpi-card-label">КАЧЕСТВО ЗВОНКОВ</span>
+            <span class="kpi-card-badge">13 КРИТЕРИЕВ</span>
+          </div>
+          <div class="kpi-card-value" id="heroQuality">0%</div>
+          <div class="kpi-card-meta">
+            <span class="kpi-delta kpi-delta--neutral" id="heroQualityDelta">Средний балл стандартов ОП</span>
+          </div>
+          <div class="kpi-sparkline">
+            <canvas id="sparkQuality" height="32"></canvas>
+          </div>
+        </div>
+
+        <!-- Card 4: Plan Deficit / Target -->
+        <div class="kpi-card kpi-card--rose">
+          <div class="kpi-card-header">
+            <span class="kpi-card-label">ДЕФИЦИТ ДО ПЛАНА</span>
+            <div class="revops-dropdown" id="dropdownPulsePeriodPlan">
+              <button class="develop-dropdown kpi-card-badge" onclick="toggleRevopsDropdown('dropdownPulsePeriodPlan', event)" style="cursor: pointer;">
+                <span class="dropdown-label" id="lblPulsePeriodPlan">План 5.0M ₽</span>
+                <svg width="8" height="5" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="revops-dropdown-menu">
+                <div class="revops-dropdown-item active" onclick="selectPulsePeriod('month', 'Октябрь 2026')">Октябрь 2026 (Текущий)</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('prev_month', 'Сентябрь 2026')">Сентябрь 2026</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('7d', 'За последние 7 дней')">7 дней (Оперативный)</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('today', 'Сегодня')">Сегодня</div>
+                <div class="revops-dropdown-item" onclick="selectPulsePeriod('year', 'Весь 2026 год (YTD)')">2026 Год целиком</div>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-card-value" id="heroSla">0 ₽</div>
+          <div class="kpi-card-meta">
+            <span class="kpi-delta kpi-delta--down" id="metricDeficitPill">
+              <span id="metricDeficitVal">-5.0M ₽</span>
+              <span class="pill-sub" style="font-size: 0.72rem; margin-left: 4px;">дефицит плана</span>
+            </span>
+          </div>
+          <div class="kpi-sparkline">
+            <canvas id="sparkSla" height="32"></canvas>
+          </div>
+          <span id="kpiPlanPeriodLabel" style="display:none;">Таргет &bull; План месяца</span>
+          <span id="metricPlanVal" style="display:none;">5 000 000 ₽</span>
+        </div>
+      </div>
+
       <!-- Bento Grid (Kristi Kamlylova Develop Benchmark) -->
       <div class="develop-grid">
         
         <!-- ================= LEFT COLUMN (63%) ================= -->
         <div class="develop-left-col">
-          
-          <!-- Row 1: Editorial Hybrid KPI Block (Linear/Vercel style) -->
-          <div class="develop-editorial-kpis" style="position: relative; display: grid; grid-template-columns: 1.35fr 1fr; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 28px; margin-bottom: 8px;">
-            <button class="card-ai-ask" onclick="openAiAsk('Что значит дефицит плана?')" title="Спросить AI"><span class="card-ai-ask-icon">&#x25c6;</span> Спросить AI</button>
-            <!-- Hero — без рамки -->
-            <div style="padding-right: 36px;">
-              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-                <div class="kpi-hero-label" id="kpiFactPeriodLabel" style="margin-bottom: 0;">Главный KPI &bull; Октябрь 2026</div>
-                <div class="revops-dropdown" id="dropdownPulsePeriodFact">
-                  <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownPulsePeriodFact', event)">
-                    <span class="dropdown-label" id="lblPulsePeriodFact">Октябрь 2026</span>
-                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <div class="revops-dropdown-menu">
-                    <div class="revops-dropdown-item active" onclick="selectPulsePeriod('month', 'Октябрь 2026')">📅 Октябрь 2026 (Текущий)</div>
-                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('prev_month', 'Сентябрь 2026')">📅 Сентябрь 2026</div>
-                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('7d', 'За последние 7 дней')">📅 7 дней (Оперативный)</div>
-                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('today', 'Сегодня')">📅 Сегодня</div>
-                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('year', 'Весь 2026 год (YTD)')">📅 2026 Год целиком</div>
-                  </div>
-                </div>
-              </div>
-              <div class="kpi-hero kpi-hero-live" id="metricFactVal">0 ₽</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-                <div class="develop-pill pill-pos">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
-                  <span id="metricFactBadge">0.0%</span>
-                  <span class="pill-sub">к плану</span>
-                </div>
-                <svg class="develop-sparkline" viewBox="0 0 120 40" style="width: 100px; height: 32px;">
-                  <defs>
-                    <linearGradient id="splineFactWon" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.45"/>
-                      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M 0,35 Q 20,32 35,28 T 70,18 T 100,8 T 120,4 L 120,40 L 0,40 Z" fill="url(#splineFactWon)"/>
-                  <path d="M 0,35 Q 20,32 35,28 T 70,18 T 100,8 T 120,4" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </div>
-
-            <!-- Plan — без рамки, с divider слева -->
-            <div style="padding-left: 36px; border-left: 1px solid rgba(255,255,255,0.06);">
-              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-                <div class="kpi-hero-label" id="kpiPlanPeriodLabel" style="margin-bottom: 0;">Таргет &bull; План месяца</div>
-                <div class="revops-dropdown" id="dropdownPulsePeriodPlan">
-                  <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownPulsePeriodPlan', event)">
-                    <span class="dropdown-label" id="lblPulsePeriodPlan">Октябрь 2026</span>
-                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <div class="revops-dropdown-menu">
-                    <div class="revops-dropdown-item active" onclick="selectPulsePeriod('month', 'Октябрь 2026')">📅 Октябрь 2026 (Текущий)</div>
-                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('prev_month', 'Сентябрь 2026')">📅 Сентябрь 2026</div>
-                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('7d', 'За последние 7 дней')">📅 7 дней (Оперативный)</div>
-                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('today', 'Сегодня')">📅 Сегодня</div>
-                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('year', 'Весь 2026 год (YTD)')">📅 2026 Год целиком</div>
-                  </div>
-                </div>
-              </div>
-              <div class="kpi-secondary" id="metricPlanVal">5 000 000 ₽</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-                <div class="develop-pill pill-neg" id="metricDeficitPill">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-                  <span id="metricDeficitVal">-5.0M ₽</span>
-                  <span class="pill-sub">дефицит плана</span>
-                </div>
-                <svg class="develop-sparkline" viewBox="0 0 120 40" style="width: 100px; height: 32px;">
-                  <defs>
-                    <linearGradient id="splineTarget" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#fb7185" stop-opacity="0.35"/>
-                      <stop offset="100%" stop-color="#fb7185" stop-opacity="0"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M 0,15 Q 30,8 55,20 T 90,12 T 120,25 L 120,40 L 0,40 Z" fill="url(#splineTarget)"/>
-                  <path d="M 0,15 Q 30,8 55,20 T 90,12 T 120,25" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </div>
-          </div>
 
           <!-- Row 2: Dissection (Bar Chart) -->
           <div class="develop-card" style="position: relative;">

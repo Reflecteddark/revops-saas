@@ -187,6 +187,58 @@ function initDevelopDissectionChart() {
       }
     }
   });
+
+  initSparklines();
+}
+
+// ==========================================================================
+// HERO KPI SPARKLINES (TIER-1 LINEAR/VERCEL)
+// ==========================================================================
+let sparklineChartInstances = {};
+
+function initSparklines() {
+  if (typeof Chart === 'undefined') return;
+  const sparkDef = {
+    type: 'line',
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 600 },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      elements: { point: { radius: 0 }, line: { tension: 0.4, borderWidth: 2 } },
+      scales: { x: { display: false }, y: { display: false } }
+    }
+  };
+
+  const mockWeekly = [0, 0, 0, 0, 0, 0, 0];
+  const ids = ['sparkRevenue', 'sparkPipeline', 'sparkQuality', 'sparkSla'];
+  const colors = ['#7c3aed', '#f59e0b', '#06b6d4', '#f43f5e'];
+
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (sparklineChartInstances[id]) {
+      try { sparklineChartInstances[id].destroy(); } catch (e) {}
+      sparklineChartInstances[id] = null;
+    }
+    const existing = Chart.getChart ? Chart.getChart(el) : null;
+    if (existing) {
+      try { existing.destroy(); } catch (e) {}
+    }
+
+    sparklineChartInstances[id] = new Chart(el, {
+      ...sparkDef,
+      data: {
+        labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+        datasets: [{
+          data: mockWeekly,
+          borderColor: colors[i],
+          backgroundColor: colors[i] + '1a',
+          fill: true
+        }]
+      }
+    });
+  });
 }
 
 function initDevelopDonutChart() {
@@ -1368,4 +1420,5 @@ window.selectDonutPeriod = selectDonutPeriod;
 window.selectCriteriaScope = selectCriteriaScope;
 window.filterRecentCalls = filterRecentCalls;
 window.selectFunnelPeriod = selectFunnelPeriod;
+window.initSparklines = initSparklines;
 
