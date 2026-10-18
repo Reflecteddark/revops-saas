@@ -127,8 +127,20 @@ let developDissectionChartInstance = null;
 let developDonutChartInstance = null;
 let developSplineChartInstance = null;
 
-// Chart Zero-State Blur Overlay
-function applyChartZeroOverlay(canvasId, wrapperId) {
+// Chart Zero-State Helpers & Blur Overlay
+function hasCrmData() {
+  const calls = (typeof window !== 'undefined' && Array.isArray(window.CALLS_DATA) && window.CALLS_DATA.length > 0)
+    ? window.CALLS_DATA
+    : ((typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA)) ? CALLS_DATA : []);
+  if (calls.length > 0) return true;
+  const deals = (typeof window !== 'undefined' && Array.isArray(window.DEALS_DATA) && window.DEALS_DATA.length > 0)
+    ? window.DEALS_DATA
+    : ((typeof DEALS_DATA !== 'undefined' && Array.isArray(DEALS_DATA)) ? DEALS_DATA : []);
+  if (deals.length > 0) return true;
+  return false;
+}
+
+function applyChartZeroOverlay(canvasId, wrapperId, forceRemove = false) {
   let canvas = document.getElementById(canvasId);
   if (!canvas && (canvasId === 'monteCarloChart' || canvasId === 'mcChart')) {
     canvas = document.getElementById('mcChart') || document.getElementById('monteCarloChart');
@@ -138,8 +150,9 @@ function applyChartZeroOverlay(canvasId, wrapperId) {
   if (!wrapper) return;
   const old = wrapper.querySelector('.chart-zero-overlay');
   if (old) old.remove();
-  const hasData = (typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA) && CALLS_DATA.length > 0);
-  if (hasData) {
+
+  const hasData = hasCrmData();
+  if (hasData || forceRemove) {
     canvas.style.filter = '';
     canvas.style.pointerEvents = '';
     return;
@@ -157,6 +170,17 @@ function applyChartZeroOverlay(canvasId, wrapperId) {
     </div>`;
   wrapper.style.position = 'relative';
   wrapper.appendChild(overlay);
+}
+
+function refreshAllChartZeroOverlays() {
+  const chartIds = [
+    'developDissectionChart',
+    'developDonutChart',
+    'developSplineChart',
+    'mcChart',
+    'monteCarloChart'
+  ];
+  chartIds.forEach(id => applyChartZeroOverlay(id, null));
 }
 
 // Safe Chart Destruction Helper (prevents Chart.js v4 "Canvas is already in use" errors)
@@ -568,7 +592,7 @@ function initMonteCarloChart() {
   });
 
   runMonteCarloSimulation(false);
-  applyChartZeroOverlay('monteCarloChart', null);
+  applyChartZeroOverlay('mcChart', null);
 }
 
 function runMonteCarloSimulation(notify = false) {
@@ -670,6 +694,8 @@ function runMonteCarloSimulation(notify = false) {
     mcChartInstance.update();
   }
 
+  applyChartZeroOverlay('mcChart', null);
+
   const vText = document.getElementById('simVerdictText');
   if (vText) {
     vText.textContent = `При ${leads} лидах (квал ${qualPct}%, закрытие ${closePct}%, чек ${avgCheck.toLocaleString('ru-RU')} ₽) прогнозная касса: ${p50.toLocaleString('ru-RU')} ₽ (P10: ${p10.toLocaleString('ru-RU')} ₽, P90: ${p90.toLocaleString('ru-RU')} ₽).`;
@@ -682,6 +708,7 @@ function runMonteCarloSimulation(notify = false) {
 
 function updateSimulation(notify = true) {
   runMonteCarloSimulation(notify);
+  applyChartZeroOverlay('mcChart', null);
 }
 
 // ==========================================================================
@@ -1297,9 +1324,7 @@ function updateDevelopBentoCharts() {
   const syncBadge = document.getElementById('syncStatusBadge');
   if (syncBadge) syncBadge.textContent = `${total} СИНХРОНИЗИРОВАНО`;
 
-  applyChartZeroOverlay('developDonutChart', null);
-  applyChartZeroOverlay('developSplineChart', null);
-  applyChartZeroOverlay('developDissectionChart', null);
+  refreshAllChartZeroOverlays();
 }
 
 
@@ -1517,6 +1542,8 @@ window.selectCriteriaScope = selectCriteriaScope;
 window.filterRecentCalls = filterRecentCalls;
 window.selectFunnelPeriod = selectFunnelPeriod;
 window.initSparklines = initSparklines;
+window.hasCrmData = hasCrmData;
 window.applyChartZeroOverlay = applyChartZeroOverlay;
+window.refreshAllChartZeroOverlays = refreshAllChartZeroOverlays;
 window.safeDestroyChart = safeDestroyChart;
 

@@ -50,6 +50,8 @@ async function onTenantSelected(tenantId) {
     selector.value = cleanId;
   }
 
+  updateSidebarTenantChip(cleanId);
+
   if (typeof showToast === 'function') {
     showToast('Переключение клиента', `Загрузка данных тенанта ${cleanId}...`);
   }
@@ -63,11 +65,31 @@ async function onTenantSelected(tenantId) {
   }
 }
 
+function updateSidebarTenantChip(tenantId) {
+  const cleanId = (tenantId || getActiveTenantId() || 'TNT-001').trim().toUpperCase();
+  const chipName = document.getElementById('sidebarTenantName');
+  const chipAvatar = document.getElementById('sidebarTenantAvatar');
+  const chipContainer = document.getElementById('sidebarTenantChip');
+  if (!chipName && !chipAvatar) return;
+
+  const tenantsMap = {
+    'TNT-001': { name: 'Самозанятый', initials: 'СЗ' },
+    'TNT-002': { name: 'ООО МедТех', initials: 'МТ' },
+    'TNT-003': { name: 'КабельЭнерго', initials: 'КЭ' },
+    'TNT-004': { name: 'УЗИП Про', initials: 'УП' }
+  };
+  const tInfo = tenantsMap[cleanId] || { name: cleanId, initials: cleanId.slice(0, 2) };
+  if (chipName) chipName.textContent = tInfo.name;
+  if (chipAvatar) chipAvatar.textContent = tInfo.initials;
+  if (chipContainer) chipContainer.setAttribute('data-tooltip', `Клиент: ${tInfo.name} (LIVE)`);
+}
+
 async function initTenantsSelector() {
   const selector = document.getElementById('headerTenantSelector');
+  const currentId = getActiveTenantId();
+  updateSidebarTenantChip(currentId);
   if (!selector) return;
 
-  const currentId = getActiveTenantId();
   try {
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants`);
     if (res.ok) {
@@ -319,7 +341,7 @@ async function promptAdminUnlock() {
     '9d3ba5c08978d3354103973088fcc0df35ece2ea9de24c9dfc250d46375c9eec',
     'd7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410'
   ];
-  if (trimmed === 'revops_admin_fleet_secret_2026' || validAdminHashes.includes(inputHash)) {
+  if (validAdminHashes.includes(inputHash)) {
     sessionStorage.setItem('revops_admin_override', 'true');
     const sbAdmin = document.getElementById('sb-admin');
     if (sbAdmin) sbAdmin.style.display = 'flex';
@@ -449,10 +471,10 @@ function toggleSidebar() {
     const isOpen = sb.classList.contains('mobile-open');
     if (backdrop) backdrop.classList.toggle('active', isOpen);
   } else {
-    sb.classList.toggle('collapsed');
-    const isCollapsed = sb.classList.contains('collapsed');
-    localStorage.setItem('revops_sidebar_collapsed', isCollapsed ? '1' : '0');
-    if (mcChartInstance) {
+    sb.classList.toggle('expanded');
+    const isExpanded = sb.classList.contains('expanded');
+    localStorage.setItem('revops_sidebar_expanded', isExpanded ? '1' : '0');
+    if (typeof mcChartInstance !== 'undefined' && mcChartInstance) {
       setTimeout(() => mcChartInstance.resize(), 260);
     }
   }
@@ -486,12 +508,43 @@ const ALL_TABS = ['pulse', 'express', 'rop', 'audit', 'analyst', 'leaks', 'impac
 
 
 
+function syncHeroKpiCards() {
+  const defEl = document.getElementById('metricDeficitVal');
+  const heroSla = document.getElementById('heroSla');
+  if (defEl && heroSla) {
+    heroSla.textContent = defEl.textContent;
+  }
+  const heroQuality = document.getElementById('heroQuality');
+  if (heroQuality && typeof CALLS_DATA !== 'undefined') {
+    const count = CALLS_DATA.length;
+    if (count > 0) {
+      const avg = CALLS_DATA.reduce((s, c) => s + (c.score || 0), 0) / count;
+      heroQuality.textContent = Math.round((avg / 13) * 100) + '%';
+    } else {
+      heroQuality.textContent = '0%';
+    }
+  }
+}
+
 function animateCounter(el, target, duration = 900) {
   if (!el) return;
   const start = performance.now();
   const fmt = n => n.toLocaleString('ru-RU');
   const isInitial = !el.dataset.hasValue;
   el.dataset.hasValue = '1';
+
+  // Synchronize with Tier-1 Hero KPI cards
+  if (el.id === 'metricFactVal') {
+    const heroRev = document.getElementById('heroRevenue');
+    if (heroRev && heroRev !== el) {
+      animateCounter(heroRev, target, duration);
+    }
+  } else if (el.id === 'metricSsotVal') {
+    const heroPipe = document.getElementById('heroPipeline');
+    if (heroPipe && heroPipe !== el) {
+      animateCounter(heroPipe, target, duration);
+    }
+  }
 
   function tick(now) {
     const p = Math.min((now - start) / duration, 1);
@@ -510,6 +563,7 @@ function animateCounter(el, target, duration = 900) {
       el.style.transform = '';
       el.style.filter = '';
       el.style.opacity = '1';
+      syncHeroKpiCards();
     }
   }
   requestAnimationFrame(tick);
@@ -564,8 +618,13 @@ async function switchTab(tabId) {
     // Close mobile sidebar if open
     closeMobileSidebar();
 
-    if (tabId === 'montecarlo' && mcChartInstance) {
-      mcChartInstance.resize();
+    if (tabId === 'montecarlo') {
+      if (typeof mcChartInstance !== 'undefined' && mcChartInstance) {
+        mcChartInstance.resize();
+      }
+      if (typeof applyChartZeroOverlay === 'function') {
+        applyChartZeroOverlay('mcChart', null);
+      }
     }
     if (tabId === 'rop' && repPerfChartInstance) {
       repPerfChartInstance.resize();
@@ -578,6 +637,9 @@ async function switchTab(tabId) {
     }
     if (tabId === 'analyst') {
       initAnalystTab();
+    }
+    if (typeof refreshAllChartZeroOverlays === 'function') {
+      refreshAllChartZeroOverlays();
     }
   };
 
@@ -781,15 +843,79 @@ function updateAllChartsTheme(mode) {
 
 
 // ==========================================================================
-// TOAST NOTIFICATION
+// BLOCK 5 & WAVE 2: SEQUENTIAL TOAST NOTIFICATION QUEUE (TIER-1)
 // ==========================================================================
-function showToast(title, desc) {
-  const box = document.getElementById('toastBox');
-  document.getElementById('toastTitle').textContent = title;
-  document.getElementById('toastDesc').textContent = desc;
-  box.style.display = 'block';
-  setTimeout(() => { box.style.display = 'none'; }, 3500);
+const toastQueue = [];
+let toastActive = false;
+let _toastHideTimeout = null;
+
+function showToast(title, desc, type = 'info', duration = 2500) {
+  const item = {
+    title: title || '',
+    desc: desc || '',
+    type: type || 'info',
+    duration: duration || 2500
+  };
+
+  if (toastActive) {
+    toastQueue.push(item);
+    return;
+  }
+
+  _renderToastItem(item);
 }
+
+function _renderToastItem(item) {
+  toastActive = true;
+  const box = document.getElementById('toastBox');
+  if (!box) {
+    toastActive = false;
+    return;
+  }
+
+  const titleEl = document.getElementById('toastTitle');
+  const descEl = document.getElementById('toastDesc');
+  const icon = box.querySelector('svg');
+
+  if (titleEl) titleEl.textContent = item.title;
+  if (descEl) descEl.textContent = item.desc;
+
+  // Reset classes and set typed styling
+  box.classList.remove('toast-leaving', 'toast--success', 'toast--error', 'toast--warn', 'toast--info');
+  const typeClass = 'toast--' + (['success', 'error', 'warn', 'info'].includes(item.type) ? item.type : 'info');
+  box.classList.add(typeClass);
+
+  if (icon) {
+    const strokeColors = {
+      success: '#10b981',
+      error: '#f43f5e',
+      warn: '#f59e0b',
+      info: '#a78bfa'
+    };
+    icon.setAttribute('stroke', strokeColors[item.type] || '#a78bfa');
+  }
+
+  box.style.display = 'block';
+
+  clearTimeout(_toastHideTimeout);
+  _toastHideTimeout = setTimeout(() => {
+    box.classList.add('toast-leaving');
+    setTimeout(() => {
+      box.style.display = 'none';
+      box.classList.remove('toast-leaving');
+      if (toastQueue.length > 0) {
+        const nextItem = toastQueue.shift();
+        _renderToastItem(nextItem);
+      } else {
+        toastActive = false;
+      }
+    }, 220);
+  }, item.duration);
+}
+
+// Backwards compatibility alias
+const _toastQueue = toastQueue;
+let _isToastShowing = toastActive;
 
 
 // ==========================================================================
@@ -1106,6 +1232,7 @@ window.filterSidebarItems = filterSidebarItems;
 window.ALL_TABS = ALL_TABS;
 window.switchTab = switchTab;
 window.animateCounter = animateCounter;
+window.syncHeroKpiCards = syncHeroKpiCards;
 window.animateCardsIn = animateCardsIn;
 window.setAccentTheme = setAccentTheme;
 window.getThemeMode = getThemeMode;
@@ -1114,6 +1241,8 @@ window.toggleThemeMode = toggleThemeMode;
 window.updateThemeToggleUI = updateThemeToggleUI;
 window.updateAllChartsTheme = updateAllChartsTheme;
 window.showToast = showToast;
+window.toastQueue = toastQueue;
+window.toastActive = toastActive;
 window.tickLiveStatus = tickLiveStatus;
 window.updateChartTimestamps = updateChartTimestamps;
 window.initCustomCursor = initCustomCursor;

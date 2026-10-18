@@ -618,8 +618,13 @@ async function switchTab(tabId) {
     // Close mobile sidebar if open
     closeMobileSidebar();
 
-    if (tabId === 'montecarlo' && mcChartInstance) {
-      mcChartInstance.resize();
+    if (tabId === 'montecarlo') {
+      if (typeof mcChartInstance !== 'undefined' && mcChartInstance) {
+        mcChartInstance.resize();
+      }
+      if (typeof applyChartZeroOverlay === 'function') {
+        applyChartZeroOverlay('mcChart', null);
+      }
     }
     if (tabId === 'rop' && repPerfChartInstance) {
       repPerfChartInstance.resize();
@@ -632,6 +637,9 @@ async function switchTab(tabId) {
     }
     if (tabId === 'analyst') {
       initAnalystTab();
+    }
+    if (typeof refreshAllChartZeroOverlays === 'function') {
+      refreshAllChartZeroOverlays();
     }
   };
 

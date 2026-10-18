@@ -110,6 +110,7 @@ async function fetchLiveCallsData(showFeedback = false) {
     const data = await res.json();
     if (data && Array.isArray(data.calls)) {
       CALLS_DATA = data.calls;
+      window.CALLS_DATA = data.calls;
       refreshAllDashboardViews();
       lastSyncTime = Date.now();
       tickLiveStatus();
@@ -232,6 +233,9 @@ function refreshAllDashboardViews() {
   renderPulseFunnel();
   // Update Donut, Spline, Dissection and Rings
   updateDevelopBentoCharts();
+  if (typeof refreshAllChartZeroOverlays === 'function') {
+    refreshAllChartZeroOverlays();
+  }
 
   // Update Tab 3 Podium
   const pCards = document.getElementById('ropPedestalCards');
