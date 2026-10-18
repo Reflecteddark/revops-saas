@@ -866,7 +866,7 @@
 
     /* Left Collapsible Sidebar */
     .mp-sidebar {
-      width: 256px;
+      width: 270px;
       flex-shrink: 0;
       background: var(--bg-sidebar);
       border-right: 1px solid var(--border-subtle);
@@ -3203,6 +3203,97 @@
       color: #808191 !important;
     }
 
+    /* Interactive RevOps Dropdowns */
+    .revops-dropdown {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .revops-dropdown .develop-dropdown {
+      border: 1px solid rgba(124, 58, 237, 0.28);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .revops-dropdown .develop-dropdown:hover {
+      border-color: rgba(124, 58, 237, 0.55);
+      background: rgba(124, 58, 237, 0.22);
+    }
+
+    .revops-dropdown.open .develop-dropdown {
+      border-color: #8b5cf6;
+      background: rgba(124, 58, 237, 0.28);
+      box-shadow: 0 0 12px rgba(124, 58, 237, 0.35);
+    }
+
+    .revops-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 200px;
+      background: rgba(13, 13, 20, 0.98);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(124, 58, 237, 0.35);
+      border-radius: 12px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 16px rgba(124, 58, 237, 0.2);
+      padding: 6px;
+      z-index: 1000;
+      display: none;
+      transform-origin: top right;
+      animation: revopsDropdownPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes revopsDropdownPop {
+      from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .revops-dropdown.open .revops-dropdown-menu {
+      display: block;
+    }
+
+    .revops-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 0.74rem;
+      font-weight: 500;
+      color: #d4d4d8;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .revops-dropdown-item:hover {
+      color: #ffffff;
+      background: rgba(124, 58, 237, 0.25);
+    }
+
+    .revops-dropdown-item.active {
+      color: #c4b5fd;
+      background: rgba(124, 58, 237, 0.18);
+      font-weight: 600;
+    }
+
+    html[data-theme="light"] .revops-dropdown-menu {
+      background: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.12) !important;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    html[data-theme="light"] .revops-dropdown-item {
+      color: #3f3f46 !important;
+    }
+
+    html[data-theme="light"] .revops-dropdown-item:hover {
+      background: #f4f4f5 !important;
+      color: #18181b !important;
+    }
+
     .develop-kpi-pair {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -4409,7 +4500,6 @@
         <button id="sb-rop" class="mp-nav-item" onclick="switchTab('rop')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span>
           <span class="mp-nav-label">3. Пульт РОПа 15 мин</span>
-          <span class="badge-lost" id="sbBadgeRop" style="font-size: 0.62rem; margin-left: auto;">0 сд.</span>
         </button>
       </div>
 
@@ -4419,15 +4509,14 @@
         <button id="sb-audit" class="mp-nav-item" onclick="switchTab('audit')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 19v4m-4 0h8"/></svg></span>
           <span class="mp-nav-label">4. ИИ-Аудит звонков</span>
-          <span class="badge-info" id="sbBadgeAudit" style="font-size: 0.62rem; margin-left: auto;">0</span>
-        </button>
-        <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')">
-          <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
-          <span class="mp-nav-label">8. Навыки & Payroll</span>
         </button>
         <button id="sb-impact" class="mp-nav-item" onclick="switchTab('impact')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
-          <span class="mp-nav-label">6. AI Impact & Детектор</span>
+          <span class="mp-nav-label">5. AI Impact & Детектор</span>
+        </button>
+        <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')">
+          <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+          <span class="mp-nav-label">6. Навыки & Payroll</span>
         </button>
       </div>
 
@@ -4436,16 +4525,15 @@
         <div class="mp-nav-group-title">Финансы & Аналитика</div>
         <button id="sb-analyst" class="mp-nav-item" onclick="switchTab('analyst')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12L2.1 12a10.1 10.1 0 0 0 9.9 10z"/></svg></span>
-          <span class="mp-nav-label">ИИ Аналитик (CCO)</span>
-          <span class="badge-won" style="font-size: 0.60rem; margin-left: auto; padding: 1px 5px; border-radius: 4px;">Agent 2</span>
+          <span class="mp-nav-label">7. ИИ Аналитик (CCO)</span>
         </button>
         <button id="sb-leaks" class="mp-nav-item" onclick="switchTab('leaks')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></span>
-          <span class="mp-nav-label">5. Диагностика утечек</span>
+          <span class="mp-nav-label">8. Диагностика утечек</span>
         </button>
         <button id="sb-montecarlo" class="mp-nav-item" onclick="switchTab('montecarlo')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/></svg></span>
-          <span class="mp-nav-label">7. Монте-Карло 3.0</span>
+          <span class="mp-nav-label">9. Монте-Карло 3.0</span>
         </button>
       </div>
 
@@ -4454,12 +4542,11 @@
         <div class="mp-nav-group-title">Система & Интеграции</div>
         <button id="sb-settings" class="mp-nav-item" onclick="switchTab('settings')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
-          <span class="mp-nav-label">9. Паспорт & E2E</span>
+          <span class="mp-nav-label">10. Паспорт & E2E</span>
         </button>
         <button id="sb-admin" class="mp-nav-item" onclick="switchTab('admin')" style="display: none;">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 10 7 12"/><line x1="12" y1="12" x2="16" y2="12"/></svg></span>
-          <span class="mp-nav-label">10. Админ-кабинет</span>
-          <span class="badge-info" style="font-size: 0.60rem; margin-left: auto; background: rgba(124, 58, 237, 0.2); color: #a78bfa; border: 1px solid rgba(124, 58, 237, 0.4);">Fleet</span>
+          <span class="mp-nav-label">11. Админ-кабинет</span>
         </button>
         <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
@@ -4574,8 +4661,20 @@
             <!-- Hero — без рамки -->
             <div style="padding-right: 36px;">
               <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-                <div class="kpi-hero-label" style="margin-bottom: 0;">Главный KPI &bull; Октябрь 2026</div>
-                <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                <div class="kpi-hero-label" id="kpiFactPeriodLabel" style="margin-bottom: 0;">Главный KPI &bull; Октябрь 2026</div>
+                <div class="revops-dropdown" id="dropdownPulsePeriodFact">
+                  <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownPulsePeriodFact', event)">
+                    <span class="dropdown-label" id="lblPulsePeriodFact">Октябрь 2026</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                  <div class="revops-dropdown-menu">
+                    <div class="revops-dropdown-item active" onclick="selectPulsePeriod('month', 'Октябрь 2026')">📅 Октябрь 2026 (Текущий)</div>
+                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('prev_month', 'Сентябрь 2026')">📅 Сентябрь 2026</div>
+                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('7d', 'За последние 7 дней')">📅 7 дней (Оперативный)</div>
+                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('today', 'Сегодня')">📅 Сегодня</div>
+                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('year', 'Весь 2026 год (YTD)')">📅 2026 Год целиком</div>
+                  </div>
+                </div>
               </div>
               <div class="kpi-hero kpi-hero-live" id="metricFactVal">0 ₽</div>
               <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
@@ -4600,8 +4699,20 @@
             <!-- Plan — без рамки, с divider слева -->
             <div style="padding-left: 36px; border-left: 1px solid rgba(255,255,255,0.06);">
               <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-                <div class="kpi-hero-label" style="margin-bottom: 0;">Таргет &bull; План месяца</div>
-                <span class="develop-dropdown" onclick="setPulsePeriod('month')">Октябрь 2026 <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                <div class="kpi-hero-label" id="kpiPlanPeriodLabel" style="margin-bottom: 0;">Таргет &bull; План месяца</div>
+                <div class="revops-dropdown" id="dropdownPulsePeriodPlan">
+                  <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownPulsePeriodPlan', event)">
+                    <span class="dropdown-label" id="lblPulsePeriodPlan">Октябрь 2026</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                  <div class="revops-dropdown-menu">
+                    <div class="revops-dropdown-item active" onclick="selectPulsePeriod('month', 'Октябрь 2026')">📅 Октябрь 2026 (Текущий)</div>
+                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('prev_month', 'Сентябрь 2026')">📅 Сентябрь 2026</div>
+                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('7d', 'За последние 7 дней')">📅 7 дней (Оперативный)</div>
+                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('today', 'Сегодня')">📅 Сегодня</div>
+                    <div class="revops-dropdown-item" onclick="selectPulsePeriod('year', 'Весь 2026 год (YTD)')">📅 2026 Год целиком</div>
+                  </div>
+                </div>
               </div>
               <div class="kpi-secondary" id="metricPlanVal">5 000 000 ₽</div>
               <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
@@ -4635,7 +4746,17 @@
                   <span class="legend-circle dot-pink" style="margin-left: 12px;"></span><span>План</span>
                 </div>
               </div>
-              <span class="develop-dropdown">По месяцам <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+              <div class="revops-dropdown" id="dropdownDissectionScale">
+                <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownDissectionScale', event)">
+                  <span class="dropdown-label" id="lblDissectionScale">По месяцам</span>
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+                <div class="revops-dropdown-menu">
+                  <div class="revops-dropdown-item active" onclick="selectDissectionScale('months', 'По месяцам')">📊 По месяцам (Год 2026)</div>
+                  <div class="revops-dropdown-item" onclick="selectDissectionScale('weeks', 'По неделям')">📈 По неделям (Октябрь)</div>
+                  <div class="revops-dropdown-item" onclick="selectDissectionScale('days', 'По дням')">📉 По дням (Последние 7 дней)</div>
+                </div>
+              </div>
             </div>
             <div style="height: 230px; position: relative; width: 100%;">
               <canvas id="developDissectionChart"></canvas>
@@ -4649,7 +4770,18 @@
             <div class="develop-card">
               <div class="develop-card-header">
                 <span class="develop-card-title">Последние звонки</span>
-                <span class="develop-dropdown" id="pulseRecentCallsCount" onclick="switchTab('audit')">Все (0) <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                <div class="revops-dropdown" id="dropdownRecentCallsFilter">
+                  <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownRecentCallsFilter', event)">
+                    <span class="dropdown-label" id="lblRecentCallsFilter">Все (0)</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                  <div class="revops-dropdown-menu">
+                    <div class="revops-dropdown-item active" onclick="filterRecentCalls('all', 'Все звонки')">🎙️ Все звонки (<span id="pulseRecentCallsCount">0</span>)</div>
+                    <div class="revops-dropdown-item" onclick="filterRecentCalls('fails', 'Только сбои (<60%)')">⚠️ Только сбои (&lt; 60%)</div>
+                    <div class="revops-dropdown-item" onclick="filterRecentCalls('won', 'Эталоны (>=85%)')">🏆 Эталоны (&ge; 85%)</div>
+                    <div class="revops-dropdown-item" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; color: #a78bfa;" onclick="switchTab('audit')">📋 Открыть Аудит звонков &rarr;</div>
+                  </div>
+                </div>
               </div>
               <div class="develop-tx-list" id="pulseRecentCallsList">
                 <div style="padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
@@ -4664,7 +4796,18 @@
             <div class="develop-card">
               <div class="develop-card-header">
                 <span class="develop-card-title">Воронка продаж SSOT</span>
-                <span class="develop-dropdown" onclick="switchTab('rop')">Октябрь <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                <div class="revops-dropdown" id="dropdownFunnelPeriod">
+                  <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownFunnelPeriod', event)">
+                    <span class="dropdown-label" id="lblFunnelPeriod">Октябрь</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                  <div class="revops-dropdown-menu">
+                    <div class="revops-dropdown-item active" onclick="selectFunnelPeriod('2026-10', 'Октябрь 2026')">🗂️ Октябрь 2026</div>
+                    <div class="revops-dropdown-item" onclick="selectFunnelPeriod('2026-09', 'Сентябрь 2026')">🗂️ Сентябрь 2026</div>
+                    <div class="revops-dropdown-item" onclick="selectFunnelPeriod('ytd', 'Весь 2026 год')">🗂️ Весь 2026 год (YTD)</div>
+                    <div class="revops-dropdown-item" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; color: #a78bfa;" onclick="switchTab('rop')">🚀 Открыть Пульт РОПа &rarr;</div>
+                  </div>
+                </div>
               </div>
               <div class="develop-inv-list" id="pulseFunnelList">
                 <div class="develop-inv-item">
@@ -4741,7 +4884,18 @@
           <div class="develop-card">
             <div class="develop-card-header">
               <span class="develop-card-title">Категории звонков</span>
-              <span class="develop-dropdown">Октябрь <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+              <div class="revops-dropdown" id="dropdownDonutPeriod">
+                <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownDonutPeriod', event)">
+                  <span class="dropdown-label" id="lblDonutPeriod">Октябрь</span>
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+                <div class="revops-dropdown-menu">
+                  <div class="revops-dropdown-item active" onclick="selectDonutPeriod('month', 'Октябрь')">🍩 Октябрь 2026</div>
+                  <div class="revops-dropdown-item" onclick="selectDonutPeriod('30d', 'За 30 дней')">🍩 За 30 дней</div>
+                  <div class="revops-dropdown-item" onclick="selectDonutPeriod('7d', 'За 7 дней')">🍩 За 7 дней</div>
+                  <div class="revops-dropdown-item" onclick="selectDonutPeriod('all', 'Все время')">🍩 Все время (All-Time)</div>
+                </div>
+              </div>
             </div>
             <div class="develop-donut-container">
               <div class="donut-chart-box">
@@ -4764,7 +4918,17 @@
 
             <div class="develop-card-header" style="margin-bottom: 10px;">
               <span class="develop-card-title" style="font-size: 0.82rem;">Нормативы конверсии</span>
-              <span class="develop-dropdown">13 критериев <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+              <div class="revops-dropdown" id="dropdownCriteriaScope">
+                <button class="develop-dropdown" onclick="toggleRevopsDropdown('dropdownCriteriaScope', event)">
+                  <span class="dropdown-label" id="lblCriteriaScope">13 критериев</span>
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+                <div class="revops-dropdown-menu">
+                  <div class="revops-dropdown-item active" onclick="selectCriteriaScope('all13', '13 критериев')">🎯 13 критериев B2B-аудита</div>
+                  <div class="revops-dropdown-item" onclick="selectCriteriaScope('core5', '5 ключевых этапов')">⚡ 5 ключевых этапов сделки</div>
+                  <div class="revops-dropdown-item" onclick="selectCriteriaScope('risks', 'Критические точки риска')">⚠️ Критические точки риска</div>
+                </div>
+              </div>
             </div>
 
             <div class="spending-rings-flex">
@@ -4836,11 +5000,12 @@
 
       <!-- Compact Autonomous Trio AI Crew Link -->
       <a href="javascript:void(0)" onclick="switchTab('settings')"
+         title="Перейти к мониторингу 3 агентов (DevOps QA Healer, CCO Auditor, Workflow Guardian)"
          style="display: inline-flex; align-items: center; gap: 8px;
-                font-size: 0.72rem; color: var(--text-muted);
-                margin-top: 24px; text-decoration: none;">
-        <span class="status-dot dot-won" style="width: 5px; height: 5px;"></span>
-        AI Crew работает · 3 агента онлайн · все системы штатно
+                font-size: 0.74rem; color: var(--text-secondary);
+                margin-top: 24px; text-decoration: none; cursor: pointer; transition: color 0.15s ease;">
+        <span class="status-dot dot-won" style="width: 6px; height: 6px;"></span>
+        <span>AI Crew: <strong style="color: #fff;">3 агента онлайн</strong> (DevOps · CCO · Guardian) · все системы штатно &rarr;</span>
       </a>
 
 

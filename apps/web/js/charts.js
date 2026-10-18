@@ -1142,15 +1142,192 @@ function updateDevelopBentoCharts() {
   if (rValPay) rValPay.textContent = `${payPct}%`;
   if (rFillPay) rFillPay.setAttribute('stroke-dasharray', `${payPct}, 100`);
 
-  // Sidebar badges
-  const sbBadgeAudit = document.getElementById('sbBadgeAudit');
-  if (sbBadgeAudit) sbBadgeAudit.textContent = `${total}`;
-  const sbBadgeRop = document.getElementById('sbBadgeRop');
-  if (sbBadgeRop) sbBadgeRop.textContent = `${total} сд.`;
+  // Live Counters & Badges
+  const recentCallsCount = document.getElementById('pulseRecentCallsCount');
+  if (recentCallsCount) recentCallsCount.textContent = `${total}`;
+  const lblRecentCalls = document.getElementById('lblRecentCallsFilter');
+  if (lblRecentCalls && lblRecentCalls.textContent.startsWith('Все')) {
+    lblRecentCalls.textContent = `Все (${total})`;
+  }
+
   const syncBadge = document.getElementById('syncStatusBadge');
   if (syncBadge) syncBadge.textContent = `${total} СИНХРОНИЗИРОВАНО`;
 }
 
+
+// ==========================================================================
+// REVOPS INTERACTIVE DROPDOWNS CONTROLLER
+// ==========================================================================
+function toggleRevopsDropdown(dropdownId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const el = document.getElementById(dropdownId);
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+  closeAllRevopsDropdowns();
+  if (!isOpen) {
+    el.classList.add('open');
+  }
+}
+
+function closeAllRevopsDropdowns() {
+  document.querySelectorAll('.revops-dropdown.open').forEach(el => {
+    el.classList.remove('open');
+  });
+}
+
+function selectPulsePeriod(periodKey, labelText) {
+  const lblFact = document.getElementById('lblPulsePeriodFact');
+  if (lblFact) lblFact.textContent = labelText;
+  const lblPlan = document.getElementById('lblPulsePeriodPlan');
+  if (lblPlan) lblPlan.textContent = labelText;
+
+  const kpiFact = document.getElementById('kpiFactPeriodLabel');
+  if (kpiFact) kpiFact.innerHTML = `Главный KPI &bull; ${labelText}`;
+  const kpiPlan = document.getElementById('kpiPlanPeriodLabel');
+  if (kpiPlan) kpiPlan.innerHTML = `Таргет &bull; ${labelText}`;
+
+  // Sync active item in both dropdowns
+  ['dropdownPulsePeriodFact', 'dropdownPulsePeriodPlan'].forEach(dId => {
+    const d = document.getElementById(dId);
+    if (d) {
+      d.querySelectorAll('.revops-dropdown-item').forEach(item => {
+        item.classList.toggle('active', item.textContent.includes(labelText));
+      });
+    }
+  });
+
+  if (typeof setPulsePeriod === 'function') {
+    setPulsePeriod(periodKey);
+  }
+  closeAllRevopsDropdowns();
+}
+
+function setDissectionScale(scaleKey, labelText) {
+  const lbl = document.getElementById('lblDissectionScale');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownDissectionScale');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  if (developDissectionChartInstance) {
+    const isZero = CALLS_DATA.length === 0;
+    if (scaleKey === 'weeks') {
+      developDissectionChartInstance.data.labels = ['Нед 40 (1-7 Окт)', 'Нед 41 (8-14 Окт)', 'Нед 42 (15-21 Окт)', 'Нед 43 (22-28 Окт)'];
+      developDissectionChartInstance.data.datasets[0].data = isZero ? [0, 0, 0, 0] : [210, 245, 190, 245];
+      developDissectionChartInstance.data.datasets[1].data = isZero ? [0, 0, 0, 0] : [190, 190, 190, 190];
+    } else if (scaleKey === 'days') {
+      developDissectionChartInstance.data.labels = ['Пн (12 Окт)', 'Вт (13 Окт)', 'Ср (14 Окт)', 'Чт (15 Окт)', 'Пт (16 Окт)', 'Сб (17 Окт)', 'Вс (18 Окт)'];
+      developDissectionChartInstance.data.datasets[0].data = isZero ? [0, 0, 0, 0, 0, 0, 0] : [35, 48, 52, 60, 45, 12, 8];
+      developDissectionChartInstance.data.datasets[1].data = isZero ? [0, 0, 0, 0, 0, 0, 0] : [40, 40, 40, 40, 40, 15, 10];
+    } else {
+      developDissectionChartInstance.data.labels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+      developDissectionChartInstance.data.datasets[0].data = isZero ? Array(12).fill(0) : [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950];
+      developDissectionChartInstance.data.datasets[1].data = isZero ? Array(12).fill(0) : [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830];
+    }
+    developDissectionChartInstance.update();
+  }
+
+  showToast('Динамика выручки', 'Масштаб графика: ' + labelText);
+  closeAllRevopsDropdowns();
+}
+
+function selectDonutPeriod(periodKey, labelText) {
+  const lbl = document.getElementById('lblDonutPeriod');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownDonutPeriod');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  if (developDonutChartInstance) {
+    const isZero = CALLS_DATA.length === 0;
+    if (periodKey === '7d') {
+      developDonutChartInstance.data.datasets[0].data = isZero ? [1] : [40, 30, 15, 10, 5];
+    } else if (periodKey === '30d') {
+      developDonutChartInstance.data.datasets[0].data = isZero ? [1] : [35, 25, 20, 12, 8];
+    } else {
+      developDonutChartInstance.data.datasets[0].data = isZero ? [1] : [34, 25, 17, 12, 6];
+    }
+    developDonutChartInstance.update();
+  }
+
+  showToast('Категории звонков', 'Срез: ' + labelText);
+  closeAllRevopsDropdowns();
+}
+
+function selectCriteriaScope(scopeKey, labelText) {
+  const lbl = document.getElementById('lblCriteriaScope');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownCriteriaScope');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  if (scopeKey === 'core5') {
+    showToast('Нормативы конверсии', 'Фокус: 5 ключевых этапов B2B');
+  } else if (scopeKey === 'risks') {
+    showToast('Нормативы конверсии', 'Фокус: Критические точки срыва и Fake Yes');
+  } else {
+    showToast('Нормативы конверсии', 'Фокус: Все 13 критериев B2B-аудита');
+  }
+  closeAllRevopsDropdowns();
+}
+
+function filterRecentCalls(filterKey, labelText) {
+  const lbl = document.getElementById('lblRecentCallsFilter');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownRecentCallsFilter');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  showToast('Последние звонки', 'Применен фильтр: ' + labelText);
+  closeAllRevopsDropdowns();
+}
+
+function selectFunnelPeriod(periodKey, labelText) {
+  const lbl = document.getElementById('lblFunnelPeriod');
+  if (lbl) lbl.textContent = labelText;
+
+  const menu = document.getElementById('dropdownFunnelPeriod');
+  if (menu) {
+    menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.textContent.includes(labelText));
+    });
+  }
+
+  showToast('Воронка продаж SSOT', 'Период: ' + labelText);
+  closeAllRevopsDropdowns();
+}
+
+// Global click-away listeners for RevOps dropdowns
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.revops-dropdown')) {
+    closeAllRevopsDropdowns();
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeAllRevopsDropdowns();
+  }
+});
 
 
 // Expose Charts handlers & instances on window
@@ -1181,3 +1358,14 @@ window.updateRadarChart = updateRadarChart;
 window.renderRadarRepPills = renderRadarRepPills;
 window.renderPayrollTable = renderPayrollTable;
 window.renderAiImpactAndFakeYes = renderAiImpactAndFakeYes;
+
+window.toggleRevopsDropdown = toggleRevopsDropdown;
+window.closeAllRevopsDropdowns = closeAllRevopsDropdowns;
+window.selectPulsePeriod = selectPulsePeriod;
+window.setDissectionScale = setDissectionScale;
+window.selectDissectionScale = setDissectionScale;
+window.selectDonutPeriod = selectDonutPeriod;
+window.selectCriteriaScope = selectCriteriaScope;
+window.filterRecentCalls = filterRecentCalls;
+window.selectFunnelPeriod = selectFunnelPeriod;
+
