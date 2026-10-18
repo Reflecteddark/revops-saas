@@ -102,6 +102,22 @@ function renderSkillsHeatmap() {
 // ==========================================================================
 // TIER-1 SAAS CHARTS (LINEAR / FEY / VERCEL AESTHETIC)
 // ==========================================================================
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = 'rgba(255, 255, 255, 0.55)';
+  Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.06)';
+  Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(10, 10, 16, 0.95)';
+  Chart.defaults.plugins.tooltip.borderColor = 'rgba(255, 255, 255, 0.12)';
+  Chart.defaults.plugins.tooltip.borderWidth = 1;
+  Chart.defaults.plugins.tooltip.cornerRadius = 10;
+  Chart.defaults.plugins.tooltip.padding = 12;
+  Chart.defaults.plugins.tooltip.boxPadding = 6;
+  Chart.defaults.plugins.tooltip.titleFont = { family: "'Inter', sans-serif", size: 12, weight: '600' };
+  Chart.defaults.plugins.tooltip.bodyFont = { family: "'JetBrains Mono', monospace", size: 11 };
+  Chart.defaults.plugins.tooltip.usePointStyle = true;
+}
+
 let developDissectionChartInstance = null;
 let developDonutChartInstance = null;
 let developSplineChartInstance = null;
@@ -293,16 +309,16 @@ function initDevelopSplineChart() {
   if (!ctx) return;
   const isLight = getThemeMode() === 'light';
   const c2d = ctx.getContext('2d');
-  let grad1 = 'rgba(139, 92, 246, 0.16)';
+  let grad1 = 'rgba(124, 58, 237, 0.20)';
   if (c2d) {
     const h = ctx.clientHeight || 180;
     const g1 = c2d.createLinearGradient(0, 0, 0, h);
-    g1.addColorStop(0, 'rgba(139, 92, 246, 0.30)');
-    g1.addColorStop(1, 'rgba(139, 92, 246, 0.00)');
+    g1.addColorStop(0, 'rgba(124, 58, 237, 0.35)');
+    g1.addColorStop(1, 'rgba(124, 58, 237, 0.00)');
     grad1 = g1;
   }
 
-  const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.035)';
+  const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.04)';
   const tickColor = isLight ? '#71717a' : '#52525b';
 
   const isZero = CALLS_DATA.length === 0;
@@ -314,15 +330,15 @@ function initDevelopSplineChart() {
         {
           label: 'SSOT Факт',
           data: isZero ? [0, 0, 0, 0, 0, 0, 0] : [240, 310, 460, 380, 540, 470, 610],
-          borderColor: '#8b5cf6',
+          borderColor: '#7c3aed',
           backgroundColor: grad1,
-          borderWidth: 2,
-          tension: 0.4,
+          borderWidth: 2.2,
+          tension: 0.42,
           fill: true,
           pointRadius: 0,
-          pointHoverRadius: 4,
+          pointHoverRadius: 5,
           pointHoverBackgroundColor: '#ffffff',
-          pointHoverBorderColor: '#8b5cf6',
+          pointHoverBorderColor: '#7c3aed',
           pointHoverBorderWidth: 2
         },
         {
@@ -331,10 +347,13 @@ function initDevelopSplineChart() {
           borderColor: isLight ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.22)',
           borderDash: [4, 4],
           borderWidth: 1.5,
-          tension: 0.4,
+          tension: 0.42,
           fill: false,
           pointRadius: 0,
-          pointHoverRadius: 3
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: '#ffffff',
+          pointHoverBorderColor: '#a78bfa',
+          pointHoverBorderWidth: 2
         }
       ]
     },
@@ -345,15 +364,16 @@ function initDevelopSplineChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(9, 9, 13, 0.96)',
-          titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+          backgroundColor: isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(10, 10, 16, 0.96)',
+          titleFont: { family: 'Inter', size: 12, weight: '600' },
           bodyFont: { family: 'JetBrains Mono', size: 11 },
           titleColor: isLight ? '#09090b' : '#fafafa',
           bodyColor: isLight ? '#52525b' : '#a1a1aa',
-          borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.10)',
+          borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)',
           borderWidth: 1,
           cornerRadius: 10,
-          padding: 10,
+          padding: 12,
+          boxPadding: 6,
           displayColors: true,
           usePointStyle: true,
           callbacks: {
@@ -363,12 +383,16 @@ function initDevelopSplineChart() {
       },
       scales: {
         x: {
-          grid: { display: false },
-          ticks: { color: tickColor, font: { size: 10, family: 'Inter' } }
+          grid: { display: false, drawBorder: false },
+          ticks: { color: tickColor, font: { size: 10, family: 'Inter', weight: '500' } }
         },
         y: {
           border: { display: false },
-          grid: { color: gridColor },
+          grid: {
+            color: gridColor,
+            borderDash: [3, 3],
+            drawBorder: false
+          },
           ticks: {
             color: tickColor,
             font: { size: 10, family: 'JetBrains Mono' },
@@ -818,7 +842,7 @@ function initSpeechRadarChart() {
         {
           label: 'Эталон B2B (100%)',
           data: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
-          borderColor: 'rgba(51, 209, 255, 0.45)',
+          borderColor: 'rgba(6, 182, 212, 0.40)',
           borderWidth: 1.5,
           borderDash: [4, 4],
           pointRadius: 0,
@@ -827,14 +851,14 @@ function initSpeechRadarChart() {
         {
           label: 'Факт выполнения, %',
           data: getDynamicRadarData('all'),
-          borderColor: '#b899eb',
-          backgroundColor: 'rgba(184, 153, 235, 0.22)',
-          borderWidth: 1.75,
-          pointBackgroundColor: '#33d1ff',
+          borderColor: '#7c3aed',
+          backgroundColor: 'rgba(124, 58, 237, 0.22)',
+          borderWidth: 2,
+          pointBackgroundColor: '#06b6d4',
           pointBorderColor: '#ffffff',
           pointBorderWidth: 1.5,
-          pointRadius: 3,
-          pointHoverRadius: 5,
+          pointRadius: 3.5,
+          pointHoverRadius: 6,
           fill: true
         }
       ]
@@ -845,19 +869,21 @@ function initSpeechRadarChart() {
       plugins: {
         legend: {
           display: true,
-          labels: { color: '#cbd5e1', font: { size: 11 } }
+          labels: { color: '#cbd5e1', font: { size: 11, family: 'Inter' } }
         },
         tooltip: {
-          backgroundColor: 'rgba(10, 10, 16, 0.98)',
-          titleFont: { family: 'Inter Tight', size: 12, weight: '600' },
+          backgroundColor: 'rgba(10, 10, 16, 0.96)',
+          titleFont: { family: 'Inter', size: 12, weight: '600' },
           bodyFont: { family: 'JetBrains Mono', size: 11 },
           titleColor: '#fff',
           bodyColor: '#cbd5e1',
-          borderColor: 'rgba(255, 255, 255, 0.08)',
+          borderColor: 'rgba(255, 255, 255, 0.12)',
           borderWidth: 1,
-          cornerRadius: 8,
-          padding: 10,
-          displayColors: false,
+          cornerRadius: 10,
+          padding: 12,
+          boxPadding: 6,
+          displayColors: true,
+          usePointStyle: true,
           callbacks: {
             label: function(ctx) {
               return ` ${ctx.dataset.label}: ${ctx.parsed.r}%`;
