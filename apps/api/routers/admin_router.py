@@ -304,6 +304,13 @@ class TaskActionRequest(BaseModel):
     time_str: Optional[str] = Field("04:00", description="Time for daily task, e.g. 04:00, 08:00")
 
 
+class CRMActionRequest(BaseModel):
+    action: str = Field(..., description="Action: show_stages, dry_run, sync_deals, switch_crm")
+    tenant_id: Optional[str] = Field("TNT-001", description="Tenant ID")
+    crm_type: Optional[str] = Field(None, description="Target CRM type: bitrix24 or amocrm")
+    days: Optional[int] = Field(30, description="Lookback window in days")
+
+
 # ============================================================================
 # ENDPOINTS
 # ============================================================================
@@ -1199,5 +1206,211 @@ def archive_desktop_launchers():
         "archive_dir": str(archive_dir),
         "errors": errors
     }
+
+
+# ============================================================================
+# CRM CONNECTOR & PIPELINE INTEGRATION
+# ============================================================================
+
+def _find_crm_connector_script(crm_type: str) -> Optional[Path]:
+    filename = "bitrix24_connector.py" if (crm_type or "").lower() == "bitrix24" else "amocrm_connector.py"
+    candidates = [
+        ENTERPRISE_OS_DIR / filename,
+        BASE_DIR.parent / "revops-enterprise-os" / filename,
+        BASE_DIR / filename,
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return None
+
+
+@router.get("/crm/status")
+def get_admin_crm_status(tenant_id: str = Query("TNT-001")):
+    """
+    Returns active CRM provider (Bitrix24 REST vs amoCRM API v4) and connection status for tenant.
+    """
+    from ..tenant_registry import get_tenant_config
+
+    config = get_tenant_config(tenant_id) or {}
+    active_crm = config.get("crm_type", "bitrix24").lower()
+
+    b24_script = _find_crm_connector_script("bitrix24")
+    amo_script = _find_crm_connector_script("amocrm")
+
+    b24_webhook = config.get("b24_webhook_url") or "https://b24-8dmblj.bitrix24.ru/rest/1/azekoswdul7y2cpi/"
+    amo_domain = (config.get("amo_domain") or "https://revopsofficial.amocrm.ru").replace("https://", "").replace("/", "")
+    amo_token = config.get("amo_token") or ""
+
+    return {
+        "tenant_id": config.get("tenant_id", tenant_id),
+        "tenant_name": config.get("tenant_name", "Клиент"),
+        "active_crm": active_crm,
+        "spreadsheet_id": config.get("spreadsheet_id", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk"),
+        "bitrix24": {
+            "available": b24_script is not None,
+            "webhook_url": b24_webhook[:35] + "..." if len(b24_webhook) > 35 else b24_webhook,
+            "connected": bool(b24_webhook),
+            "label": "Bitrix24 REST API"
+        },
+        "amocrm": {
+            "available": amo_script is not None,
+            "domain": amo_domain,
+            "connected": bool(amo_domain and amo_token),
+            "label": "amoCRM API v4"
+        }
+    }
+
+
+@router.post("/crm/action")
+def execute_crm_action(req: CRMActionRequest):
+    """
+    Executes CRM connector operations (replaces Интеграция_Bitrix24.bat and Интеграция_AmoCRM.bat):
+    - show_stages: python {connector}.py --show-stages
+    - dry_run: python {connector}.py --dry-run --days 30
+    - sync_deals: python {connector}.py (live deal sync to raw_deals)
+    - switch_crm: switch active CRM in tenants_registry.json
+    """
+    from ..tenant_registry import get_tenant_config, get_tenants_registry_path
+
+    tenant_id = req.tenant_id or "TNT-001"
+    config = get_tenant_config(tenant_id) or {}
+    current_crm = (req.crm_type or config.get("crm_type") or "bitrix24").lower()
+    action = req.action.lower()
+
+    if action == "switch_crm":
+        new_crm = (req.crm_type or ("amocrm" if current_crm == "bitrix24" else "bitrix24")).lower()
+        reg_path = get_tenants_registry_path()
+        if reg_path and reg_path.exists():
+            try:
+                with open(reg_path, "r", encoding="utf-8") as f:
+                    reg_data = json.load(f)
+                for t in reg_data.get("tenants", []):
+                    if str(t.get("tenant_id", "")).upper() == tenant_id.upper():
+                        t["crm_type"] = new_crm
+                        break
+                with open(reg_path, "w", encoding="utf-8") as f:
+                    json.dump(reg_data, f, ensure_ascii=False, indent=2)
+
+                from ..tenant_registry import _REGISTRY_CACHE
+                _REGISTRY_CACHE["timestamp"] = 0
+            except Exception as e:
+                logger.error(f"Failed to update tenant crm_type: {e}")
+
+        msg = f"Активная CRM для {tenant_id} успешно переключена на {new_crm.upper()}!"
+        append_console_log(f"🔄 {msg}", "success")
+        return {"success": True, "action": action, "active_crm": new_crm, "message": msg}
+
+    script_path = _find_crm_connector_script(current_crm)
+    if not script_path:
+        err = f"Скрипт коннектора для {current_crm} не найден!"
+        append_console_log(err, "error")
+        return {"success": False, "error": err}
+
+    cmd = [sys.executable, str(script_path)]
+    desc = ""
+
+    if action == "show_stages":
+        cmd.append("--show-stages")
+        desc = f"Обзор этапов воронки CRM ({current_crm.upper()})"
+    elif action == "dry_run":
+        days = req.days or 30
+        cmd.extend(["--dry-run", "--days", str(days)])
+        desc = f"Тестовая синхронизация сделок ({current_crm.upper()}, за {days} дней)"
+    elif action in ("sync_deals", "sync"):
+        desc = f"Боевая синхронизация сделок из {current_crm.upper()} в raw_deals"
+    else:
+        raise HTTPException(status_code=400, detail=f"Неизвестное действие CRM: {action}")
+
+    append_console_log(f"Запуск CRM: {desc}...", "info")
+
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+
+    try:
+        res = subprocess.run(
+            cmd,
+            cwd=str(ENTERPRISE_OS_DIR),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
+            timeout=120
+        )
+        output = res.stdout if res.stdout else res.stderr
+        ok = (res.returncode == 0)
+
+        lines = [line.strip() for line in output.splitlines() if line.strip()][-10:]
+        for line in lines:
+            append_console_log(line, "success" if ok else "error")
+
+        return {
+            "success": ok,
+            "action": action,
+            "crm_type": current_crm,
+            "desc": desc,
+            "output": output,
+            "returncode": res.returncode
+        }
+    except subprocess.TimeoutExpired:
+        err_msg = f"Таймаут операции CRM {current_crm} (превышено 120 секунд)"
+        append_console_log(err_msg, "error")
+        return {"success": False, "error": err_msg}
+    except Exception as e:
+        append_console_log(f"Ошибка CRM: {e}", "error")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/desktop/restore")
+def restore_desktop_launchers():
+    """
+    Restores the key RevOps batch files back to the user's Desktop
+    from launchers/ archive upon request.
+    """
+    import shutil
+
+    desktop_dir = Path.home() / "Desktop"
+    launchers_dir = Path.home() / ".gemini" / "antigravity" / "scratch" / "launchers"
+    archive_dir = ENTERPRISE_OS_DIR / "desktop_launchers_archive"
+
+    key_launchers = [
+        "Интеграция_Bitrix24.bat",
+        "Интеграция_AmoCRM.bat",
+        "Запустить_Все_Службы_RevOps.bat",
+        "Остановить_Все_Службы_RevOps.bat",
+        "⚡_Экспресс-Аудит_За_Неделю_(2_Часа).bat",
+        "🔄_Единое_Обновление_Всех_Таблиц.bat",
+        "🩺_Дежурный_DevOps_QA_Healer.bat",
+    ]
+
+    restored = []
+    errors = []
+
+    for item in key_launchers:
+        src = None
+        for cand in [launchers_dir / item, archive_dir / item]:
+            if cand.exists():
+                src = cand
+                break
+        if src:
+            dest = desktop_dir / item
+            try:
+                shutil.copy2(str(src), str(dest))
+                restored.append(item)
+                append_console_log(f"📥 Восстановлен лаунчер на Рабочий стол: {item}", "success")
+            except Exception as e:
+                errors.append(f"{item}: {e}")
+
+    msg = f"Восстановлено {len(restored)} файлов на Рабочий стол"
+    append_console_log(msg, "success")
+    return {
+        "success": True,
+        "restored_count": len(restored),
+        "restored_files": restored,
+        "desktop_dir": str(desktop_dir),
+        "errors": errors
+    }
+
 
 

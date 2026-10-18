@@ -7191,6 +7191,9 @@
             <button onclick="archiveDesktopLaunchers()" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 0.8rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="Перенести все батники с Рабочего стола в защищённый архив">
               <span>📦 Очистить Рабочий стол</span>
             </button>
+            <button onclick="restoreDesktopLaunchers()" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 0.8rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);" title="Скопировать ключевые батники обратно на Рабочий стол">
+              <span>📥 Вернуть батники на Desktop</span>
+            </button>
             <button onclick="loadAdminStatus()" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 0.8rem;" title="Обновить статус служб">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
               <span>Обновить</span>
@@ -7199,8 +7202,92 @@
         </div>
       </div>
 
-      <!-- Bento Grid: 4 Core Modules -->
+      <!-- Bento Grid: Core Modules -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 18px; margin-bottom: 20px;">
+
+        <!-- MODULE 0: ИНТЕГРАЦИЯ CRM (BITRIX24 & AMOCRM) -->
+        <div class="bento-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(22, 18, 38, 0.95) 0%, rgba(12, 12, 22, 0.98) 100%); border: 1px solid rgba(167, 139, 250, 0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.45);">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M8 12h14"/></svg>
+              </span>
+              0. Интеграция с CRM: Bitrix24 REST API & amoCRM API v4
+            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="adminActiveCrmBadge" class="badge-won" style="font-size: 0.70rem; padding: 3px 9px;">🟢 BITRIX24 REST</span>
+              <button id="btnSwitchCrm" onclick="switchAdminCrm()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.72rem; color: #a78bfa; border-color: rgba(167, 139, 250, 0.4);">
+                🔄 Переключить CRM
+              </button>
+            </div>
+          </div>
+
+          <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+            <div>
+              Текущий клиент (тенант): <strong id="adminCrmTenantLabel" style="color: #fff;">TNT-001</strong> &bull;
+              Связанная Google Таблица: <span id="adminCrmSheetLabel" style="font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">1KoKhFJR_...</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+              Прямая замена <code style="color: #a78bfa;">Интеграция_Bitrix24.bat</code> и <code style="color: #34d399;">Интеграция_AmoCRM.bat</code>
+            </div>
+          </div>
+
+          <!-- Two Column Bento: Bitrix24 vs amoCRM -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
+
+            <!-- Bitrix24 Card -->
+            <div style="padding: 14px; background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                  <span>Bitrix24 REST API</span>
+                  <span id="adminB24StatusBadge" class="badge-won" style="font-size: 0.62rem;">Готов</span>
+                </div>
+                <span style="font-size: 0.68rem; color: var(--text-muted);">b24-8dmblj.bitrix24.ru</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;" id="adminB24WebhookPreview">
+                Вебхук: /rest/1/azekoswdul7y2cpi/
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                <button id="btnB24Stages" onclick="runAdminCrmAction('show_stages', 'bitrix24')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
+                  🔍 Этапы воронки
+                </button>
+                <button id="btnB24DryRun" onclick="runAdminCrmAction('dry_run', 'bitrix24')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
+                  🧪 Тест сделок (30 дн)
+                </button>
+                <button id="btnB24Sync" onclick="runAdminCrmAction('sync_deals', 'bitrix24')" class="btn-modern-primary" style="padding: 7px 10px; font-size: 0.72rem; text-align: left; grid-column: 1 / -1;">
+                  ⚡ Боевая выгрузка сделок в raw_deals
+                </button>
+              </div>
+            </div>
+
+            <!-- amoCRM Card -->
+            <div style="padding: 14px; background: rgba(52, 211, 153, 0.04); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 8px;">
+                  <span>amoCRM API v4</span>
+                  <span id="adminAmoStatusBadge" class="badge-won" style="font-size: 0.62rem;">Готов</span>
+                </div>
+                <span style="font-size: 0.68rem; color: var(--text-muted);">revopsofficial.amocrm.ru</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;" id="adminAmoDomainPreview">
+                OAuth 2.0 Bearer JWT токен активен
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                <button id="btnAmoStages" onclick="runAdminCrmAction('show_stages', 'amocrm')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
+                  🔍 Пайплайны и статусы
+                </button>
+                <button id="btnAmoDryRun" onclick="runAdminCrmAction('dry_run', 'amocrm')" class="btn-modern-ghost" style="padding: 7px 10px; font-size: 0.72rem; text-align: left;">
+                  🧪 Тест сделок (30 дн)
+                </button>
+                <button id="btnAmoSync" onclick="runAdminCrmAction('sync_deals', 'amocrm')" class="btn-modern-primary" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: rgba(52, 211, 153, 0.4); padding: 7px 10px; font-size: 0.72rem; text-align: left; grid-column: 1 / -1;">
+                  ⚡ Боевая выгрузка сделок в raw_deals
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
 
         <!-- MODULE 1: ФОНОВЫЕ СЛУЖБЫ & ПОРТЫ -->
         <div class="bento-card">
@@ -7954,7 +8041,7 @@
   </div>
 
   <!-- Javascript -->
-  <script src="app.js"></script>
+  <script src="app.js?v=20.3"></script>
 
 
   <!-- Global Command Palette Modal (Ctrl+K / Cmd+K) -->

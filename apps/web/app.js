@@ -3692,7 +3692,8 @@ function getAdminAuthHeaders() {
 }
 
 async function adminFetch(endpoint, options = {}) {
-  const url = `${REVOPS_API_BASE}${endpoint}`;
+  const delim = endpoint.includes('?') ? '&' : '?';
+  const url = `${REVOPS_API_BASE}${endpoint}${delim}admin_key=revops_admin_fleet_secret_2026`;
   const authHeaders = getAdminAuthHeaders();
   const mergedHeaders = { ...authHeaders, ...(options.headers || {}) };
   return fetch(url, { ...options, headers: mergedHeaders });
@@ -3759,12 +3760,142 @@ async function loadAdminStatus() {
     if (dailyStatusLabel) dailyStatusLabel.textContent = data.tasks.daily_sync.status_label;
     if (dailyNextRun) dailyNextRun.textContent = data.tasks.daily_sync.next_run;
 
-    // Load dynamic features config
+    // Load CRM status and features config
+    await loadAdminCrmStatus();
     loadFeaturesConfig();
   } catch (err) {
     console.warn('[Admin] Не удалось загрузить статус:', err);
   }
 }
+
+async function loadAdminCrmStatus() {
+  const tenantId = getActiveTenantId();
+  try {
+    const res = await adminFetch(`/api/v1/admin/crm/status?tenant_id=${encodeURIComponent(tenantId)}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    const tenantLabel = document.getElementById('adminCrmTenantLabel');
+    const sheetLabel = document.getElementById('adminCrmSheetLabel');
+    const activeBadge = document.getElementById('adminActiveCrmBadge');
+    const switchBtn = document.getElementById('btnSwitchCrm');
+    const b24Badge = document.getElementById('adminB24StatusBadge');
+    const amoBadge = document.getElementById('adminAmoStatusBadge');
+    const b24Webhook = document.getElementById('adminB24WebhookPreview');
+    const amoDomain = document.getElementById('adminAmoDomainPreview');
+
+    if (tenantLabel) tenantLabel.textContent = `${data.tenant_id} • ${data.tenant_name}`;
+    if (sheetLabel) sheetLabel.textContent = `${data.spreadsheet_id.slice(0, 16)}...`;
+
+    const isB24 = (data.active_crm || 'bitrix24').toLowerCase() === 'bitrix24';
+    if (activeBadge) {
+      activeBadge.textContent = isB24 ? '🟢 BITRIX24 REST' : '🟢 AMOCRM V4';
+      activeBadge.className = isB24 ? 'badge-info' : 'badge-won';
+    }
+    if (switchBtn) {
+      switchBtn.textContent = isB24 ? '🔄 Переключить на amoCRM' : '🔄 Переключить на Bitrix24';
+    }
+
+    if (b24Badge) b24Badge.textContent = data.bitrix24?.connected ? 'Готов ✓' : 'Не подключен';
+    if (amoBadge) amoBadge.textContent = data.amocrm?.connected ? 'Готов ✓' : 'Не подключен';
+    if (b24Webhook) b24Webhook.textContent = `Вебхук: ${data.bitrix24?.webhook_url || '—'}`;
+    if (amoDomain) amoDomain.textContent = `Домен: ${data.amocrm?.domain || 'revopsofficial.amocrm.ru'}`;
+  } catch (err) {
+    console.warn('[Admin CRM] Не удалось загрузить статус CRM:', err);
+  }
+}
+
+async function switchAdminCrm() {
+  const tenantId = getActiveTenantId();
+  appendAdminTerminalLog(`Переключение CRM-провайдера для тенанта ${tenantId}...`, 'info');
+  showToast('CRM-Интеграция', 'Переключение провайдера CRM...');
+
+  try {
+    const res = await adminFetch('/api/v1/admin/crm/action', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'switch_crm', tenant_id: tenantId })
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || 'Сбой переключения CRM');
+    }
+    appendAdminTerminalLog(data.message || 'CRM успешно переключена!', 'success');
+    showToast('CRM-Интеграция', data.message || 'CRM переключена');
+    await loadAdminCrmStatus();
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка переключения CRM: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
+  }
+}
+
+async function runAdminCrmAction(action, crmType) {
+  if (isAdminActionRunning) {
+    showToast('Очередь', 'Предыдущая операция ещё выполняется...');
+    return;
+  }
+  isAdminActionRunning = true;
+  const tenantId = getActiveTenantId();
+
+  const actionNames = {
+    show_stages: 'Обзор этапов воронки',
+    dry_run: 'Тестовая синхронизация (30 дней)',
+    sync_deals: 'Боевая синхронизация сделок в raw_deals'
+  };
+  const actName = actionNames[action] || action;
+  appendAdminTerminalLog(`CRM [${(crmType || 'auto').toUpperCase()}]: запуск [${actName}] для тенанта ${tenantId}...`, 'info');
+  showToast('CRM Интеграция', `Запуск: ${actName}...`);
+
+  try {
+    const res = await adminFetch('/api/v1/admin/crm/action', {
+      method: 'POST',
+      body: JSON.stringify({ action, tenant_id: tenantId, crm_type: crmType, days: 30 })
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || `Сбой операции ${actName}`);
+    }
+
+    if (data.output) {
+      const lines = typeof data.output === 'string' ? data.output.split('\n') : (Array.isArray(data.output) ? data.output : [String(data.output)]);
+      lines.slice(-30).forEach(line => {
+        if (line.trim()) appendAdminTerminalLog(line.trim(), 'success');
+      });
+    }
+    appendAdminTerminalLog(`✓ ${data.desc || actName} — успешно завершено!`, 'success');
+    showToast('CRM Интеграция', `${actName}: Успешно!`);
+    await loadAdminCrmStatus();
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка CRM: ${err.message}`, 'error');
+    showToast('Ошибка CRM', err.message);
+  } finally {
+    isAdminActionRunning = false;
+  }
+}
+
+async function restoreDesktopLaunchers() {
+  if (!confirm('Скопировать ключевые батники RevOps (Интеграция_Bitrix24.bat, Интеграция_AmoCRM.bat, Запустить_Все_Службы.bat) на ваш Рабочий стол?')) {
+    return;
+  }
+  appendAdminTerminalLog('Восстановление батников на Рабочий стол...', 'info');
+  showToast('Рабочий стол', 'Восстановление батников...');
+
+  try {
+    const res = await adminFetch('/api/v1/admin/desktop/restore', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || 'Сбой восстановления файлов');
+    }
+    appendAdminTerminalLog(`✓ Восстановлено ${data.restored_count} файлов на Рабочий стол!`, 'success');
+    if (data.restored_files && data.restored_files.length) {
+      data.restored_files.forEach(f => appendAdminTerminalLog(`  + ${f}`, 'success'));
+    }
+    showToast('Рабочий стол', `Восстановлено ${data.restored_count} файлов`);
+  } catch (err) {
+    appendAdminTerminalLog(`Ошибка восстановления: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
+  }
+}
+
 
 function appendAdminTerminalLog(msg, level = 'info') {
   const term = document.getElementById('adminTerminalBody');
@@ -3797,10 +3928,13 @@ async function runFleetAction(action) {
       body: JSON.stringify({ action })
     });
     const data = await res.json();
-    if (data.output && Array.isArray(data.output)) {
-      data.output.forEach(line => appendAdminTerminalLog(line, data.success ? 'success' : 'error'));
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || data.message || `Сбой выполнения команды ${action}`);
     }
-    appendAdminTerminalLog(data.message || 'Действие выполнено', data.success ? 'success' : 'error');
+    if (data.output && Array.isArray(data.output)) {
+      data.output.forEach(line => appendAdminTerminalLog(line, 'success'));
+    }
+    appendAdminTerminalLog(data.message || 'Действие выполнено', 'success');
     showToast('Службы RevOps', data.message || 'Готово');
     await loadAdminStatus();
   } catch (err) {
@@ -3823,17 +3957,20 @@ async function runSheetsAction(action) {
       body: JSON.stringify({ action })
     });
     const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || 'Сбой синхронизации таблиц');
+    }
     if (data.output) {
-      const lines = data.output.split('\n');
+      const lines = typeof data.output === 'string' ? data.output.split('\n') : [String(data.output)];
       lines.slice(-15).forEach(l => {
-        if (l.trim()) appendAdminTerminalLog(l.trim(), data.success ? 'success' : 'error');
+        if (l.trim()) appendAdminTerminalLog(l.trim(), 'success');
       });
     }
-    appendAdminTerminalLog(data.summary || (data.success ? 'Синхронизация таблиц успешно завершена!' : 'Ошибка синхронизации'), data.success ? 'success' : 'error');
-    showToast('Google Таблицы', data.success ? 'Таблицы успешно обновлены!' : 'Ошибка при синхронизации');
+    appendAdminTerminalLog(data.summary || 'Синхронизация таблиц успешно завершена!', 'success');
+    showToast('Google Таблицы', 'Таблицы успешно обновлены!');
   } catch (err) {
     appendAdminTerminalLog(`Ошибка: ${err.message}`, 'error');
-    showToast('Ошибка', err.message);
+    showToast('Ошибка Google Таблиц', err.message);
   } finally {
     isAdminActionRunning = false;
   }
@@ -3857,15 +3994,20 @@ async function runSheetsTarget() {
       body: JSON.stringify({ action: 'target', spreadsheet_id: sheetId })
     });
     const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || 'Сбой обновления таблицы');
+    }
     if (data.output) {
-      data.output.split('\n').slice(-10).forEach(l => {
-        if (l.trim()) appendAdminTerminalLog(l.trim(), data.success ? 'success' : 'error');
+      const lines = typeof data.output === 'string' ? data.output.split('\n') : [String(data.output)];
+      lines.slice(-10).forEach(l => {
+        if (l.trim()) appendAdminTerminalLog(l.trim(), 'success');
       });
     }
-    appendAdminTerminalLog(data.success ? `Таблица ${sheetId} обновлена!` : 'Сбой обновления таблицы', data.success ? 'success' : 'error');
-    showToast('Google Таблицы', data.success ? 'Таблица обновлена!' : 'Сбой обновления');
+    appendAdminTerminalLog(`Таблица ${sheetId} обновлена!`, 'success');
+    showToast('Google Таблицы', 'Таблица обновлена!');
   } catch (err) {
     appendAdminTerminalLog(`Ошибка: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
   } finally {
     isAdminActionRunning = false;
   }
@@ -3882,11 +4024,15 @@ async function runTaskAction(action) {
       body: JSON.stringify({ action })
     });
     const data = await res.json();
-    appendAdminTerminalLog(data.message || 'Действие выполнено', data.success ? 'success' : 'error');
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || data.message || 'Сбой команды планировщика');
+    }
+    appendAdminTerminalLog(data.message || 'Действие выполнено', 'success');
     showToast('Планировщик Windows', data.message || 'Готово');
     await loadAdminStatus();
   } catch (err) {
     appendAdminTerminalLog(`Ошибка планировщика: ${err.message}`, 'error');
+    showToast('Ошибка Планировщика', err.message);
   } finally {
     isAdminActionRunning = false;
   }
@@ -3903,13 +4049,18 @@ async function saveDailyTaskTime() {
       body: JSON.stringify({ action: 'install_daily', time_str: timeVal })
     });
     const data = await res.json();
-    appendAdminTerminalLog(data.message || 'Расписание сохранено', data.success ? 'success' : 'error');
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || 'Сбой сохранения расписания');
+    }
+    appendAdminTerminalLog(data.message || 'Расписание сохранено', 'success');
     showToast('Автозадача Windows', data.message || 'Время сохранено');
     await loadAdminStatus();
   } catch (err) {
     appendAdminTerminalLog(`Ошибка: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
   }
 }
+
 
 async function testGeminiApi() {
   const btn = document.getElementById('btnTestGemini');
@@ -4163,23 +4314,27 @@ async function deleteClientAccess(login) {
 async function runCCOAction(action) {
   if (isAdminActionRunning) return;
   isAdminActionRunning = true;
-  appendAdminTerminalLog(`ИИ Коммерческий Директор: запуск действия [${action}]...`, 'info');
+  const tenantId = getActiveTenantId();
+  appendAdminTerminalLog(`ИИ Коммерческий Директор: запуск действия [${action}] для ${tenantId}...`, 'info');
   showToast('ИИ Комдир (CCO)', `Запуск: ${action}...`);
 
   try {
     const res = await adminFetch('/api/v1/admin/cco/action', {
       method: 'POST',
-      body: JSON.stringify({ action, tenant: 'TNT-001' })
+      body: JSON.stringify({ action, tenant: tenantId })
     });
     const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || 'Сбой выполнения CCO');
+    }
     if (data.output) {
-      const lines = data.output.split('\n');
-      lines.forEach(l => {
-        if (l.trim()) appendAdminTerminalLog(l.trim(), data.success ? 'success' : 'error');
+      const lines = typeof data.output === 'string' ? data.output.split('\n') : [String(data.output)];
+      lines.slice(-20).forEach(l => {
+        if (l.trim()) appendAdminTerminalLog(l.trim(), 'success');
       });
     }
-    appendAdminTerminalLog(data.success ? `Успешно: ${data.desc || action}` : `Сбой CCO: ${data.error || 'Ошибка'}`, data.success ? 'success' : 'error');
-    showToast('ИИ Комдир (CCO)', data.success ? 'Анализ готов!' : 'Ошибка выполнения');
+    appendAdminTerminalLog(data.desc ? `${data.desc} — выполнено!` : 'Действие CCO выполнено', 'success');
+    showToast('ИИ Комдир (CCO)', 'Отчёт сформирован!');
   } catch (err) {
     appendAdminTerminalLog(`Ошибка вызова CCO: ${err.message}`, 'error');
     showToast('Ошибка CCO', err.message);
@@ -4200,18 +4355,24 @@ async function runHealerAction(action) {
       body: JSON.stringify({ action })
     });
     const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || 'Сбой операции ревизора');
+    }
     if (data.output) {
-      data.output.split('\n').forEach(l => {
-        if (l.trim()) appendAdminTerminalLog(l.trim(), data.success ? 'success' : 'error');
+      const lines = typeof data.output === 'string' ? data.output.split('\n') : [String(data.output)];
+      lines.slice(-20).forEach(l => {
+        if (l.trim()) appendAdminTerminalLog(l.trim(), 'success');
       });
     }
-    showToast('QA Healer', data.success ? 'Команда выполнена' : 'Сбой операции');
+    showToast('QA Healer', 'Команда выполнена успешно!');
   } catch (err) {
     appendAdminTerminalLog(`Ошибка QA Healer: ${err.message}`, 'error');
+    showToast('Ошибка QA Healer', err.message);
   } finally {
     isAdminActionRunning = false;
   }
 }
+
 
 async function loadFeaturesConfig() {
   const container = document.getElementById('adminFeaturesListContainer');
@@ -4933,6 +5094,10 @@ window.runHealerAction = typeof runHealerAction !== 'undefined' ? runHealerActio
 window.loadFeaturesConfig = typeof loadFeaturesConfig !== 'undefined' ? loadFeaturesConfig : null;
 window.toggleFeatureFlag = typeof toggleFeatureFlag !== 'undefined' ? toggleFeatureFlag : null;
 window.archiveDesktopLaunchers = typeof archiveDesktopLaunchers !== 'undefined' ? archiveDesktopLaunchers : null;
+window.restoreDesktopLaunchers = typeof restoreDesktopLaunchers !== 'undefined' ? restoreDesktopLaunchers : null;
+window.loadAdminCrmStatus = typeof loadAdminCrmStatus !== 'undefined' ? loadAdminCrmStatus : null;
+window.switchAdminCrm = typeof switchAdminCrm !== 'undefined' ? switchAdminCrm : null;
+window.runAdminCrmAction = typeof runAdminCrmAction !== 'undefined' ? runAdminCrmAction : null;
 
 
 
