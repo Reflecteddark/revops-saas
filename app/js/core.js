@@ -50,6 +50,8 @@ async function onTenantSelected(tenantId) {
     selector.value = cleanId;
   }
 
+  updateSidebarTenantChip(cleanId);
+
   if (typeof showToast === 'function') {
     showToast('Переключение клиента', `Загрузка данных тенанта ${cleanId}...`);
   }
@@ -63,11 +65,31 @@ async function onTenantSelected(tenantId) {
   }
 }
 
+function updateSidebarTenantChip(tenantId) {
+  const cleanId = (tenantId || getActiveTenantId() || 'TNT-001').trim().toUpperCase();
+  const chipName = document.getElementById('sidebarTenantName');
+  const chipAvatar = document.getElementById('sidebarTenantAvatar');
+  const chipContainer = document.getElementById('sidebarTenantChip');
+  if (!chipName && !chipAvatar) return;
+
+  const tenantsMap = {
+    'TNT-001': { name: 'Самозанятый', initials: 'СЗ' },
+    'TNT-002': { name: 'ООО МедТех', initials: 'МТ' },
+    'TNT-003': { name: 'КабельЭнерго', initials: 'КЭ' },
+    'TNT-004': { name: 'УЗИП Про', initials: 'УП' }
+  };
+  const tInfo = tenantsMap[cleanId] || { name: cleanId, initials: cleanId.slice(0, 2) };
+  if (chipName) chipName.textContent = tInfo.name;
+  if (chipAvatar) chipAvatar.textContent = tInfo.initials;
+  if (chipContainer) chipContainer.setAttribute('data-tooltip', `Клиент: ${tInfo.name} (LIVE)`);
+}
+
 async function initTenantsSelector() {
   const selector = document.getElementById('headerTenantSelector');
+  const currentId = getActiveTenantId();
+  updateSidebarTenantChip(currentId);
   if (!selector) return;
 
-  const currentId = getActiveTenantId();
   try {
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants`);
     if (res.ok) {
@@ -319,7 +341,7 @@ async function promptAdminUnlock() {
     '9d3ba5c08978d3354103973088fcc0df35ece2ea9de24c9dfc250d46375c9eec',
     'd7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410'
   ];
-  if (trimmed === 'revops_admin_fleet_secret_2026' || validAdminHashes.includes(inputHash)) {
+  if (validAdminHashes.includes(inputHash)) {
     sessionStorage.setItem('revops_admin_override', 'true');
     const sbAdmin = document.getElementById('sb-admin');
     if (sbAdmin) sbAdmin.style.display = 'flex';
@@ -813,34 +835,33 @@ function updateAllChartsTheme(mode) {
 
 
 // ==========================================================================
-// BLOCK 5: SEQUENTIAL TOAST NOTIFICATION QUEUE (TIER-1)
+// BLOCK 5 & WAVE 2: SEQUENTIAL TOAST NOTIFICATION QUEUE (TIER-1)
 // ==========================================================================
-const _toastQueue = [];
-let _isToastShowing = false;
+const toastQueue = [];
+let toastActive = false;
 let _toastHideTimeout = null;
 
-function showToast(title, desc, type = 'info', duration = 3000) {
-  _toastQueue.push({
+function showToast(title, desc, type = 'info', duration = 2500) {
+  const item = {
     title: title || '',
     desc: desc || '',
     type: type || 'info',
-    duration: duration || 3000
-  });
-  if (!_isToastShowing) {
-    _processToastQueue();
-  }
-}
+    duration: duration || 2500
+  };
 
-function _processToastQueue() {
-  if (_toastQueue.length === 0) {
-    _isToastShowing = false;
+  if (toastActive) {
+    toastQueue.push(item);
     return;
   }
-  _isToastShowing = true;
-  const item = _toastQueue.shift();
+
+  _renderToastItem(item);
+}
+
+function _renderToastItem(item) {
+  toastActive = true;
   const box = document.getElementById('toastBox');
   if (!box) {
-    _isToastShowing = false;
+    toastActive = false;
     return;
   }
 
@@ -874,10 +895,19 @@ function _processToastQueue() {
     setTimeout(() => {
       box.style.display = 'none';
       box.classList.remove('toast-leaving');
-      _processToastQueue();
+      if (toastQueue.length > 0) {
+        const nextItem = toastQueue.shift();
+        _renderToastItem(nextItem);
+      } else {
+        toastActive = false;
+      }
     }, 220);
   }, item.duration);
 }
+
+// Backwards compatibility alias
+const _toastQueue = toastQueue;
+let _isToastShowing = toastActive;
 
 
 // ==========================================================================
@@ -1203,6 +1233,8 @@ window.toggleThemeMode = toggleThemeMode;
 window.updateThemeToggleUI = updateThemeToggleUI;
 window.updateAllChartsTheme = updateAllChartsTheme;
 window.showToast = showToast;
+window.toastQueue = toastQueue;
+window.toastActive = toastActive;
 window.tickLiveStatus = tickLiveStatus;
 window.updateChartTimestamps = updateChartTimestamps;
 window.initCustomCursor = initCustomCursor;

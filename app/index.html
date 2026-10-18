@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0">
   <base href="/app/">
   <title>RevOps Platform V20.0 — Behavioral Intelligence Edition | TNT-001</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237c3aed'/%3E%3Cstop offset='100%25' stop-color='%2300d4ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Ctext x='50%25' y='54%25' font-family='system-ui, -apple-system, sans-serif' font-size='19' font-weight='800' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'%3ER%3C/text%3E%3C/svg%3E">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4886,6 +4886,272 @@
       flex-shrink: 0;
       animation: dotPulseViolet 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
+
+    /* ==========================================================================
+       WAVE 2: UI UPGRADE TOKENS & COMPONENTS (TIER-1 LINEAR/VERCEL)
+       ========================================================================== */
+
+    /* [P6]: SIDEBAR TENANT CHIP */
+    .mp-tenant-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 12px 10px;
+      padding: 7px 10px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      position: relative;
+    }
+    .mp-tenant-chip:hover {
+      background: rgba(255, 255, 255, 0.065);
+      border-color: rgba(124, 58, 237, 0.4);
+    }
+    .mp-tenant-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      letter-spacing: -0.02em;
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.35);
+    }
+    .mp-tenant-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+      transition: opacity 0.15s ease, width 0.15s ease;
+    }
+    .mp-tenant-name {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+    .mp-tenant-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+    }
+    .mp-tenant-status-text {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #34d399;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Collapsed sidebar adjustments for tenant chip */
+    .mp-sidebar:not(:hover):not(.expanded) .mp-tenant-chip {
+      margin: 8px auto 10px;
+      padding: 6px;
+      justify-content: center;
+      width: 40px;
+      border-color: transparent;
+      background: transparent;
+    }
+    .mp-sidebar:not(:hover):not(.expanded) .mp-tenant-info {
+      opacity: 0 !important;
+      width: 0 !important;
+      max-width: 0 !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+    }
+    .mp-sidebar:not(:hover):not(.expanded) .mp-tenant-chip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(14, 18, 28, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 1000;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+    .mp-sidebar:not(:hover):not(.expanded) .mp-tenant-chip:hover::after {
+      opacity: 1;
+    }
+
+    /* [P3]: STICKY SUMMARY BAR FOR LEAKS DIAGNOSTICS */
+    .leaks-sticky-bar {
+      position: sticky;
+      top: -12px;
+      z-index: 30;
+      background: rgba(10, 10, 16, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+    .leaks-summary-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .leaks-pill--danger {
+      border-color: rgba(244, 63, 94, 0.25);
+      background: rgba(244, 63, 94, 0.06);
+    }
+    .leaks-pill--success {
+      border-color: rgba(52, 211, 153, 0.25);
+      background: rgba(52, 211, 153, 0.06);
+    }
+    .leaks-pill--warn {
+      border-color: rgba(245, 158, 11, 0.25);
+      background: rgba(245, 158, 11, 0.06);
+    }
+    .leaks-summary-pill .pill-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .leaks-summary-pill .pill-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .leaks-pill--danger .pill-value { color: #fb7185; }
+    .leaks-pill--success .pill-value { color: #34d399; }
+    .leaks-summary-pill .pill-sub {
+      font-size: 0.70rem;
+      color: var(--text-secondary);
+    }
+
+    /* [P8]: ZERO-STATE FOR FINANCIAL BRIDGE */
+    .metric-zero-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 0.66rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      opacity: 0.65;
+      animation: pulseZeroState 2.5s ease-in-out infinite;
+    }
+    @keyframes pulseZeroState {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 0.85; }
+    }
+
+    /* [P1]: SENSITIVITY TABLE & COPILOT INSIGHT IN MONTE-CARLO */
+    .sensitivity-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.8rem;
+    }
+    .sensitivity-table th,
+    .sensitivity-table td {
+      padding: 12px 16px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .sensitivity-table th {
+      font-size: 0.70rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .sensitivity-table td.cell-active {
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.5);
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 800;
+      box-shadow: 0 0 16px rgba(124, 58, 237, 0.3);
+    }
+    .sensitivity-table td.cell-up {
+      color: #34d399;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+    .sensitivity-table td.cell-base {
+      color: #fbbf24;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+    .sensitivity-table td.cell-down {
+      color: #fb7185;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+
+    /* [P2]: PLATFORM EVENT LOG */
+    .event-log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+    .event-log-table th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.015);
+    }
+    .event-log-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+    }
+    .event-log-table tr:hover td {
+      background: rgba(255, 255, 255, 0.025);
+    }
+    .event-log-ts {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .event-log-actor {
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -4976,6 +5242,18 @@
         <button class="mp-sidebar-toggle" onclick="toggleSidebar()" title="Свернуть / Развернуть меню">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
         </button>
+      </div>
+
+      <!-- Wave 2 [P6]: Active Tenant Indicator Chip -->
+      <div class="mp-tenant-chip" id="sidebarTenantChip" data-tooltip="Клиент: Самозанятый (LIVE)" onclick="switchTab('settings')">
+        <div class="mp-tenant-avatar" id="sidebarTenantAvatar">СЗ</div>
+        <div class="mp-tenant-info">
+          <div class="mp-tenant-name" id="sidebarTenantName">Самозанятый</div>
+          <div class="mp-tenant-status">
+            <span class="dot-live" style="width: 6px; height: 6px;"></span>
+            <span class="mp-tenant-status-text">LIVE</span>
+          </div>
+        </div>
       </div>
 
       <!-- Quick Tool Search in Sidebar -->
@@ -6319,7 +6597,7 @@
       </div>
 
       <!-- Split 2-Column: Left (Interactive CCO Dialogue) & Right (Revenue Anomalies & Playbooks) -->
-      <div style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; align-items: start;">
+      <div style="display: grid; grid-template-columns: 2fr 3fr; gap: 20px; align-items: start;">
         
         <!-- LEFT: Interactive Chat Panel with CCO -->
         <div class="bento-card" style="display: flex; flex-direction: column; height: 620px; padding: 0; overflow: hidden;">
@@ -6366,8 +6644,11 @@
         <!-- RIGHT: Anomalies & Prescribed Corrective Playbooks -->
         <div style="display: flex; flex-direction: column; gap: 16px;">
           <div class="bento-card" style="padding: 20px 22px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-              <div style="font-size: 0.88rem; font-weight: 600; color: #fff;">Реестр точек роста и критических утечек</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="font-size: 0.88rem; font-weight: 700; color: #fff;">Реестр точек роста и критических утечек</div>
+                <span class="badge-won" id="growthPointsCountBadge" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 9999px;">● 5 точек найдено</span>
+              </div>
               <span class="badge-lost" id="analystAnomaliesBadge">3 очага</span>
             </div>
             <div id="analystAnomaliesList" style="display: flex; flex-direction: column; gap: 12px;">
@@ -6402,6 +6683,27 @@
     <!-- ======================================================== -->
     <div id="view-leaks" class="tab-view">
 
+      <!-- Wave 2 [P3]: Sticky Summary Bar -->
+      <div class="leaks-sticky-bar">
+        <div class="leaks-summary-pill leaks-pill--danger">
+          <span class="dot-error" style="width: 7px; height: 7px;"></span>
+          <span class="pill-label">Выявлено потерь:</span>
+          <span class="pill-value" id="stickyLeaksFound">2 259 000 ₽</span>
+        </div>
+        <div class="leaks-summary-pill leaks-pill--success">
+          <span class="dot-live" style="width: 7px; height: 7px;"></span>
+          <span class="pill-label">Потенциал возврата:</span>
+          <span class="pill-value" id="stickyLeaksReturn">675 000 ₽ / мес</span>
+        </div>
+        <div class="leaks-summary-pill leaks-pill--warn">
+          <span class="badge-lost" style="font-size: 0.68rem; padding: 3px 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+            <span class="dot-error" style="width: 5px; height: 5px;"></span>
+            Риск: Высокий
+          </span>
+          <span class="pill-sub">Критичный отток на этапе Квалификация</span>
+        </div>
+      </div>
+
       <div class="bento-card" style="margin-bottom: 22px; background: linear-gradient(135deg, rgba(20,24,36,0.95), rgba(10,12,16,0.98));">
         <div class="bento-card-header">
           <div>
@@ -6419,21 +6721,37 @@
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: var(--text-muted);">Факт выручки (As-Is)</div>
             <div id="lossBridgeFact" style="font-size: 1.3rem; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace;">0 ₽</div>
+            <div class="metric-zero-state">
+              <span class="dot-warn" style="width: 5px; height: 5px;"></span>
+              <span>Ожидание данных из CRM</span>
+            </div>
           </div>
           <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">+</div>
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: var(--text-muted);">Взвешенный SSOT пайплайн</div>
             <div id="lossBridgeSsot" style="font-size: 1.3rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace;">0 ₽</div>
+            <div class="metric-zero-state">
+              <span class="dot-warn" style="width: 5px; height: 5px;"></span>
+              <span>Ожидание данных из CRM</span>
+            </div>
           </div>
           <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">+</div>
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: var(--text-muted);">Возврат 35% утечек ОП (To-Be)</div>
             <div id="lossBridgeLeaks" style="font-size: 1.3rem; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace;">+0 ₽</div>
+            <div class="metric-zero-state">
+              <span class="dot-warn" style="width: 5px; height: 5px;"></span>
+              <span>Ожидание данных из CRM</span>
+            </div>
           </div>
-          <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">→</div>
+          <div style="font-size: 1.3rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">&rarr;</div>
           <div style="text-align: center;">
             <div style="font-size: 0.72rem; color: #a78bfa; font-weight: 700;">ИТОГО КАССА TO-BE</div>
             <div id="lossBridgeTotal" style="font-size: 1.5rem; font-weight: 800; color: #a78bfa; font-family: 'JetBrains Mono', monospace;">0 ₽</div>
+            <div class="metric-zero-state">
+              <span class="dot-live" style="width: 5px; height: 5px;"></span>
+              <span>Сценарный расчет кассы</span>
+            </div>
           </div>
         </div>
       </div>
@@ -6978,7 +7296,11 @@
             <span class="badge-lost">90% ГАРАНТИЯ</span>
           </div>
           <div id="mcP10Val" class="metric-value" style="color: #fb7185;">0 ₽</div>
-          <div class="metric-sub">Минимальная гарантированная планка</div>
+          <div class="metric-meta" style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+            <span class="metric-delta metric-delta--down">&darr; -3.8%</span>
+            <span style="font-size: 0.65rem; color: var(--text-muted);">vs прошлый расчет</span>
+          </div>
+          <div class="metric-sub" style="margin-top: 4px;">Минимальная гарантированная планка</div>
         </div>
 
         <div class="bento-card stat-only">
@@ -6987,7 +7309,11 @@
             <span class="badge-info">50% ВЕРОЯТНОСТЬ</span>
           </div>
           <div id="mcP50Val" class="metric-value" style="color: var(--accent-cyan);">0 ₽</div>
-          <div class="metric-sub">Математическое ожидание кассы</div>
+          <div class="metric-meta" style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+            <span class="metric-delta metric-delta--up">&uarr; +12.4%</span>
+            <span style="font-size: 0.65rem; color: var(--text-muted);">vs прошлый расчет</span>
+          </div>
+          <div class="metric-sub" style="margin-top: 4px;">Математическое ожидание кассы</div>
         </div>
 
         <div class="bento-card stat-only">
@@ -6996,7 +7322,11 @@
             <span class="badge-won">С ИИ-ДОЖИМОМ</span>
           </div>
           <div id="mcP90Val" class="metric-value" style="color: #34d399;">0 ₽</div>
-          <div class="metric-sub">Таргет при реанимации базы</div>
+          <div class="metric-meta" style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+            <span class="metric-delta metric-delta--up">&uarr; +18.2%</span>
+            <span style="font-size: 0.65rem; color: var(--text-muted);">vs прошлый расчет</span>
+          </div>
+          <div class="metric-sub" style="margin-top: 4px;">Таргет при реанимации базы</div>
         </div>
 
         <div class="bento-card stat-only">
@@ -7005,7 +7335,11 @@
             <span id="mcTargetProbBadge" class="badge-warn">СРЕДНИЙ РИСК</span>
           </div>
           <div id="mcTargetProbVal" class="metric-value" style="color: #fbbf24;">0.0%</div>
-          <div id="mcTargetProbSub" class="metric-sub">План 5 000 000 ₽ &bull; Требуется дожим</div>
+          <div class="metric-meta" style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+            <span class="metric-delta metric-delta--up">&uarr; +8.5%</span>
+            <span style="font-size: 0.65rem; color: var(--text-muted);">к началу спринта</span>
+          </div>
+          <div id="mcTargetProbSub" class="metric-sub" style="margin-top: 4px;">План 5 000 000 ₽ &bull; Требуется дожим</div>
         </div>
       </div>
 
@@ -7051,6 +7385,93 @@
 
         <div style="margin-top: 14px; padding: 12px 16px; background: rgba(115, 82, 255, 0.1); border-radius: var(--radius-sm); border: 1px solid rgba(115, 82, 255, 0.3); font-size: 0.8rem; color: #c4b5fd;">
           <strong>Прогноз симулятора:</strong> <span id="simVerdictText">При текущих параметрах прогнозная касса составляет 2 100 000 ₽.</span>
+        </div>
+      </div>
+
+      <!-- Wave 2 [P1]: 1. Sensitivity Table 3x3 -->
+      <div class="bento-card" style="margin-top: 20px;">
+        <div class="bento-card-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="title-icon" style="color: #38bdf8;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+            </span>
+            <span class="bento-card-title">Матрица чувствительности выручки 3x3 (Sensitivity Matrix)</span>
+          </div>
+          <span class="badge-info">СТРЕСС-ТЕСТ ПАРАМЕТРОВ</span>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.45;">
+          Оценка итоговой кассы при вариациях объёма лидгена (строки) и конверсии в закрытие (столбцы) при среднем чеке 350 000 ₽.
+        </div>
+        <div class="table-container" style="overflow-x: auto;">
+          <table class="sensitivity-table">
+            <thead>
+              <tr>
+                <th style="text-align: left;">Лиды \ Win-Rate</th>
+                <th>25% (Консервативный)</th>
+                <th>35% (Текущий факт)</th>
+                <th>45% (Целевой с ИИ-дожимом)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight: 700; color: #fff; text-align: left;">10 лидов / мес</td>
+                <td class="cell-down">875 000 ₽</td>
+                <td class="cell-base">1 225 000 ₽</td>
+                <td class="cell-up">1 575 000 ₽</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 700; color: #fff; text-align: left;">25 лидов / мес</td>
+                <td class="cell-down">2 187 500 ₽</td>
+                <td class="cell-active cell-base">3 062 500 ₽ <span style="font-size: 0.65rem; display: block; color: #c4b5fd;">[Текущий коридор]</span></td>
+                <td class="cell-up">3 937 500 ₽</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 700; color: #fff; text-align: left;">50 лидов / мес</td>
+                <td class="cell-base">4 375 000 ₽</td>
+                <td class="cell-up">6 125 000 ₽</td>
+                <td class="cell-up" style="background: rgba(52, 211, 153, 0.12); border-radius: 8px; font-weight: 800;">7 875 000 ₽ <span style="font-size: 0.65rem; display: block; color: #34d399;">[Max Потенциал]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Wave 2 [P1]: 2. AI Scenario Copilot Insights -->
+      <div class="bento-card" style="margin-top: 20px; background: linear-gradient(135deg, rgba(20, 18, 36, 0.95) 0%, rgba(10, 10, 16, 0.98) 100%); border-left: 3px solid #7c3aed;">
+        <div class="bento-card-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="title-icon" style="color: #a78bfa;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12L2.1 12a10.1 10.1 0 0 0 9.9 10z"/></svg>
+            </span>
+            <span class="bento-card-title">Вывод ИИ-советника по сценарному анализу</span>
+          </div>
+          <span class="badge-won">AI STRATEGY COPILOT</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 10px;">
+          <div style="padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
+            <div style="font-size: 0.74rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px;">
+              1. Точка безубыточности плана
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">
+              План <strong>5 000 000 ₽</strong> достигается с вероятностью 82% только при комбинации: входящих лидов &ge; 25 шт и квалификации ЛПР &ge; 68%. При текущих 10 лидах план недостижим математически.
+            </div>
+          </div>
+          <div style="padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
+            <div style="font-size: 0.74rem; font-weight: 700; color: #34d399; text-transform: uppercase; margin-bottom: 6px;">
+              2. Главный рычаг роста (Leverage)
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">
+              Повышение конверсии закрытия (Win-Rate) на <strong>+10%</strong> генерирует прирост кассы <strong>+1 750 000 ₽</strong>, что в 2.4 раза дешевле, чем закупка дополнительного трафика.
+            </div>
+          </div>
+          <div style="padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
+            <div style="font-size: 0.74rem; font-weight: 700; color: #fbbf24; text-transform: uppercase; margin-bottom: 6px;">
+              3. Директива РОПу на неделю
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">
+              Внедрить обязательный речевой скрипт фиксации Zoom-встреч (критерии CR10-CR13). Это устранит застревание 45% лидов между этапами КП и Договор.
+            </div>
+          </div>
         </div>
       </div>
 
@@ -7151,9 +7572,15 @@
         <div style="display: flex; flex-direction: column; gap: 24px; padding-top: 18px;">
 
           <!-- 1. Бизнес-цели, Период и Казначейство -->
-          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
-            <div style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
-              <span>🎯 1. Бизнес-цели, Период Анализа и План Выручки (Ячейки B3..B9)</span>
+          <div class="bento-card" style="padding: 20px 22px;">
+            <div class="bento-card-header" style="margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="title-icon" style="color: #38bdf8;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                </span>
+                <span class="bento-card-title">1. Бизнес-цели, Период Анализа и План Выручки (Ячейки B3..B9)</span>
+              </div>
+              <span class="badge-won">НАСТРОЕНО</span>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
@@ -7214,10 +7641,15 @@
           </div>
 
           <!-- 2. Этапы воронки, Win % и нормативы SLA (часы) -->
-          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
-            <div style="font-size: 0.82rem; font-weight: 800; color: #a78bfa; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-              <span>⏱️ 2. Воронка продаж: SLA нормативы переходов и Win-вероятности (Ячейки C12..D18)</span>
-              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">7 этапов &bull; Стандарт SSOT</span>
+          <div class="bento-card" style="padding: 20px 22px;">
+            <div class="bento-card-header" style="margin-bottom: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="title-icon" style="color: #a78bfa;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </span>
+                <span class="bento-card-title">2. Воронка продаж: SLA нормативы переходов и Win-вероятности (Ячейки C12..D18)</span>
+              </div>
+              <span class="badge-won">7 ЭТАПОВ SSOT</span>
             </div>
 
             <div class="table-container" style="max-height: 280px; overflow-y: auto;">
@@ -7239,10 +7671,15 @@
           </div>
 
           <!-- 3. Штатное расписание и Лимиты емкости (Capacity) -->
-          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
-            <div style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-              <span>👥 3. Штатное расписание и Лимиты емкости менеджеров (Capacity Planning B21..D24)</span>
-              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">Лимит открытых сделок без потери конверсии</span>
+          <div class="bento-card" style="padding: 20px 22px;">
+            <div class="bento-card-header" style="margin-bottom: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="title-icon" style="color: #fbbf24;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </span>
+                <span class="bento-card-title">3. Штатное расписание и Лимиты емкости менеджеров (Capacity Planning B21..D24)</span>
+              </div>
+              <span class="badge-info">3 МЕНЕДЖЕРА В ШТАТЕ</span>
             </div>
 
             <div class="table-container">
@@ -7266,9 +7703,15 @@
           <!-- 4. Причины срыва и Telegram Интеграция -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
             <!-- Причины срыва сделок -->
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
-              <div style="font-size: 0.82rem; font-weight: 800; color: #fb7185; text-transform: uppercase; margin-bottom: 12px;">
-                🚨 4.1. Справочник причин срыва (L1..L4)
+            <div class="bento-card" style="padding: 20px 22px;">
+              <div class="bento-card-header" style="margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="title-icon" style="color: #fb7185;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </span>
+                  <span class="bento-card-title">4.1. Справочник причин срыва (L1..L4)</span>
+                </div>
+                <span class="badge-won">НАСТРОЕНО</span>
               </div>
               <div class="table-container">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.76rem;">
@@ -7287,10 +7730,15 @@
             </div>
 
             <!-- Telegram Интеграция -->
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
-              <div style="font-size: 0.82rem; font-weight: 800; color: #60a5fa; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                <span>🤖 4.2. Telegram Bot API & Маршруты алертов</span>
-                <span id="cfgTgStatusBadge" class="badge-won" style="font-size: 0.68rem;">🟢 ACTIVE</span>
+            <div class="bento-card" style="padding: 20px 22px;">
+              <div class="bento-card-header" style="margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="title-icon" style="color: #60a5fa;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </span>
+                  <span class="bento-card-title">4.2. Telegram Bot API & Маршруты алертов</span>
+                </div>
+                <span id="cfgTgStatusBadge" class="badge-won" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 9999px;">ACTIVE</span>
               </div>
               <div style="display: flex; flex-direction: column; gap: 10px;">
                 <div>
@@ -7317,17 +7765,21 @@
           </div>
 
           <!-- 5. 19 Модулей интеграции CRM (⚙️ Модули_Интеграции) -->
-          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div class="bento-card" style="padding: 20px 22px;">
+            <div class="bento-card-header" style="margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
               <div>
-                <div style="font-size: 0.82rem; font-weight: 800; color: #34d399; text-transform: uppercase;">
-                  ⚙️ 5. 19 Модулей интеграции с CRM (Лист ⚙️ Модули_Интеграции)
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="title-icon" style="color: #34d399;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  </span>
+                  <span class="bento-card-title">5. 19 Модулей интеграции с CRM (Модули_Интеграции)</span>
                 </div>
-                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">
                   Индивидуальные тумблеры управления поведением ИИ-аудитора и синхронизации с amoCRM / Битрикс24
                 </div>
               </div>
-              <div style="display: flex; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge-won" style="font-size: 0.68rem; padding: 3px 8px;">19 МОДУЛЕЙ АКТИВНЫ</span>
                 <button type="button" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem; border: 1px solid var(--border-subtle);" onclick="toggleAllModules(true)">Включить все</button>
                 <button type="button" class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.72rem; border: 1px solid var(--border-subtle);" onclick="toggleAllModules(false)">Выключить все</button>
               </div>
@@ -8182,6 +8634,111 @@
               </div>
             </div>
 
+          </div>
+
+          <!-- Wave 2 [P2]: Platform Event Log (10 rows) -->
+          <div class="bento-card" style="margin-top: 10px; margin-bottom: 20px;">
+            <div class="bento-card-header" style="flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="title-icon" style="color: #38bdf8;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </span>
+                <span class="bento-card-title">Журнал событий и телеметрии платформы (System Event Log)</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge-won" style="display: inline-flex; align-items: center; gap: 5px;">
+                  <span class="dot-live" style="width: 6px; height: 6px;"></span>
+                  100% HEALTHY
+                </span>
+                <span style="font-size: 0.70rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">10 последних событий</span>
+              </div>
+            </div>
+            
+            <div class="table-container" style="overflow-x: auto;">
+              <table class="event-log-table">
+                <thead>
+                  <tr>
+                    <th>Время (МСК)</th>
+                    <th>Уровень</th>
+                    <th>Служба / Агент</th>
+                    <th>Событие и системный отклик</th>
+                    <th style="text-align: right;">Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="event-log-ts">18.10 18:02:14</td>
+                    <td><span class="badge-won" style="font-size: 0.65rem; padding: 2px 7px;">PASS</span></td>
+                    <td class="event-log-actor">Агент 6 (Architecture)</td>
+                    <td>Валидация 160 системных инвариантов L0&ndash;L3.5: отклонений 0, архитектурный грейд Grade A (98/100)</td>
+                    <td style="text-align: right; color: #34d399; font-weight: 700; font-family: 'JetBrains Mono', monospace;">OK (0ms)</td>
+                  </tr>
+                  <tr>
+                    <td class="event-log-ts">18.10 17:58:30</td>
+                    <td><span class="badge-info" style="font-size: 0.65rem; padding: 2px 7px;">SYNC</span></td>
+                    <td class="event-log-actor">n8n Webhook Gateway</td>
+                    <td>Входящий аудиопоток Gemini 2.5 Flash: транскрибация звонка #1049 и расчет 13 критериев B2B-аудита</td>
+                    <td style="text-align: right; color: #38bdf8; font-weight: 700; font-family: 'JetBrains Mono', monospace;">1 820ms</td>
+                  </tr>
+                  <tr>
+                    <td class="event-log-ts">18.10 17:45:12</td>
+                    <td><span class="badge-warn" style="font-size: 0.65rem; padding: 2px 7px;">WARN</span></td>
+                    <td class="event-log-actor">Агент 4 (Judge Guard)</td>
+                    <td>Детектор ложных согласий: Z-score 1.8 по темпу речи (Менеджер 3), сформирована рекомендация РОПу</td>
+                    <td style="text-align: right; color: #fbbf24; font-weight: 700; font-family: 'JetBrains Mono', monospace;">LOGGED</td>
+                  </tr>
+                  <tr>
+                    <td class="event-log-ts">18.10 17:30:00</td>
+                    <td><span class="badge-won" style="font-size: 0.65rem; padding: 2px 7px;">LIVE</span></td>
+                    <td class="event-log-actor">FastAPI Engine (Port 8000)</td>
+                    <td>Телеметрия фонового демона: 0 необработанных исключений, потребление RAM 218 MB, CPU 3.8%</td>
+                    <td style="text-align: right; color: #34d399; font-weight: 700; font-family: 'JetBrains Mono', monospace;">200 OK</td>
+                  </tr>
+                  <tr>
+                    <td class="event-log-ts">18.10 17:15:22</td>
+                    <td><span class="badge-won" style="font-size: 0.65rem; padding: 2px 7px;">PASS</span></td>
+                    <td class="event-log-actor">Агент 5 (Chaos Red-Team)</td>
+                    <td>Стресс-тест канареечной задержки (Canary Latency): 18.4s &le; 90s SLA, выживаемость мутаций 100%</td>
+                    <td style="text-align: right; color: #34d399; font-weight: 700; font-family: 'JetBrains Mono', monospace;">T-26 PASS</td>
+                  </tr>
+                  <tr>
+                    <td class="event-log-ts">18.10 16:50:41</td>
+                    <td><span class="badge-info" style="font-size: 0.65rem; padding: 2px 7px;">SYNC</span></td>
+                    <td class="event-log-actor">Google Sheets SSOT</td>
+                    <td>Сквозная синхронизация 10 звонков в raw_calls &rarr; пересчет калькулятора calc_engine!B266</td>
+                    <td style="text-align: right; color: #38bdf8; font-weight: 700; font-family: 'JetBrains Mono', monospace;">28 cells</td>
+                  </tr>
+                  <tr>
+                    <td class="event-log-ts">18.10 16:30:05</td>
+                    <td><span class="badge-info" style="font-size: 0.65rem; padding: 2px 7px;">PUSH</span></td>
+                    <td class="event-log-actor">Telegram Bot API</td>
+                    <td>Отправка дайджеста CCO в закрытый канал РОПа: зафиксировано 14 целевых касаний, касса 420 000 ₽</td>
+                    <td style="text-align: right; color: #34d399; font-weight: 700; font-family: 'JetBrains Mono', monospace;">SENT</td>
+                  </tr>
+                  <tr>
+                    <td class="event-log-ts">18.10 16:00:19</td>
+                    <td><span class="badge-won" style="font-size: 0.65rem; padding: 2px 7px;">AUTH</span></td>
+                    <td class="event-log-actor">Security Guard (HMAC)</td>
+                    <td>Верификация криптографической сессии администратора: тенант TNT-001 подтвержден</td>
+                    <td style="text-align: right; color: #34d399; font-weight: 700; font-family: 'JetBrains Mono', monospace;">VALID</td>
+                  </tr>
+                  <tr>
+                    <td class="event-log-ts">18.10 15:30:00</td>
+                    <td><span class="badge-won" style="font-size: 0.65rem; padding: 2px 7px;">PASS</span></td>
+                    <td class="event-log-actor">Монте-Карло Форекастер</td>
+                    <td>Стохастическая симуляция 10 000 траекторий выручки: коридор P10/P50/P90 пересчитан в фоне</td>
+                    <td style="text-align: right; color: #34d399; font-weight: 700; font-family: 'JetBrains Mono', monospace;">10k ITERS</td>
+                  </tr>
+                  <tr>
+                    <td class="event-log-ts">18.10 15:00:00</td>
+                    <td><span class="badge-info" style="font-size: 0.65rem; padding: 2px 7px;">SYNC</span></td>
+                    <td class="event-log-actor">amoCRM / Bitrix24 Gateway</td>
+                    <td>Инкрементальный опрос воронки: обновлены статусы 28 сделок, обнаружено 0 рассинхронизаций</td>
+                    <td style="text-align: right; color: #38bdf8; font-weight: 700; font-family: 'JetBrains Mono', monospace;">28 DEALS</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
