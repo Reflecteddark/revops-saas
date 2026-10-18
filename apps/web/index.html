@@ -8552,8 +8552,8 @@
             <div class="bento-card" style="padding: 14px 16px; background: rgba(124, 58, 237, 0.08); border-color: rgba(124, 58, 237, 0.25);">
               <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">🤖 Флот в строю</div>
               <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span style="font-size: 1.45rem; font-weight: 700; color: #fff;">6 / 6</span>
-                <span class="badge-won" style="font-size: 0.65rem;">100% ГОТОВ</span>
+                <span id="fleetReadyKpi" style="font-size: 1.45rem; font-weight: 700; color: #fff;">6 / 6</span>
+                <span id="fleetReadyBadge" class="badge-won" style="font-size: 0.65rem;">100% ГОТОВ</span>
               </div>
               <div style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 4px;">Sextet AI Crew активен 24/7</div>
             </div>
@@ -8561,10 +8561,10 @@
             <div class="bento-card" style="padding: 14px 16px; background: rgba(52, 211, 153, 0.08); border-color: rgba(52, 211, 153, 0.25);">
               <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">📐 Архитектура (Агент 6)</div>
               <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span style="font-size: 1.45rem; font-weight: 700; color: #34d399;">Grade A</span>
-                <span class="badge-info" style="font-size: 0.65rem;">98 / 100</span>
+                <span id="fleetAdvisorGradeKpi" style="font-size: 1.45rem; font-weight: 700; color: #34d399;">Grade A</span>
+                <span id="fleetAdvisorScoreBadge" class="badge-info" style="font-size: 0.65rem;">98 / 100</span>
               </div>
-              <div style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 4px;">160/160 инвариантов &bull; 0 техдолга</div>
+              <div id="fleetAdvisorSubtext" style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 4px;">160/160 инвариантов &bull; 0 техдолга</div>
             </div>
 
             <div class="bento-card" style="padding: 14px 16px; background: rgba(251, 191, 36, 0.08); border-color: rgba(251, 191, 36, 0.25);">
@@ -8582,7 +8582,7 @@
                 <span id="fleetGroundingRecallKpi" style="font-size: 1.45rem; font-weight: 700; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">96.8%</span>
                 <span class="badge-won" style="font-size: 0.65rem;">SLA &ge; 95%</span>
               </div>
-              <div style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 4px;">Карантин: 0 звонков &bull; Z-Score &le; 2.5</div>
+              <div id="fleetJudgeSubtext" style="font-size: 0.70rem; color: var(--text-secondary); margin-top: 4px;">Карантин: 0 звонков &bull; Z-Score &le; 2.5</div>
             </div>
           </div>
 
@@ -8593,16 +8593,43 @@
               <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">Запуск комплексного учения всех 6 уровней автономных агентов за один клик</div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <button onclick="runFullFleetDrill()" class="btn-modern-primary" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; font-size: 0.8rem; font-weight: 600;">
+              <button id="btnRunFullFleetDrill" onclick="runFullFleetDrill(this)" class="btn-modern-primary" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; font-size: 0.8rem; font-weight: 600;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 <span>⚡ Запустить комплексное учение (Sextet Drill)</span>
               </button>
-              <button onclick="runCCOAction('send_telegram')" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; font-size: 0.8rem; color: #34d399; border-color: rgba(52, 211, 153, 0.35);">
+              <button onclick="runCCOAction('send_telegram', this)" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; font-size: 0.8rem; color: #34d399; border-color: rgba(52, 211, 153, 0.35);">
                 <span>📱 Сводка в Telegram</span>
               </button>
-              <button onclick="loadAdminStatus()" class="btn-modern-ghost" style="padding: 9px 12px; font-size: 0.8rem;">
+              <button id="btnRefreshAgents" onclick="loadAgentsTelemetry(true)" class="btn-modern-ghost" style="padding: 9px 12px; font-size: 0.8rem;">
                 <span>🔄 Обновить</span>
               </button>
+            </div>
+          </div>
+
+          <!-- Agent Live Execution Console / Drawer -->
+          <div id="agentLiveExecutionDrawer" class="bento-card" style="display: none; margin-bottom: 22px; border: 1px solid rgba(124, 58, 237, 0.5); background: linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(10, 13, 20, 0.98) 100%); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6); border-radius: 12px; overflow: hidden;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: rgba(124, 58, 237, 0.12); border-bottom: 1px solid rgba(255, 255, 255, 0.08); flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="agentDrawerDot" class="dot-live" style="width: 10px; height: 10px; background: #a78bfa; box-shadow: 0 0 10px #a78bfa;"></span>
+                <span id="agentDrawerTitle" style="font-weight: 700; color: #fff; font-size: 0.86rem; letter-spacing: -0.01em;">⚡ Выполнение: Инициализация агента...</span>
+                <span id="agentDrawerStatus" class="badge-warn" style="font-size: 0.64rem;">⏳ ВЫПОЛНЯЕТСЯ</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.70rem; color: var(--text-muted);">Время:</span>
+                <span id="agentDrawerTimer" style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700; color: #38bdf8;">0.0s</span>
+                <button onclick="copyDrawerOutput()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem;" title="Копировать вывод">
+                  📋 Копировать
+                </button>
+                <button onclick="clearDrawerOutput()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem;" title="Очистить терминал">
+                  🧹 Очистить
+                </button>
+                <button onclick="closeDrawerConsole()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem; color: var(--text-secondary);" title="Закрыть консоль">
+                  ✕ Скрыть
+                </button>
+              </div>
+            </div>
+            <div id="agentDrawerOutput" style="padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; line-height: 1.55; color: #e2e8f0; background: rgba(0, 0, 0, 0.7); max-height: 420px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;">
+              <!-- Real-time agent stdout/stderr stream -->
             </div>
           </div>
 
@@ -8617,21 +8644,21 @@
                     <span class="title-icon" style="background: rgba(124, 58, 237, 0.2); color: #a78bfa;">📐</span>
                     Агент 6: Architecture & System Advisor
                   </span>
-                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                  <span id="a6CardStatus" class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
                 </div>
-                <div style="font-size: 0.72rem; color: #a78bfa; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                <div id="a6CardMeta" style="font-size: 0.72rem; color: #a78bfa; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
                   Уровень: Meta L0–L3.5 &bull; SLA: 98% &bull; Grade A
                 </div>
                 <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
                   Мета-контроллер и архитектор. Анализирует сквозной стек L0–L3.5, валидирует 160 инвариантов, устраняет техдолг и строит радар узких мест (Bottlenecks).
                 </div>
                 <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
-                  <span>Инварианты: <strong style="color: #34d399;">160/160 PASS</strong></span>
-                  <span>Pytest: <strong style="color: #34d399;">237/237</strong></span>
+                  <span>Инварианты: <strong id="a6CardInvariants" style="color: #34d399;">160/160 PASS</strong></span>
+                  <span>Pytest: <strong id="a6CardPytest" style="color: #34d399;">237/237</strong></span>
                 </div>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
-                <button onclick="runArchitectureAudit()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                <button id="btnRunA6" onclick="runArchitectureAudit(this)" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
                   📐 Аудит архитектуры
                 </button>
                 <button onclick="switchAgentSubtab('a6')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
@@ -8648,21 +8675,21 @@
                     <span class="title-icon" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24;">🧪</span>
                     Агент 5: Synthetic Chaos & Red-Team Tester
                   </span>
-                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                  <span id="a5CardStatus" class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
                 </div>
-                <div style="font-size: 0.72rem; color: #fbbf24; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                <div id="a5CardMeta" style="font-size: 0.72rem; color: #fbbf24; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
                   Уровень: L0 (Synthetic) &bull; Latency: 18.4s &bull; T-26
                 </div>
                 <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
                   Генератор синтетического хаоса. Внедряет мутации в звонки, тестирует защитные барьеры Агента 4 и обновляет пульс пайплайна в <code style="color: #34d399;">calc_engine!B266</code>.
                 </div>
                 <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
-                  <span>Survival: <strong style="color: #34d399;">100.0%</strong></span>
-                  <span>Shield: <strong style="color: #34d399;">92.3%</strong></span>
+                  <span>Survival: <strong id="a5CardSurvival" style="color: #34d399;">100.0%</strong></span>
+                  <span>Shield: <strong id="a5CardShield" style="color: #34d399;">92.3%</strong></span>
                 </div>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
-                <button onclick="runCanaryDrill()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                <button id="btnRunA5" onclick="runCanaryDrill(this)" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
                   🧪 Запустить Canary Drill
                 </button>
                 <button onclick="switchAgentSubtab('a5')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
@@ -8679,21 +8706,21 @@
                     <span class="title-icon" style="background: rgba(52, 211, 153, 0.2); color: #34d399;">🩺</span>
                     Агент 1: Autonomous DevOps & QA Healer
                   </span>
-                  <span class="badge-won" style="font-size: 0.62rem;">🟢 24/7 ДЕЖУРСТВО</span>
+                  <span id="a1CardStatus" class="badge-won" style="font-size: 0.62rem;">🟢 24/7 ДЕЖУРСТВО</span>
                 </div>
-                <div style="font-size: 0.72rem; color: #34d399; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                <div id="a1CardMeta" style="font-size: 0.72rem; color: #34d399; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
                   Уровень: L1/L2 (Infra/DWH) &bull; Цикл: 15 мин &bull; Self-Healing
                 </div>
                 <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
                   Автономный ревизор инфраструктуры. Мониторит порты 8000/5678, туннель Cloudflare, токены CRM и восстанавливает динамические формулы в Google Таблицах.
                 </div>
                 <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
-                  <span>Службы: <strong style="color: #34d399;">4/4 ONLINE</strong></span>
-                  <span>Formulas: <strong style="color: #34d399;">100% OK</strong></span>
+                  <span>Службы: <strong id="a1CardServices" style="color: #34d399;">4/4 ONLINE</strong></span>
+                  <span>Formulas: <strong id="a1CardFormulas" style="color: #34d399;">100% OK</strong></span>
                 </div>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
-                <button onclick="runHealerAction('run_now')" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                <button id="btnRunA1" onclick="runHealerAction('run_now', this)" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
                   ⚡ Самоисцеление сейчас
                 </button>
                 <button onclick="switchAgentSubtab('a1')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
@@ -8710,21 +8737,21 @@
                     <span class="title-icon" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">🧬</span>
                     Агент 3: Workflow Logic & Lineage
                   </span>
-                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                  <span id="a3CardStatus" class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
                 </div>
-                <div style="font-size: 0.72rem; color: #38bdf8; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                <div id="a3CardMeta" style="font-size: 0.72rem; color: #38bdf8; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
                   Уровень: L3 (Workflow) &bull; Lineage: 100% &bull; Schema Guard
                 </div>
                 <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
                   Арбитр бизнес-логики интеграции. Обеспечивает строгую валидацию цепочки CRM (amoCRM / Битрикс24) ➔ n8n ➔ 11 Raw Google Sheets без потерь и рассинхрона.
                 </div>
                 <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
-                  <span>Воркфлоу: <strong style="color: #34d399;">3 Published</strong></span>
-                  <span>Schema Drift: <strong style="color: #34d399;">0 расхождений</strong></span>
+                  <span>Воркфлоу: <strong id="a3CardWorkflows" style="color: #34d399;">3 Published</strong></span>
+                  <span>Schema Drift: <strong id="a3CardDrift" style="color: #34d399;">0 расхождений</strong></span>
                 </div>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
-                <button onclick="runWorkflowLineageAudit()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                <button id="btnRunA3" onclick="runWorkflowLineageAudit(this)" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
                   🔬 Аудит Lineage (/lineage)
                 </button>
                 <button onclick="switchAgentSubtab('a3')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
@@ -8741,21 +8768,21 @@
                     <span class="title-icon" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e;">🎙️</span>
                     Агент 4: Prompt & Audio QA Judge
                   </span>
-                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                  <span id="a4CardStatus" class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
                 </div>
-                <div style="font-size: 0.72rem; color: #f43f5e; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                <div id="a4CardMeta" style="font-size: 0.72rem; color: #f43f5e; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
                   Уровень: L3.5 (Semantic) &bull; Grounding: 96.8% &bull; Triage
                 </div>
                 <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
                   Семантический арбитр качества аудио. Проверяет цитирование (Citation Grounding), матрицу cr1..cr13 и изолирует подозрительные звонки в лист <code style="color: #fbbf24;">⚠️ QA_Quarantine</code>.
                 </div>
                 <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
-                  <span>Grounding: <strong style="color: #34d399;">96.8%</strong></span>
+                  <span>Grounding: <strong id="a4CardGrounding" style="color: #34d399;">96.8%</strong></span>
                   <span>В Карантине: <strong id="cardQuarantineBadge" style="color: #34d399;">0 звонков</strong></span>
                 </div>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
-                <button onclick="runJudgeAudit()" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                <button id="btnRunA4" onclick="runJudgeAudit(this)" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
                   🎙️ Аудит Judge (/judge)
                 </button>
                 <button onclick="switchAgentSubtab('a4')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
@@ -8772,21 +8799,21 @@
                     <span class="title-icon" style="background: rgba(234, 179, 8, 0.2); color: #eab308;">💼</span>
                     Агент 2: Commercial Director (CCO)
                   </span>
-                  <span class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
+                  <span id="a2CardStatus" class="badge-won" style="font-size: 0.62rem;">🟢 В СТРОЮ</span>
                 </div>
-                <div style="font-size: 0.72rem; color: #eab308; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                <div id="a2CardMeta" style="font-size: 0.72rem; color: #eab308; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
                   Уровень: Бизнес (Executive) &bull; Health: 84.2% &bull; Telegram
                 </div>
                 <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
                   ИИ Коммерческий Директор. Анализирует здоровье воронки, выявляет зависшие сделки (>7 дней), прогнозирует выполнение плана и формирует отчеты для владельца.
                 </div>
                 <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; display: flex; justify-content: space-between;">
-                  <span>Health Index: <strong style="color: #34d399;">84.2%</strong></span>
-                  <span>Прогноз: <strong style="color: #34d399;">5.42M ₽</strong></span>
+                  <span>Health Index: <strong id="a2CardHealth" style="color: #34d399;">84.2%</strong></span>
+                  <span>Прогноз: <strong id="a2CardForecast" style="color: #34d399;">5.42M ₽</strong></span>
                 </div>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
-                <button onclick="runCCOAction('summary')" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
+                <button id="btnRunA2" onclick="runCCOAction('summary', this)" class="btn-modern-primary" style="padding: 6px 12px; font-size: 0.72rem;">
                   📋 Экспресс-сводка CCO
                 </button>
                 <button onclick="switchAgentSubtab('a2')" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
