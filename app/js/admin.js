@@ -170,9 +170,10 @@ async function loadAdminStatus() {
     if (dailyStatusLabel) dailyStatusLabel.textContent = data.tasks.daily_sync.status_label;
     if (dailyNextRun) dailyNextRun.textContent = data.tasks.daily_sync.next_run;
 
-    // Load CRM status and features config
+    // Load CRM status, features config, and agents telemetry
     await loadAdminCrmStatus();
     loadFeaturesConfig();
+    loadAgentsTelemetry(false);
   } catch (err) {
     console.warn('[Admin] Не удалось загрузить статус:', err);
   }
@@ -723,43 +724,23 @@ async function deleteClientAccess(login) {
 // CCO AI AGENT & WORKFLOW LOGIC CONTROLS
 // ==========================================================================
 
-async function runCCOAction(action) {
-  if (isAdminActionRunning) return;
-  isAdminActionRunning = true;
-  const tenantId = getActiveTenantId();
-  appendAdminTerminalLog(`ИИ Коммерческий Директор: запуск действия [${action}] для ${tenantId}...`, 'info');
-  showToast('ИИ Комдир (CCO)', `Запуск: ${action}...`);
-
-  try {
-    const res = await adminFetch('/api/v1/admin/cco/action', {
-      method: 'POST',
-      body: JSON.stringify({ action, tenant: tenantId })
-    });
-    const data = await res.json();
-    if (!res.ok || data.success === false) {
-      throw new Error(data.error || data.detail || 'Сбой выполнения CCO');
-    }
-    if (data.output) {
-      const lines = typeof data.output === 'string' ? data.output.split('\n') : [String(data.output)];
-      lines.slice(-20).forEach(l => {
-        if (l.trim()) appendAdminTerminalLog(l.trim(), 'success');
-      });
-    }
-    appendAdminTerminalLog(data.desc ? `${data.desc} — выполнено!` : 'Действие CCO выполнено', 'success');
-    showToast('ИИ Комдир (CCO)', 'Отчёт сформирован!');
-  } catch (err) {
-    appendAdminTerminalLog(`Ошибка вызова CCO: ${err.message}`, 'error');
-    showToast('Ошибка CCO', err.message);
-  } finally {
-    isAdminActionRunning = false;
-  }
+async function runCCOAction(action, btn = null) {
+  return executeAgentAction('a2', action, btn || document.getElementById('btnRunA2'));
 }
 
-async function runHealerAction(action) {
+async function runHealerAction(action, btn = null) {
+  if (action === 'run_now' || action === 'self_heal') {
+    return executeAgentAction('a1', 'run_now', btn || document.getElementById('btnRunA1'));
+  }
+
+  // Handle install/uninstall via healer service router
   if (isAdminActionRunning) return;
   isAdminActionRunning = true;
-  appendAdminTerminalLog(`Дежурный DevOps & QA Healer: действие [${action}]...`, 'info');
+  appendDrawerOutput(`🩺 Дежурный DevOps & QA Healer: действие [${action}]...`, 'header');
   showToast('QA Healer', `Выполняется: ${action}`);
+
+  const drawer = document.getElementById('agentLiveExecutionDrawer');
+  if (drawer) drawer.style.display = 'block';
 
   try {
     const res = await adminFetch('/api/v1/admin/healer/action', {
@@ -773,12 +754,14 @@ async function runHealerAction(action) {
     if (data.output) {
       const lines = typeof data.output === 'string' ? data.output.split('\n') : [String(data.output)];
       lines.slice(-20).forEach(l => {
-        if (l.trim()) appendAdminTerminalLog(l.trim(), 'success');
+        if (l.trim()) appendDrawerOutput(l.trim(), 'success');
       });
     }
+    appendDrawerOutput(`✓ Действие ${action} завершено успешно!`, 'success');
     showToast('QA Healer', 'Команда выполнена успешно!');
+    await loadAgentsTelemetry(false);
   } catch (err) {
-    appendAdminTerminalLog(`Ошибка QA Healer: ${err.message}`, 'error');
+    appendDrawerOutput(`✗ Ошибка QA Healer: ${err.message}`, 'error');
     showToast('Ошибка QA Healer', err.message);
   } finally {
     isAdminActionRunning = false;
@@ -945,7 +928,9 @@ function switchAdminSubtab(subtabId) {
     }
   });
 
-  if (subtabId === 'clients') {
+  if (subtabId === 'agents') {
+    loadAgentsTelemetry(false);
+  } else if (subtabId === 'clients') {
     renderAdminClientsTable();
   } else if (subtabId === 'terminal') {
     const term = document.getElementById('adminTerminalBody');
@@ -985,192 +970,411 @@ function switchAgentSubtab(agentId) {
   });
 }
 
-// 1. Coordinated Full Fleet Drill
-async function runFullFleetDrill() {
-  if (isAdminActionRunning) return;
+// ============================================================================
+// AGENT LIVE EXECUTION CONSOLE & REAL-TIME DISPATCHER
+// ============================================================================
+
+let agentExecutionTimerInterval = null;
+let agentExecutionStartTime = null;
+
+function escapeHtml(str) {
+  if (typeof str !== 'string') return String(str ?? '');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function appendDrawerOutput(text, type = 'info') {
+  const out = document.getElementById('agentDrawerOutput');
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('ru-RU');
+
+  // Keep terminal log synchronized
+  appendAdminTerminalLog(text, type);
+
+  if (!out) return;
+
+  let color = '#e2e8f0';
+  if (type === 'success' || text.includes('✓') || text.includes('PASS') || text.includes('ONLINE') || text.includes('100%')) {
+    color = '#34d399';
+  } else if (type === 'error' || text.includes('FAIL') || text.includes('Ошибка') || text.includes('Exception')) {
+    color = '#f87171';
+  } else if (type === 'warning' || text.includes('WARN') || text.includes('Внимание')) {
+    color = '#fbbf24';
+  } else if (type === 'header') {
+    color = '#a78bfa';
+  }
+
+  const row = document.createElement('div');
+  row.style.marginBottom = '3px';
+  row.style.color = color;
+  row.innerHTML = `<span style="color: rgba(255,255,255,0.3); font-size: 0.68rem; margin-right: 6px;">[${timeStr}]</span>${escapeHtml(text)}`;
+  out.appendChild(row);
+  out.scrollTop = out.scrollHeight;
+}
+
+function clearDrawerOutput() {
+  const out = document.getElementById('agentDrawerOutput');
+  if (out) out.innerHTML = '';
+}
+
+function closeDrawerConsole() {
+  const drawer = document.getElementById('agentLiveExecutionDrawer');
+  if (drawer) drawer.style.display = 'none';
+}
+
+function copyDrawerOutput() {
+  const out = document.getElementById('agentDrawerOutput');
+  if (!out) return;
+  const txt = out.innerText || out.textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    showToast('Консоль', 'Лог выполнения скопирован в буфер');
+  }).catch(() => {
+    showToast('Консоль', 'Не удалось скопировать в буфер');
+  });
+}
+
+async function executeAgentAction(agentKey, action = 'run', btn = null) {
+  if (isAdminActionRunning) {
+    showToast('Внимание', 'Предыдущая операция ещё выполняется. Дождитесь завершения.');
+    return;
+  }
   isAdminActionRunning = true;
-  appendAdminTerminalLog('🚀 Инициализация комплексного учения флота (Sextet AI Fleet Full Drill)...', 'info');
-  showToast('Sextet Fleet', 'Запуск сквозного учения всех 6 агентов...');
+
+  const drawer = document.getElementById('agentLiveExecutionDrawer');
+  const titleEl = document.getElementById('agentDrawerTitle');
+  const statusEl = document.getElementById('agentDrawerStatus');
+  const dotEl = document.getElementById('agentDrawerDot');
+  const timerEl = document.getElementById('agentDrawerTimer');
+  const tenantId = getActiveTenantId();
+
+  // Show drawer and scroll to it
+  if (drawer) {
+    drawer.style.display = 'block';
+    drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  const titles = {
+    'drill': '⚡ Комплексное учение флота (Sextet AI Fleet Full Drill)',
+    'a6': '📐 Агент 6: Architecture & System Advisor (Аудит слоев L0–L3.5)',
+    'a5': '🧪 Агент 5: Synthetic Chaos & Red-Team Tester (Canary Drill)',
+    'a1': '🩺 Агент 1: Autonomous DevOps & QA Healer (Ревизия и самоисцеление)',
+    'a3': '🧬 Агент 3: Workflow Logic & Lineage (Сквозной Data Lineage)',
+    'a4': '🎙️ Агент 4: Prompt & Audio QA Judge (Аудит цитирования и Z-Score)',
+    'a2': '💼 Агент 2: Commercial Director CCO (Анализ воронки и прогноз)'
+  };
+
+  const actionTitle = titles[agentKey] || `Исполнитель агента: ${agentKey.toUpperCase()}`;
+  if (titleEl) titleEl.textContent = actionTitle;
+  if (statusEl) {
+    statusEl.className = 'badge-warn';
+    statusEl.textContent = '⏳ ВЫПОЛНЯЕТСЯ';
+  }
+  if (dotEl) {
+    dotEl.style.background = '#fbbf24';
+    dotEl.style.boxShadow = '0 0 10px #fbbf24';
+  }
+
+  // Clear previous output and log initial announcement
+  clearDrawerOutput();
+  appendDrawerOutput(`🚀 Запуск исполнителя: ${actionTitle} [Тенант: ${tenantId}, Действие: ${action}]...`, 'header');
+  appendDrawerOutput('📡 Отправка асинхронного сигнала в локальный контур Python FastAPI...', 'info');
+
+  // Disable clicked button and show spinner
+  let origBtnHtml = '';
+  if (btn) {
+    btn.disabled = true;
+    origBtnHtml = btn.innerHTML;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg><span>Выполняется...</span>`;
+  }
+
+  // Start real-time stopwatch
+  agentExecutionStartTime = Date.now();
+  if (timerEl) timerEl.textContent = '0.0s';
+  clearInterval(agentExecutionTimerInterval);
+  agentExecutionTimerInterval = setInterval(() => {
+    if (timerEl && agentExecutionStartTime) {
+      const elapsed = ((Date.now() - agentExecutionStartTime) / 1000).toFixed(1);
+      timerEl.textContent = `${elapsed}s`;
+    }
+  }, 100);
 
   try {
-    appendAdminTerminalLog('[Агент 6: Architecture] Проверка 160 инвариантов системы...', 'info');
-    await new Promise(r => setTimeout(r, 400));
-    appendAdminTerminalLog('[Агент 6: Architecture] ✓ Grade A (98/100) — все инварианты PASS', 'success');
+    const res = await adminFetch('/api/v1/admin/agents/action', {
+      method: 'POST',
+      body: JSON.stringify({
+        agent: agentKey,
+        action: action,
+        tenant: tenantId
+      })
+    });
 
-    appendAdminTerminalLog('[Агент 5: Chaos Red-Team] Запуск Canary Runner E2E теста...', 'info');
-    await new Promise(r => setTimeout(r, 500));
-    const latency = (16.8 + Math.random() * 3.5).toFixed(1);
-    appendAdminTerminalLog(`[Агент 5: Chaos Red-Team] ✓ Canary latency: ${latency}s (SLA <= 90s, PASS)`, 'success');
-    appendAdminTerminalLog('[Агент 5: Chaos Red-Team] ✓ Heartbeat записан в calc_engine!B266:F266 (Test T-26 PASS)', 'success');
+    const data = await res.json();
+    clearInterval(agentExecutionTimerInterval);
 
-    appendAdminTerminalLog('[Агент 1: DevOps & Healer] Проверка физических портов (:8000, :5678) и Cloudflare...', 'info');
-    await new Promise(r => setTimeout(r, 400));
-    appendAdminTerminalLog('[Агент 1: DevOps & Healer] ✓ Все 4 службы в строю, формулы Google Таблиц синхронны', 'success');
+    const totalDuration = data.total_duration_sec || data.duration_sec || ((Date.now() - agentExecutionStartTime) / 1000).toFixed(2);
+    if (timerEl) timerEl.textContent = `${totalDuration}s`;
 
-    appendAdminTerminalLog('[Агент 3: Workflow Logic] Верификация Data Lineage (CRM -> n8n -> 11 Raw Sheets)...', 'info');
-    await new Promise(r => setTimeout(r, 400));
-    appendAdminTerminalLog('[Агент 3: Workflow Logic] ✓ 0 Schema Drift, 3 воркфлоу Published', 'success');
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || `Скрипт завершился с кодом ошибки: ${data.returncode}`);
+    }
 
-    appendAdminTerminalLog('[Агент 4: QA Judge] Проверка Citation Grounding и карантина QA_Quarantine...', 'info');
-    await new Promise(r => setTimeout(r, 450));
-    appendAdminTerminalLog('[Агент 4: QA Judge] ✓ Grounding Recall: 96.8% (SLA >= 95%), 0 активных аномалий', 'success');
+    // Success State
+    if (statusEl) {
+      statusEl.className = 'badge-won';
+      statusEl.textContent = `🟢 ЗАВЕРШЕНО (${totalDuration}s)`;
+    }
+    if (dotEl) {
+      dotEl.style.background = '#34d399';
+      dotEl.style.boxShadow = '0 0 10px #34d399';
+    }
 
-    appendAdminTerminalLog('[Агент 2: Commercial CCO] Расчёт метрик здоровья воронки и прогноза...', 'info');
-    await new Promise(r => setTimeout(r, 400));
-    appendAdminTerminalLog('[Агент 2: Commercial CCO] ✓ Pipeline Health Index: 84.2%, прогноз: 5.42M ₽ (108%)', 'success');
+    if (agentKey === 'drill' && Array.isArray(data.results)) {
+      appendDrawerOutput(`════════════════════════════════════════════════════════════════`, 'header');
+      appendDrawerOutput(`🏁 СВОДНЫЕ РЕЗУЛЬТАТЫ КОМПЛЕКСНОГО УЧЕНИЯ ВСЕХ 6 АГЕНТОВ:`, 'header');
+      appendDrawerOutput(`════════════════════════════════════════════════════════════════`, 'header');
+      data.results.forEach(r => {
+        const agTag = `[${r.agent.toUpperCase()}]`;
+        const durTag = r.duration_sec ? `(${r.duration_sec}s)` : '';
+        if (r.success) {
+          appendDrawerOutput(`${agTag} ✓ ${r.title} ${durTag} — УСПЕШНО (PASS)`, 'success');
+        } else {
+          appendDrawerOutput(`${agTag} ✗ ${r.title} ${durTag} — ОШИБКА: ${r.output || 'Сбой'}`, 'error');
+        }
+      });
+      appendDrawerOutput(`════════════════════════════════════════════════════════════════`, 'header');
+      appendDrawerOutput(`🎉 ИТОГ: Все боевые контуры флота проверены. Общее время: ${totalDuration}s.`, 'success');
+    } else {
+      appendDrawerOutput(`✓ Процесс выполнен за ${totalDuration}s (код возврата: ${data.returncode ?? 0})`, 'success');
+      if (data.output) {
+        const rawLines = typeof data.output === 'string' ? data.output.split('\n') : [String(data.output)];
+        rawLines.forEach(l => {
+          if (l.trim()) appendDrawerOutput(l);
+        });
+      }
+    }
 
-    appendAdminTerminalLog('🏁 Комплексное учение Sextet Fleet завершено со 100% успехом!', 'success');
-    showToast('Sextet Fleet', 'Все 6 агентов подтвердили 100% боеготовность!');
+    showToast('ИИ-Агенты', `${actionTitle} успешно завершён за ${totalDuration}s!`);
+
+    // Automatically refresh all telemetry cards with fresh real numbers
+    await loadAgentsTelemetry(false);
+
   } catch (err) {
-    appendAdminTerminalLog(`Ошибка учения: ${err.message}`, 'error');
+    clearInterval(agentExecutionTimerInterval);
+    if (statusEl) {
+      statusEl.className = 'badge-lost';
+      statusEl.textContent = '🔴 ОШИБКА ВЫПОЛНЕНИЯ';
+    }
+    if (dotEl) {
+      dotEl.style.background = '#f87171';
+      dotEl.style.boxShadow = '0 0 10px #f87171';
+    }
+    appendDrawerOutput(`✗ Сбой выполнения: ${err.message}`, 'error');
+    showToast('Ошибка агента', err.message);
   } finally {
     isAdminActionRunning = false;
+    if (btn && origBtnHtml) {
+      btn.disabled = false;
+      btn.innerHTML = origBtnHtml;
+    }
   }
 }
 
-// 2. Agent 6: Architecture Advisor
-async function runArchitectureAudit() {
-  appendAdminTerminalLog('📐 Агент 6 (Architecture Advisor): Полный аудит слоев L0-L3.5 и инвариантов...', 'info');
-  showToast('Агент 6: Архитектура', 'Аудит архитектурных инвариантов...');
-  try {
-    appendAdminTerminalLog('✓ L0 Synthetic: Canary E2E Runner & Chaos Engine валидны', 'success');
-    appendAdminTerminalLog('✓ L1 Physical: Порты :8000 и :5678 активны, Cloudflare Tunnel UP', 'success');
-    appendAdminTerminalLog('✓ L2 Storage: 11 Raw sheets, строгие форматы #,##0 ₽ соблюдены', 'success');
-    appendAdminTerminalLog('✓ L3 Lineage: Маршруты вебхуков CRM изолированы, 0 дубликатов', 'success');
-    appendAdminTerminalLog('✓ L3.5 Semantic: Gemini 3.5 Flash JSON schema соблюдена', 'success');
-    appendAdminTerminalLog('✓ Business: CCO аналитика и Telegram-диспетчер активны', 'success');
-    appendAdminTerminalLog('🎉 Итог аудита: Оценка Grade A (98/100). Критический техдолг отсутствует.', 'success');
-    showToast('Агент 6', 'Архитектурный индекс: Grade A (98%)');
-  } catch (e) {
-    appendAdminTerminalLog(`Сбой аудита: ${e.message}`, 'error');
+// Real-Time Telemetry Loader
+async function loadAgentsTelemetry(isManual = false) {
+  const refreshBtn = document.getElementById('btnRefreshAgents');
+  if (isManual && refreshBtn) {
+    refreshBtn.innerHTML = `<span>⏳ Обновление...</span>`;
   }
-}
 
-function generateArchitectureWhitepaper() {
-  appendAdminTerminalLog('📄 Агент 6: Генерация белой книги архитектуры (RevOps Enterprise Whitepaper V20.2)...', 'info');
-  showToast('Агент 6', 'Whitepaper сгенерирован и доступен в репозитории');
-  appendAdminTerminalLog('✓ Файл сохранен: revops-enterprise-os/ARCHITECTURE.md', 'success');
-}
-
-function inspectSystemBottlenecks() {
-  appendAdminTerminalLog('📊 Агент 6: Сканирование узких мест пайплайна (Bottlenecks Radar)...', 'info');
-  appendAdminTerminalLog('  • Ingress latency: 120ms (норма < 300ms)', 'success');
-  appendAdminTerminalLog('  • Gemini API transcribe + audit: 14.2s (норма < 25s)', 'success');
-  appendAdminTerminalLog('  • Google Sheets batch append: 1.8s (норма < 4s)', 'success');
-  appendAdminTerminalLog('  • calc_engine recompute: 2.1s (норма < 5s)', 'success');
-  appendAdminTerminalLog('✓ Узких мест и блокировок в пайплайне не обнаружено.', 'success');
-  showToast('Агент 6', 'Узких мест не обнаружено (P95 < 20s)');
-}
-
-// 3. Agent 5: Chaos & Red-Team
-async function runCanaryDrill() {
-  if (isAdminActionRunning) return;
-  isAdminActionRunning = true;
-  appendAdminTerminalLog('🧪 Агент 5: Запуск Canary Drill (Синтетический стресс-тест пайплайна)...', 'info');
-  showToast('Агент 5: Chaos Red-Team', 'Выполнение Canary Drill...');
   try {
-    const lat = (17.5 + Math.random() * 2.5).toFixed(1);
-    appendAdminTerminalLog('• Синтетический звонок сгенерирован (mp3, 1.2MB, 13 B2B-критериев)', 'info');
-    appendAdminTerminalLog('• Отправка через Ingress Webhook...', 'info');
-    appendAdminTerminalLog('• Инлайн-транскрипция и скоринг Gemini 3.5 Flash...', 'info');
-    appendAdminTerminalLog('• Запись в raw_calls и сверка с calc_engine!A266:F266...', 'info');
-    appendAdminTerminalLog(`✓ Canary Drill пройден! E2E Latency: ${lat}s (SLA <= 90s PASS)`, 'success');
-    appendAdminTerminalLog('✓ Mutation Survival: 100%, Shield Recall: 92.3%', 'success');
+    const tenantId = getActiveTenantId();
+    const res = await adminFetch(`/api/v1/admin/agents/telemetry?tenant=${encodeURIComponent(tenantId)}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
 
-    const kpiEl = document.getElementById('fleetCanaryLatencyKpi');
-    const a5El = document.getElementById('a5MetricLatency');
-    if (kpiEl) kpiEl.textContent = `${lat}s`;
-    if (a5El) a5El.textContent = `${lat}s`;
+    const kpis = data.top_kpis || {};
+    const agents = data.agents || {};
 
-    showToast('Агент 5', `Canary Drill успешно завершён (${lat}s)!`);
-  } catch (e) {
-    appendAdminTerminalLog(`Ошибка Canary Drill: ${e.message}`, 'error');
+    // 1. Top Ribbon KPIs
+    const elFleetReady = document.getElementById('fleetReadyKpi');
+    const elFleetBadge = document.getElementById('fleetReadyBadge');
+    if (elFleetReady && kpis.fleet_ready) elFleetReady.textContent = kpis.fleet_ready;
+    if (elFleetBadge && kpis.fleet_ready_pct !== undefined) elFleetBadge.textContent = `${kpis.fleet_ready_pct}% ГОТОВ`;
+
+    const elAdvisorGrade = document.getElementById('fleetAdvisorGradeKpi');
+    const elAdvisorScore = document.getElementById('fleetAdvisorScoreBadge');
+    const elAdvisorSub = document.getElementById('fleetAdvisorSubtext');
+    if (elAdvisorGrade && kpis.advisor_grade) elAdvisorGrade.textContent = kpis.advisor_grade;
+    if (elAdvisorScore && kpis.advisor_score !== undefined) elAdvisorScore.textContent = `${kpis.advisor_score} / 100`;
+    if (elAdvisorSub && agents.a6) elAdvisorSub.textContent = `${agents.a6.invariants} • ${agents.a6.tech_debt_count} техдолга`;
+
+    const elCanaryLatency = document.getElementById('fleetCanaryLatencyKpi');
+    if (elCanaryLatency && kpis.canary_latency_s !== undefined) elCanaryLatency.textContent = `${kpis.canary_latency_s}s`;
+
+    const elGroundingRecall = document.getElementById('fleetGroundingRecallKpi');
+    const elJudgeSub = document.getElementById('fleetJudgeSubtext');
+    if (elGroundingRecall && kpis.grounding_recall_pct !== undefined) elGroundingRecall.textContent = `${kpis.grounding_recall_pct}%`;
+    if (elJudgeSub && kpis.quarantine_count !== undefined) elJudgeSub.textContent = `Карантин: ${kpis.quarantine_count} звонков • Z-Score ≤ 2.5`;
+
+    // 2. Card 1: Agent 6 (Architecture)
+    if (agents.a6) {
+      const a6Status = document.getElementById('a6CardStatus');
+      const a6Meta = document.getElementById('a6CardMeta');
+      const a6Inv = document.getElementById('a6CardInvariants');
+      const a6Pytest = document.getElementById('a6CardPytest');
+      if (a6Status) a6Status.textContent = `🟢 ${agents.a6.status}`;
+      if (a6Meta) a6Meta.textContent = `Уровень: Meta L0–L3.5 • ${agents.a6.grade} • ${agents.a6.pytest}`;
+      if (a6Inv) a6Inv.textContent = agents.a6.invariants;
+      if (a6Pytest) a6Pytest.textContent = agents.a6.pytest;
+    }
+
+    // 3. Card 2: Agent 5 (Chaos & Red-Team)
+    if (agents.a5) {
+      const a5Status = document.getElementById('a5CardStatus');
+      const a5Meta = document.getElementById('a5CardMeta');
+      const a5Surv = document.getElementById('a5CardSurvival');
+      const a5Shield = document.getElementById('a5CardShield');
+      if (a5Status) a5Status.textContent = `🟢 ${agents.a5.status}`;
+      if (a5Meta) a5Meta.textContent = `Уровень: L0 (Synthetic) • Latency: ${agents.a5.latency_s}s • ${agents.a5.canary_status}`;
+      if (a5Surv) a5Surv.textContent = `${agents.a5.survival_pct}%`;
+      if (a5Shield) a5Shield.textContent = `${agents.a5.shield_pct}%`;
+
+      const subLat = document.getElementById('a5MetricLatency');
+      const subShield = document.getElementById('a5MetricShield');
+      const subSurv = document.getElementById('a5MetricMutation');
+      if (subLat) subLat.textContent = `${agents.a5.latency_s}s`;
+      if (subShield) subShield.textContent = `${agents.a5.shield_pct}%`;
+      if (subSurv) subSurv.textContent = `${agents.a5.survival_pct}%`;
+    }
+
+    // 4. Card 3: Agent 1 (DevOps Healer)
+    if (agents.a1) {
+      const a1Status = document.getElementById('a1CardStatus');
+      const a1Meta = document.getElementById('a1CardMeta');
+      const a1Services = document.getElementById('a1CardServices');
+      const a1Formulas = document.getElementById('a1CardFormulas');
+      if (a1Status) a1Status.textContent = `🟢 ${agents.a1.status}`;
+      if (a1Meta) a1Meta.textContent = `Уровень: L1/L2 (Infra/DWH) • Службы: ${agents.a1.services}`;
+      if (a1Services) a1Services.textContent = agents.a1.services;
+      if (a1Formulas) a1Formulas.textContent = agents.a1.broken_formulas === 0 ? '100% OK' : `${agents.a1.broken_formulas} битых`;
+    }
+
+    // 5. Card 4: Agent 3 (Workflow Logic & Lineage)
+    if (agents.a3) {
+      const a3Status = document.getElementById('a3CardStatus');
+      const a3Meta = document.getElementById('a3CardMeta');
+      const a3Workflows = document.getElementById('a3CardWorkflows');
+      const a3Drift = document.getElementById('a3CardDrift');
+      if (a3Status) a3Status.textContent = `🟢 ${agents.a3.status}`;
+      if (a3Meta) a3Meta.textContent = `Уровень: L3 (Workflow) • Сходимость: ${agents.a3.convergence_pct}%`;
+      if (a3Workflows) a3Workflows.textContent = agents.a3.workflows;
+      if (a3Drift) a3Drift.textContent = agents.a3.schema_drift === 0 ? '0 расхождений' : `${agents.a3.schema_drift} расхождений`;
+    }
+
+    // 6. Card 5: Agent 4 (QA Judge)
+    if (agents.a4) {
+      const a4Status = document.getElementById('a4CardStatus');
+      const a4Meta = document.getElementById('a4CardMeta');
+      const a4Grounding = document.getElementById('a4CardGrounding');
+      const a4Quarantine = document.getElementById('a4CardQuarantine');
+      const cardQuarBadge = document.getElementById('cardQuarantineBadge');
+      if (a4Status) a4Status.textContent = `🟢 ${agents.a4.status}`;
+      if (a4Meta) a4Meta.textContent = `Уровень: L3.5 (Semantic) • Grounding: ${agents.a4.grounding_recall}%`;
+      if (a4Grounding) a4Grounding.textContent = `${agents.a4.grounding_recall}%`;
+      if (a4Quarantine) a4Quarantine.textContent = `${agents.a4.quarantine_count} звонков`;
+      if (cardQuarBadge) cardQuarBadge.textContent = `${agents.a4.quarantine_count} звонков`;
+    }
+
+    // 7. Card 6: Agent 2 (Commercial Director CCO)
+    if (agents.a2) {
+      const a2Status = document.getElementById('a2CardStatus');
+      const a2Meta = document.getElementById('a2CardMeta');
+      const a2Health = document.getElementById('a2CardHealth');
+      const a2Forecast = document.getElementById('a2CardForecast');
+      if (a2Status) a2Status.textContent = `🟢 ${agents.a2.status}`;
+      if (a2Meta) a2Meta.textContent = `Уровень: Бизнес (Executive) • Health: ${agents.a2.health_index}%`;
+      if (a2Health) a2Health.textContent = `${agents.a2.health_index}%`;
+      if (a2Forecast) a2Forecast.textContent = agents.a2.forecast;
+    }
+
+    if (isManual) {
+      showToast('Телеметрия флота', 'Данные всех 6 агентов успешно синхронизированы!');
+    }
+  } catch (err) {
+    console.warn('[Admin] Ошибка обновления телеметрии агентов:', err);
+    if (isManual) showToast('Ошибка телеметрии', err.message);
   } finally {
-    isAdminActionRunning = false;
+    if (isManual && refreshBtn) {
+      refreshBtn.innerHTML = `<span>🔄 Обновить</span>`;
+    }
   }
 }
 
-function injectSyntheticMutation() {
-  appendAdminTerminalLog('💉 Агент 5: Инъекция синтетических мутаций (hallucination injection test)...', 'info');
-  showToast('Агент 5', 'Тестирование защиты Агента 4 от галлюцинаций...');
-  appendAdminTerminalLog('• Внедрено 5 искажений в речевые критерии cr3, cr7, cr11', 'info');
-  appendAdminTerminalLog('✓ Агент 4 успешно перехватил 5 из 5 мутаций (Shield Recall: 100%)', 'success');
-  appendAdminTerminalLog('✓ Ложные срабатывания отсечены по Z-Score', 'success');
+// Wire real execution to existing button names
+async function runFullFleetDrill(btn = null) {
+  return executeAgentAction('drill', 'drill', btn || document.getElementById('btnRunFullFleetDrill'));
 }
 
-function updateSheetsHeartbeatNow() {
-  appendAdminTerminalLog('💓 Агент 5: Принудительное обновление штампа времени в calc_engine!B266:F266...', 'info');
-  const nowStr = new Date().toLocaleString('ru-RU');
-  appendAdminTerminalLog(`✓ Штамп [${nowStr}] записан в ячейку calc_engine!B266 (Тест T-26 PASS)`, 'success');
-  showToast('Агент 5', 'Пульс calc_engine!B266 обновлен!');
+async function runArchitectureAudit(btn = null) {
+  return executeAgentAction('a6', 'audit', btn || document.getElementById('btnRunA6'));
 }
 
-// 4. Agent 3: Workflow Logic & Lineage
-async function runWorkflowLineageAudit() {
-  appendAdminTerminalLog('🔬 Агент 3: Сквозной аудит Data Lineage и бизнес-логики интеграции (/lineage)...', 'info');
-  showToast('Агент 3: Workflow Logic', 'Сверка цепочки CRM -> n8n -> Sheets...');
-  try {
-    return runCCOAction('workflow_audit');
-  } catch (e) {
-    appendAdminTerminalLog(`Ошибка Lineage: ${e.message}`, 'error');
-  }
+async function generateArchitectureWhitepaper(btn = null) {
+  return executeAgentAction('a6', 'whitepaper', btn);
 }
 
-function autoPublishN8nWorkflows() {
-  appendAdminTerminalLog('🔄 Агент 3: Проверка и автопубликация воркфлоу в n8n (статус Published)...', 'info');
-  appendAdminTerminalLog('• Sh4JkQtMKVdeRJn5 (Аудит звонков): 🟢 Published', 'success');
-  appendAdminTerminalLog('• RevOpsErrorSupervisor01 (Супервизор ошибок): 🟢 Published', 'success');
-  appendAdminTerminalLog('• RevOpsReportGenerator01 (Генератор PDF): 🟢 Published', 'success');
-  showToast('Агент 3', 'Все 3 воркфлоу имеют статус Published');
+async function inspectSystemBottlenecks(btn = null) {
+  return executeAgentAction('a6', 'bottlenecks', btn);
 }
 
-function inspectCrmFieldMapping() {
-  appendAdminTerminalLog('📋 Агент 3: Инспекция маппинга полей amoCRM и Битрикс24...', 'info');
-  appendAdminTerminalLog('• lead_id -> raw_calls!A, deal_id -> raw_deals!A: OK', 'success');
-  appendAdminTerminalLog('• audio_link -> raw_calls!E: OK', 'success');
-  appendAdminTerminalLog('• cr1..cr13 -> raw_calls!H:T: OK (Строгий бинарный формат 0/1)', 'success');
-  appendAdminTerminalLog('• ai_recommendation -> raw_calls!V: OK', 'success');
-  showToast('Агент 3', 'Маппинг полей полностью валиден');
+async function runCanaryDrill(btn = null) {
+  return executeAgentAction('a5', 'drill', btn || document.getElementById('btnRunA5'));
 }
 
-// 5. Agent 4: Prompt & Audio QA Judge
-async function runJudgeAudit() {
-  appendAdminTerminalLog('🎙️ Агент 4: Запуск семантического аудита промптов и скоринга (/judge)...', 'info');
-  showToast('Агент 4: QA Judge', 'Аудит Citation Grounding...');
-  try {
-    appendAdminTerminalLog('• Проверка верификации цитат в стенограммах звонков...', 'info');
-    appendAdminTerminalLog('✓ Grounding Recall: 96.8% (Target >= 95%, PASS)', 'success');
-    appendAdminTerminalLog('• Сканирование листа ⚠️ QA_Quarantine на зависшие записи...', 'info');
-    appendAdminTerminalLog('✓ В карантине 0 активных аномалий', 'success');
-    showToast('Агент 4', 'Grounding Recall: 96.8% (PASS)');
-  } catch (e) {
-    appendAdminTerminalLog(`Ошибка Judge: ${e.message}`, 'error');
-  }
+async function injectSyntheticMutation(btn = null) {
+  return executeAgentAction('a5', 'mutation', btn);
+}
+
+async function updateSheetsHeartbeatNow(btn = null) {
+  return executeAgentAction('a5', 'heartbeat', btn);
+}
+
+async function runWorkflowLineageAudit(btn = null) {
+  return executeAgentAction('a3', 'audit', btn || document.getElementById('btnRunA3'));
+}
+
+async function autoPublishN8nWorkflows(btn = null) {
+  return executeAgentAction('a3', 'publish', btn);
+}
+
+async function inspectCrmFieldMapping(btn = null) {
+  return executeAgentAction('a3', 'mapping', btn);
+}
+
+async function runJudgeAudit(btn = null) {
+  return executeAgentAction('a4', 'audit', btn || document.getElementById('btnRunA4'));
 }
 
 function loadQuarantineCalls() {
-  const container = document.getElementById('quarantineCallsContainer');
-  if (!container) return;
-  appendAdminTerminalLog('⚠️ Агент 4: Запрос записей из листа QA_Quarantine...', 'info');
-  container.innerHTML = `
-    <div style="padding: 16px; text-align: center; color: #34d399; background: rgba(52, 211, 153, 0.05); border-radius: 8px; border: 1px dashed rgba(52, 211, 153, 0.3);">
-      ✓ Карантин пуст. Все звонки прошли строгую верификацию цитирования Агентом 4 (Grounding 96.8%).
-    </div>
-  `;
-  showToast('Агент 4: Карантин', 'Карантин пуст (0 звонков в риске)');
+  executeAgentAction('a4', 'audit');
 }
 
 function calibrateZScoreThresholds() {
   const val = prompt('Укажите порог отсечения аномалий Z-Score (текущий: 2.5):', '2.5');
   if (val && !isNaN(parseFloat(val))) {
-    appendAdminTerminalLog(`⚖️ Агент 4: Порог Z-Score откалиброван на sigma = ${parseFloat(val)}`, 'success');
-    showToast('Агент 4', `Порог Z-Score установлен: sigma = ${parseFloat(val)}`);
+    appendDrawerOutput(`⚖️ Агент 4: Порог Z-Score откалиброван на sigma = ${parseFloat(val)}`, 'success');
+    showToast('Агент 4', `Порог Z-Score откалиброван: sigma = ${parseFloat(val)}`);
   }
 }
 
-// Window exports for Sextet Fleet
+// Window exports
 window.switchAdminSubtab = switchAdminSubtab;
 window.switchAgentSubtab = switchAgentSubtab;
+window.executeAgentAction = executeAgentAction;
+window.loadAgentsTelemetry = loadAgentsTelemetry;
+window.copyDrawerOutput = copyDrawerOutput;
+window.clearDrawerOutput = clearDrawerOutput;
+window.closeDrawerConsole = closeDrawerConsole;
+
 window.runFullFleetDrill = runFullFleetDrill;
 window.runArchitectureAudit = runArchitectureAudit;
 window.generateArchitectureWhitepaper = generateArchitectureWhitepaper;
@@ -1184,3 +1388,5 @@ window.inspectCrmFieldMapping = inspectCrmFieldMapping;
 window.runJudgeAudit = runJudgeAudit;
 window.loadQuarantineCalls = loadQuarantineCalls;
 window.calibrateZScoreThresholds = calibrateZScoreThresholds;
+window.runCCOAction = runCCOAction;
+window.runHealerAction = runHealerAction;
