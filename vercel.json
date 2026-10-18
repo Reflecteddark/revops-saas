@@ -3,13 +3,18 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/app", "destination": "/apps/web/index.html" },
-    { "source": "/app/", "destination": "/apps/web/index.html" },
+    { "source": "/app", "destination": "/apps/web" },
+    { "source": "/app/", "destination": "/apps/web" },
     { "source": "/app/app.js", "destination": "/apps/web/app.js" },
     { "source": "/app/js/:path*", "destination": "/apps/web/js/:path*" },
-    { "source": "/js/:path*", "destination": "/apps/web/js/:path*" },
-    { "source": "/app.js", "destination": "/apps/web/app.js" },
-    { "source": "/", "destination": "/apps/landing/index.html" },
+    { "source": "/", "destination": "/apps/landing" },
+    { "source": "/css/:path*", "destination": "/apps/landing/css/:path*" },
+    { "source": "/images/:path*", "destination": "/apps/landing/images/:path*" },
+    { "source": "/audio/:path*", "destination": "/apps/landing/audio/:path*" },
+    { "source": "/fonts/:path*", "destination": "/apps/landing/fonts/:path*" },
+    { "source": "/webfonts/:path*", "destination": "/apps/landing/webfonts/:path*" },
+    { "source": "/samples/:path*", "destination": "/apps/landing/samples/:path*" },
+    { "source": "/favicon.svg", "destination": "/apps/landing/favicon.svg" },
     { "source": "/:path*", "destination": "/apps/landing/:path*" }
   ]
 }
