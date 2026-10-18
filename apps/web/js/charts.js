@@ -31,10 +31,15 @@ function renderSkillsHeatmap() {
 
   if (reps.length === 0) {
     container.innerHTML = `
-      <div style="padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.08); border-radius: 10px;">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 10px; opacity: 0.35; display: block;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        <strong style="color: #fff; font-size: 0.9rem; display: block; margin-bottom: 4px;">Нет данных о менеджерах (Чистый лист)</strong>
-        <span>Ожидание поступления звонков из телефонии CRM через n8n</span>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+        </div>
+        <div class="empty-state-title">Нет данных о менеджерах</div>
+        <div class="empty-state-desc">Ожидание поступления звонков из телефонии CRM через n8n для построения матрицы навыков</div>
+        <span class="empty-state-badge"><span class="badge-dot"></span>Ожидание CRM</span>
       </div>`;
     return;
   }
