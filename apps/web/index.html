@@ -4240,6 +4240,62 @@
       border-color: #10b981;
       background: rgba(0,0,0,0.5);
     }
+
+    /* AI Analyst CCO Component Styles */
+    .quick-prompt-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      font-family: inherit;
+    }
+    .quick-prompt-chip:hover {
+      background: rgba(139, 92, 246, 0.16);
+      border-color: rgba(139, 92, 246, 0.45);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .analyst-chat-bubble {
+      max-width: 88%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .analyst-bubble-user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.35) 0%, rgba(99, 102, 241, 0.25) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #fff;
+      border-bottom-right-radius: 2px;
+    }
+    .analyst-bubble-ai {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      border-bottom-left-radius: 2px;
+    }
+    html[data-theme="light"] .analyst-bubble-ai {
+      background: #f8fafc;
+      border-color: rgba(15, 23, 42, 0.1);
+      color: #0f172a;
+    }
+    html[data-theme="light"] .quick-prompt-chip {
+      background: rgba(15, 23, 42, 0.04);
+      border-color: rgba(15, 23, 42, 0.12);
+      color: #475569;
+    }
+    html[data-theme="light"] .quick-prompt-chip:hover {
+      background: rgba(124, 58, 237, 0.1);
+      color: #6d28d9;
+    }
   </style>
 </head>
 <body>
@@ -4377,6 +4433,11 @@
       <!-- Nav Items: 3. Финансы & Аналитика -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Финансы & Аналитика</div>
+        <button id="sb-analyst" class="mp-nav-item" onclick="switchTab('analyst')">
+          <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12L2.1 12a10.1 10.1 0 0 0 9.9 10z"/></svg></span>
+          <span class="mp-nav-label">ИИ Аналитик (CCO)</span>
+          <span class="badge-won" style="font-size: 0.60rem; margin-left: auto; padding: 1px 5px; border-radius: 4px;">Agent 2</span>
+        </button>
         <button id="sb-leaks" class="mp-nav-item" onclick="switchTab('leaks')">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></span>
           <span class="mp-nav-label">5. Диагностика утечек</span>
@@ -5515,6 +5576,145 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB: ИИ АНАЛИТИК (КОММЕРЧЕСКИЙ ДИРЕКТОР / CCO / AGENT 2) -->
+    <!-- ======================================================== -->
+    <div id="view-analyst" class="tab-view">
+
+      <!-- View Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <h2 style="font-size: 1.35rem; font-weight: 700; margin: 0; letter-spacing: -0.02em; color: #fff;">
+              ИИ Аналитик (Коммерческий Директор / CCO)
+            </h2>
+            <span class="badge-won" style="font-size: 0.65rem; padding: 2px 8px; border-radius: 9999px;">Agent 2 Active</span>
+            <span class="badge-info" style="font-size: 0.65rem; padding: 2px 8px; border-radius: 9999px;">Gemini 2.5 Flash &amp; SSOT</span>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.80rem; margin: 5px 0 0 0;">
+            Стратегический анализ воронки, аудит узких мест, разбор звонков и план дожима на основе живых данных ЛК
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn btn-outline" onclick="initAnalystTab(true)" id="btnRefreshAnalyst" style="font-size: 0.75rem; padding: 7px 14px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Обновить анализ
+          </button>
+          <button class="btn btn-primary" onclick="triggerAnalystQuickPrompt('Где мы теряем больше всего денег?')" style="font-size: 0.75rem; padding: 7px 14px;">
+            Экспресс-аудит потерь
+          </button>
+        </div>
+      </div>
+
+      <!-- CCO Executive Diagnosis Bento Banner -->
+      <div class="bento-card" style="padding: 22px 26px; margin-bottom: 20px; border-left: 3px solid #8b5cf6; background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(20, 20, 30, 0.65) 100%);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 16px; align-items: flex-start; max-width: 900px;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(139, 92, 246, 0.2); display: flex; align-items: center; justify-content: center; color: #a78bfa; flex-shrink: 0; margin-top: 2px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12L2.1 12a10.1 10.1 0 0 0 9.9 10z"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #a78bfa; font-weight: 700; margin-bottom: 6px;">
+                Стратегический вердикт Коммерческого Директора
+              </div>
+              <div id="analystExecutiveSummary" style="font-size: 0.88rem; line-height: 1.6; color: var(--text-primary);">
+                Загрузка стратегического анализа на основе живого массива звонков и сделок...
+              </div>
+            </div>
+          </div>
+          <div style="text-align: right; flex-shrink: 0; margin-left: auto;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9999px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);">
+              <span class="status-dot dot-emerald" style="width: 6px; height: 6px;"></span>
+              <span style="font-size: 0.70rem; color: #34d399; font-weight: 600;">SSOT Синхронизировано</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Core KPI Bento Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;" id="analystKpiGrid">
+        <!-- Populated dynamically by app.js -->
+      </div>
+
+      <!-- Split 2-Column: Left (Interactive CCO Dialogue) & Right (Revenue Anomalies & Playbooks) -->
+      <div style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; align-items: start;">
+        
+        <!-- LEFT: Interactive Chat Panel with CCO -->
+        <div class="bento-card" style="display: flex; flex-direction: column; height: 620px; padding: 0; overflow: hidden;">
+          <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.01);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(139, 92, 246, 0.2); display: flex; align-items: center; justify-content: center; color: #a78bfa;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 0.85rem; font-weight: 600; color: #fff;">Диалог с Коммерческим Директором</div>
+                <div style="font-size: 0.68rem; color: var(--text-muted);">Интерактивный анализ звонков, менеджеров и воронки</div>
+              </div>
+            </div>
+            <button class="btn btn-ghost" onclick="clearAnalystChat()" style="font-size: 0.70rem; padding: 4px 10px;" title="Очистить диалог">
+              Очистить
+            </button>
+          </div>
+
+          <!-- Quick Action Chips -->
+          <div style="padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); display: flex; gap: 6px; overflow-x: auto; background: rgba(0, 0, 0, 0.15);" class="custom-scroll">
+            <button class="quick-prompt-chip" onclick="triggerAnalystQuickPrompt('Где мы теряем больше всего денег?')">Где теряем деньги?</button>
+            <button class="quick-prompt-chip" onclick="triggerAnalystQuickPrompt('Разбор слабых мест менеджеров')">Слабые места менеджеров</button>
+            <button class="quick-prompt-chip" onclick="triggerAnalystQuickPrompt('План дожима зависших сделок')">План дожима</button>
+            <button class="quick-prompt-chip" onclick="triggerAnalystQuickPrompt('Прогноз выполнения плана месяца')">Прогноз P50</button>
+            <button class="quick-prompt-chip" onclick="triggerAnalystQuickPrompt('Анализ причин отказов клиентов')">Причины отказов</button>
+          </div>
+
+          <!-- Messages Stream -->
+          <div id="analystChatMessages" style="flex: 1; padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;" class="custom-scroll">
+            <!-- Messages appended here -->
+          </div>
+
+          <!-- Chat Input Bar -->
+          <div style="padding: 12px 16px; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(10, 10, 16, 0.85); display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="analystChatInput" placeholder="Задайте вопрос Коммерческому Директору по воронке, звонкам, менеджерам..." 
+                   style="flex: 1; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #fff; outline: none;"
+                   onkeydown="if(event.key === 'Enter') sendAnalystChat()">
+            <button class="btn btn-primary" onclick="sendAnalystChat()" style="padding: 10px 16px; border-radius: 8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT: Anomalies & Prescribed Corrective Playbooks -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="bento-card" style="padding: 20px 22px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <div style="font-size: 0.88rem; font-weight: 600; color: #fff;">Реестр точек роста и критических утечек</div>
+              <span class="badge-lost" id="analystAnomaliesBadge">3 очага</span>
+            </div>
+            <div id="analystAnomaliesList" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <div class="bento-card" style="padding: 20px 22px;">
+            <div style="font-size: 0.88rem; font-weight: 600; color: #fff; margin-bottom: 8px;">Директивы CCO по регламентам</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px;">
+              Автоматический контроль соблюдения 13 критериев B2B-аудита: каждый входящий и исходящий звонок проверяется на фиксацию точной даты и времени Zoom-встречи.
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-outline" onclick="switchTab('audit')" style="font-size: 0.72rem; padding: 6px 12px;">
+                Открыть речевые аудиты &rarr;
+              </button>
+              <button class="btn btn-outline" onclick="switchTab('leaks')" style="font-size: 0.72rem; padding: 6px 12px;">
+                Карта утечек &rarr;
+              </button>
+              <button class="btn btn-outline" onclick="switchTab('rop')" style="font-size: 0.72rem; padding: 6px 12px;">
+                Пульт РОПа &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <!-- ======================================================== -->
