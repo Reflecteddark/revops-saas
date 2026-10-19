@@ -69,7 +69,7 @@ def log(msg: str, symbol: str = "[*]"):
     timestamp = datetime.now().strftime("%H:%M:%S")
     safe_symbol = symbol.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8", errors="replace")
     safe_msg = msg.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8", errors="replace")
-    print(f"[{timestamp}] {safe_symbol} {safe_msg}")
+    print(f"[{timestamp}] {safe_symbol} {safe_msg}", flush=True)
 
 def check_syntax(local_path: Path) -> bool:
     """Проверяет синтаксис всех .py файлов перед деплоем."""
