@@ -213,7 +213,8 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
-        sheet_id = os.getenv("REVOPS_SPREADSHEET_ID", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk")
+        tenant_id = (payload.tenant_id or "TNT-001").strip().upper()
+        sheet_id = get_tenant_spreadsheet_id(tenant_id)
         ss = gc.open_by_key(sheet_id)
         ws = ss.worksheet("raw_calls")
 
@@ -269,7 +270,8 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
 
         ws.append_row(row)
         # Invalidate cache so fresh calls appear immediately
-        _CALLS_CACHE["timestamp"] = 0
+        _CALLS_CACHE.pop(tenant_id, None)
+        _CALLS_CACHE.clear()
         return True
     except Exception as e:
         logger.error(f"Error appending call to Google Sheets: {e}")
