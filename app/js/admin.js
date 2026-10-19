@@ -932,6 +932,8 @@ function switchAdminSubtab(subtabId) {
     loadAgentsTelemetry(false);
   } else if (subtabId === 'clients') {
     renderAdminClientsTable();
+  } else if (subtabId === 'infra') {
+    loadFeaturesConfig();
   } else if (subtabId === 'terminal') {
     const term = document.getElementById('adminTerminalBody');
     if (term) term.scrollTop = term.scrollHeight;

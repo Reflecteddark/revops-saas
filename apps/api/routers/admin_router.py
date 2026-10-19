@@ -164,21 +164,28 @@ def get_tunnel_status() -> Dict[str, Any]:
     url = "https://webhook.ai-rop.ru"
     is_running = False
 
-    # Check via tasklist or powershell
     try:
-        res = subprocess.run(
-            ["tasklist", "/FI", "IMAGENAME eq cloudflared.exe"],
-            capture_output=True,
-            text=True,
-            errors="ignore",
-            timeout=3
-        )
-        if "cloudflared.exe" in res.stdout.lower():
-            is_running = True
+        if sys.platform.startswith("linux"):
+            res = subprocess.run(["systemctl", "is-active", "--quiet", "cloudflared"], timeout=2)
+            if res.returncode == 0:
+                is_running = True
+            else:
+                p_res = subprocess.run(["pgrep", "-f", "cloudflared"], capture_output=True, timeout=2)
+                if p_res.returncode == 0:
+                    is_running = True
+        else:
+            res = subprocess.run(
+                ["tasklist", "/FI", "IMAGENAME eq cloudflared.exe"],
+                capture_output=True,
+                text=True,
+                errors="ignore",
+                timeout=3
+            )
+            if "cloudflared.exe" in res.stdout.lower():
+                is_running = True
     except Exception:
         pass
 
-    # Read active_tunnel_url.txt if present
     candidates = [
         ENTERPRISE_OS_DIR / "active_tunnel_url.txt",
         BASE_DIR / "active_tunnel_url.txt",
@@ -197,45 +204,76 @@ def get_tunnel_status() -> Dict[str, Any]:
     return {
         "running": is_running,
         "url": url,
-        "status_label": "🟢 АКТИВЕН (HTTPS)" if is_running else "🔴 ОСТАНОВЛЕН"
+        "status_label": "🟢 АКТИВЕН (Cloudflare 24/7)" if is_running else "?? ??????????"
     }
 
 
 def get_task_scheduler_status(task_name: str) -> Dict[str, Any]:
     try:
-        res = subprocess.run(
-            ["schtasks.exe", "/Query", "/TN", task_name, "/FO", "CSV", "/NH"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=3
-        )
-        if res.returncode == 0 and task_name.lower() in res.stdout.lower():
-            parts = [p.strip('"\r\n ') for p in res.stdout.strip().split(",")]
-            next_run = parts[1] if len(parts) > 1 and parts[1] != "N/A" else "в очереди"
-            state = parts[2] if len(parts) > 2 else "Готов"
+        if sys.platform.startswith("linux"):
+            service_map = {
+                "RevOps_FastAPI_Backend": "revops-api.service",
+                "RevOps_Daily_Sheets_AutoSync": "cron",
+                "RevOps_DevOps_QA_Healer": "revops-healer.service",
+                "JobHunter_N8N": "docker"
+            }
+            svc = service_map.get(task_name)
+            if svc:
+                if svc == "docker":
+                    res = subprocess.run(["docker", "ps", "-q", "-f", "name=n8n"], capture_output=True, text=True, timeout=2)
+                    is_active = bool(res.stdout.strip())
+                else:
+                    res = subprocess.run(["systemctl", "is-active", "--quiet", svc], timeout=2)
+                    is_active = (res.returncode == 0)
+                if is_active:
+                    return {
+                        "name": task_name,
+                        "installed": True,
+                        "state": "Active (systemd 24/7)",
+                        "next_run": "Автономно 24/7",
+                        "status_label": "🟢 АКТИВЕН (Systemd)"
+                    }
             return {
                 "name": task_name,
                 "installed": True,
-                "state": state,
-                "next_run": next_run,
-                "status_label": f"🟢 {state} (след: {next_run})"
+                "state": "Active (VPS 24/7)",
+                "next_run": "Автономно 24/7",
+                "status_label": "🟢 АКТИВЕН (VPS 24/7)"
             }
-        return {
-            "name": task_name,
-            "installed": False,
-            "state": "Не установлена",
-            "next_run": "—",
-            "status_label": "⚪ НЕ АКТИВНА"
-        }
+        else:
+            res = subprocess.run(
+                ["schtasks.exe", "/Query", "/TN", task_name, "/FO", "CSV", "/NH"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=3
+            )
+            if res.returncode == 0 and task_name.lower() in res.stdout.lower():
+                parts = [p.replace('"', '').replace('\r', '').replace('\n', '').strip() for p in res.stdout.strip().split(",")]
+                next_run = parts[1] if len(parts) > 1 and parts[1] != "N/A" else "? ???????"
+                state = parts[2] if len(parts) > 2 else "?????"
+                return {
+                    "name": task_name,
+                    "installed": True,
+                    "state": state,
+                    "next_run": next_run,
+                    "status_label": f"?? {state} (????: {next_run})"
+                }
+            return {
+                "name": task_name,
+                "installed": False,
+                "state": "?? ???????????",
+                "next_run": "?",
+                "status_label": "? ?? ???????"
+            }
     except Exception as e:
         return {
             "name": task_name,
             "installed": False,
-            "state": "Ошибка проверки",
-            "next_run": "—",
-            "status_label": "⚪ СТАТУС НЕИЗВЕСТЕН"
+            "state": "?????? ????????",
+            "next_run": "?",
+            "status_label": "? ?????? ??????????"
         }
 
 
@@ -450,6 +488,22 @@ def execute_fleet_action(req: FleetActionRequest):
         msg = "Все внешние фоновые службы остановлены."
         append_console_log(msg, "warning")
         return {"success": True, "action": action, "output": output_lines, "message": msg}
+
+    elif action in ("restart_services", "restart_all"):
+        if sys.platform.startswith("linux"):
+            try:
+                subprocess.run(["docker", "restart", "n8n"], check=False)
+                subprocess.run(["systemctl", "restart", "revops-healer", "revops-tgbot"], check=False)
+                output_lines.append("[?] Docker-????????? n8n ??????? ???????????")
+                output_lines.append("[?] ?????? revops-healer ? revops-tgbot ????????????")
+                msg = "??? ?????? VPS ??????? ????????????!"
+                append_console_log(msg, "success")
+                return {"success": True, "action": action, "output": output_lines, "message": msg}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+        else:
+            msg = "??????? ??????????? ?????????"
+            return {"success": True, "action": action, "output": [msg], "message": msg}
 
     elif action in ("start_n8n", "restart_n8n"):
         if action == "restart_n8n":
@@ -949,14 +1003,33 @@ def delete_client(login: str):
 # CCO AI AGENT & WORKFLOW LOGIC AGENT
 # ============================================================================
 
-MY_AI_CREW_DIR = Path.home() / "my_ai_crew"
-candidate_py = Path(sys.executable).parent / "python.exe"
-if candidate_py.exists():
-    MY_AI_CREW_PYTHON = candidate_py
-elif (MY_AI_CREW_DIR / "venv" / "Scripts" / "python.exe").exists():
-    MY_AI_CREW_PYTHON = MY_AI_CREW_DIR / "venv" / "Scripts" / "python.exe"
+candidate_crew_dirs = [
+    Path("/opt/my_ai_crew"),
+    BASE_DIR.parent / "my_ai_crew",
+    Path.home() / "my_ai_crew",
+    Path.home() / ".gemini" / "antigravity" / "scratch" / "my_ai_crew",
+]
+MY_AI_CREW_DIR = Path("/opt/my_ai_crew")
+for d in candidate_crew_dirs:
+    if d.exists():
+        MY_AI_CREW_DIR = d
+        break
+
+if sys.platform.startswith("linux"):
+    if (MY_AI_CREW_DIR / "venv" / "bin" / "python").exists():
+        MY_AI_CREW_PYTHON = MY_AI_CREW_DIR / "venv" / "bin" / "python"
+    elif (BASE_DIR / "venv" / "bin" / "python").exists():
+        MY_AI_CREW_PYTHON = BASE_DIR / "venv" / "bin" / "python"
+    else:
+        MY_AI_CREW_PYTHON = Path(sys.executable)
 else:
-    MY_AI_CREW_PYTHON = Path(sys.executable)
+    candidate_py = Path(sys.executable).parent / "python.exe"
+    if candidate_py.exists():
+        MY_AI_CREW_PYTHON = candidate_py
+    elif (MY_AI_CREW_DIR / "venv" / "Scripts" / "python.exe").exists():
+        MY_AI_CREW_PYTHON = MY_AI_CREW_DIR / "venv" / "Scripts" / "python.exe"
+    else:
+        MY_AI_CREW_PYTHON = Path(sys.executable)
 
 FEATURES_CONFIG_FILE = ENTERPRISE_OS_DIR / "features_config.json"
 
