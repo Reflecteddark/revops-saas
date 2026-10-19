@@ -7732,6 +7732,170 @@
         <!-- 5 Interactive Sections Container -->
         <div style="display: flex; flex-direction: column; gap: 24px; padding-top: 18px;">
 
+          <!-- 0A. МОЙ АККАУНТ И БЕЗОПАСНОСТЬ -->
+          <div class="bento-card" style="padding: 20px 22px; background: linear-gradient(135deg, rgba(30, 27, 75, 0.4), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(139, 92, 246, 0.35);">
+            <div class="bento-card-header" style="margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="title-icon" style="color: #a78bfa; background: rgba(139,92,246,0.15); padding: 8px; border-radius: 8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <div>
+                  <span class="bento-card-title" style="font-size: 1.05rem; font-weight: 800; color: #fff;">0A. Мой Аккаунт, Безопасность и Доступ</span>
+                  <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">Управление реквизитами входа, контактными данными РОПа и смена пароля кабинета</div>
+                </div>
+              </div>
+              <span id="clientAccountBadge" class="badge-won">АКТИВЕН</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+              <!-- Контактные данные -->
+              <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+                <div style="font-size: 0.76rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 12px;">Контактные данные клиента</div>
+                <div style="margin-bottom: 10px;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">Email (Логин):</label>
+                  <input type="email" id="clientAccEmail" class="auth-input" style="width: 100%; box-sizing: border-box; font-size: 0.85rem;" placeholder="ceo@company.ru">
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">ФИО руководителя / РОПа:</label>
+                  <input type="text" id="clientAccName" class="auth-input" style="width: 100%; box-sizing: border-box; font-size: 0.85rem;" placeholder="Дмитрий Федотов">
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">Telegram РОПа (для отчетов ИИ):</label>
+                  <input type="text" id="clientAccTg" class="auth-input" style="width: 100%; box-sizing: border-box; font-size: 0.85rem;" placeholder="@username или chat_id">
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="submitUpdateProfile()" style="width: 100%; justify-content: center; padding: 8px;">
+                  <span>Сохранить контакты</span>
+                </button>
+              </div>
+
+              <!-- Смена пароля -->
+              <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+                <div style="font-size: 0.76rem; font-weight: 700; color: #fbbf24; text-transform: uppercase; margin-bottom: 12px;">Смена пароля доступа</div>
+                <div style="margin-bottom: 10px;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">Текущий пароль:</label>
+                  <input type="password" id="clientAccCurrPass" class="auth-input" style="width: 100%; box-sizing: border-box; font-size: 0.85rem;" placeholder="••••••••••••">
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">Новый пароль:</label>
+                  <input type="password" id="clientAccNewPass" class="auth-input" style="width: 100%; box-sizing: border-box; font-size: 0.85rem;" placeholder="Минимум 6 символов">
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">Повтор нового пароля:</label>
+                  <input type="password" id="clientAccNewPassConfirm" class="auth-input" style="width: 100%; box-sizing: border-box; font-size: 0.85rem;" placeholder="Повторите новый пароль">
+                </div>
+                <button type="button" class="btn btn-primary" onclick="submitChangePassword()" style="width: 100%; justify-content: center; padding: 8px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>Обновить пароль</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 0B. ИНТЕГРАЦИЯ С CRM И ТЕЛЕФОНИЕЙ -->
+          <div class="bento-card" style="padding: 20px 22px; background: linear-gradient(135deg, rgba(14, 28, 48, 0.4), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(56, 189, 248, 0.35);">
+            <div class="bento-card-header" style="margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="title-icon" style="color: #38bdf8; background: rgba(56,189,248,0.15); padding: 8px; border-radius: 8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </span>
+                <div>
+                  <span class="bento-card-title" style="font-size: 1.05rem; font-weight: 800; color: #fff;">0B. Интеграция с CRM и Вебхук Телефонии</span>
+                  <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">Управление токенами amoCRM, входящим вебхуком Битрикс24 и адресом приёма звонков АТС</div>
+                </div>
+              </div>
+              <span id="clientCrmLiveStatusBadge" class="badge-won">ГОТОВ К ПРИЁМУ</span>
+            </div>
+
+            <!-- Персональный Webhook URL телефонии -->
+            <div style="padding: 14px 16px; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; margin-bottom: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 0.74rem; font-weight: 700; color: #38bdf8; text-transform: uppercase;">
+                  📞 Персональный Webhook URL телефонии (Mango Office / Zadarma / Sipuni / Asterisk / n8n):
+                </span>
+                <span style="font-size: 0.68rem; color: var(--text-muted);">POST JSON &bull; Мгновенный ИИ-аудит 13 критериев</span>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="clientTelephonyWebhookUrl" readonly class="auth-input" style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #fff; background: rgba(0,0,0,0.3); border-color: rgba(56,189,248,0.3);" value="https://report.ai-rop.ru/api/v1/webhooks/TNT-001/call">
+                <button type="button" class="btn btn-secondary" onclick="copyTelephonyWebhookUrl()" style="padding: 8px 14px; font-size: 0.76rem;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Копировать</span>
+                </button>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+              <!-- Настройка amoCRM -->
+              <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <span style="font-size: 0.76rem; font-weight: 700; color: #fff; text-transform: uppercase;">1. amoCRM API v4</span>
+                  <span id="badgeCrmAmoStatus" class="delta-badge delta-cyan">OAuth 2.0</span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">Домен amoCRM:</label>
+                  <input type="text" id="clientAmoDomain" class="auth-input" style="width: 100%; box-sizing: border-box; font-size: 0.82rem;" placeholder="company.amocrm.ru">
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">Долгосрочный API токен:</label>
+                  <input type="password" id="clientAmoToken" class="auth-input" style="width: 100%; box-sizing: border-box; font-size: 0.82rem;" placeholder="eyJ0eXAiOiJKV1QiLC...">
+                </div>
+              </div>
+
+              <!-- Настройка Битрикс24 -->
+              <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <span style="font-size: 0.76rem; font-weight: 700; color: #fff; text-transform: uppercase;">2. Битрикс24 REST API</span>
+                  <span id="badgeCrmB24Status" class="delta-badge delta-pos">Входящий REST</span>
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">Входящий вебхук Битрикс24:</label>
+                  <input type="text" id="clientB24Webhook" class="auth-input" style="width: 100%; box-sizing: border-box; font-size: 0.82rem;" placeholder="https://portal.bitrix24.ru/rest/1/abc123xyz/">
+                </div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); line-height: 1.4;">
+                  Где взять: В Битрикс24: <em>Разработчикам &rarr; Другое &rarr; Входящий вебхук</em>. Права: <code>crm</code>.
+                </div>
+              </div>
+            </div>
+
+            <!-- Кнопки сохранения и проверки связи -->
+            <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary" onclick="submitUpdateCrmSettings()" style="padding: 8px 16px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+                <span>Сохранить CRM-реквизиты</span>
+              </button>
+              <button type="button" class="btn btn-primary" onclick="testClientCrmLive()" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: none; padding: 8px 18px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>🧪 Проверить связь с CRM (Ping)</span>
+              </button>
+              <span id="clientCrmPingResult" style="display: flex; align-items: center; font-size: 0.76rem; color: var(--text-secondary); margin-left: auto;"></span>
+            </div>
+          </div>
+
+          <!-- 0C. УПРАВЛЕНИЕ ДАННЫМИ И ОТКАЗ ОТ СЕРВИСА -->
+          <div class="bento-card" style="padding: 20px 22px; background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.08);">
+            <div class="bento-card-header" style="margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="title-icon" style="color: #ec4899; background: rgba(236,72,153,0.12); padding: 8px; border-radius: 8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </span>
+                <div>
+                  <span class="bento-card-title" style="font-size: 1.05rem; font-weight: 800; color: #fff;">0C. Экспорт Данных Компании и Завершение Работы (Data Portability)</span>
+                  <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">Выгрузка полного архива данных (152-ФЗ / GDPR). Все сделки, звонки, 13 критериев и транскрипты в 1 клик</div>
+                </div>
+              </div>
+              <span class="delta-badge delta-pos">БЕЗОПАСНО 100%</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+              <div style="font-size: 0.76rem; color: var(--text-secondary); max-width: 600px; line-height: 1.45;">
+                При прекращении сотрудничества или переносе аналитики вы можете скачать полный архив компании в ZIP-формате: содержит файлы <code>calls.json</code>, <code>calls_audit.csv</code>, <code>deals_pipeline.csv</code>, <code>settings.json</code> и паспорт интеграции.
+              </div>
+              <button type="button" class="btn btn-secondary" onclick="downloadTenantDataArchive()" style="padding: 9px 18px; font-weight: 700; border-color: rgba(236,72,153,0.4);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Скачать полный архив (ZIP)</span>
+              </button>
+            </div>
+          </div>
+
           <!-- 1. Бизнес-цели, Период и Казначейство -->
           <div class="bento-card" style="padding: 20px 22px;">
             <div class="bento-card-header" style="margin-bottom: 16px;">
