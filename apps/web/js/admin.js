@@ -310,6 +310,9 @@ async function switchAdminCrm() {
     appendAdminTerminalLog(data.message || 'CRM успешно переключена!', 'success');
     showToast('CRM-Интеграция', data.message || 'CRM переключена');
     await loadAdminCrmStatus();
+    if (typeof fetchLiveDealsData === 'function') await fetchLiveDealsData(false);
+    if (typeof fetchLiveCallsData === 'function') await fetchLiveCallsData(false);
+    if (typeof refreshAllDashboardViews === 'function') refreshAllDashboardViews();
   } catch (err) {
     appendAdminTerminalLog(`Ошибка переключения CRM: ${err.message}`, 'error');
     showToast('Ошибка', err.message);
@@ -352,6 +355,11 @@ async function runAdminCrmAction(action, crmType) {
     appendAdminTerminalLog(`✓ ${data.desc || actName} — успешно завершено!`, 'success');
     showToast('CRM Интеграция', `${actName}: Успешно!`);
     await loadAdminCrmStatus();
+    if (action === 'sync_deals') {
+      if (typeof fetchLiveDealsData === 'function') await fetchLiveDealsData(false);
+      if (typeof fetchLiveCallsData === 'function') await fetchLiveCallsData(false);
+      if (typeof refreshAllDashboardViews === 'function') refreshAllDashboardViews();
+    }
   } catch (err) {
     appendAdminTerminalLog(`Ошибка CRM: ${err.message}`, 'error');
     showToast('Ошибка CRM', err.message);

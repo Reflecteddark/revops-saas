@@ -1826,19 +1826,25 @@ def execute_crm_action(req: CRMActionRequest):
                     timeout=60
                 )
                 if run_res.returncode == 0:
-                    reset_details = f" Таблица raw_deals и ЛК автоматически очищены и синхронизированы с {new_crm.upper()}."
-                    append_console_log(f"🧹 Google Таблица raw_deals и ЛК автоматически очищены и синхронизированы с {new_crm.upper()}!", "success")
+                    reset_details = f" Таблицы raw_deals, raw_calls и ЛК автоматически очищены и синхронизированы с {new_crm.upper()}."
+                    append_console_log(f"🧹 Google Таблицы raw_deals, raw_calls и ЛК автоматически очищены и синхронизированы с {new_crm.upper()}!", "success")
                     if new_crm == "bitrix24":
-                        append_console_log("ℹ️ Bitrix24: Облачный REST API требует подписку Маркет Плюс. Задействован демо-контур из 10 сделок в raw_deals.", "info")
+                        append_console_log("ℹ️ Bitrix24: Облачный REST API требует подписку Маркет Плюс. Задействован демо-контур из 10 сделок и звонков.", "info")
                 else:
                     logger.warning(f"Reset script failed (code {run_res.returncode}): {run_res.stderr or run_res.stdout}")
         except Exception as e:
             logger.error(f"Failed to auto-reset sheet on CRM switch: {e}")
 
-        # Evict in-memory deals cache so ЛК immediately displays fresh data
+        # Evict in-memory deals & calls cache so ЛК immediately displays fresh data
         try:
             from .deals_router import _DEALS_CACHE
             _DEALS_CACHE.clear()
+        except Exception:
+            pass
+
+        try:
+            from .calls_router import _CALLS_CACHE
+            _CALLS_CACHE.clear()
         except Exception:
             pass
 

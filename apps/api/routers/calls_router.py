@@ -161,7 +161,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> List
 
             error_sum = r[21] if len(r) > 21 else ""
             rec = r[22] if len(r) > 22 else ""
-            transcript = r[30] if len(r) > 30 else ""
+            transcript = r[29] if len(r) > 29 else ""
 
             # Client name heuristic from transcript or deal title
             client_name = "Клиент"
@@ -199,8 +199,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> List
             if len(calls) >= limit:
                 break
 
-        _CALLS_CACHE["calls"] = calls
-        _CALLS_CACHE["timestamp"] = now
+        _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": calls}
         return calls
     except Exception as e:
         logger.error(f"Error fetching calls from Google Sheets: {e}")
