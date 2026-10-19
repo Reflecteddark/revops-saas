@@ -105,8 +105,16 @@ let liveWs = null;
 async function fetchLiveCallsData(showFeedback = false) {
   try {
     const tenantId = getActiveTenantId();
-    const res = await fetch(`${REVOPS_API_BASE}/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`);
-    if (!res.ok) throw new Error('API status ' + res.status);
+    let res;
+    try {
+      res = await fetch(`${REVOPS_API_BASE}/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`);
+      if (!res.ok && REVOPS_API_BASE) {
+        res = await fetch(`/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`);
+      }
+    } catch (e) {
+      res = await fetch(`/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`);
+    }
+    if (!res || !res.ok) throw new Error('API status ' + (res ? res.status : 'network error'));
     const data = await res.json();
     if (data && Array.isArray(data.calls)) {
       CALLS_DATA = data.calls;
@@ -206,8 +214,14 @@ function refreshAllDashboardViews() {
   const factVal = document.getElementById('metricFactVal');
   if (factVal) animateCounter(factVal, totalFact, 900);
 
+  const heroRevenue = document.getElementById('heroRevenue');
+  if (heroRevenue && heroRevenue !== factVal) animateCounter(heroRevenue, totalFact, 900);
+
   const ssotVal = document.getElementById('metricSsotVal');
   if (ssotVal) animateCounter(ssotVal, computedSsot, 900);
+
+  const heroPipeline = document.getElementById('heroPipeline');
+  if (heroPipeline && heroPipeline !== ssotVal) animateCounter(heroPipeline, computedSsot, 900);
 
   const plan = getMonthlyTarget();
   const factBadge = document.getElementById('metricFactBadge');
@@ -220,6 +234,26 @@ function refreshAllDashboardViews() {
   if (defVal) {
     const diff = totalFact - plan;
     defVal.textContent = diff < 0 ? `-${(Math.abs(diff)/1000000).toFixed(1)}M ₽` : `+${(diff/1000000).toFixed(1)}M ₽`;
+  }
+
+  const heroSla = document.getElementById('heroSla');
+  if (heroSla && defVal) {
+    heroSla.textContent = defVal.textContent;
+  }
+
+  const heroQuality = document.getElementById('heroQuality');
+  if (heroQuality) {
+    const count = CALLS_DATA.length;
+    if (count > 0) {
+      const avg = CALLS_DATA.reduce((s, c) => s + (c.score || 0), 0) / count;
+      heroQuality.textContent = Math.round((avg / 13) * 100) + '%';
+    } else {
+      heroQuality.textContent = '0%';
+    }
+  }
+
+  if (typeof syncHeroKpiCards === 'function') {
+    syncHeroKpiCards();
   }
 
   const ssotTip = document.getElementById('metricSsotTooltip');

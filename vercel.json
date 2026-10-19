@@ -4,6 +4,7 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/tg-proxy/:path*", "destination": "https://api.telegram.org/:path*" },
+    { "source": "/api/:path*", "destination": "https://report.ai-rop.ru/api/:path*" },
     { "source": "/app", "destination": "/apps/web" },
     { "source": "/app/", "destination": "/apps/web" },
     { "source": "/app/app.js", "destination": "/apps/web/app.js" },

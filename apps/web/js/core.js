@@ -13,10 +13,16 @@ function getActiveTenantId() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const urlTenant = urlParams.get('tenant') || urlParams.get('tenant_id');
-      if (urlTenant && urlTenant.trim()) return urlTenant.trim().toUpperCase();
+      if (urlTenant && urlTenant.trim()) {
+        const m = urlTenant.match(/TNT-[A-Z0-9_-]+/i);
+        return m ? m[0].toUpperCase() : urlTenant.trim().toUpperCase();
+      }
 
       const stored = localStorage.getItem('revops_active_tenant');
-      if (stored && stored.trim()) return stored.trim().toUpperCase();
+      if (stored && stored.trim()) {
+        const m = stored.match(/TNT-[A-Z0-9_-]+/i);
+        return m ? m[0].toUpperCase() : stored.trim().toUpperCase();
+      }
 
       const rawSession = localStorage.getItem('revops_auth_session');
       if (rawSession) {
