@@ -338,13 +338,13 @@ RBAC_MATRIX: Dict[str, Dict[str, Any]] = {
 
 # 9. ROLE_LANDING_MAP (Целевые посадочные страницы по ролям пользователей)
 ROLE_LANDING_MAP = {
-    "ceo": {"role": "👑 CEO", "sheet": "📄 Executive_OnePager", "route": "/one-pager"},
-    "rop": {"role": "📋 РОП", "sheet": "📋 Пульт_РОПа_15_Минут", "route": "/rop-pult"},
-    "kam": {"role": "💼 KAM", "sheet": "⚡ Пульс_Компании", "route": "/pulse"},
-    "sdr": {"role": "📞 SDR", "sheet": "⚡ Пульс_Компании", "route": "/pulse"},
-    "cmo": {"role": "🌐 CMO", "sheet": "🌐 Маркетинг_и_Трафик", "route": "/marketing"},
-    "cfo": {"role": "💳 CFO", "sheet": "💳 Финансы_и_AI_Дожим", "route": "/finance"},
-    "admin": {"role": "🔧 Admin", "sheet": "⚙️ Настройки", "route": "/settings"},
+    "ceo": {"role": "👑 CEO", "sheet": "📄 Executive_OnePager", "landing_sheet": "📄 Executive_OnePager", "route": "/one-pager"},
+    "rop": {"role": "📋 РОП", "sheet": "📋 Пульт_РОПа_15_Минут", "landing_sheet": "📋 Пульт_РОПа_15_Минут", "route": "/rop-pult"},
+    "kam": {"role": "💼 KAM", "sheet": "⚡ Пульс_Компании", "landing_sheet": "⚡ Пульс_Компании", "route": "/pulse"},
+    "sdr": {"role": "📞 SDR", "sheet": "⚡ Пульс_Компании", "landing_sheet": "⚡ Пульс_Компании", "route": "/pulse"},
+    "cmo": {"role": "🌐 CMO", "sheet": "🌐 Маркетинг_и_Трафик", "landing_sheet": "🌐 Маркетинг_и_Трафик", "route": "/marketing"},
+    "cfo": {"role": "💳 CFO", "sheet": "💳 Финансы_и_AI_Дожим", "landing_sheet": "💳 Финансы_и_AI_Дожим", "route": "/finance"},
+    "admin": {"role": "🔧 Admin", "sheet": "⚙️ Настройки", "landing_sheet": "⚙️ Настройки", "route": "/settings"},
 }
 
 # Персональный маппинг пользователей (USERS_ROLES_MAP)

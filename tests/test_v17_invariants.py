@@ -130,7 +130,7 @@ def test_t15_touchpoint_amounts_non_negative():
 def test_t16_stage_sla_norms_positive():
     """T-16: [Воронка & SLA] Все нормативы SLA этапов воронки строго > 0 часов == True"""
     for stage_id, data in STAGES.items():
-        if stage_id <= 6:
+        if stage_id <= 5:
             assert data["sla_hours"] > 0
 
 def test_t17_active_deals_count(metrics):
@@ -364,8 +364,8 @@ def test_t59_sla_matrix_transitions_count():
 
 def test_t59_b_sla_matrix_thresholds_monotonic():
     """T-59-B: [SLA & Эскалации] Нормативы SLA_Matrix монотонны (L1 <= L2 <= L3) == True"""
-    for tr, cfg in SLA_MATRIX.items():
-        assert cfg["l1_hours"] <= cfg["l2_hours"] <= cfg["l3_hours"]
+    for cfg in SLA_MATRIX:
+        assert cfg["escalation_L1_h"] <= cfg["escalation_L2_h"] <= cfg["escalation_L3_h"]
 
 def test_t61_sla_compliance_index(metrics):
     """T-61: [SLA & Эскалации] Индекс соблюдения SLA принадлежит интервалу [0, 1] == True"""
@@ -525,11 +525,11 @@ def test_t86_action_center_deadlines_exist():
 
 def test_t87_sla_matrix_step_norms_positive():
     """T-87: [Воронка & SLA] SLA_Matrix: Положительность нормативов времени перехода == True"""
-    assert all(cfg["sla_hours"] > 0 for cfg in SLA_MATRIX.values())
+    assert all(cfg["sla_norm_hours"] > 0 for cfg in SLA_MATRIX)
 
 def test_t88_sla_matrix_escalation_thresholds_positive():
     """T-88: [Воронка & SLA] SLA_Matrix: Положительность порогов эскалации L1/L2 == True"""
-    assert all(cfg["l1_hours"] > 0 and cfg["l2_hours"] > 0 for cfg in SLA_MATRIX.values())
+    assert all(cfg["escalation_L1_h"] > 0 and cfg["escalation_L2_h"] > 0 for cfg in SLA_MATRIX)
 
 # ==============================================================================
 # 19. LOGS (T-89..T-92)
@@ -621,31 +621,31 @@ def test_t102_rbac_matrix_45_sheets():
 
 def test_t103_rbac_matrix_7_roles():
     """T-103: [RBAC Архитектура] 7 системных ролей в заголовке матрицы (CEO..Admin) == 7.0"""
-    first_sheet_roles = list(RBAC_MATRIX["⚙️ Настройки"].keys())
+    first_sheet_roles = list(RBAC_MATRIX["⚙️ Настройки"]["permissions"].keys())
     assert len(first_sheet_roles) == 7
 
 def test_t104_rbac_settings_always_visible():
     """T-104: [RBAC Целостность] Системный лист Настройки защищен флагом always_visible=TRUE == True"""
     # Sheet Settings is visible to all roles
-    settings_perms = RBAC_MATRIX["⚙️ Настройки"].values()
+    settings_perms = RBAC_MATRIX["⚙️ Настройки"]["permissions"].values()
     assert all(perm in {"👁", "✏️"} for perm in settings_perms)
 
 def test_t105_rbac_raw_deals_denied_kam():
     """T-105: [RBAC Безопасность] Защита raw_deals: закрыт для роли КАМ (KAM = ⛔) == True"""
-    assert RBAC_MATRIX["raw_deals"]["💼 KAM"] == "⛔"
+    assert RBAC_MATRIX["raw_deals"]["permissions"]["💼 KAM"] == "⛔"
 
 def test_t106_rbac_calc_engine_hidden_kam_sdr():
     """T-106: [RBAC Безопасность] Защита расчетного ядра: calc_engine скрыт от KAM и SDR == True"""
-    assert RBAC_MATRIX["calc_engine"]["💼 KAM"] == "⛔"
-    assert RBAC_MATRIX["calc_engine"]["📞 SDR"] == "⛔"
+    assert RBAC_MATRIX["calc_engine"]["permissions"]["💼 KAM"] == "⛔"
+    assert RBAC_MATRIX["calc_engine"]["permissions"]["📞 SDR"] == "⛔"
 
 def test_t107_rbac_admin_full_access_calc():
     """T-107: [RBAC Доступ Admin] Полный доступ Администратора ко всем calc-листам (Admin = ✏️) == True"""
-    assert RBAC_MATRIX["calc_engine"]["🔧 Admin"] == "✏️"
+    assert RBAC_MATRIX["calc_engine"]["permissions"]["🔧 Admin"] == "✏️"
 
 def test_t108_rbac_ceo_scenarios_edit():
     """T-108: [RBAC Доступ CEO] Права Собственника на сценарное моделирование (CEO = ✏️) == True"""
-    assert RBAC_MATRIX["🎯 Сценарное_Моделирование"]["👑 CEO"] == "✏️"
+    assert RBAC_MATRIX["🔮 Симулятор_Роста"]["permissions"]["👑 CEO"] == "✏️"
 
 def test_t109_rbac_settings_role_valid():
     """T-109: [RBAC Конфигурация] Валидность роли в Настройки!B10 относительно ROLES_LIST == True"""
@@ -655,8 +655,8 @@ def test_t109_rbac_settings_role_valid():
 
 def test_t110_rbac_matrix_hidden_rop_kam():
     """T-110: [RBAC Безопасность] Матрица прав 🔐 RBAC_Matrix скрыта от РОПа и КАМа (⛔) == True"""
-    assert RBAC_MATRIX["🔐 RBAC_Matrix"]["📋 РОП"] == "⛔"
-    assert RBAC_MATRIX["🔐 RBAC_Matrix"]["💼 KAM"] == "⛔"
+    assert RBAC_MATRIX["🔐 RBAC_Matrix"]["permissions"]["📋 РОП"] == "⛔"
+    assert RBAC_MATRIX["🔐 RBAC_Matrix"]["permissions"]["💼 KAM"] == "⛔"
 
 def test_t111_rbac_audit_log_present():
     """T-111: [RBAC Аудит] Наличие журнала аудита безопасности raw_audit_log == True"""

@@ -5,6 +5,8 @@
 *.sqlite3
 *.log
 -w
+*credentials*.json
+service_account.json
 
 # Python
 __pycache__/

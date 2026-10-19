@@ -171,6 +171,7 @@ async def receive_amocrm_webhook(
         return {
             "status": "ok",
             "crm": "amoCRM",
+            "source": "amoCRM",
             "event": "call_recorded",
             "call_id": call_payload.id,
             "sheets_synced": sheets_ok
@@ -204,6 +205,7 @@ async def receive_amocrm_webhook(
     return {
         "status": "ok",
         "crm": "amoCRM",
+        "source": "amoCRM",
         "event": "deal_updated",
         "processed_deal": deal_id
     }
@@ -299,6 +301,7 @@ async def receive_bitrix24_webhook(
         return {
             "status": "ok",
             "crm": "Bitrix24",
+            "source": "Bitrix24",
             "event": "call_recorded",
             "call_id": call_payload.id,
             "sheets_synced": sheets_ok
@@ -321,6 +324,7 @@ async def receive_bitrix24_webhook(
     return {
         "status": "ok",
         "crm": "Bitrix24",
+        "source": "Bitrix24",
         "event": "deal_updated",
         "processed_deal": deal_id
     }
