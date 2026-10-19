@@ -212,6 +212,7 @@ async def _process_amocrm_webhook(request: Request, tenant_param: Optional[str] 
         return {
             "status": "ok",
             "crm": "amoCRM",
+            "source": "amoCRM",
             "tenant_id": org_id,
             "event": "call_recorded",
             "call_id": call_payload.id,
@@ -242,6 +243,7 @@ async def _process_amocrm_webhook(request: Request, tenant_param: Optional[str] 
     return {
         "status": "ok",
         "crm": "amoCRM",
+        "source": "amoCRM",
         "tenant_id": org_id,
         "event": "deal_updated",
         "processed_deal": deal_id
@@ -348,6 +350,7 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: Optional[str
         return {
             "status": "ok",
             "crm": "Bitrix24",
+            "source": "Bitrix24",
             "tenant_id": org_id,
             "event": "call_recorded",
             "call_id": call_payload.id,
@@ -367,6 +370,7 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: Optional[str
     return {
         "status": "ok",
         "crm": "Bitrix24",
+        "source": "Bitrix24",
         "tenant_id": org_id,
         "event": "deal_updated",
         "processed_deal": deal_id

@@ -191,6 +191,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> List
                 "status_label": status_label,
                 "risk_amount": risk_amt,
                 "next_step": next_step,
+                "date": r[3] if len(r) > 3 and r[3] else "",
                 "cr": cr_list,
                 "error_summary": error_sum or "Анализ завершен ИИ",
                 "recommendation": rec or "Следовать регламенту фиксации Next Step",

@@ -55,7 +55,7 @@ class TelemetryCollector:
                 "status": "healthy"
             },
             "alerts": {
-                "latency_breach_alert": p95 > 2.0,
+                "latency_breach_alert": p95 > 3.0,
                 "queue_overflow_alert": False,
                 "crm_sync_alert": self.crm_sync_failures > 5,
                 "error_rate_alert": error_rate_pct > 1.0

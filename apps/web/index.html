@@ -6124,97 +6124,8 @@
         </div>
 
         <div id="ropPedestalCards" style="display: none;">
-          <div class="podium-grid">
-            <!-- 2nd Place: Надежда (Left) -->
-            <div class="podium-card rank-2" style="cursor: pointer;" onclick="filterRepAudit('Надежда')" title="Нажмите для фильтрации звонков Надежды">
-              <div class="podium-avatar-wrap">
-                <div class="podium-avatar">Н</div>
-              </div>
-              <div class="podium-rep-name">Надежда</div>
-              <div class="podium-role-badge">2 МЕСТО &bull; ЭТАЛОН СКРИПТА</div>
-              <div class="podium-metrics-box">
-                <div class="podium-metric-row">
-                  <span style="color: var(--text-muted);">Качество речи:</span>
-                  <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">12.0 / 13 (РЕКОРД)</span>
-                </div>
-                <div class="podium-metric-row">
-                  <span style="color: var(--text-muted);">В пайплайне:</span>
-                  <strong style="color: #fff; font-family: 'JetBrains Mono', monospace;">500 000 ₽</strong>
-                </div>
-                <div class="podium-metric-row">
-                  <span style="color: var(--text-muted);">Next Step:</span>
-                  <span style="color: #34d399; font-weight: 700;">100% (1 из 1)</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 1st Place: Заряна (Center - Raised) -->
-            <div class="podium-card rank-1" style="cursor: pointer;" onclick="filterRepAudit('Заряна')" title="Нажмите для фильтрации звонков Заряны">
-              <div class="podium-avatar-wrap">
-                <span class="podium-crown" style="font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fbbf24;">ТОП-1</span>
-                <div class="podium-avatar">З</div>
-              </div>
-              <div class="podium-rep-name">Заряна</div>
-              <div class="podium-role-badge" style="color: #f59e0b; font-weight: 800;">1 МЕСТО &bull; ТОП-ПЕРФОРМЕР</div>
-              <div class="podium-metrics-box" style="border: 1px solid rgba(245, 158, 11, 0.25);">
-                <div class="podium-metric-row">
-                  <span style="color: var(--text-muted);">Качество речи:</span>
-                  <span class="delta-badge delta-pos" style="padding: 1px 6px; font-size: 0.68rem;">9.8 / 13 (ТОП-БАЛЛ)</span>
-                </div>
-                <div class="podium-metric-row">
-                  <span style="color: var(--text-muted);">В пайплайне:</span>
-                  <strong style="color: #fbbf24; font-family: 'JetBrains Mono', monospace;">2 500 000 ₽ (5 сделок)</strong>
-                </div>
-                <div class="podium-metric-row">
-                  <span style="color: var(--text-muted);">Next Step:</span>
-                  <span style="color: #34d399; font-weight: 700;">80% (4 из 5)</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 3rd Place: Виктория (Right) -->
-            <div class="podium-card rank-3" style="cursor: pointer;" onclick="filterRepAudit('Виктория')" title="Нажмите для фильтрации звонков Виктории">
-              <div class="podium-avatar-wrap">
-                <div class="podium-avatar">В</div>
-              </div>
-              <div class="podium-rep-name">Виктория</div>
-              <div class="podium-role-badge">3 МЕСТО &bull; СТАБИЛЬНОСТЬ</div>
-              <div class="podium-metrics-box">
-                <div class="podium-metric-row">
-                  <span style="color: var(--text-muted);">Качество речи:</span>
-                  <span class="delta-badge delta-cyan" style="padding: 1px 6px; font-size: 0.68rem;">9.5 / 13 (НОРМА)</span>
-                </div>
-                <div class="podium-metric-row">
-                  <span style="color: var(--text-muted);">В пайплайне:</span>
-                  <strong style="color: #fff; font-family: 'JetBrains Mono', monospace;">1 000 000 ₽ (2 сделки)</strong>
-                </div>
-                <div class="podium-metric-row">
-                  <span style="color: var(--text-muted);">Next Step:</span>
-                  <span style="color: #34d399; font-weight: 700;">100% (2 из 2)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- P0 Hazard Rep Alert Card -->
-          <div class="hazard-alert-strip" style="cursor: pointer;" onclick="filterRepAudit('Светлана')" title="Нажмите для разбора критических звонков Светланы">
-            <div style="display: flex; align-items: center; gap: 14px;">
-              <div class="hazard-rep-avatar">С</div>
-              <div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="delta-badge delta-neg"><span class="delta-dot"></span>P0 ЗОНА КРИТИЧЕСКОГО РИСКА</span>
-                  <strong style="color: #fff; font-size: 0.88rem;">Светлана</strong>
-                  <span style="font-size: 0.74rem; color: #fca5a5;">(1 000 000 ₽ в работе &bull; 2 сделки)</span>
-                </div>
-                <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">
-                  Средний балл речи: <strong style="color: #fb7185;">5.5 / 13</strong> &bull; Брак Next Step: <strong style="color: #fb7185;">100% (2 звонка слиты без фиксации слота)</strong>
-                </div>
-              </div>
-            </div>
-            <button class="btn btn-emerald" onclick="event.stopPropagation(); document.getElementById('script-case01').scrollIntoView({behavior: 'smooth'})" style="font-size: 0.74rem;">
-              <span>Разбор звонков и дожим (15 мин)</span>
-            </button>
-          </div>
+          <div id="ropPedestalGrid" class="podium-grid"></div>
+          <div id="ropHazardRepCard" style="margin-top: 14px;"></div>
         </div>
 
         <!-- Zero State Placeholder for Podium -->
@@ -6271,107 +6182,7 @@
         </div>
 
         <div id="ropRescueDealsCards" style="display: none; flex-direction: column; gap: 14px;">
-          
-          <!-- Deal 1 -->
-          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
-              <div>
-                <span class="badge-lost" style="margin-right: 6px;">P0 КРИТИЧЕСКИЙ</span>
-                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 01: Услуги повышения лояльности клиентов (asales)</strong>
-                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Светлана &bull; 500 000 ₽)</span>
-              </div>
-              <button class="btn btn-emerald" onclick="copyRescueScript('case01')">
-                <span>Скопировать в WhatsApp</span>
-              </button>
-            </div>
-            <div style="font-size: 0.78rem; color: #fca5a5; margin-bottom: 6px;">
-              <strong>Симптом:</strong> Нет жесткого Next Step; клиент предложил скинуть на почту и ушел от встречи; боли клиники не квалифицированы.
-            </div>
-            <div id="script-case01" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
-              "Здравствуйте! По вашей заявке на услуги программы лояльности на сумму 500 000 ₽ согласовали спецусловия до конца недели: гарантия окупаемости + аудит оттока в подарок. Давайте зафиксируем бронь? Удобно сегодня созвониться на 5 минут в 14:00?"
-            </div>
-          </div>
-
-          <!-- Deal 2 -->
-          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
-              <div>
-                <span class="badge-lost" style="margin-right: 6px;">P0 КРИТИЧЕСКИЙ</span>
-                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 02: Услуги сопровождения гос закупок (asales)</strong>
-                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Надежда &bull; 500 000 ₽)</span>
-              </div>
-              <button class="btn btn-emerald" onclick="copyRescueScript('case02')">
-                <span>Скопировать в WhatsApp</span>
-              </button>
-            </div>
-            <div style="font-size: 0.78rem; color: #fca5a5; margin-bottom: 6px;">
-              <strong>Симптом:</strong> Сомнение клиента в прозрачности тендеров; не показаны кейсы в геодезии и экологии с суммами контрактов.
-            </div>
-            <div id="script-case02" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
-              "Игорь, добрый день! Подготовили 2 кейса побед в тендерах по геодезии и рекультивации на 4.2 млн ₽ с прозрачным допуском. В понедельник в 15:00 наш эксперт покажет документацию на 10 минут в Zoom. Ссылку направить сюда?"
-            </div>
-          </div>
-
-          <!-- Deal 3 -->
-          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
-              <div>
-                <span class="badge-warn" style="margin-right: 6px;">P1 ВНИМАНИЕ</span>
-                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 03: Продажа ортопедических матрасов (asales)</strong>
-                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Заряна &bull; 500 000 ₽)</span>
-              </div>
-              <button class="btn btn-emerald" onclick="copyRescueScript('case03')">
-                <span>Скопировать в WhatsApp</span>
-              </button>
-            </div>
-            <div style="font-size: 0.78rem; color: #fde68a; margin-bottom: 6px;">
-              <strong>Симптом:</strong> Согласован только звонок «уточнить время»; клиент может быть на производстве; нет твердого слота.
-            </div>
-            <div id="script-case03" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
-              "Сергей Юрьевич, здравствуйте! Забронировали образец матраса 2х1200 для теста на вашем производстве. Специалист будет в вашем районе во вторник ровно в 12:00. Подтвердите, пожалуйста, пропуск?"
-            </div>
-          </div>
-
-          <!-- Deal 4 -->
-          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
-              <div>
-                <span class="badge-lost" style="margin-right: 6px;">P0 КРИТИЧЕСКИЙ</span>
-                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 04: Продажа CRM Битрикс24 (asales)</strong>
-                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Светлана &bull; 500 000 ₽)</span>
-              </div>
-              <button class="btn btn-emerald" onclick="copyRescueScript('case04')">
-                <span>Скопировать в WhatsApp</span>
-              </button>
-            </div>
-            <div style="font-size: 0.78rem; color: #fca5a5; margin-bottom: 6px;">
-              <strong>Симптом:</strong> Слив на почту; клиент сравнивает с МойСклад/1С; не показана ценность автоматизации воронки.
-            </div>
-            <div id="script-case04" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
-              "Алексей, добрый день! Отправили на sales@ краткую таблицу сравнения Битрикс24 vs 1С в вашей нише: как исключить потерю лидов без смены привычного учета. В четверг в 14:00 удобно созвониться на 7 минут?"
-            </div>
-          </div>
-
-          <!-- Deal 5 -->
-          <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
-              <div>
-                <span class="badge-lost" style="margin-right: 6px;">P0 КРИТИЧЕСКИЙ</span>
-                <strong style="color: #fff; font-size: 0.88rem;">B24 Кейс 05: Услуги софинансирования кредита (asales)</strong>
-                <span style="font-size: 0.74rem; color: var(--text-muted); margin-left: 6px;">(Виктория &bull; 500 000 ₽)</span>
-              </div>
-              <button class="btn btn-emerald" onclick="copyRescueScript('case05')">
-                <span>Скопировать в WhatsApp</span>
-              </button>
-            </div>
-            <div style="font-size: 0.78rem; color: #fca5a5; margin-bottom: 6px;">
-              <strong>Симптом:</strong> Слабая отработка возражения 'пока нет'; менеджер читал монологом без пауз; не выявлены параметры кредита.
-            </div>
-            <div id="script-case05" style="font-size: 0.76rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: var(--radius-sm); border-left: 3px solid #34d399; color: var(--text-secondary); font-style: italic;">
-              "Николай Петрович, здравствуйте! Эксперт по кредитному софинансированию рассчитал экономию до 280 000 ₽ по вашим платежам с гарантией по договору. Завтра в 10:00 удобно принять созвон с расчетом?"
-            </div>
-          </div>
-
+          <div id="ropRescueDealsDynamicList" style="display: flex; flex-direction: column; gap: 14px;"></div>
         </div>
       </div>
 
@@ -10299,14 +10110,14 @@
       <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 16px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="tenant-badge" style="font-size: 0.72rem;">TNT-001 • САМОЗАНЯТЫЙ</span>
-            <span class="badge-won">ЭТАЛОННАЯ СХОДИМОСТЬ (100% SSOT)</span>
+            <span id="onePagerTenantBadge" class="tenant-badge" style="font-size: 0.72rem;">TNT-001 • САМОЗАНЯТЫЙ</span>
+            <span id="onePagerSsotBadge" class="badge-won">ЭТАЛОННАЯ СХОДИМОСТЬ (100% SSOT)</span>
           </div>
           <h2 style="font-size: 1.45rem; font-weight: 800; color: #fff; margin-top: 6px;">
             RevOps Executive One-Pager &bull; Управленческий дайджест
           </h2>
-          <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
-            Отчетный срез: Октябрь 2026 &bull; РОП: Дмитрий Федотов (info@ai-rop.ru) &bull; amoCRM API v4 + Битрикс24 REST
+          <div id="onePagerDateSub" style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
+            Отчетный срез: Октябрь 2026 &bull; РОП: Интеллектуальный Аудит &bull; amoCRM API v4 + Битрикс24 REST
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;" class="no-print">
@@ -10328,19 +10139,19 @@
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
             <div>
               <div style="font-size: 0.7rem; color: var(--text-muted);">План месяца:</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #fff;">5 000 000 ₽</div>
+              <div id="onePagerPlanVal" style="font-size: 1.15rem; font-weight: 800; color: #fff;">5 000 000 ₽</div>
             </div>
             <div>
               <div style="font-size: 0.7rem; color: var(--text-muted);">Факт Won:</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #34d399;">500 000 ₽ (10%)</div>
+              <div id="onePagerFactVal" style="font-size: 1.15rem; font-weight: 800; color: #34d399;">500 000 ₽ (10%)</div>
             </div>
             <div>
               <div style="font-size: 0.7rem; color: var(--text-muted);">Взвешенный SSOT:</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;">2 375 000 ₽</div>
+              <div id="onePagerSsotVal" style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;">2 375 000 ₽</div>
             </div>
             <div>
               <div style="font-size: 0.7rem; color: var(--text-muted);">Пайплайн в работе:</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #c4b5fd;">4 500 000 ₽ (9 сд.)</div>
+              <div id="onePagerPipeVal" style="font-size: 1.15rem; font-weight: 800; color: #c4b5fd;">4 500 000 ₽ (9 сд.)</div>
             </div>
           </div>
         </div>
@@ -10353,19 +10164,19 @@
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
             <div>
               <div style="font-size: 0.7rem; color: var(--text-muted);">Средний балл речи:</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #34d399;">9.1 / 13 (70.0%)</div>
+              <div id="onePagerScoreVal" style="font-size: 1.15rem; font-weight: 800; color: #34d399;">9.1 / 13 (70.0%)</div>
             </div>
             <div>
               <div style="font-size: 0.7rem; color: var(--text-muted);">Фиксация Next Step:</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;">70.0% (7/10)</div>
+              <div id="onePagerNextStepVal" style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;">70.0% (7/10)</div>
             </div>
             <div>
               <div style="font-size: 0.7rem; color: var(--text-muted);">Брак речи (&lt;9 баллов):</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #fb7185;">4 звонка (1.5M ₽)</div>
+              <div id="onePagerRiskCallsVal" style="font-size: 1.15rem; font-weight: 800; color: #fb7185;">4 звонка (1.5M ₽)</div>
             </div>
             <div>
               <div style="font-size: 0.7rem; color: var(--text-muted);">Эталонные диалоги:</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: var(--accent-cyan);">4 звонка (68% Win)</div>
+              <div id="onePagerWonCallsVal" style="font-size: 1.15rem; font-weight: 800; color: var(--accent-cyan);">4 звонка (68% Win)</div>
             </div>
           </div>
         </div>
@@ -10375,15 +10186,11 @@
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;">
         <!-- Box 3: Топ-5 сделок в риске -->
         <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-          <div style="font-size: 0.74rem; font-weight: 700; color: #fb7185; text-transform: uppercase; margin-bottom: 8px;">
-            3. Пульт РОПа: Сделки в риске срыва (2 500 000 ₽)
+          <div id="onePagerRiskTitle" style="font-size: 0.74rem; font-weight: 700; color: #fb7185; text-transform: uppercase; margin-bottom: 8px;">
+            3. Пульт РОПа: Сделки в риске срыва
           </div>
-          <div style="font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary);">
-            <div>&bull; <strong>Кейс 01 (Лояльность):</strong> 500k ₽ &bull; Слив на почту &bull; Перезвон РОПа</div>
-            <div>&bull; <strong>Кейс 02 (Госзакупки):</strong> 500k ₽ &bull; Возражение недоверия &bull; Оффер Zoom</div>
-            <div>&bull; <strong>Кейс 03 (Матрасы):</strong> 500k ₽ &bull; Плавающий слот &bull; Фиксация вторник 12:00</div>
-            <div>&bull; <strong>Кейс 04 (Битрикс24):</strong> 500k ₽ &bull; Сравнение с 1С &bull; Сравнит. матрица</div>
-            <div>&bull; <strong>Кейс 05 (Кредит):</strong> 500k ₽ &bull; Возражение 'пока нет' &bull; Расчет выгоды</div>
+          <div id="onePagerRiskCasesList" style="font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary);">
+            <div>&bull; <strong>Кейс 01:</strong> 500k ₽ &bull; Слив на почту &bull; Перезвон РОПа</div>
           </div>
         </div>
 
@@ -10392,19 +10199,19 @@
           <div style="font-size: 0.74rem; font-weight: 700; color: #a78bfa; text-transform: uppercase; margin-bottom: 8px;">
             4. Вероятностный коридор Монте-Карло 3.0
           </div>
-          <div style="font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary);">
+          <div id="onePagerMonteCarloList" style="font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary);">
             <div>&bull; <strong>P10 (Пессимистичный):</strong> 1 863 250 ₽ (90% гарантия)</div>
             <div>&bull; <strong>P50 (Медиана):</strong> 2 578 250 ₽ (математическое ожидание)</div>
             <div>&bull; <strong>P90 (Оптимистичный с ИИ):</strong> 3 213 650 ₽</div>
-            <div>&bull; <strong>Вероятность плана 5.0M ₽:</strong> 45.0%</div>
-            <div style="margin-top: 6px; color: #34d399; font-weight: 700;">Вердикт: Для взятия 5 млн ₽ необходим дожим сделок Кейс 01 и Кейс 02.</div>
+            <div>&bull; <strong>Вероятность плана:</strong> 45.0%</div>
+            <div id="onePagerVerdict" style="margin-top: 6px; color: #34d399; font-weight: 700;">Вердикт: Для выполнения плана необходим дожим сделок в риске.</div>
           </div>
         </div>
       </div>
 
       <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-muted);">
         <span>RevOps Enterprise OS V20.0 &bull; Centurial Baseline 160 QA &bull; 152-ФЗ РФ Compliant</span>
-        <span>Сформировано: 16.10.2026 22:30 &bull; Подпись РОПа: ____________________</span>
+        <span id="onePagerFooterDate">Сформировано: 16.10.2026 22:30 &bull; Подпись РОПа: ____________________</span>
       </div>
     </div>
   </div>
@@ -10421,14 +10228,14 @@
   </div>
 
   <!-- Javascript Modules (v20.6 Tier-1 UI Redesign Architecture) -->
-  <script src="js/core.js?v=20.11-crm-switch-fix"></script>
-  <script src="js/calls.js?v=20.11-crm-switch-fix"></script>
-  <script src="js/charts.js?v=20.11-crm-switch-fix"></script>
-  <script src="js/deals.js?v=20.11-crm-switch-fix"></script>
-  <script src="js/admin.js?v=20.11-crm-switch-fix"></script>
-  <script src="js/settings.js?v=20.11-crm-switch-fix"></script>
-  <script src="js/analyst.js?v=20.11-crm-switch-fix"></script>
-  <script src="app.js?v=20.11-crm-switch-fix"></script>
+  <script src="js/core.js?v=20.12-dynamic-analytics"></script>
+  <script src="js/calls.js?v=20.12-dynamic-analytics"></script>
+  <script src="js/charts.js?v=20.12-dynamic-analytics"></script>
+  <script src="js/deals.js?v=20.12-dynamic-analytics"></script>
+  <script src="js/admin.js?v=20.12-dynamic-analytics"></script>
+  <script src="js/settings.js?v=20.12-dynamic-analytics"></script>
+  <script src="js/analyst.js?v=20.12-dynamic-analytics"></script>
+  <script src="app.js?v=20.12-dynamic-analytics"></script>
 
 
   <!-- Global Command Palette Modal (Ctrl+K / Cmd+K) -->

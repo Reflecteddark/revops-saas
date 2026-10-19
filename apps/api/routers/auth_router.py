@@ -4,7 +4,9 @@ Auth Router: Tenant Onboarding, Login, and Profile.
 
 import re
 import uuid
+from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from packages.database.models import Tenant, User, Workspace, UserRole, SubscriptionTier

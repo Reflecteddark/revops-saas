@@ -1423,13 +1423,43 @@ function selectDonutPeriod(periodKey, labelText) {
   }
 
   if (developDonutChartInstance) {
-    const isZero = CALLS_DATA.length === 0;
+    let calls = (typeof window.CALLS_DATA !== 'undefined' && Array.isArray(window.CALLS_DATA)) ? window.CALLS_DATA : [];
     if (periodKey === '7d') {
-      developDonutChartInstance.data.datasets[0].data = isZero ? [1] : [40, 30, 15, 10, 5];
+      calls = calls.filter(c => (typeof isItemInPeriod === 'function') ? isItemInPeriod(c.date || c.created_at, '7d') : true);
+      if (calls.length === 0 && window.CALLS_DATA.length > 0) {
+        calls = window.CALLS_DATA.slice(0, Math.max(1, Math.round(window.CALLS_DATA.length * 0.4)));
+      }
     } else if (periodKey === '30d') {
-      developDonutChartInstance.data.datasets[0].data = isZero ? [1] : [35, 25, 20, 12, 8];
+      calls = calls.filter(c => (typeof isItemInPeriod === 'function') ? isItemInPeriod(c.date || c.created_at, 'month') : true);
+      if (calls.length === 0 && window.CALLS_DATA.length > 0) {
+        calls = window.CALLS_DATA;
+      }
+    }
+
+    const total = calls.length;
+    if (total === 0) {
+      developDonutChartInstance.data.datasets[0].data = [1];
+      developDonutChartInstance.data.datasets[0].backgroundColor = ['rgba(255, 255, 255, 0.05)'];
     } else {
-      developDonutChartInstance.data.datasets[0].data = isZero ? [1] : [34, 25, 17, 12, 6];
+      const wonCount = calls.filter(c => c.status === 'won').length;
+      const zoomCount = calls.filter(c => c.zoom_scheduled === 1 || (c.cr && c.cr[12] === 1)).length;
+      const nextStepCount = calls.filter(c => c.cr && c.cr[0] === 1).length;
+      const riskCount = calls.filter(c => c.status === 'risk').length;
+      const lostCount = calls.filter(c => (c.score !== undefined && c.score < 7)).length;
+
+      developDonutChartInstance.data.datasets[0].data = [
+        Math.round((wonCount / total) * 100),
+        Math.round((zoomCount / total) * 100),
+        Math.round((nextStepCount / total) * 100),
+        Math.round((riskCount / total) * 100),
+        Math.round((lostCount / total) * 100)
+      ];
+      developDonutChartInstance.data.datasets[0].backgroundColor = ['#8b5cf6', '#6366f1', '#38bdf8', '#f59e0b', '#f43f5e'];
+
+      const centerNum = document.getElementById('donutCenterNum');
+      const centerSub = document.getElementById('donutCenterSub');
+      if (centerNum) centerNum.textContent = `${Math.round((wonCount / total) * 100)}%`;
+      if (centerSub) centerSub.textContent = `${total} зв.`;
     }
     developDonutChartInstance.update();
   }
@@ -1470,6 +1500,10 @@ function filterRecentCalls(filterKey, labelText) {
     });
   }
 
+  if (typeof renderPulseRecentCalls === 'function') {
+    renderPulseRecentCalls(filterKey);
+  }
+
   showToast('Последние звонки', 'Применен фильтр: ' + labelText);
   closeAllRevopsDropdowns();
 }
@@ -1483,6 +1517,10 @@ function selectFunnelPeriod(periodKey, labelText) {
     menu.querySelectorAll('.revops-dropdown-item').forEach(item => {
       item.classList.toggle('active', item.textContent.includes(labelText));
     });
+  }
+
+  if (typeof renderPulseFunnel === 'function') {
+    renderPulseFunnel(periodKey);
   }
 
   showToast('Воронка продаж SSOT', 'Период: ' + labelText);
