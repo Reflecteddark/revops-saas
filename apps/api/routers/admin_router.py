@@ -1769,7 +1769,8 @@ def execute_crm_action(req: CRMActionRequest):
             Path("/opt/revops-enterprise-os/tenants_registry.json"),
             ENTERPRISE_OS_DIR / "tenants_registry.json",
             Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "tenants_registry.json",
-            Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "multitenant_revops" / "tenants_registry.json"
+            Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "multitenant_revops" / "tenants_registry.json",
+            Path("/opt/revops-enterprise-os/multitenant_revops/tenants_registry.json")
         ]
         seen_paths = set()
         for rp in candidate_reg_paths:
@@ -1787,10 +1788,65 @@ def execute_crm_action(req: CRMActionRequest):
                 except Exception as e:
                     logger.error(f"Failed to update tenant crm_type in {rp}: {e}")
 
+        # Invalidate tenant and deals cache
         from ..tenant_registry import _REGISTRY_CACHE
         _REGISTRY_CACHE["timestamp"] = 0
 
-        msg = f"Активная CRM для {tenant_id} успешно переключена на {new_crm.upper()}!"
+        # Automated reset of Google Sheets raw_deals and ЛК data
+        reset_details = ""
+        try:
+            candidate_scripts = [
+                ENTERPRISE_OS_DIR / "scripts" / "switch_crm_with_reset.py",
+                Path("/opt/revops-enterprise-os/scripts/switch_crm_with_reset.py"),
+                Path(__file__).resolve().parent.parent.parent.parent / "revops-enterprise-os" / "scripts" / "switch_crm_with_reset.py"
+            ]
+            reset_script = next((s for s in candidate_scripts if s.exists()), None)
+            if reset_script:
+                env = os.environ.copy()
+                env["PYTHONIOENCODING"] = "utf-8"
+                python_bin = sys.executable
+                if Path("/opt/revops-saas/venv/bin/python").exists():
+                    python_bin = "/opt/revops-saas/venv/bin/python"
+
+                run_res = subprocess.run(
+                    [python_bin, str(reset_script), "--tenant", tenant_id, "--crm", new_crm],
+                    cwd=str(reset_script.parent.parent),
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    env=env,
+                    timeout=60
+                )
+                if run_res.returncode == 0:
+                    reset_details = f" Таблица raw_deals и ЛК автоматически очищены и синхронизированы с {new_crm.upper()}."
+                    append_console_log(f"🧹 Google Таблица raw_deals и ЛК автоматически очищены и синхронизированы с {new_crm.upper()}!", "success")
+                else:
+                    logger.warning(f"Reset script failed (code {run_res.returncode}): {run_res.stderr or run_res.stdout}")
+        except Exception as e:
+            logger.error(f"Failed to auto-reset sheet on CRM switch: {e}")
+
+        # Evict in-memory deals cache so ЛК immediately displays fresh data
+        try:
+            from .deals_router import _DEALS_CACHE
+            _DEALS_CACHE.clear()
+        except Exception:
+            pass
+
+        # Broadcast real-time WebSocket event to active dashboard instances
+        try:
+            import asyncio
+            from ..websocket_manager import manager
+            asyncio.create_task(manager.broadcast(tenant_id, {
+                "type": "crm_switched",
+                "action": "switch_crm",
+                "active_crm": new_crm,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }))
+        except Exception:
+            pass
+
+        msg = f"Активная CRM для {tenant_id} успешно переключена на {new_crm.upper()}!{reset_details}"
         append_console_log(f"🔄 {msg}", "success")
         return {"success": True, "action": action, "active_crm": new_crm, "message": msg}
 
