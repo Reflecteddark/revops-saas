@@ -66,6 +66,9 @@ async function onTenantSelected(tenantId) {
   if (typeof fetchLiveCallsData === 'function') {
     await fetchLiveCallsData(true);
   }
+  if (typeof fetchLiveDealsData === 'function') {
+    await fetchLiveDealsData(false);
+  }
   if (typeof fetchAndPopulateSettings === 'function') {
     await fetchAndPopulateSettings(false);
   }
@@ -545,7 +548,7 @@ function animateCounter(el, target, duration = 900) {
     if (heroRev && heroRev !== el) {
       animateCounter(heroRev, target, duration);
     }
-  } else if (el.id === 'metricSsotVal') {
+  } else if (el.id === 'metricPipeVal') {
     const heroPipe = document.getElementById('heroPipeline');
     if (heroPipe && heroPipe !== el) {
       animateCounter(heroPipe, target, duration);

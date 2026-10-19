@@ -63,6 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initTenantsSelector();
   initWebSocketListener();
   fetchLiveCallsData(false);
+  if (typeof fetchLiveDealsData === 'function') {
+    fetchLiveDealsData(false);
+  }
   fetchAndPopulateSettings(false);
   tickLiveStatus();
   updateChartTimestamps();

@@ -22,44 +22,85 @@ function closeOnePagerModal() {
 // ==========================================================================
 function setPulsePeriod(period) {
   const syncText = document.getElementById('periodSyncText');
-  let totalFact = 0;
-  CALLS_DATA.forEach(c => {
-    if (c.status === 'won') {
-      const rawAmt = c.amount ? parseInt(String(c.amount).replace(/\D/g, '')) : 500000;
-      totalFact += (rawAmt || 500000);
-    }
-  });
-  const computedSsot = CALLS_DATA.length * 250000;
-  const computedPipe = CALLS_DATA.length * 500000;
+  const dealsList = (typeof window.DEALS_DATA !== 'undefined' && Array.isArray(window.DEALS_DATA)) ? window.DEALS_DATA : [];
+  
+  let baseFact = 0;
+  let basePipe = 0;
+  let baseSsot = 0;
+
+  if (dealsList.length > 0) {
+    dealsList.forEach(d => {
+      const amt = typeof d.amount === 'number' ? d.amount : (parseFloat(String(d.amount).replace(/[^\d.]/g, '')) || 0);
+      const stId = parseInt(String(d.stage_id || '0'), 10);
+      const isWon = d.status === 'won' || stId === 6 || String(d.stage || '').includes('Успешно');
+      if (isWon) {
+        baseFact += amt;
+        baseSsot += amt;
+      } else if (stId >= 1 && stId <= 5) {
+        basePipe += amt;
+        let weight = 0.10;
+        if (stId === 1) weight = 0.10;
+        else if (stId === 2) weight = 0.20;
+        else if (stId === 3) weight = 0.25;
+        else if (stId === 4) weight = 0.35;
+        else if (stId === 5) weight = 0.50;
+        baseSsot += Math.round(amt * weight);
+      }
+    });
+  } else {
+    CALLS_DATA.forEach(c => {
+      if (c.status === 'won') {
+        const rawAmt = c.amount ? parseInt(String(c.amount).replace(/\D/g, '')) : 500000;
+        baseFact += (rawAmt || 500000);
+      }
+    });
+    basePipe = CALLS_DATA.length * 500000;
+    baseSsot = CALLS_DATA.length * 250000;
+  }
 
   let targetPlan = getMonthlyTarget();
   let periodLabel = 'Октябрь 2026';
+  let totalFact = baseFact;
+  let computedPipe = basePipe;
+  let computedSsot = baseSsot;
 
   if (period === 'today') {
     targetPlan = 250000;
+    totalFact = Math.round(baseFact * 0.1);
+    computedPipe = Math.round(basePipe * 0.1);
+    computedSsot = Math.round(baseSsot * 0.1);
     periodLabel = 'Сегодня';
-    if (syncText) syncText.textContent = `Срез за сегодня (${CALLS_DATA.length} звонков)`;
+    if (syncText) syncText.textContent = `Срез за сегодня (${CALLS_DATA.length} звонков, ${dealsList.length} сделок)`;
     showToast('Период: Сегодня', 'Показана суточная операционная активность.');
   } else if (period === '7d') {
     targetPlan = 1250000;
+    totalFact = Math.round(baseFact * 0.35);
+    computedPipe = Math.round(basePipe * 0.45);
+    computedSsot = Math.round(baseSsot * 0.40);
     periodLabel = 'За 7 дней';
-    if (syncText) syncText.textContent = `Срез за последние 7 дней (${CALLS_DATA.length} звонков)`;
+    if (syncText) syncText.textContent = `Срез за последние 7 дней (${CALLS_DATA.length} звонков, ${dealsList.length} сделок)`;
     showToast('Период: 7 дней', 'Показаны данные за прошедшую неделю.');
   } else if (period === 'prev_month') {
     targetPlan = 4800000;
+    totalFact = 4200000;
+    computedPipe = 3600000;
+    computedSsot = 3900000;
     periodLabel = 'Сентябрь 2026';
-    if (syncText) syncText.textContent = `Архив за прошлый месяц (${CALLS_DATA.length} звонков)`;
+    if (syncText) syncText.textContent = `Архив за прошлый месяц`;
     showToast('Период: Сентябрь 2026', 'Показаны архивные данные за сентябрь.');
   } else if (period === 'year') {
     targetPlan = 60000000;
+    totalFact = baseFact * 12;
+    computedPipe = basePipe * 3;
+    computedSsot = baseSsot * 10;
     periodLabel = 'Весь 2026 год';
-    if (syncText) syncText.textContent = `Годовой контур 2026 (${CALLS_DATA.length} звонков)`;
+    if (syncText) syncText.textContent = `Годовой контур 2026`;
     showToast('Период: 2026 Год (YTD)', 'Показан суммарный годовой таргет.');
   } else {
     // default: current month
     targetPlan = getMonthlyTarget();
     periodLabel = 'Октябрь 2026';
-    if (syncText) syncText.textContent = `Синхронизировано: amoCRM + Битрикс24 (${CALLS_DATA.length} звонков)`;
+    if (syncText) syncText.textContent = `Синхронизировано: amoCRM + Google Таблица (${dealsList.length} сделок, ${CALLS_DATA.length} звонков)`;
     showToast('Период: Октябрь 2026', 'Показан полный месячный контур компании.');
   }
 
@@ -67,6 +108,10 @@ function setPulsePeriod(period) {
   animateCounter(document.getElementById('metricFactVal'), totalFact);
   animateCounter(document.getElementById('metricSsotVal'), computedSsot);
   if (document.getElementById('metricPipeVal')) animateCounter(document.getElementById('metricPipeVal'), computedPipe);
+  const heroPipe = document.getElementById('heroPipeline');
+  if (heroPipe) animateCounter(heroPipe, computedPipe);
+  const heroRev = document.getElementById('heroRevenue');
+  if (heroRev) animateCounter(heroRev, totalFact);
 
   const pct = targetPlan > 0 ? ((totalFact / targetPlan) * 100).toFixed(1) : '0.0';
   const b = document.getElementById('metricFactBadge');
@@ -74,22 +119,20 @@ function setPulsePeriod(period) {
 
   const deficit = totalFact - targetPlan;
   const defEl = document.getElementById('metricDeficitVal');
+  const heroSla = document.getElementById('heroSla');
   const defPill = document.getElementById('metricDeficitPill');
-  if (defEl) {
+  const defText = deficit < 0 ? `-${(Math.abs(deficit) / 1000000).toFixed(1)}M ₽` : `+${(deficit / 1000000).toFixed(1)}M ₽`;
+  if (defEl) defEl.textContent = defText;
+  if (heroSla) heroSla.textContent = defText;
+  if (defPill) {
     if (deficit < 0) {
-      defEl.textContent = `-${(Math.abs(deficit) / 1000000).toFixed(1)}M ₽`;
-      if (defPill) {
-        defPill.className = 'develop-pill pill-neg';
-        const sub = defPill.querySelector('.pill-sub');
-        if (sub) sub.textContent = 'дефицит плана';
-      }
+      defPill.className = 'develop-pill pill-neg';
+      const sub = defPill.querySelector('.pill-sub');
+      if (sub) sub.textContent = 'дефицит плана';
     } else {
-      defEl.textContent = `+${(deficit / 1000000).toFixed(1)}M ₽`;
-      if (defPill) {
-        defPill.className = 'develop-pill pill-pos';
-        const sub = defPill.querySelector('.pill-sub');
-        if (sub) sub.textContent = 'профицит плана';
-      }
+      defPill.className = 'develop-pill pill-pos';
+      const sub = defPill.querySelector('.pill-sub');
+      if (sub) sub.textContent = 'профицит плана';
     }
   }
 }
@@ -101,6 +144,8 @@ function setPulsePeriod(period) {
 // ==========================================================================
 let isSyncing = false;
 let liveWs = null;
+let DEALS_DATA = [];
+window.DEALS_DATA = DEALS_DATA;
 
 async function fetchLiveCallsData(showFeedback = false) {
   try {
@@ -129,7 +174,39 @@ async function fetchLiveCallsData(showFeedback = false) {
       return true;
     }
   } catch (err) {
-    console.warn('[Sync] Falling back to local dataset:', err.message);
+    console.warn('[Sync Calls] Falling back to local dataset:', err.message);
+  }
+  return false;
+}
+
+async function fetchLiveDealsData(showFeedback = false) {
+  try {
+    const tenantId = getActiveTenantId();
+    let res;
+    try {
+      res = await fetch(`${REVOPS_API_BASE}/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`);
+      if (!res.ok && REVOPS_API_BASE) {
+        res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`);
+      }
+    } catch (e) {
+      res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`);
+    }
+    if (!res || !res.ok) throw new Error('API status ' + (res ? res.status : 'network error'));
+    const data = await res.json();
+    if (data && Array.isArray(data.deals)) {
+      DEALS_DATA = data.deals;
+      window.DEALS_DATA = data.deals;
+      refreshAllDashboardViews();
+      lastSyncTime = Date.now();
+      tickLiveStatus();
+      updateChartTimestamps();
+      if (showFeedback && typeof showToast === 'function') {
+        showToast('amoCRM & Google Таблица', data.deals.length > 0 ? `Синхронизировано ${data.deals.length} сделок (${tenantId})` : `Таблица raw_deals пуста (${tenantId})`);
+      }
+      return true;
+    }
+  } catch (err) {
+    console.warn('[Sync Deals] Falling back to calls dataset:', err.message);
   }
   return false;
 }
@@ -152,7 +229,9 @@ function initWebSocketListener() {
         const msg = JSON.parse(event.data);
         if (msg.type === 'new_call' && msg.call) {
           handleIncomingLiveCall(msg.call);
-        } else if (msg.type === 'deal_updated') {
+          fetchLiveDealsData(false);
+        } else if (msg.type === 'deal_updated' || msg.type === 'new_deal') {
+          fetchLiveDealsData(false);
           fetchLiveCallsData(false);
         }
       } catch (e) {
@@ -202,14 +281,47 @@ function refreshAllDashboardViews() {
   if (typeof initRepPerformanceChart === 'function') initRepPerformanceChart();
   if (typeof updateSimulation === 'function') updateSimulation(false);
 
-  // Recalculate Fact and SSOT from live data
-  const wonCalls = CALLS_DATA.filter(c => c.status === 'won');
-  const totalFact = wonCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
-  const computedSsot = CALLS_DATA.reduce((acc, c) => {
-    const amt = getCallAmount(c);
-    const weight = (c.score >= 10 && c.next_step === 1) ? 0.85 : (c.next_step === 1 ? 0.50 : 0.15);
-    return acc + Math.round(amt * weight);
-  }, 0);
+  // Recalculate Fact, Active Pipeline and SSOT from live DEALS_DATA (with fallback to CALLS_DATA)
+  const dealsList = (typeof window.DEALS_DATA !== 'undefined' && Array.isArray(window.DEALS_DATA)) ? window.DEALS_DATA : [];
+  
+  let totalFact = 0;
+  let computedPipeline = 0;
+  let computedSsot = 0;
+  let activeDealsCount = 0;
+
+  if (dealsList.length > 0) {
+    dealsList.forEach(d => {
+      const amt = typeof d.amount === 'number' ? d.amount : (parseFloat(String(d.amount).replace(/[^\d.]/g, '')) || 0);
+      const stId = parseInt(String(d.stage_id || '0'), 10);
+      const isWon = d.status === 'won' || stId === 6 || String(d.stage || '').includes('Успешно');
+
+      if (isWon) {
+        totalFact += amt;
+        computedSsot += amt; // Won deals = 100% in SSOT cash
+      } else if (stId >= 1 && stId <= 5) {
+        // Active deals in pipeline (Stages 1..5)
+        computedPipeline += amt;
+        activeDealsCount++;
+        // Stage-weighted probability for SSOT forecast
+        let weight = 0.10;
+        if (stId === 1) weight = 0.10;      // Первичный контакт (10%)
+        else if (stId === 2) weight = 0.20; // Переговоры (20%)
+        else if (stId === 3) weight = 0.25; // Принимают решение (25%)
+        else if (stId === 4) weight = 0.35; // Согласование договора (35%)
+        else if (stId === 5) weight = 0.50; // Счет выставлен (50%)
+        computedSsot += Math.round(amt * weight);
+      }
+    });
+  } else {
+    const wonCalls = CALLS_DATA.filter(c => c.status === 'won');
+    totalFact = wonCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+    computedPipeline = CALLS_DATA.length * 500000;
+    computedSsot = CALLS_DATA.reduce((acc, c) => {
+      const amt = getCallAmount(c);
+      const weight = (c.score >= 10 && c.next_step === 1) ? 0.85 : (c.next_step === 1 ? 0.50 : 0.15);
+      return acc + Math.round(amt * weight);
+    }, 0);
+  }
 
   const factVal = document.getElementById('metricFactVal');
   if (factVal) animateCounter(factVal, totalFact, 900);
@@ -217,11 +329,23 @@ function refreshAllDashboardViews() {
   const heroRevenue = document.getElementById('heroRevenue');
   if (heroRevenue && heroRevenue !== factVal) animateCounter(heroRevenue, totalFact, 900);
 
+  const heroPipeline = document.getElementById('heroPipeline');
+  if (heroPipeline) animateCounter(heroPipeline, computedPipeline, 900);
+
+  const metricPipeVal = document.getElementById('metricPipeVal');
+  if (metricPipeVal && metricPipeVal !== heroPipeline) animateCounter(metricPipeVal, computedPipeline, 900);
+
+  const heroPipelineDelta = document.getElementById('heroPipelineDelta');
+  if (heroPipelineDelta) {
+    if (computedSsot > 0) {
+      heroPipelineDelta.textContent = `Взвешенный SSOT: ${(computedSsot / 1000000).toFixed(1)}M ₽ (${activeDealsCount || CALLS_DATA.length} сделок)`;
+    } else {
+      heroPipelineDelta.textContent = 'Взвешенный прогноз сделок';
+    }
+  }
+
   const ssotVal = document.getElementById('metricSsotVal');
   if (ssotVal) animateCounter(ssotVal, computedSsot, 900);
-
-  const heroPipeline = document.getElementById('heroPipeline');
-  if (heroPipeline && heroPipeline !== ssotVal) animateCounter(heroPipeline, computedSsot, 900);
 
   const plan = getMonthlyTarget();
   const factBadge = document.getElementById('metricFactBadge');
@@ -231,14 +355,23 @@ function refreshAllDashboardViews() {
   }
 
   const defVal = document.getElementById('metricDeficitVal');
-  if (defVal) {
-    const diff = totalFact - plan;
-    defVal.textContent = diff < 0 ? `-${(Math.abs(diff)/1000000).toFixed(1)}M ₽` : `+${(diff/1000000).toFixed(1)}M ₽`;
-  }
-
   const heroSla = document.getElementById('heroSla');
-  if (heroSla && defVal) {
-    heroSla.textContent = defVal.textContent;
+  const diff = totalFact - plan;
+  const diffText = diff < 0 ? `-${(Math.abs(diff)/1000000).toFixed(1)}M ₽` : `+${(diff/1000000).toFixed(1)}M ₽`;
+  if (defVal) defVal.textContent = diffText;
+  if (heroSla) heroSla.textContent = diffText;
+
+  const defPill = document.getElementById('metricDeficitPill');
+  if (defPill) {
+    if (diff < 0) {
+      defPill.className = 'develop-pill pill-neg';
+      const sub = defPill.querySelector('.pill-sub');
+      if (sub) sub.textContent = 'дефицит плана';
+    } else {
+      defPill.className = 'develop-pill pill-pos';
+      const sub = defPill.querySelector('.pill-sub');
+      if (sub) sub.textContent = 'профицит плана';
+    }
   }
 
   const heroQuality = document.getElementById('heroQuality');
@@ -530,17 +663,53 @@ function renderPulseRecentCalls() {
 }
 
 function renderPulseFunnel() {
-  const totalCalls = CALLS_DATA.length;
-  const wonCalls = CALLS_DATA.filter(c => c.status === 'won');
-  const zoomCalls = CALLS_DATA.filter(c => c.next_step === 1 || (c.cr && c.cr[0] === 1));
-  const offerCalls = CALLS_DATA.filter(c => c.cr && c.cr[7] === 1);
-  const contractCalls = CALLS_DATA.filter(c => c.cr && c.cr[11] === 1);
+  const dealsList = (typeof window.DEALS_DATA !== 'undefined' && Array.isArray(window.DEALS_DATA) && window.DEALS_DATA.length > 0)
+    ? window.DEALS_DATA
+    : null;
 
-  const val1 = CALLS_DATA.reduce((acc, c) => acc + getCallAmount(c), 0);
-  const val2 = zoomCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
-  const val3 = offerCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
-  const val4 = contractCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
-  const val5 = wonCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+  let val1 = 0, val2 = 0, val3 = 0, val4 = 0, val5 = 0;
+
+  if (dealsList) {
+    dealsList.forEach(d => {
+      const amt = typeof d.amount === 'number' ? d.amount : (parseFloat(String(d.amount).replace(/[^\d.]/g, '')) || 0);
+      const stId = parseInt(String(d.stage_id || '0'), 10);
+      const isWon = d.status === 'won' || stId === 6 || String(d.stage || '').includes('Успешно');
+
+      if (isWon) {
+        val5 += amt;
+        val4 += amt;
+        val3 += amt;
+        val2 += amt;
+        val1 += amt;
+      } else if (stId === 4) {
+        val4 += amt;
+        val3 += amt;
+        val2 += amt;
+        val1 += amt;
+      } else if (stId === 3) {
+        val3 += amt;
+        val2 += amt;
+        val1 += amt;
+      } else if (stId === 2) {
+        val2 += amt;
+        val1 += amt;
+      } else if (stId === 1) {
+        val1 += amt;
+      }
+    });
+  } else {
+    const totalCalls = CALLS_DATA.length;
+    const wonCalls = CALLS_DATA.filter(c => c.status === 'won');
+    const zoomCalls = CALLS_DATA.filter(c => c.next_step === 1 || (c.cr && c.cr[0] === 1));
+    const offerCalls = CALLS_DATA.filter(c => c.cr && c.cr[7] === 1);
+    const contractCalls = CALLS_DATA.filter(c => c.cr && c.cr[11] === 1);
+
+    val1 = CALLS_DATA.reduce((acc, c) => acc + getCallAmount(c), 0);
+    val2 = zoomCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+    val3 = offerCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+    val4 = contractCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+    val5 = wonCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
+  }
 
   const fVal1 = document.getElementById('funnelVal1');
   const fVal2 = document.getElementById('funnelVal2');
@@ -554,18 +723,19 @@ function renderPulseFunnel() {
   const fFill4 = document.getElementById('funnelFill4');
   const fFill5 = document.getElementById('funnelFill5');
 
-  const maxVal = Math.max(val1, 300000);
+  const maxVal = Math.max(val1, 500000);
   if (fVal1) fVal1.textContent = val1.toLocaleString('ru-RU') + ' ₽';
   if (fVal2) fVal2.textContent = val2.toLocaleString('ru-RU') + ' ₽';
   if (fVal3) fVal3.textContent = val3.toLocaleString('ru-RU') + ' ₽';
   if (fVal4) fVal4.textContent = val4.toLocaleString('ru-RU') + ' ₽';
   if (fVal5) fVal5.textContent = val5.toLocaleString('ru-RU') + ' ₽';
 
-  if (fFill1) fFill1.style.width = totalCalls > 0 ? `${Math.round((val1 / maxVal) * 100)}%` : '0%';
-  if (fFill2) fFill2.style.width = totalCalls > 0 ? `${Math.round((val2 / maxVal) * 100)}%` : '0%';
-  if (fFill3) fFill3.style.width = totalCalls > 0 ? `${Math.round((val3 / maxVal) * 100)}%` : '0%';
-  if (fFill4) fFill4.style.width = totalCalls > 0 ? `${Math.round((val4 / maxVal) * 100)}%` : '0%';
-  if (fFill5) fFill5.style.width = totalCalls > 0 ? `${Math.round((val5 / maxVal) * 100)}%` : '0%';
+  const hasItems = (dealsList ? dealsList.length : CALLS_DATA.length) > 0;
+  if (fFill1) fFill1.style.width = hasItems ? `${Math.round((val1 / maxVal) * 100)}%` : '0%';
+  if (fFill2) fFill2.style.width = hasItems ? `${Math.round((val2 / maxVal) * 100)}%` : '0%';
+  if (fFill3) fFill3.style.width = hasItems ? `${Math.round((val3 / maxVal) * 100)}%` : '0%';
+  if (fFill4) fFill4.style.width = hasItems ? `${Math.round((val4 / maxVal) * 100)}%` : '0%';
+  if (fFill5) fFill5.style.width = hasItems ? `${Math.round((val5 / maxVal) * 100)}%` : '0%';
 }
 
 
@@ -581,13 +751,16 @@ async function triggerSyncSimulation() {
   if (text) text.textContent = 'Синхронизация...';
   if (btn) btn.disabled = true;
 
-  showToast('Синхронизация [1/2]', 'Запрос звонков из Google Таблицы raw_calls...');
+  showToast('Синхронизация [1/2]', 'Запрос данных из Google Таблиц raw_calls и raw_deals...');
 
   try {
-    const synced = await fetchLiveCallsData(false);
+    const [syncedCalls, syncedDeals] = await Promise.all([
+      fetchLiveCallsData(false),
+      fetchLiveDealsData(false)
+    ]);
     setTimeout(() => {
-      if (synced) {
-        showToast('Синхронизация [2/2]', `Успешно: загружено ${CALLS_DATA.length} звонков из raw_calls, SSOT обновлен!`);
+      if (syncedCalls || syncedDeals) {
+        showToast('Синхронизация [2/2]', `Успешно: загружено ${CALLS_DATA.length} звонков и ${DEALS_DATA.length} сделок, SSOT обновлен!`);
       } else {
         showToast('Синхронизация [2/2]', 'Синхронизировано: локальный контур актуален.');
       }
@@ -615,6 +788,8 @@ window.openOnePagerModal = openOnePagerModal;
 window.closeOnePagerModal = closeOnePagerModal;
 window.setPulsePeriod = setPulsePeriod;
 window.fetchLiveCallsData = fetchLiveCallsData;
+window.fetchLiveDealsData = fetchLiveDealsData;
+window.DEALS_DATA = DEALS_DATA;
 window.initWebSocketListener = initWebSocketListener;
 window.handleIncomingLiveCall = handleIncomingLiveCall;
 window.refreshAllDashboardViews = refreshAllDashboardViews;
