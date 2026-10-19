@@ -8,7 +8,8 @@ Replaces all desktop batch files (.bat) with a unified, secure REST & Web GUI co
 - Live Execution Console & Log Stream
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
+import hashlib
 import json
 import logging
 import os
@@ -1109,6 +1110,566 @@ def delete_client(login: str):
 
 
 # ============================================================================
+# MULTI-TENANT LIFECYCLE MANAGEMENT (CLIENT FLEET CENTER)
+# ============================================================================
+
+def get_all_tenants_registry_paths() -> List[Path]:
+    paths = [
+        ENTERPRISE_OS_DIR / "tenants_registry.json",
+        ENTERPRISE_OS_DIR / "multitenant_revops" / "tenants_registry.json",
+        BASE_DIR / "tenants_registry.json",
+        Path("/opt/revops-enterprise-os/tenants_registry.json"),
+        Path("/opt/revops-enterprise-os/multitenant_revops/tenants_registry.json"),
+        Path("/opt/revops-saas/tenants_registry.json"),
+    ]
+    existing = []
+    seen = set()
+    for p in paths:
+        if p.exists() and str(p.resolve()) not in seen:
+            existing.append(p)
+            seen.add(str(p.resolve()))
+    return existing
+
+
+def get_all_tenants_archive_paths() -> List[Path]:
+    return [
+        DATA_DIR / "tenants_archive.json",
+        ENTERPRISE_OS_DIR / "tenants_archive.json",
+        Path("/opt/revops-saas/data/tenants_archive.json"),
+    ]
+
+
+def load_archived_tenants() -> List[Dict[str, Any]]:
+    for p in get_all_tenants_archive_paths():
+        if p.exists():
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+    return []
+
+
+def save_archived_tenants(archives: List[Dict[str, Any]]):
+    for p in get_all_tenants_archive_paths():
+        try:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(archives, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to write archive to {p}: {e}")
+
+
+def sync_save_registry(registry_data: Dict[str, Any]):
+    paths = get_all_tenants_registry_paths()
+    if not paths:
+        target = ENTERPRISE_OS_DIR / "tenants_registry.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        paths = [target]
+    for p in paths:
+        try:
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(registry_data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to sync registry to {p}: {e}")
+    try:
+        from ..tenant_registry import _REGISTRY_CACHE
+        _REGISTRY_CACHE["timestamp"] = 0
+    except Exception:
+        pass
+
+
+class TenantProvisionRequest(BaseModel):
+    name: str = Field(..., description="Название компании клиента")
+    email: Optional[str] = Field(None, description="Email клиента для Google Sheets и ЛК")
+    password: Optional[str] = Field(None, description="Пароль для ЛК")
+    role: Optional[str] = Field("РОП • Руководитель ОП", description="Роль в системе")
+    crm_type: str = Field("amocrm", description="Тип CRM: 'amocrm' или 'bitrix24'")
+    amo_domain: Optional[str] = Field(None, description="Домен amoCRM")
+    amo_token: Optional[str] = Field(None, description="Долгоживущий токен API v4")
+    crm_webhook: Optional[str] = Field(None, description="Входящий вебхук REST API Bitrix24")
+    niche_name: Optional[str] = Field("Универсальный B2B", description="Ниша / индустрия")
+    avg_deal_check: Optional[int] = Field(150000, description="Средний чек сделки")
+    target_next_step: Optional[str] = Field("Фиксация следующего контакта с датой и временем", description="Целевой Next Step")
+    sheet_id: Optional[str] = Field(None, description="Существующий ID таблицы Google (иначе авто-клон Clean Starter)")
+
+
+class TenantUpdateRequest(BaseModel):
+    tenant_name: Optional[str] = None
+    client_email: Optional[str] = None
+    crm_type: Optional[str] = None
+    amo_domain: Optional[str] = None
+    amo_token: Optional[str] = None
+    crm_webhook_url: Optional[str] = None
+    niche_name: Optional[str] = None
+    avg_deal_check: Optional[int] = None
+    target_next_step: Optional[str] = None
+    new_password: Optional[str] = None
+
+
+class TenantStatusRequest(BaseModel):
+    action: str = Field(..., description="'freeze', 'unfreeze', 'offboard'")
+    reason: Optional[str] = Field(None, description="Причина смены статуса")
+
+
+class ScoringCalibrateRequest(BaseModel):
+    z_score_threshold: float = Field(2.5, description="Новый порог сигма Z-Score")
+    tenant_id: Optional[str] = Field(None, description="Tenant ID (или глобально)")
+
+
+@router.get("/tenants")
+def get_admin_tenants():
+    """
+    Returns complete multi-tenant fleet overview:
+    - Active tenants from tenants_registry.json
+    - Archived tenants from tenants_archive.json
+    - Connected ЛК users & status (active / frozen)
+    - Master clean template reference
+    """
+    from ..tenant_registry import load_tenants_registry
+    registry = load_tenants_registry()
+    clients = load_registered_clients()
+    archived = load_archived_tenants()
+
+    tenants_list = []
+    for t in registry.get("tenants", []):
+        t_id = str(t.get("tenant_id", "")).strip().upper()
+        # Find matching clients
+        matched_clients = [
+            c for c in clients 
+            if t_id in str(c.get("tenant", "")).upper() or (t.get("client_email") and str(c.get("login", "")).lower() in str(t.get("client_email", "")).lower())
+        ]
+        
+        is_frozen = (t.get("status") == "frozen") or any(c.get("is_active") is False for c in matched_clients)
+        effective_status = "frozen" if is_frozen else t.get("status", "active")
+        
+        rec = dict(t)
+        rec["effective_status"] = effective_status
+        rec["connected_clients"] = [
+            {
+                "login": c.get("login"),
+                "name": c.get("name"),
+                "role": c.get("role"),
+                "is_active": c.get("is_active", True),
+                "is_system": c.get("is_system", False),
+            }
+            for c in matched_clients
+        ]
+        tenants_list.append(rec)
+
+    return {
+        "tenants": tenants_list,
+        "archived": archived,
+        "master_template": registry.get("clean_starter_template") or registry.get("master_template", {}),
+        "total_active": len([t for t in tenants_list if t["effective_status"] == "active"]),
+        "total_frozen": len([t for t in tenants_list if t["effective_status"] == "frozen"]),
+        "total_archived": len(archived),
+    }
+
+
+@router.post("/tenants/provision")
+def provision_tenant_endpoint(req: TenantProvisionRequest):
+    """
+    Full automated multi-tenant provisioning:
+    1. Clones Google Sheet from Clean Starter Template (or connects provided sheet_id).
+    2. Enforces RBAC hardware lock on system calculation sheets.
+    3. Configures 📋 Паспорт_Клиента in Google Sheets.
+    4. Grants Editor permissions to client_email.
+    5. Generates tenant-isolated Bitrix24/amoCRM inbound webhooks.
+    6. Registers in tenants_registry.json.
+    7. Creates user account in registered_clients.json with SHA-256 password hash.
+    8. Generates ready onboarding brief and invite text.
+    """
+    company_name = req.name.strip()
+    if not company_name:
+        raise HTTPException(status_code=400, detail="Название компании обязательно")
+
+    clean_email = (req.email or "").strip().lower()
+    crm_type = (req.crm_type or "amocrm").lower().strip()
+    if crm_type not in ("amocrm", "bitrix24", "hybrid"):
+        crm_type = "amocrm"
+
+    plain_password = req.password.strip() if req.password else f"RevOps_{int(time.time()) % 10000}!"
+    password_hash = hashlib.sha256(plain_password.encode("utf-8")).hexdigest()
+
+    append_console_log(f"🚀 Старт авто-развертывания клиента: '{company_name}' ({crm_type.upper()})...", "info")
+
+    prov_dir = ENTERPRISE_OS_DIR / "multitenant_revops"
+    if prov_dir.exists() and str(prov_dir) not in sys.path:
+        sys.path.insert(0, str(prov_dir))
+
+    try:
+        from tenant_provisioner import provision_tenant, load_registry
+        
+        tenant_record = provision_tenant(
+            company_name=company_name,
+            client_email=clean_email if clean_email else None,
+            sheet_id=req.sheet_id if req.sheet_id else None,
+            crm_type=crm_type,
+            crm_webhook=req.crm_webhook,
+            amo_domain=req.amo_domain,
+            amo_token=req.amo_token,
+            niche_name=req.niche_name or "Универсальный B2B",
+            avg_deal_check=req.avg_deal_check or 150000,
+            target_next_step=req.target_next_step or "Фиксация следующего контакта с датой и временем",
+        )
+    except Exception as e:
+        logger.error(f"Tenant provisioning error: {e}", exc_info=True)
+        append_console_log(f"[-] Сбой развертывания тенанта: {e}", "error")
+        raise HTTPException(status_code=500, detail=f"Ошибка развертывания тенанта: {str(e)}")
+
+    if not tenant_record:
+        err_msg = (
+            "Квота хранилища Google Drive сервисного аккаунта исчерпана для прямого автоклонирования. "
+            "Пожалуйста, откройте шаблон: https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy , "
+            "сохраните копию на свой Google Диск и укажите её ID в поле 'Google Spreadsheet ID'."
+        )
+        append_console_log(f"[-] {err_msg}", "warning")
+        raise HTTPException(status_code=400, detail=err_msg)
+
+    tenant_id = tenant_record.get("tenant_id")
+
+    # Sync registry across all candidate paths
+    try:
+        from tenant_provisioner import load_registry
+        reg_data = load_registry()
+        sync_save_registry(reg_data)
+    except Exception as e:
+        logger.warning(f"Could not re-sync all registry paths: {e}")
+
+    # Register client account in registered_clients.json
+    now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    login = clean_email if clean_email else f"{tenant_id.lower()}@revops.local"
+    
+    clients = load_registered_clients()
+    existing_client = next((c for c in clients if c["login"].lower() == login), None)
+    if existing_client:
+        if password_hash not in existing_client.get("keyHashes", []):
+            existing_client.setdefault("keyHashes", []).append(password_hash)
+        existing_client["name"] = company_name
+        existing_client["role"] = req.role or "РОП • Руководитель ОП"
+        existing_client["tenant"] = f"{tenant_id} • {company_name}"
+        existing_client["is_active"] = True
+        existing_client["updated_at"] = now_iso
+    else:
+        new_client = {
+            "login": login,
+            "keyHashes": [password_hash],
+            "name": company_name,
+            "role": req.role or "РОП • Руководитель ОП",
+            "tenant": f"{tenant_id} • {company_name}",
+            "is_system": False,
+            "is_active": True,
+            "created_at": now_iso
+        }
+        clients.append(new_client)
+    save_registered_clients(clients)
+
+    # Build Ready Onboarding Brief Text
+    sh_url = tenant_record.get("spreadsheet_url", "")
+    wh_url = tenant_record.get("inbound_webhook_b24_url") or tenant_record.get("inbound_webhook_url", "")
+    
+    brief_lines = [
+        f"Здравствуйте, {company_name}!",
+        "",
+        "Добро пожаловать в RevOps Enterprise OS — интеллектуальную систему речевого аудита и RevOps-аналитики.",
+        "",
+        "🔑 ВАШИ ДОСТУПЫ В ЛИЧНЫЙ КАБИНЕТ:",
+        f"• Портал:    https://report.ai-rop.ru (или локально)",
+        f"• Логин:     {login}",
+        f"• Пароль:    {plain_password}",
+        f"• Роль:      {req.role or 'РОП • Руководитель ОП'}",
+        "",
+        "📊 ВАШ ПЕРСОНАЛЬНЫЙ ДАШБОРД (GOOGLE ТАБЛИЦА):",
+        f"• Ссылка:    {sh_url}",
+        f"• Доступ:    Редактор для {clean_email or 'вашего аккаунта'}",
+        "",
+    ]
+    if crm_type == "bitrix24":
+        brief_lines.extend([
+            "🔌 ПОДКЛЮЧЕНИЕ ТЕЛЕФОНИИ БИТРИКС24:",
+            f"• Входящий Webhook: {wh_url}",
+            "• Инструкция: Битрикс24 -> Разработчикам -> Исходящий вебхук -> событие ONVOXIMPLANTCALLEND",
+            "• Каждый звонок будет автоматически транскрибироваться и оцениваться ИИ по 13 критериям!",
+        ])
+    else:
+        brief_lines.extend([
+            "🔌 ПОДКЛЮЧЕНИЕ AMOCRM:",
+            f"• Домен: {req.amo_domain or 'revopsofficial.amocrm.ru'}",
+            "• Интеграция: Прямой API v4 (Polling & Events) активен",
+            "• Звонки и сделки синхронизируются автоматически!",
+        ])
+
+    brief_text = "\n".join(brief_lines)
+    append_console_log(f"🎉 Клиент {tenant_id} ({company_name}) успешно развернут под ключ!", "success")
+
+    return {
+        "success": True,
+        "tenant_id": tenant_id,
+        "tenant": tenant_record,
+        "credentials": {
+            "login": login,
+            "password": plain_password,
+            "role": req.role or "РОП • Руководитель ОП",
+        },
+        "invite_message": brief_text,
+        "spreadsheet_url": sh_url,
+        "webhook_url": wh_url,
+    }
+
+
+@router.put("/tenants/{tenant_id}")
+def update_tenant_endpoint(tenant_id: str, req: TenantUpdateRequest):
+    """Updates tenant settings in tenants_registry.json and credentials in registered_clients.json."""
+    from ..tenant_registry import load_tenants_registry
+    clean_id = tenant_id.strip().upper()
+    registry = load_tenants_registry()
+    
+    target_tenant = None
+    for t in registry.get("tenants", []):
+        if str(t.get("tenant_id", "")).upper() == clean_id:
+            target_tenant = t
+            break
+
+    if not target_tenant:
+        raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден в реестре")
+
+    if req.tenant_name:
+        target_tenant["tenant_name"] = req.tenant_name.strip()
+    if req.crm_type:
+        target_tenant["crm_type"] = req.crm_type.strip().lower()
+    if req.amo_domain is not None:
+        target_tenant["amo_domain"] = req.amo_domain.strip()
+    if req.amo_token is not None:
+        target_tenant["amo_token"] = req.amo_token.strip()
+    if req.crm_webhook_url is not None:
+        target_tenant["crm_webhook_url"] = req.crm_webhook_url.strip()
+        target_tenant["b24_webhook_url"] = req.crm_webhook_url.strip()
+    if req.niche_name:
+        target_tenant["niche_name"] = req.niche_name.strip()
+    if req.avg_deal_check is not None:
+        target_tenant["avg_deal_check"] = req.avg_deal_check
+    if req.target_next_step:
+        target_tenant["target_next_step"] = req.target_next_step.strip()
+    if req.client_email:
+        new_em = req.client_email.strip().lower()
+        target_tenant["client_email"] = new_em
+        target_tenant["client_emails"] = [new_em]
+
+    sync_save_registry(registry)
+
+    # Password reset or client update
+    password_updated = False
+    clients = load_registered_clients()
+    for c in clients:
+        if clean_id in str(c.get("tenant", "")).upper() or (target_tenant.get("client_email") and str(c.get("login", "")).lower() == str(target_tenant.get("client_email", "")).lower()):
+            if req.new_password:
+                new_hash = hashlib.sha256(req.new_password.strip().encode("utf-8")).hexdigest()
+                c["keyHashes"] = [new_hash]
+                password_updated = True
+            if req.tenant_name:
+                c["tenant"] = f"{clean_id} • {req.tenant_name}"
+
+    if password_updated or req.tenant_name:
+        save_registered_clients(clients)
+
+    append_console_log(f"⚙️ Обновлены параметры тенанта: {clean_id} ({target_tenant.get('tenant_name')})", "info")
+
+    return {
+        "success": True,
+        "tenant": target_tenant,
+        "password_reset": password_updated,
+        "message": f"Конфигурация тенанта {clean_id} успешно обновлена"
+    }
+
+
+@router.post("/tenants/{tenant_id}/status")
+def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
+    """
+    Manages tenant lifecycle state:
+    - 'freeze': Suspends client login & background sync
+    - 'unfreeze': Restores client login & active operations
+    - 'offboard': Revokes client access and archives tenant into tenants_archive.json
+    """
+    from ..tenant_registry import load_tenants_registry
+    clean_id = tenant_id.strip().upper()
+    action = req.action.lower().strip()
+    registry = load_tenants_registry()
+    clients = load_registered_clients()
+
+    target_tenant = None
+    target_idx = -1
+    for idx, t in enumerate(registry.get("tenants", [])):
+        if str(t.get("tenant_id", "")).upper() == clean_id:
+            target_tenant = t
+            target_idx = idx
+            break
+
+    if not target_tenant and action not in ("unfreeze", "restore"):
+        raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден среди активных")
+
+    if not target_tenant and action in ("unfreeze", "restore"):
+        # Check archive if trying to unarchive
+        archived = load_archived_tenants()
+        for idx, a in enumerate(archived):
+            if str(a.get("tenant_id", "")).upper() == clean_id:
+                restored = archived.pop(idx)
+                restored["status"] = "active"
+                save_archived_tenants(archived)
+                registry.setdefault("tenants", []).append(restored)
+                sync_save_registry(registry)
+                for c in clients:
+                    if clean_id in str(c.get("tenant", "")).upper():
+                        c["is_active"] = True
+                save_registered_clients(clients)
+                append_console_log(f"☀️ Клиент {clean_id} восстановлен из архива и активирован!", "success")
+                return {"success": True, "action": "unarchive", "status": "active", "message": f"Клиент {clean_id} восстановлен из архива"}
+
+        raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден в архиве")
+
+    if action == "freeze":
+        target_tenant["status"] = "frozen"
+        target_tenant["frozen_at"] = datetime.now().isoformat()
+        if req.reason:
+            target_tenant["freeze_reason"] = req.reason
+        sync_save_registry(registry)
+        
+        # Suspend client accounts
+        for c in clients:
+            if clean_id in str(c.get("tenant", "")).upper():
+                c["is_active"] = False
+        save_registered_clients(clients)
+        
+        msg = f"❄️ Тенант {clean_id} ({target_tenant.get('tenant_name')}) заморожен. Доступ в ЛК приостановлен."
+        append_console_log(msg, "warning")
+        return {"success": True, "action": "freeze", "status": "frozen", "message": msg}
+
+    elif action in ("unfreeze", "restore"):
+        target_tenant["status"] = "active"
+        target_tenant.pop("frozen_at", None)
+        target_tenant.pop("freeze_reason", None)
+        sync_save_registry(registry)
+        
+        # Restore client accounts
+        for c in clients:
+            if clean_id in str(c.get("tenant", "")).upper():
+                c["is_active"] = True
+        save_registered_clients(clients)
+        
+        msg = f"☀️ Тенант {clean_id} ({target_tenant.get('tenant_name')}) разморожен и снова активен."
+        append_console_log(msg, "success")
+        return {"success": True, "action": "unfreeze", "status": "active", "message": msg}
+
+    elif action == "offboard":
+        removed = registry["tenants"].pop(target_idx)
+        removed["status"] = "archived"
+        removed["archived_at"] = datetime.now().isoformat()
+        removed["offboard_reason"] = req.reason or "Отказ от сотрудничества / завершение проекта"
+        sync_save_registry(registry)
+
+        archived = load_archived_tenants()
+        archived.append(removed)
+        save_archived_tenants(archived)
+
+        for c in clients:
+            if clean_id in str(c.get("tenant", "")).upper():
+                c["is_active"] = False
+        save_registered_clients(clients)
+
+        msg = f"📦 Тенант {clean_id} ({removed.get('tenant_name')}) выведен из эксплуатации и перемещён в архив."
+        append_console_log(msg, "warning")
+        return {"success": True, "action": "offboard", "status": "archived", "message": msg}
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Неизвестное действие: {action}")
+
+
+@router.post("/infra/test-sa")
+def test_google_service_account():
+    """
+    Real live ping to Google Drive & Sheets API using service_account.json.
+    Returns actual round-trip latency in milliseconds, accessible files count,
+    and service account client email. Zero mock or stub.
+    """
+    candidate_sa_paths = [
+        ENTERPRISE_OS_DIR / "service_account.json",
+        BASE_DIR.parent / "revops-enterprise-os" / "service_account.json",
+        Path.home() / ".gemini" / "antigravity" / "scratch" / "service_account.json",
+        Path("service_account.json"),
+    ]
+    sa_path = next((p for p in candidate_sa_paths if p.exists()), None)
+    if not sa_path:
+        raise HTTPException(status_code=404, detail="Файл service_account.json не найден в путях проекта")
+
+    try:
+        import gspread
+        with open(sa_path, "r", encoding="utf-8") as f:
+            sa_info = json.load(f)
+        sa_email = sa_info.get("client_email") or sa_info.get("email")
+
+        t0 = time.time()
+        gc = gspread.service_account_from_dict(sa_info)
+        files = gc.list_spreadsheet_files()
+        latency_ms = round((time.time() - t0) * 1000, 1)
+
+        msg = f"✓ Google Service Account ({sa_email}): пинг {latency_ms} ms, доступно таблиц: {len(files)}"
+        append_console_log(msg, "success")
+        return {
+            "success": True,
+            "email": sa_email,
+            "latency_ms": latency_ms,
+            "accessible_spreadsheets": len(files),
+            "status": "CONNECTED_OK",
+            "message": msg
+        }
+    except Exception as e:
+        err = f"Ошибка проверки Google Service Account: {e}"
+        append_console_log(err, "error")
+        return {
+            "success": False,
+            "error": str(e),
+            "status": "CONNECTION_FAILED"
+        }
+
+
+@router.post("/scoring/calibrate")
+def calibrate_scoring_threshold(req: ScoringCalibrateRequest):
+    """
+    Calibrates statistical Z-score anomaly threshold for Gemini speech audit.
+    Persists to scoring_config.json and tenants_registry.json.
+    """
+    threshold = float(req.z_score_threshold)
+    if threshold <= 0 or threshold > 10:
+        raise HTTPException(status_code=400, detail="Порог Z-Score должен быть в диапазоне от 0.5 до 10.0 сигма")
+
+    cfg_file = ENTERPRISE_OS_DIR / "scoring_config.json"
+    scoring_data = {"z_score_threshold": threshold, "updated_at": datetime.now().isoformat()}
+    try:
+        with open(cfg_file, "w", encoding="utf-8") as f:
+            json.dump(scoring_data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.warning(f"Could not write {cfg_file}: {e}")
+
+    try:
+        from ..tenant_registry import load_tenants_registry
+        registry = load_tenants_registry()
+        for t in registry.get("tenants", []):
+            if not req.tenant_id or str(t.get("tenant_id", "")).upper() == req.tenant_id.upper():
+                t["z_score_threshold"] = threshold
+        sync_save_registry(registry)
+    except Exception as e:
+        logger.warning(f"Could not update tenant z_score: {e}")
+
+    msg = f"⚖️ Порог Z-Score для детекции аномалий качества откалиброван: {threshold}σ"
+    append_console_log(msg, "success")
+    return {
+        "success": True,
+        "threshold": threshold,
+        "message": msg
+    }
+
+
+# ============================================================================
 # CCO AI AGENT & WORKFLOW LOGIC AGENT
 # ============================================================================
 
@@ -1440,9 +2001,27 @@ def execute_agent_action(req: AgentActionRequest):
     a6_args = ["--mode=whitepaper"] if action == "whitepaper" else (["--mode=roadmap"] if action == "bottlenecks" else ["--mode=audit"])
     a5_args = ["--mode=fuzz"] if action == "mutation" else (["--mode=drill"] if action in ("heartbeat", "drill") else ["--mode=self_test"])
     a1_args = ["--tenant", tenant, "--dry-run", "--no-report"]
-    a3_args = ["--balance", "--tenant", tenant] if action == "balance" else ["--audit", "--tenant", tenant]
+    if action == "balance":
+        a3_args = ["--balance", "--tenant", tenant]
+    elif action in ("heal", "mapping", "publish"):
+        a3_args = ["--heal", "--tenant", tenant]
+    else:
+        a3_args = ["--audit", "--tenant", tenant]
+
     a4_args = ["--mode=audit", "--tenant", tenant] if action == "audit" else ["--mode=self_test", "--tenant", tenant]
-    a2_args = ["--tenant", tenant, "--summary", "--send"] if action in ("send_telegram", "send") else (["--tenant", tenant, "--pipeline"] if action == "pipeline" else (["--tenant", tenant, "--forecast"] if action == "forecast" else ["--tenant", tenant, "--summary"]))
+
+    if action in ("send_telegram", "send"):
+        a2_args = ["--tenant", tenant, "--summary", "--send"]
+    elif action == "pipeline":
+        a2_args = ["--tenant", tenant, "--pipeline"]
+    elif action == "forecast":
+        a2_args = ["--tenant", tenant, "--forecast"]
+    elif action in ("team", "managers"):
+        a2_args = ["--tenant", tenant, "--team"]
+    elif action in ("stalled", "stalled_deals"):
+        a2_args = ["--tenant", tenant, "--stalled"]
+    else:
+        a2_args = ["--tenant", tenant, "--summary"]
 
     agent_scripts = {
         "a6": (MY_AI_CREW_DIR / "system_health_advisor.py", a6_args, "Агент 6: Architecture Advisor (Аудит архитектуры L0–L3.5)"),

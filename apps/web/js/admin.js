@@ -414,6 +414,11 @@ function appendAdminTerminalLog(msg, level = 'info') {
 
 async function runFleetAction(action) {
   if (isAdminActionRunning) return;
+  if (action === 'stop_all') {
+    if (!confirm('ВНИМАНИЕ: Остановка всех служб RevOps остановит сервер FastAPI и веб-панель управления. Вы действительно хотите продолжить?')) {
+      return;
+    }
+  }
   isAdminActionRunning = true;
   appendAdminTerminalLog(`Инициализация команды флота: ${action}...`, 'info');
   showToast('Управление службами', `Выполняется: ${action}`);
@@ -647,161 +652,491 @@ function generateRandomPassword() {
   return pass;
 }
 
-function renderAdminClientsTable() {
-  const container = document.getElementById('adminClientsListTable');
-  const countBadge = document.getElementById('adminClientsCountBadge');
-  if (!container) return;
+// ============================================================================
+// CLIENT & TENANT LIFECYCLE MANAGEMENT CENTER (V21.0)
+// ============================================================================
 
-  const clients = VALID_CREDENTIALS || [];
-  if (countBadge) {
-    countBadge.textContent = `${clients.length} пользователей`;
+let currentTenantsCache = [];
+let lastGeneratedProvInvite = '';
+
+async function loadAdminTenants() {
+  const tbody = document.getElementById('adminTenantsFleetTbody');
+  const activeBadge = document.getElementById('adminTenantsActiveBadge');
+  const frozenBadge = document.getElementById('adminTenantsFrozenBadge');
+  const archivedBadge = document.getElementById('adminTenantsArchivedBadge');
+
+  try {
+    const res = await adminFetch('/api/v1/admin/tenants');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Сбой загрузки флота тенантов');
+
+    currentTenantsCache = data.tenants || [];
+
+    if (activeBadge) activeBadge.textContent = `${data.total_active || 0} активен`;
+    if (frozenBadge) frozenBadge.textContent = `${data.total_frozen || 0} заморожено`;
+    if (archivedBadge) archivedBadge.textContent = `${data.total_archived || 0} в архиве`;
+
+    renderAdminTenantsTable(data.tenants || []);
+    renderAdminArchivedTenants(data.archived || []);
+  } catch (err) {
+    console.error('[Admin] Error loading tenants:', err);
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="padding: 16px; text-align: center; color: var(--accent-rose);">
+            [-] Ошибка загрузки реестра: ${err.message}
+          </td>
+        </tr>
+      `;
+    }
+  }
+}
+
+function renderAdminTenantsTable(tenants) {
+  const tbody = document.getElementById('adminTenantsFleetTbody');
+  if (!tbody) return;
+
+  if (!tenants || tenants.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted);">
+          Нет активных тенантов. Нажмите «+ Развернуть клиента» для создания первого контура.
+        </td>
+      </tr>
+    `;
+    return;
   }
 
-  container.innerHTML = clients.map((c) => {
-    const isSys = c.login === 'admin' || c.login === 'rop' || c.login === 'dmitriyfedotov1908@gmail.com';
-    const initials = (c.name || c.login).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CL';
+  tbody.innerHTML = tenants.map(t => {
+    const isFrozen = (t.effective_status === 'frozen');
+    const statusBadge = isFrozen
+      ? `<span class="badge-info" style="font-size: 0.65rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);">❄️ Заморожен</span>`
+      : `<span class="badge-won" style="font-size: 0.65rem; padding: 2px 7px;">🟢 Активен</span>`;
+
+    const crm = (t.crm_type || 'amocrm').toLowerCase();
+    const crmBadge = (crm === 'bitrix24')
+      ? `<span class="badge-won" style="font-size: 0.65rem; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4);">🔵 Bitrix24</span>`
+      : `<span class="badge-won" style="font-size: 0.65rem; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">🟢 amoCRM</span>`;
+
+    const sheetId = t.spreadsheet_id || '1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk';
+    const sheetUrl = t.spreadsheet_url || `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+
+    const usersList = (t.connected_clients && t.connected_clients.length > 0)
+      ? t.connected_clients.map(c => `
+          <div style="font-size: 0.70rem; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 4px;">
+            <span style="color: ${c.is_active ? '#34d399' : '#94a3b8'};">●</span>
+            <span style="color: #e2e8f0;">${c.login}</span>
+            <span style="color: var(--text-muted); font-size: 0.65rem;">(${c.role})</span>
+          </div>
+        `).join('')
+      : `<span style="color: var(--text-muted); font-size: 0.70rem;">${t.client_email || 'Нет пользователей'}</span>`;
+
     return `
-      <div style="padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 28px; height: 28px; border-radius: 6px; background: ${isSys ? 'rgba(124, 58, 237, 0.25)' : 'rgba(52, 211, 153, 0.2)'}; color: ${isSys ? '#a78bfa' : '#34d399'}; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700;">
-            ${initials}
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s ease;">
+        <td style="padding: 12px 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <strong style="color: #c4b5fd; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">${t.tenant_id}</strong>
+            <span style="font-weight: 600; color: #fff;">${t.tenant_name}</span>
           </div>
-          <div>
-            <div style="font-size: 0.8rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
-              <span>${c.name || 'Клиент'}</span>
-              <span class="badge-info" style="font-size: 0.62rem; padding: 1px 6px;">${c.tenant || 'TNT-001'}</span>
-              ${isSys ? '<span class="badge-won" style="font-size: 0.60rem; background: rgba(124,58,237,0.2); color: #c4b5fd; border: 1px solid rgba(124,58,237,0.4);">Владелец</span>' : ''}
-            </div>
-            <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; font-family: 'JetBrains Mono', monospace;">
-              Логин: <strong style="color: #cbd5e1;">${c.login}</strong> &bull; Роль: ${c.role || 'Клиент'}
-            </div>
+          <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 3px;">
+            Ниша: <span style="color: #cbd5e1;">${t.niche_name || 'B2B'}</span> &bull; Чек: <span style="color: #cbd5e1;">${(t.avg_deal_check || 150000).toLocaleString('ru-RU')} ₽</span>
           </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 0.68rem; color: #34d399; font-family: 'JetBrains Mono', monospace;">● Доступ активен</span>
-          ${!isSys ? `<button onclick="deleteClientAccess('${c.login}')" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.68rem; color: var(--accent-rose);" title="Удалить доступ">🗑️</button>` : ''}
-        </div>
-      </div>
+        </td>
+        <td style="padding: 12px 14px;">
+          ${statusBadge}
+        </td>
+        <td style="padding: 12px 14px;">
+          ${crmBadge}
+        </td>
+        <td style="padding: 12px 14px;">
+          <a href="${sheetUrl}" target="_blank" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem; color: var(--accent-cyan); border-color: rgba(6,182,212,0.3); display: inline-flex; align-items: center; gap: 4px;">
+            <span>📊 Открыть &nearr;</span>
+          </a>
+        </td>
+        <td style="padding: 12px 14px;">
+          ${usersList}
+        </td>
+        <td style="padding: 12px 14px; text-align: right;">
+          <div style="display: inline-flex; align-items: center; gap: 6px;">
+            <button onclick="openTenantEditModal('${t.tenant_id}')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.70rem;" title="Редактировать параметры и пароль">⚙️</button>
+            <button onclick="toggleTenantFreeze('${t.tenant_id}', '${t.effective_status}')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.70rem; color: ${isFrozen ? '#34d399' : '#38bdf8'};" title="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'}">${isFrozen ? '☀️' : '❄️'}</button>
+            <button onclick="offboardTenant('${t.tenant_id}', '${(t.tenant_name || '').replace(/'/g, "\\'")}')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.70rem; color: var(--accent-rose);" title="Вывести в архив (Offboard)">📦</button>
+          </div>
+        </td>
+      </tr>
     `;
   }).join('');
 }
 
-let lastGeneratedInviteMessage = '';
+function renderAdminArchivedTenants(archived) {
+  const container = document.getElementById('adminArchivedTenantsContainer');
+  const list = document.getElementById('adminArchivedTenantsList');
+  const countText = document.getElementById('adminArchivedCountText');
+  if (!container || !list) return;
 
-async function registerNewClientAccess() {
-  const loginInput = document.getElementById('adminNewUserLogin');
-  const passInput = document.getElementById('adminNewUserPass');
-  const nameInput = document.getElementById('adminNewUserName');
-  const tenantInput = document.getElementById('adminNewUserTenant');
-  const roleInput = document.getElementById('adminNewUserRole');
-
-  const loginVal = (loginInput?.value || '').trim().toLowerCase();
-  const passVal = (passInput?.value || '').trim();
-  const nameVal = (nameInput?.value || '').trim();
-  const tenantVal = (tenantInput?.value || '').trim() || 'TNT-002 • Клиент';
-  const roleVal = (roleInput?.value || '').trim() || 'РОП • Руководитель ОП';
-
-  if (!loginVal || !passVal || !nameVal) {
-    showToast('Внимание', 'Заполните Email/логин, пароль и имя клиента');
+  if (!archived || archived.length === 0) {
+    container.style.display = 'none';
     return;
   }
 
-  showToast('Регистрация', `Создание доступа для ${nameVal}...`);
+  container.style.display = 'block';
+  if (countText) countText.textContent = `${archived.length}`;
 
-  try {
-    const inputHash = await sha256Hex(passVal);
+  list.innerHTML = archived.map(a => `
+    <div style="padding: 10px 14px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="badge-info" style="font-size: 0.65rem; background: rgba(148, 163, 184, 0.15); color: #94a3b8;">${a.tenant_id}</span>
+        <div>
+          <strong style="color: #cbd5e1; font-size: 0.78rem;">${a.tenant_name}</strong>
+          <div style="font-size: 0.68rem; color: var(--text-muted);">
+            В архиве с: ${a.archived_at ? a.archived_at.slice(0, 10) : '—'} &bull; Причина: ${a.offboard_reason || 'Завершение проекта'}
+          </div>
+        </div>
+      </div>
+      <button onclick="restoreArchivedTenant('${a.tenant_id}')" class="btn-modern-ghost" style="padding: 3px 9px; font-size: 0.68rem; color: #34d399;" title="Восстановить из архива">
+        ☀️ Восстановить
+      </button>
+    </div>
+  `).join('');
+}
 
-    const clientRecord = {
-      login: loginVal,
-      keyHashes: [inputHash],
-      name: nameVal,
-      role: roleVal,
-      tenant: tenantVal,
-      created_at: new Date().toISOString()
-    };
-
-    // 1. Save in memory & localStorage
-    const existingIdx = VALID_CREDENTIALS.findIndex(v => v.login.toLowerCase() === loginVal);
-    if (existingIdx >= 0) {
-      VALID_CREDENTIALS[existingIdx] = clientRecord;
-    } else {
-      VALID_CREDENTIALS.push(clientRecord);
-    }
-    localStorage.setItem(CUSTOM_CLIENTS_KEY, JSON.stringify(VALID_CREDENTIALS));
-
-    // 2. Persist to FastAPI backend
-    try {
-      await adminFetch('/api/v1/admin/clients/register', {
-        method: 'POST',
-        body: JSON.stringify({
-          login: loginVal,
-          password_hash: inputHash,
-          name: nameVal,
-          role: roleVal,
-          tenant: tenantVal
-        })
-      });
-    } catch (apiErr) {
-      console.warn('[Admin] Не удалось сохранить на бэкенд (будет сохранён локально):', apiErr);
-    }
-
-    // 3. Prepare ready message
-    lastGeneratedInviteMessage = `Здравствуйте, ${nameVal}!
-
-Ваш персональный доступ в систему RevOps Enterprise OS готов:
-🔗 Ссылка для входа: https://ai-rop.ru/app/
-👤 Логин: ${loginVal}
-🔑 Пароль: ${passVal}
-🏢 Компания: ${tenantVal}
-🎭 Роль: ${roleVal}
-
-Вход защищён криптографическим протоколом. 
-По всем техническим вопросам: @dm1918`;
-
-    const card = document.getElementById('adminNewClientCard');
-    const textEl = document.getElementById('adminClientInviteText');
-    if (card && textEl) {
-      textEl.textContent = lastGeneratedInviteMessage;
-      card.style.display = 'block';
-      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    // 4. Update UI table & console log
-    renderAdminClientsTable();
-    appendAdminTerminalLog(`Успешно зарегистрирован клиент: ${nameVal} (${loginVal}), тенант: ${tenantVal}`, 'success');
-    showToast('Успешно', `Доступ для ${nameVal} активирован!`);
-
-  } catch (err) {
-    showToast('Ошибка регистрации', err.message);
+function scrollToOnboardingWizard() {
+  const el = document.getElementById('adminOnboardingWizardCard');
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const nameInput = document.getElementById('adminProvName');
+    if (nameInput) setTimeout(() => nameInput.focus(), 300);
   }
 }
 
-function copyClientInviteMessage() {
-  if (!lastGeneratedInviteMessage) {
-    const textEl = document.getElementById('adminClientInviteText');
-    if (textEl) lastGeneratedInviteMessage = textEl.textContent;
-  }
-  if (!lastGeneratedInviteMessage) return;
+function toggleProvCrmFields() {
+  const crm = (document.getElementById('adminProvCrmType')?.value || 'amocrm').toLowerCase();
+  const amoFields = document.getElementById('adminProvAmoFields');
+  const amoTokenField = document.getElementById('adminProvAmoTokenField');
+  const b24Fields = document.getElementById('adminProvB24Fields');
 
-  navigator.clipboard.writeText(lastGeneratedInviteMessage).then(() => {
-    showToast('Скопировано!', 'Текст приглашения с логином и паролем скопирован в буфер обмена');
+  if (crm === 'bitrix24') {
+    if (amoFields) amoFields.style.display = 'none';
+    if (amoTokenField) amoTokenField.style.display = 'none';
+    if (b24Fields) b24Fields.style.display = 'block';
+  } else {
+    if (amoFields) amoFields.style.display = 'block';
+    if (amoTokenField) amoTokenField.style.display = 'block';
+    if (b24Fields) b24Fields.style.display = 'none';
+  }
+}
+
+function generateProvPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+  let pass = 'RevOps_';
+  for (let i = 0; i < 6; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const el = document.getElementById('adminProvPassword');
+  if (el) el.value = pass;
+  return pass;
+}
+
+async function submitProvisionTenant() {
+  const btn = document.getElementById('btnAdminProvisionSubmit');
+  const spinner = document.getElementById('adminProvStatusSpinner');
+  const statusText = document.getElementById('adminProvStatusText');
+  const successCard = document.getElementById('adminProvSuccessCard');
+  const inviteTextEl = document.getElementById('adminProvInviteText');
+  const sheetLink = document.getElementById('adminProvSuccessSheetLink');
+
+  const name = (document.getElementById('adminProvName')?.value || '').trim();
+  const email = (document.getElementById('adminProvEmail')?.value || '').trim().toLowerCase();
+  const password = (document.getElementById('adminProvPassword')?.value || '').trim();
+  const crmType = (document.getElementById('adminProvCrmType')?.value || 'amocrm').toLowerCase();
+  const amoDomain = (document.getElementById('adminProvAmoDomain')?.value || '').trim();
+  const amoToken = (document.getElementById('adminProvAmoToken')?.value || '').trim();
+  const b24Webhook = (document.getElementById('adminProvB24Webhook')?.value || '').trim();
+  const niche = (document.getElementById('adminProvNiche')?.value || '').trim() || 'Универсальный B2B';
+  const avgCheck = parseInt(document.getElementById('adminProvAvgCheck')?.value || '150000', 10);
+  const sheetId = (document.getElementById('adminProvSheetId')?.value || '').trim();
+
+  if (!name) {
+    showToast('Внимание', 'Укажите название компании клиента');
+    return;
+  }
+  if (!email) {
+    showToast('Внимание', 'Укажите email клиента для доступа к Google Таблице и ЛК');
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (spinner) spinner.style.display = 'flex';
+  if (statusText) statusText.textContent = 'Клонирование Google Таблицы из шаблона...';
+
+  appendAdminTerminalLog(`🚀 Инициализация развертывания тенанта '${name}' (${crmType.toUpperCase()})...`, 'info');
+  showToast('Развертывание', `Создание контура для ${name}...`);
+
+  try {
+    const payload = {
+      name: name,
+      email: email,
+      password: password || undefined,
+      crm_type: crmType,
+      amo_domain: amoDomain || undefined,
+      amo_token: amoToken || undefined,
+      crm_webhook: b24Webhook || undefined,
+      niche_name: niche,
+      avg_deal_check: avgCheck,
+      sheet_id: sheetId || undefined
+    };
+
+    const res = await adminFetch('/api/v1/admin/tenants/provision', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.detail || data.error || 'Ошибка онбординга тенанта');
+    }
+
+    lastGeneratedProvInvite = data.invite_message || '';
+    if (inviteTextEl) inviteTextEl.textContent = lastGeneratedProvInvite;
+    if (sheetLink && data.spreadsheet_url) {
+      sheetLink.href = data.spreadsheet_url;
+      sheetLink.style.display = 'inline-flex';
+    }
+    if (successCard) {
+      successCard.style.display = 'block';
+      successCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    appendAdminTerminalLog(`✓ Тенант ${data.tenant_id} успешно развернут: ${name}`, 'success');
+    showToast('Онбординг завершен!', `Контур ${data.tenant_id} готов к работе`);
+
+    await loadAdminTenants();
+  } catch (err) {
+    appendAdminTerminalLog(`[-] Ошибка развертывания тенанта: ${err.message}`, 'error');
+    showToast('Ошибка онбординга', err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (spinner) spinner.style.display = 'none';
+  }
+}
+
+function copyProvInviteMessage() {
+  if (!lastGeneratedProvInvite) {
+    showToast('Внимание', 'Бриф еще не сформирован');
+    return;
+  }
+  navigator.clipboard.writeText(lastGeneratedProvInvite).then(() => {
+    showToast('Скопировано', 'Бриф и доступы скопированы в буфер обмена!');
   }).catch(() => {
-    showToast('Сообщение готово', 'Выделите и скопируйте текст из карточки');
+    showToast('Инфо', 'Выделите текст и нажмите Ctrl+C');
   });
 }
 
-async function deleteClientAccess(login) {
-  if (!confirm(`Удалить доступ для клиента ${login}?`)) return;
-  VALID_CREDENTIALS = VALID_CREDENTIALS.filter(v => v.login.toLowerCase() !== login.toLowerCase());
-  localStorage.setItem(CUSTOM_CLIENTS_KEY, JSON.stringify(VALID_CREDENTIALS));
+function openTenantEditModal(tenantId) {
+  const tenant = currentTenantsCache.find(t => String(t.tenant_id).toUpperCase() === String(tenantId).toUpperCase());
+  if (!tenant) {
+    showToast('Ошибка', `Тенант ${tenantId} не найден`);
+    return;
+  }
+
+  const modal = document.getElementById('adminTenantEditModal');
+  if (!modal) return;
+
+  document.getElementById('modalTenantId').value = tenant.tenant_id;
+  document.getElementById('modalTenantIdBadge').textContent = tenant.tenant_id;
+  document.getElementById('modalTenantTitle').textContent = `Редактирование: ${tenant.tenant_name}`;
+  document.getElementById('modalTenantName').value = tenant.tenant_name || '';
+  document.getElementById('modalTenantCrmType').value = (tenant.crm_type || 'amocrm').toLowerCase();
+  document.getElementById('modalTenantEmail').value = tenant.client_email || '';
+  document.getElementById('modalTenantAmoDomain').value = tenant.amo_domain || '';
+  document.getElementById('modalTenantAmoToken').value = '';
+  document.getElementById('modalTenantB24Webhook').value = tenant.crm_webhook_url || tenant.b24_webhook_url || '';
+  document.getElementById('modalTenantNiche').value = tenant.niche_name || '';
+  document.getElementById('modalTenantAvgCheck').value = tenant.avg_deal_check || 150000;
+  document.getElementById('modalTenantNextStep').value = tenant.target_next_step || '';
+  document.getElementById('modalTenantNewPass').value = '';
+
+  modal.style.display = 'flex';
+}
+
+function closeTenantEditModal() {
+  const modal = document.getElementById('adminTenantEditModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function generateModalPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+  let pass = 'RevOps_';
+  for (let i = 0; i < 6; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const el = document.getElementById('modalTenantNewPass');
+  if (el) el.value = pass;
+}
+
+async function saveTenantEdit() {
+  const tenantId = document.getElementById('modalTenantId')?.value;
+  if (!tenantId) return;
+
+  const payload = {
+    tenant_name: (document.getElementById('modalTenantName')?.value || '').trim() || undefined,
+    crm_type: document.getElementById('modalTenantCrmType')?.value || undefined,
+    client_email: (document.getElementById('modalTenantEmail')?.value || '').trim().toLowerCase() || undefined,
+    amo_domain: (document.getElementById('modalTenantAmoDomain')?.value || '').trim() || undefined,
+    amo_token: (document.getElementById('modalTenantAmoToken')?.value || '').trim() || undefined,
+    crm_webhook_url: (document.getElementById('modalTenantB24Webhook')?.value || '').trim() || undefined,
+    niche_name: (document.getElementById('modalTenantNiche')?.value || '').trim() || undefined,
+    avg_deal_check: parseInt(document.getElementById('modalTenantAvgCheck')?.value || '150000', 10),
+    target_next_step: (document.getElementById('modalTenantNextStep')?.value || '').trim() || undefined,
+    new_password: (document.getElementById('modalTenantNewPass')?.value || '').trim() || undefined
+  };
+
+  showToast('Сохранение', `Обновление параметров тенанта ${tenantId}...`);
 
   try {
-    await adminFetch(`/api/v1/admin/clients/${encodeURIComponent(login)}`, { method: 'DELETE' });
-  } catch (e) {}
+    const res = await adminFetch(`/api/v1/admin/tenants/${encodeURIComponent(tenantId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.detail || data.error || 'Ошибка обновления тенанта');
+    }
 
-  renderAdminClientsTable();
-  appendAdminTerminalLog(`Удалён доступ клиента: ${login}`, 'warning');
-  showToast('Удалено', `Клиент ${login} удалён`);
+    appendAdminTerminalLog(`✓ Конфигурация ${tenantId} обновлена`, 'success');
+    showToast('Успешно', `Параметры ${tenantId} сохранены`);
+    closeTenantEditModal();
+    await loadAdminTenants();
+  } catch (err) {
+    appendAdminTerminalLog(`[-] Ошибка сохранения ${tenantId}: ${err.message}`, 'error');
+    showToast('Ошибка сохранения', err.message);
+  }
+}
+
+async function toggleTenantFreeze(tenantId, currentStatus) {
+  const isFrozen = (currentStatus === 'frozen');
+  const action = isFrozen ? 'unfreeze' : 'freeze';
+  const label = isFrozen ? 'разморозить' : 'заморозить';
+
+  if (!confirm(`Вы действительно хотите ${label} клиентский контур ${tenantId}? ${isFrozen ? 'Доступ в ЛК будет открыт.' : 'Доступ в ЛК и фоновая синхронизация будут приостановлены.'}`)) {
+    return;
+  }
+
+  showToast('Изменение статуса', `${label.charAt(0).toUpperCase() + label.slice(1)} тенанта ${tenantId}...`);
+
+  try {
+    const res = await adminFetch(`/api/v1/admin/tenants/${encodeURIComponent(tenantId)}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.detail || data.error || 'Ошибка смены статуса');
+    }
+
+    appendAdminTerminalLog(data.message, 'warning');
+    showToast('Статус обновлен', data.message);
+    await loadAdminTenants();
+  } catch (err) {
+    appendAdminTerminalLog(`[-] Ошибка: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
+  }
+}
+
+async function offboardTenant(tenantId, tenantName) {
+  if (!confirm(`ВНИМАНИЕ: Вы уверены, что хотите вывести клиента ${tenantId} (${tenantName}) из эксплуатации и переместить в архив? Доступ в ЛК будет заблокирован.`)) {
+    return;
+  }
+
+  const reason = prompt('Укажите причину архивации (например: Завершение контракта):', 'Завершение контракта');
+
+  showToast('Архивация', `Вывод из эксплуатации ${tenantId}...`);
+
+  try {
+    const res = await adminFetch(`/api/v1/admin/tenants/${encodeURIComponent(tenantId)}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'offboard', reason: reason || 'Завершение контракта' })
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.detail || data.error || 'Ошибка вывода в архив');
+    }
+
+    appendAdminTerminalLog(data.message, 'warning');
+    showToast('Клиент архивирован', data.message);
+    await loadAdminTenants();
+  } catch (err) {
+    appendAdminTerminalLog(`[-] Ошибка архивации: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
+  }
+}
+
+async function restoreArchivedTenant(tenantId) {
+  if (!confirm(`Восстановить клиента ${tenantId} из архива и активировать контур?`)) {
+    return;
+  }
+
+  showToast('Восстановление', `Восстановление ${tenantId}...`);
+
+  try {
+    const res = await adminFetch(`/api/v1/admin/tenants/${encodeURIComponent(tenantId)}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'restore' })
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.detail || data.error || 'Ошибка восстановления');
+    }
+
+    appendAdminTerminalLog(data.message, 'success');
+    showToast('Восстановлен', data.message);
+    await loadAdminTenants();
+  } catch (err) {
+    appendAdminTerminalLog(`[-] Ошибка восстановления: ${err.message}`, 'error');
+    showToast('Ошибка', err.message);
+  }
+}
+
+async function testServiceAccountLive() {
+  const btn = document.getElementById('btnTestSaLive');
+  const badge = document.getElementById('adminSaBadge');
+  const emailEl = document.getElementById('adminSaEmail');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Пинг...';
+  }
+  showToast('Google API', 'Проверка связи с Google Drive & Sheets API...');
+
+  try {
+    const res = await adminFetch('/api/v1/admin/infra/test-sa', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || 'Сбой проверки сервисного аккаунта');
+    }
+
+    if (badge) {
+      badge.textContent = `🟢 ПИНГ ${data.latency_ms} ms (${data.accessible_spreadsheets} табл.)`;
+      badge.className = 'badge-won';
+    }
+    if (emailEl && data.email) {
+      emailEl.textContent = data.email;
+    }
+
+    appendAdminTerminalLog(`✓ Google Service Account: ${data.email} | пинг: ${data.latency_ms} ms | доступно таблиц: ${data.accessible_spreadsheets}`, 'success');
+    showToast('Google API Подключен', `Пинг: ${data.latency_ms} ms, доступно таблиц: ${data.accessible_spreadsheets}`);
+  } catch (e) {
+    if (badge) {
+      badge.textContent = '🔴 ОШИБКА СВЯЗИ';
+      badge.className = 'badge-lost';
+    }
+    appendAdminTerminalLog(`[-] Ошибка связи с Google SA: ${e.message}`, 'error');
+    showToast('Google API Ошибка', e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '⚡ Проверить пинг';
+    }
+  }
 }
 
 
@@ -1016,7 +1351,7 @@ function switchAdminSubtab(subtabId) {
   if (subtabId === 'agents') {
     loadAgentsTelemetry(false);
   } else if (subtabId === 'clients') {
-    renderAdminClientsTable();
+    loadAdminTenants();
   } else if (subtabId === 'infra') {
     loadFeaturesConfig();
   } else if (subtabId === 'terminal') {
@@ -1445,11 +1780,25 @@ function loadQuarantineCalls() {
   executeAgentAction('a4', 'audit');
 }
 
-function calibrateZScoreThresholds() {
-  const val = prompt('Укажите порог отсечения аномалий Z-Score (текущий: 2.5):', '2.5');
-  if (val && !isNaN(parseFloat(val))) {
-    appendDrawerOutput(`⚖️ Агент 4: Порог Z-Score откалиброван на sigma = ${parseFloat(val)}`, 'success');
-    showToast('Агент 4', `Порог Z-Score откалиброван: sigma = ${parseFloat(val)}`);
+async function calibrateZScoreThresholds() {
+  const val = prompt('Укажите целевой порог отсечения аномалий Z-Score (по умолчанию: 2.5 сигма):', '2.5');
+  if (!val || isNaN(parseFloat(val))) return;
+  const sigma = parseFloat(val);
+  try {
+    showToast('Калибровка Z-Score', `Сохранение порога ${sigma}σ...`);
+    const res = await adminFetch('/api/v1/admin/scoring/calibrate', {
+      method: 'POST',
+      body: JSON.stringify({ z_score_threshold: sigma })
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.detail || data.error || 'Ошибка калибровки');
+    }
+    appendDrawerOutput(`⚖️ Агент 4: ${data.message}`, 'success');
+    appendAdminTerminalLog(`⚖️ ${data.message}`, 'success');
+    showToast('Агент 4: Z-Score', data.message);
+  } catch (e) {
+    showToast('Ошибка калибровки', e.message);
   }
 }
 
@@ -1477,3 +1826,22 @@ window.loadQuarantineCalls = loadQuarantineCalls;
 window.calibrateZScoreThresholds = calibrateZScoreThresholds;
 window.runCCOAction = runCCOAction;
 window.runHealerAction = runHealerAction;
+
+// Client Lifecycle Center Exports
+window.loadAdminTenants = loadAdminTenants;
+window.renderAdminTenantsTable = renderAdminTenantsTable;
+window.renderAdminArchivedTenants = renderAdminArchivedTenants;
+window.scrollToOnboardingWizard = scrollToOnboardingWizard;
+window.toggleProvCrmFields = toggleProvCrmFields;
+window.generateProvPassword = generateProvPassword;
+window.submitProvisionTenant = submitProvisionTenant;
+window.copyProvInviteMessage = copyProvInviteMessage;
+window.openTenantEditModal = openTenantEditModal;
+window.closeTenantEditModal = closeTenantEditModal;
+window.generateModalPassword = generateModalPassword;
+window.saveTenantEdit = saveTenantEdit;
+window.toggleTenantFreeze = toggleTenantFreeze;
+window.offboardTenant = offboardTenant;
+window.restoreArchivedTenant = restoreArchivedTenant;
+window.testServiceAccountLive = testServiceAccountLive;
+

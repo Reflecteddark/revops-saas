@@ -9316,106 +9316,281 @@
            ADMIN SUBTAB 2: КЛИЕНТЫ & ДОСТУПЫ
            =================================================================== -->
       <div id="admin-pane-clients" class="admin-pane" style="display: none;">
-<!-- MODULE 5: РЕГИСТРАЦИЯ И ОНБОРДИНГ КЛИЕНТОВ (ГЕНЕРАТОР ДОСТУПОВ) -->
-      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(20, 16, 35, 0.95) 0%, rgba(10, 10, 18, 0.98) 100%); border: 1px solid rgba(167, 139, 250, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-        <div class="bento-card-header" style="margin-bottom: 14px;">
-          <span class="bento-card-title">
-            <span class="title-icon" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+
+        <!-- MODULE 5A: ФЛОТ КЛИЕНТСКИХ КОНТУРОВ (TENANTS FLEET) -->
+        <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(20, 16, 35, 0.95) 0%, rgba(10, 10, 18, 0.98) 100%); border: 1px solid rgba(167, 139, 250, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div class="bento-card-header" style="margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <span class="bento-card-title">
+              <span class="title-icon" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
+              5. Флот клиентских контуров & Жизненный цикл (Client Lifecycle Center)
             </span>
-            5. Регистрация нового клиента & Выдача доступов
-          </span>
-          <span class="badge-won" style="font-size: 0.65rem;">Мгновенная активация</span>
-        </div>
-
-        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
-          Создайте персональный доступ для нового клиента. Пароль автоматически хэшируется по алгоритму SHA-256 (без открытого текста), доступ активируется на платформе, и генерируется готовое приветственное сообщение для отправки клиенту в Telegram или WhatsApp.
-        </div>
-
-        <!-- Form Fields Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px;">
-          <!-- Login / Email -->
-          <div>
-            <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">📧 Email / Логин клиента:</label>
-            <input type="email" id="adminNewUserLogin" placeholder="client@company.ru" 
-                   style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
-          </div>
-
-          <!-- Password + Generator -->
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-              <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">🔑 Пароль:</label>
-              <button type="button" onclick="generateRandomPassword()" class="btn-modern-ghost" style="padding: 1px 6px; font-size: 0.65rem; height: auto;">🎲 Сгенерировать</button>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span id="adminTenantsActiveBadge" class="badge-won" style="font-size: 0.70rem; padding: 3px 8px;">1 активен</span>
+              <span id="adminTenantsFrozenBadge" class="badge-info" style="font-size: 0.70rem; padding: 3px 8px; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">0 заморожено</span>
+              <span id="adminTenantsArchivedBadge" class="badge-info" style="font-size: 0.70rem; padding: 3px 8px; background: rgba(148, 163, 184, 0.15); color: #94a3b8;">0 в архиве</span>
+              <button onclick="loadAdminTenants()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.72rem;" title="Обновить список тенантов">🔄 Обновить</button>
+              <button onclick="scrollToOnboardingWizard()" class="btn-modern-primary" style="padding: 4px 12px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 6px;">
+                <span>+ Развернуть клиента</span>
+              </button>
             </div>
-            <input type="text" id="adminNewUserPass" placeholder="Например: RevOps2026!" 
-                   style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #34d399; outline: none;">
           </div>
 
-          <!-- Client Full Name -->
-          <div>
-            <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">👤 Имя / ФИО клиента:</label>
-            <input type="text" id="adminNewUserName" placeholder="Алексей Смирнов" 
-                   style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+          <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+            Централизованное управление организациями клиентов: персональные таблицы Google Sheets, RBAC-защита ядра, доступы в ЛК, смена CRM-вебхуков, токенов, приостановка (заморозка) и вывод из эксплуатации (архив).
           </div>
 
-          <!-- Company / Tenant -->
-          <div>
-            <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🏢 Название компании (Тенант):</label>
-            <input type="text" id="adminNewUserTenant" placeholder="ООО 'ТехноСбыт'" 
-                   style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+          <!-- Active & Frozen Tenants Fleet Table -->
+          <div style="overflow-x: auto; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: rgba(0,0,0,0.25);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.76rem; text-align: left;">
+              <thead>
+                <tr style="background: rgba(255,255,255,0.04); color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.08);">
+                  <th style="padding: 10px 14px;">Организация (Тенант)</th>
+                  <th style="padding: 10px 14px;">Статус</th>
+                  <th style="padding: 10px 14px;">CRM-контур</th>
+                  <th style="padding: 10px 14px;">Google Таблица</th>
+                  <th style="padding: 10px 14px;">Пользователи ЛК</th>
+                  <th style="padding: 10px 14px; text-align: right;">Управление</th>
+                </tr>
+              </thead>
+              <tbody id="adminTenantsFleetTbody">
+                <tr>
+                  <td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted);">
+                    <div class="loader-spinner" style="margin: 0 auto 8px auto;"></div>
+                    Загрузка флота клиентов...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          <!-- Role Selector -->
-          <div>
-            <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🎭 Роль в системе:</label>
-            <select id="adminNewUserRole" 
-                    style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(15,15,25,0.95); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
-              <option value="РОП • Руководитель ОП">РОП • Руководитель ОП</option>
-              <option value="CEO • Собственник бизнеса">CEO • Собственник бизнеса</option>
-              <option value="Менеджер по продажам">Менеджер по продажам</option>
-              <option value="Аналитик RevOps">Аналитик RevOps</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Submit Button -->
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
-          <button onclick="registerNewClientAccess()" class="btn-modern-primary" style="padding: 9px 18px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-            <span>Зарегистрировать клиента и выдать доступ</span>
-          </button>
-          <span style="font-size: 0.7rem; color: var(--text-muted);">
-            🛡️ Zero-Knowledge: Пароль хэшируется в браузере через SHA-256
-          </span>
-        </div>
-
-        <!-- Generated Client Card & Ready Message (Hidden until created) -->
-        <div id="adminNewClientCard" style="display: none; padding: 14px 16px; background: rgba(52, 211, 153, 0.06); border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 12px; margin-top: 14px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="status-dot dot-won"></span>
-              <strong style="color: #34d399; font-size: 0.82rem;">Доступ успешно создан и активен!</strong>
+          <!-- Archived Tenants Accordion/Block -->
+          <div id="adminArchivedTenantsContainer" style="display: none; margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+              <span style="font-size: 0.76rem; font-weight: 700; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+                <span>📦 Архив клиентов (выведены из эксплуатации):</span>
+                <span id="adminArchivedCountText" class="badge-info" style="font-size: 0.65rem;">0</span>
+              </span>
             </div>
-            <button onclick="copyClientInviteMessage()" class="btn-modern-primary" style="padding: 5px 12px; font-size: 0.72rem;">
-              📋 Скопировать сообщение для клиента
+            <div id="adminArchivedTenantsList" style="display: flex; flex-direction: column; gap: 6px;">
+              <!-- Archived cards -->
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 5B: ОНБОРДИНГ НОВОГО КЛИЕНТА «ПОД КЛЮЧ» (ONBOARDING WIZARD) -->
+        <div id="adminOnboardingWizardCard" class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(16, 24, 39, 0.95) 0%, rgba(10, 15, 26, 0.98) 100%); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </span>
+              Онбординг нового клиента под ключ (Multi-Tenant Auto-Provisioning)
+            </span>
+            <span class="badge-won" style="font-size: 0.65rem; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4);">Clean Starter Template 1jBBot...</span>
+          </div>
+
+          <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+            Автоматическое развертывание: система создаёт копию чистого шаблона Google Таблицы, применяет аппаратную защиту RBAC к системным формулам, генерирует персональный вебхук для телефонии, заводит аккаунт в ЛК и формирует готовый бриф для клиента.
+          </div>
+
+          <!-- Wizard Form Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 16px;">
+            <!-- Company Name -->
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🏢 Название компании (Организация): *</label>
+              <input type="text" id="adminProvName" placeholder="Например: ООО 'Альфа Трейд'" 
+                     style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+            </div>
+
+            <!-- Client Email -->
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">📧 Email клиента (Редактор Google & Логин ЛК): *</label>
+              <input type="email" id="adminProvEmail" placeholder="client@company.ru" 
+                     style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+            </div>
+
+            <!-- Password + Generator -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">🔑 Пароль в ЛК:</label>
+                <button type="button" onclick="generateProvPassword()" class="btn-modern-ghost" style="padding: 1px 6px; font-size: 0.65rem; height: auto;">🎲 Сгенерировать</button>
+              </div>
+              <input type="text" id="adminProvPassword" placeholder="Оставьте пустым для автогенерации" 
+                     style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #38bdf8; outline: none;">
+            </div>
+
+            <!-- CRM Selector -->
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🔌 CRM-система клиента: *</label>
+              <select id="adminProvCrmType" onchange="toggleProvCrmFields()" 
+                      style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(15,15,25,0.95); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+                <option value="amocrm">amoCRM API v4 (Polling & Events)</option>
+                <option value="bitrix24">Битрикс24 REST (Входящий Webhook)</option>
+              </select>
+            </div>
+
+            <!-- amoCRM Domain (conditional) -->
+            <div id="adminProvAmoFields">
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🌐 Домен amoCRM:</label>
+              <input type="text" id="adminProvAmoDomain" placeholder="company.amocrm.ru" 
+                     style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+            </div>
+
+            <!-- amoCRM Token (conditional) -->
+            <div id="adminProvAmoTokenField">
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🔑 Токен amoCRM API v4 (опционально):</label>
+              <input type="text" id="adminProvAmoToken" placeholder="eyJ0eXAiOiJKV1QiLC..." 
+                     style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+            </div>
+
+            <!-- Bitrix24 Webhook URL (conditional) -->
+            <div id="adminProvB24Fields" style="display: none;">
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🔗 Исходящий REST Webhook Битрикс24:</label>
+              <input type="text" id="adminProvB24Webhook" placeholder="https://portal.bitrix24.ru/rest/1/abc123xyz/" 
+                     style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+            </div>
+
+            <!-- Niche / Industry -->
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">🎯 Ниша бизнеса:</label>
+              <input type="text" id="adminProvNiche" placeholder="Например: Строительные материалы" 
+                     style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+            </div>
+
+            <!-- Average Check -->
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">💰 Средний чек сделки (₽):</label>
+              <input type="number" id="adminProvAvgCheck" placeholder="150000" value="150000" 
+                     style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+            </div>
+
+            <!-- Custom Sheet ID (Optional) -->
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600;">📊 Google Spreadsheet ID (опционально):</label>
+              <input type="text" id="adminProvSheetId" placeholder="Пусто = авто-клон из Clean Template" 
+                     style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff; outline: none;">
+            </div>
+          </div>
+
+          <!-- Provision Submit Button & Status Banner -->
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <button id="btnAdminProvisionSubmit" onclick="submitProvisionTenant()" class="btn-modern-primary" style="padding: 10px 20px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: rgba(56,189,248,0.5);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>🚀 Развернуть клиентский контур под ключ</span>
             </button>
+            <div id="adminProvStatusSpinner" style="display: none; align-items: center; gap: 8px; font-size: 0.75rem; color: #38bdf8;">
+              <div class="loader-spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>
+              <span id="adminProvStatusText">Развертывание в Google Drive & Sheets API...</span>
+            </div>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">
+              🛡️ RBAC Hardware Lock &bull; Полная изоляция данных &bull; Zero-Knowledge паролей
+            </span>
           </div>
 
-          <!-- Ready Text to send -->
-          <pre id="adminClientInviteText" style="margin: 0; padding: 12px; background: rgba(0,0,0,0.5); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: #e2e8f0; white-space: pre-wrap; line-height: 1.6; border: 1px solid rgba(255,255,255,0.08);"></pre>
+          <!-- Ready Client Card & Welcome Brief (Shown after successful provision) -->
+          <div id="adminProvSuccessCard" style="display: none; padding: 16px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; margin-top: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot dot-won"></span>
+                <strong id="adminProvSuccessTitle" style="color: #38bdf8; font-size: 0.86rem;">Клиентский контур успешно развернут!</strong>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <a id="adminProvSuccessSheetLink" href="#" target="_blank" class="btn-modern-ghost" style="padding: 5px 12px; font-size: 0.72rem; color: #38bdf8; border-color: rgba(56,189,248,0.4);">
+                  📊 Открыть таблицу &nearr;
+                </a>
+                <button onclick="copyProvInviteMessage()" class="btn-modern-primary" style="padding: 5px 12px; font-size: 0.72rem;">
+                  📋 Скопировать бриф для клиента
+                </button>
+              </div>
+            </div>
+            <pre id="adminProvInviteText" style="margin: 0; padding: 14px; background: rgba(0,0,0,0.6); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: #e2e8f0; white-space: pre-wrap; line-height: 1.6; border: 1px solid rgba(255,255,255,0.08); max-height: 280px; overflow-y: auto;"></pre>
+          </div>
         </div>
 
-        <!-- List of registered clients -->
-        <div style="margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
-          <div style="font-size: 0.78rem; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-            <span>Активные пользователи и клиенты:</span>
-            <span id="adminClientsCountBadge" class="badge-info" style="font-size: 0.65rem;">Загрузка...</span>
-          </div>
-          <div id="adminClientsListTable" style="display: flex; flex-direction: column; gap: 6px;">
-            <!-- Dynamically populated -->
-          </div>
-        </div>
       </div>
+
+      <!-- MODAL: РЕДАКТИРОВАНИЕ ТЕНАНТА & СБРОС ПАРОЛЯ -->
+      <div id="adminTenantEditModal" style="display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 20px;">
+        <div style="width: 100%; max-width: 580px; background: #0f121d; border: 1px solid rgba(167, 139, 250, 0.4); border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,0.6); overflow: hidden;">
+          <div style="padding: 16px 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="modalTenantIdBadge" class="badge-won" style="font-size: 0.75rem;">TNT-001</span>
+              <strong id="modalTenantTitle" style="color: #fff; font-size: 0.9rem;">Редактирование настроек клиента</strong>
+            </div>
+            <button onclick="closeTenantEditModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</button>
+          </div>
+
+          <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto;">
+            <input type="hidden" id="modalTenantId">
+            
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">🏢 Название компании:</label>
+              <input type="text" id="modalTenantName" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">🔌 Тип CRM:</label>
+                <select id="modalTenantCrmType" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: #161b2b; border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+                  <option value="amocrm">amoCRM API v4</option>
+                  <option value="bitrix24">Битрикс24 REST</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">📧 Email клиента:</label>
+                <input type="email" id="modalTenantEmail" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">🌐 Домен amoCRM (если amoCRM):</label>
+              <input type="text" id="modalTenantAmoDomain" placeholder="company.amocrm.ru" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">🔑 Токен amoCRM API v4 (если обновлён):</label>
+              <input type="text" id="modalTenantAmoToken" placeholder="Оставьте пустым, если не менялся" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">🔗 Исходящий REST Webhook Битрикс24 (если B24):</label>
+              <input type="text" id="modalTenantB24Webhook" placeholder="https://portal.bitrix24.ru/rest/1/abc123xyz/" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">🎯 Ниша бизнеса:</label>
+                <input type="text" id="modalTenantNiche" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">💰 Средний чек (₽):</label>
+                <input type="number" id="modalTenantAvgCheck" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">📌 Целевой Next Step:</label>
+              <input type="text" id="modalTenantNextStep" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+            </div>
+
+            <!-- Password Reset Field -->
+            <div style="background: rgba(167, 139, 250, 0.08); border: 1px solid rgba(167, 139, 250, 0.25); border-radius: 10px; padding: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-size: 0.74rem; color: #c4b5fd; font-weight: 700;">🔑 Сбросить пароль для ЛК:</label>
+                <button type="button" onclick="generateModalPassword()" class="btn-modern-ghost" style="padding: 1px 6px; font-size: 0.65rem; height: auto;">🎲 Новый пароль</button>
+              </div>
+              <input type="text" id="modalTenantNewPass" placeholder="Оставьте пустым, чтобы не менять пароль" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.5); border: 1px solid var(--border-subtle); border-radius: 8px; color: #34d399;">
+              <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">При сохранении пароль будет захэширован по SHA-256 в базе ЛК.</div>
+            </div>
+          </div>
+
+          <div style="padding: 14px 20px; background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+            <button onclick="closeTenantEditModal()" class="btn-modern-ghost" style="padding: 7px 14px; font-size: 0.78rem;">Отмена</button>
+            <button onclick="saveTenantEdit()" class="btn-modern-primary" style="padding: 7px 18px; font-size: 0.78rem; font-weight: 700;">Сохранить изменения</button>
+          </div>
+        </div>
       </div>
 
       <!-- ===================================================================
@@ -9579,9 +9754,7 @@
                   revops-prod-sa@revops-441112.iam.gserviceaccount.com
                 </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <button onclick="showToast('Ключ сервисного аккаунта', 'service_account.json проверен и валиден')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Проверен ✓</button>
-              </div>
+                <button id="btnTestSaLive" onclick="testServiceAccountLive()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.72rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="Реальный пинг Google Drive & Sheets API">⚡ Проверить пинг</button>
             </div>
           </div>
         </div>
