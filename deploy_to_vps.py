@@ -243,45 +243,60 @@ def restart_services(services: list) -> bool:
         log(f"Ошибка перезапуска служб: {res.stderr.strip()}", symbol="[-]")
         return False
         
-    time.sleep(2)
     return True
 
-def run_smoke_test() -> bool:
-    """Проверяет здоровье боевых служб и эндпоинта OpenAPI."""
-    log("Запуск смоук-теста боевой среды...", symbol="[?]")
+def run_smoke_test(timeout_sec: int = 15) -> bool:
+    """Ожидает полной готовности боевых служб и проверяет эндпоинты."""
+    log("Ожидание готовности и запуск смоук-теста боевой среды...", symbol="[?]")
+    t0 = time.time()
     
-    units_cmd = subprocess.run(
-        [
-            "ssh", "-n", "-o", "StrictHostKeyChecking=no",
-            f"{VPS_USER}@{VPS_HOST}",
-            "systemctl is-active revops-api revops-healer revops-tgbot cloudflared"
-        ],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="ignore"
-    )
-    statuses = [s.strip() for s in units_cmd.stdout.strip().split("\n") if s.strip()]
-    if all(s == "active" for s in statuses) and len(statuses) >= 4:
+    # 1. Ожидание активности всех systemd служб
+    all_active = False
+    statuses = []
+    while time.time() - t0 < timeout_sec:
+        units_cmd = subprocess.run(
+            [
+                "ssh", "-n", "-o", "StrictHostKeyChecking=no",
+                f"{VPS_USER}@{VPS_HOST}",
+                "systemctl is-active revops-api revops-healer revops-tgbot cloudflared"
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="ignore"
+        )
+        statuses = [s.strip() for s in units_cmd.stdout.strip().split("\n") if s.strip()]
+        if len(statuses) >= 4 and all(s == "active" for s in statuses):
+            all_active = True
+            break
+        time.sleep(1.0)
+        
+    if all_active:
         log("Все 4 боевые службы VPS активны (revops-api, healer, tgbot, cloudflared).", symbol="[+]")
     else:
         log(f"Внимание: статус служб: {statuses}", symbol="[!]")
 
-    try:
-        req = urllib.request.Request(
-            "https://report.ai-rop.ru/docs",
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) RevOps-Deploy/1.0"}
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            code = resp.getcode()
-            if code == 200:
-                log("Публичный API шлюз https://report.ai-rop.ru/docs доступен (HTTP 200 OK).", symbol="[+]")
-            else:
-                log(f"API вернул код {code}", symbol="[!]")
-    except Exception as e:
-        log(f"Предупреждение при запросе к API: {e}", symbol="[!]")
+    # 2. Ожидание ответа HTTP 200 от публичного API
+    api_ready = False
+    req = urllib.request.Request(
+        "https://report.ai-rop.ru/docs",
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) RevOps-Deploy/1.0"}
+    )
+    while time.time() - t0 < timeout_sec:
+        try:
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                if resp.getcode() == 200:
+                    api_ready = True
+                    break
+        except Exception:
+            time.sleep(1.0)
+            
+    if api_ready:
+        log("Публичный API шлюз https://report.ai-rop.ru/docs готов (HTTP 200 OK).", symbol="[+]")
+    else:
+        log("Предупреждение: API шлюз еще не ответил 200 OK (возможно, прогрев воркеров).", symbol="[!]")
 
-    return True
+    return all_active and api_ready
 
 def main():
     parser = argparse.ArgumentParser(description="RevOps OS — Unified Deployment Script")
@@ -334,8 +349,8 @@ def main():
         # Шаг 4: Рестарт служб
         restart_services(list(dict.fromkeys(all_services)))
 
-        # Шаг 5: Смоук-тест
-        run_smoke_test()
+        # Шаг 5: Смоук-тест с ожиданием прогрева
+        run_smoke_test(timeout_sec=15)
 
     total_time = time.time() - start_time
     print("=" * 70)
