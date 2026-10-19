@@ -1735,13 +1735,17 @@ def get_admin_crm_status(tenant_id: str = Query("TNT-001")):
             "available": b24_script is not None,
             "webhook_url": b24_webhook[:35] + "..." if len(b24_webhook) > 35 else b24_webhook,
             "connected": bool(b24_webhook),
-            "label": "Bitrix24 REST API"
+            "label": "Bitrix24 REST API",
+            "rest_status": "subscription_required",
+            "status_text": "Демо-контур (REST 401: подписка Маркет+)"
         },
         "amocrm": {
             "available": amo_script is not None,
             "domain": amo_domain,
             "connected": bool(amo_domain and amo_token),
-            "label": "amoCRM API v4"
+            "label": "amoCRM API v4",
+            "rest_status": "ready",
+            "status_text": "Готов ✓ (OAuth 2.0)"
         }
     }
 
@@ -1766,6 +1770,7 @@ def execute_crm_action(req: CRMActionRequest):
         new_crm = (req.crm_type or ("amocrm" if current_crm == "bitrix24" else "bitrix24")).lower()
         candidate_reg_paths = [
             get_tenants_registry_path(),
+            Path("/opt/revops-saas/tenants_registry.json"),
             Path("/opt/revops-enterprise-os/tenants_registry.json"),
             ENTERPRISE_OS_DIR / "tenants_registry.json",
             Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "tenants_registry.json",
@@ -1796,9 +1801,11 @@ def execute_crm_action(req: CRMActionRequest):
         reset_details = ""
         try:
             candidate_scripts = [
+                Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "switch_crm_with_reset.py",
+                Path("/opt/revops-saas/scripts/switch_crm_with_reset.py"),
                 ENTERPRISE_OS_DIR / "scripts" / "switch_crm_with_reset.py",
                 Path("/opt/revops-enterprise-os/scripts/switch_crm_with_reset.py"),
-                Path(__file__).resolve().parent.parent.parent.parent / "revops-enterprise-os" / "scripts" / "switch_crm_with_reset.py"
+                Path(__file__).resolve().parent.parent.parent.parent.parent / "revops-enterprise-os" / "scripts" / "switch_crm_with_reset.py"
             ]
             reset_script = next((s for s in candidate_scripts if s.exists()), None)
             if reset_script:
@@ -1821,6 +1828,8 @@ def execute_crm_action(req: CRMActionRequest):
                 if run_res.returncode == 0:
                     reset_details = f" Таблица raw_deals и ЛК автоматически очищены и синхронизированы с {new_crm.upper()}."
                     append_console_log(f"🧹 Google Таблица raw_deals и ЛК автоматически очищены и синхронизированы с {new_crm.upper()}!", "success")
+                    if new_crm == "bitrix24":
+                        append_console_log("ℹ️ Bitrix24: Облачный REST API требует подписку Маркет Плюс. Задействован демо-контур из 10 сделок в raw_deals.", "info")
                 else:
                     logger.warning(f"Reset script failed (code {run_res.returncode}): {run_res.stderr or run_res.stdout}")
         except Exception as e:

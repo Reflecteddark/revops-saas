@@ -207,10 +207,87 @@ async function loadAdminCrmStatus() {
       switchBtn.textContent = isB24 ? '🔄 Переключить на amoCRM' : '🔄 Переключить на Bitrix24';
     }
 
-    if (b24Badge) b24Badge.textContent = data.bitrix24?.connected ? 'Готов ✓' : 'Не подключен';
-    if (amoBadge) amoBadge.textContent = data.amocrm?.connected ? 'Готов ✓' : 'Не подключен';
-    if (b24Webhook) b24Webhook.textContent = `Вебхук: ${data.bitrix24?.webhook_url || '—'}`;
-    if (amoDomain) amoDomain.textContent = `Домен: ${data.amocrm?.domain || 'revopsofficial.amocrm.ru'}`;
+    // Dynamic CRM Card & Button Highlighting
+    const b24Card = document.getElementById('adminB24Card');
+    const amoCard = document.getElementById('adminAmoCard');
+    const b24SyncBtn = document.getElementById('btnB24Sync');
+    const amoSyncBtn = document.getElementById('btnAmoSync');
+
+    if (b24Card && amoCard) {
+      if (isB24) {
+        // Bitrix24 is Active
+        b24Card.style.border = '1.5px solid #38bdf8';
+        b24Card.style.background = 'rgba(56, 189, 248, 0.08)';
+        b24Card.style.boxShadow = '0 0 16px rgba(56, 189, 248, 0.12)';
+        b24Card.style.opacity = '1';
+
+        amoCard.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+        amoCard.style.background = 'rgba(255, 255, 255, 0.02)';
+        amoCard.style.boxShadow = 'none';
+        amoCard.style.opacity = '0.65';
+
+        if (b24SyncBtn) {
+          b24SyncBtn.style.background = 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)';
+          b24SyncBtn.style.borderColor = 'rgba(56, 189, 248, 0.5)';
+          b24SyncBtn.style.color = '#ffffff';
+          b24SyncBtn.style.fontWeight = '600';
+          b24SyncBtn.style.boxShadow = '0 2px 10px rgba(56, 189, 248, 0.3)';
+        }
+        if (amoSyncBtn) {
+          amoSyncBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+          amoSyncBtn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          amoSyncBtn.style.color = 'var(--text-secondary)';
+          amoSyncBtn.style.fontWeight = 'normal';
+          amoSyncBtn.style.boxShadow = 'none';
+        }
+      } else {
+        // amoCRM is Active
+        amoCard.style.border = '1.5px solid #34d399';
+        amoCard.style.background = 'rgba(52, 211, 153, 0.08)';
+        amoCard.style.boxShadow = '0 0 16px rgba(52, 211, 153, 0.12)';
+        amoCard.style.opacity = '1';
+
+        b24Card.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+        b24Card.style.background = 'rgba(255, 255, 255, 0.02)';
+        b24Card.style.boxShadow = 'none';
+        b24Card.style.opacity = '0.65';
+
+        if (amoSyncBtn) {
+          amoSyncBtn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+          amoSyncBtn.style.borderColor = 'rgba(52, 211, 153, 0.5)';
+          amoSyncBtn.style.color = '#ffffff';
+          amoSyncBtn.style.fontWeight = '600';
+          amoSyncBtn.style.boxShadow = '0 2px 10px rgba(52, 211, 153, 0.3)';
+        }
+        if (b24SyncBtn) {
+          b24SyncBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+          b24SyncBtn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          b24SyncBtn.style.color = 'var(--text-secondary)';
+          b24SyncBtn.style.fontWeight = 'normal';
+          b24SyncBtn.style.boxShadow = 'none';
+        }
+      }
+    }
+
+    if (b24Badge) {
+      const b24Text = data.bitrix24?.status_text || (data.bitrix24?.connected ? 'Демо-контур (REST 401)' : 'Не подключен');
+      b24Badge.textContent = isB24 ? `● АКТИВНА: ${b24Text}` : b24Text;
+      b24Badge.className = isB24 ? 'badge-info' : 'badge-ghost';
+      b24Badge.title = 'Облачный REST API требует подписку Маркет+. Задействован демо-контур из 10 сделок.';
+    }
+
+    if (amoBadge) {
+      const amoText = data.amocrm?.status_text || (data.amocrm?.connected ? 'Готов ✓' : 'Не подключен');
+      amoBadge.textContent = (!isB24) ? `● АКТИВНА: ${amoText}` : amoText;
+      amoBadge.className = (!isB24) ? 'badge-won' : 'badge-ghost';
+    }
+
+    if (b24Webhook) {
+      b24Webhook.innerHTML = `Вебхук: ${data.bitrix24?.webhook_url || '—'} <span style="color: #f59e0b; font-size: 0.68rem;" title="REST доступен только по подписке Маркет+">(REST 401)</span>`;
+    }
+    if (amoDomain) {
+      amoDomain.textContent = `Домен: ${data.amocrm?.domain || 'revopsofficial.amocrm.ru'} (OAuth активен)`;
+    }
   } catch (err) {
     console.warn('[Admin CRM] Не удалось загрузить статус CRM:', err);
   }

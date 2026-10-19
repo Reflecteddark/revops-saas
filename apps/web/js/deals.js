@@ -17,6 +17,16 @@ function closeOnePagerModal() {
 }
 
 
+function getActiveCrmLabel(deals) {
+  const list = Array.isArray(deals) && deals.length > 0 ? deals : (window.DEALS_DATA || []);
+  if (Array.isArray(list) && list.length > 0) {
+    const src = String(list[0].crm_source || list[0].source || list[0].channel || '').toLowerCase();
+    if (src.includes('bitrix') || src.includes('b24')) return 'Bitrix24';
+    if (src.includes('amo')) return 'amoCRM';
+  }
+  return 'CRM';
+}
+
 // ==========================================================================
 // PERIOD SELECTOR (TAB 1: PULSE)
 // ==========================================================================
@@ -100,7 +110,8 @@ function setPulsePeriod(period) {
     // default: current month
     targetPlan = getMonthlyTarget();
     periodLabel = 'Октябрь 2026';
-    if (syncText) syncText.textContent = `Синхронизировано: amoCRM + Google Таблица (${dealsList.length} сделок, ${CALLS_DATA.length} звонков)`;
+    const crmLabel = getActiveCrmLabel(dealsList);
+    if (syncText) syncText.textContent = `Синхронизировано: ${crmLabel} + Google Таблица (${dealsList.length} сделок, ${CALLS_DATA.length} звонков)`;
     showToast('Период: Октябрь 2026', 'Показан полный месячный контур компании.');
   }
 
@@ -201,7 +212,8 @@ async function fetchLiveDealsData(showFeedback = false) {
       tickLiveStatus();
       updateChartTimestamps();
       if (showFeedback && typeof showToast === 'function') {
-        showToast('amoCRM & Google Таблица', data.deals.length > 0 ? `Синхронизировано ${data.deals.length} сделок (${tenantId})` : `Таблица raw_deals пуста (${tenantId})`);
+        const crmLabel = getActiveCrmLabel(data.deals);
+        showToast(`${crmLabel} & Google Таблица`, data.deals.length > 0 ? `Синхронизировано ${data.deals.length} сделок (${tenantId})` : `Таблица raw_deals пуста (${tenantId})`);
       }
       return true;
     }
