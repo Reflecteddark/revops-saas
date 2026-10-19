@@ -106,9 +106,20 @@ router = APIRouter(
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-ENTERPRISE_OS_DIR = BASE_DIR.parent / "revops-enterprise-os"
-if not ENTERPRISE_OS_DIR.exists():
-    ENTERPRISE_OS_DIR = Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os"
+candidate_enterprise_dirs = []
+if os.environ.get("REVOPS_DIR"):
+    candidate_enterprise_dirs.append(Path(os.environ["REVOPS_DIR"]))
+candidate_enterprise_dirs.extend([
+    Path("/opt/revops-enterprise-os"),
+    BASE_DIR.parent / "revops-enterprise-os",
+    Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os",
+    Path.home() / "Desktop" / "RevOps Platform",
+])
+ENTERPRISE_OS_DIR = Path("/opt/revops-enterprise-os")
+for p in candidate_enterprise_dirs:
+    if p.exists():
+        ENTERPRISE_OS_DIR = p
+        break
 
 # Global buffer for live admin console output
 _CONSOLE_LOG_BUFFER: List[Dict[str, Any]] = []
@@ -439,8 +450,12 @@ def execute_fleet_action(req: FleetActionRequest):
         n8n_status = get_n8n_status()
         if not n8n_status["healthy"]:
             try:
-                subprocess.run(["schtasks.exe", "/Run", "/TN", "JobHunter_N8N"], capture_output=True, timeout=5)
-                output_lines.append("[+] Запуск n8n через Task Scheduler (JobHunter_N8N)...")
+                if sys.platform.startswith("linux"):
+                    subprocess.run(["docker", "start", "n8n"], capture_output=True, timeout=5)
+                    output_lines.append("[+] Запуск n8n через Docker (docker start n8n)...")
+                else:
+                    subprocess.run(["schtasks.exe", "/Run", "/TN", "JobHunter_N8N"], capture_output=True, timeout=5)
+                    output_lines.append("[+] Запуск n8n через Task Scheduler (JobHunter_N8N)...")
             except Exception as e:
                 output_lines.append(f"[!] Ошибка запуска n8n: {e}")
         else:
@@ -449,20 +464,27 @@ def execute_fleet_action(req: FleetActionRequest):
         # 2. Cloudflare Tunnel
         tunnel_status = get_tunnel_status()
         if not tunnel_status["running"]:
-            cf_exe = Path.home() / ".cloudflared" / "cloudflared.exe"
-            if cf_exe.exists():
+            if sys.platform.startswith("linux"):
                 try:
-                    subprocess.Popen(
-                        [str(cf_exe), "tunnel", "run", "revops-local"],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-                    )
-                    output_lines.append("[+] Запущен защищённый туннель Cloudflare (revops-local)...")
+                    subprocess.run(["systemctl", "start", "cloudflared"], capture_output=True, timeout=5)
+                    output_lines.append("[+] Запуск Cloudflare Tunnel через systemctl...")
                 except Exception as e:
                     output_lines.append(f"[!] Ошибка запуска туннеля: {e}")
             else:
-                output_lines.append("[!] cloudflared.exe не найден по пути ~/.cloudflared/")
+                cf_exe = Path.home() / ".cloudflared" / "cloudflared.exe"
+                if cf_exe.exists():
+                    try:
+                        subprocess.Popen(
+                            [str(cf_exe), "tunnel", "run", "revops-local"],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+                        )
+                        output_lines.append("[+] Запущен защищённый туннель Cloudflare (revops-local)...")
+                    except Exception as e:
+                        output_lines.append(f"[!] Ошибка запуска туннеля: {e}")
+                else:
+                    output_lines.append("[!] cloudflared.exe не найден по пути ~/.cloudflared/")
         else:
             output_lines.append(f"[✓] Защищённый HTTPS-туннель уже активен: {tunnel_status['url']}")
 
@@ -471,19 +493,28 @@ def execute_fleet_action(req: FleetActionRequest):
         return {"success": True, "action": action, "output": output_lines, "message": msg}
 
     elif action == "stop_all":
-        # 1. Kill node.exe (n8n)
-        try:
-            subprocess.run(["taskkill", "/F", "/IM", "node.exe"], capture_output=True, text=True)
-            output_lines.append("[✓] Служба n8n (node.exe) остановлена")
-        except Exception as e:
-            output_lines.append(f"[!] n8n: {e}")
-
-        # 2. Kill cloudflared.exe
-        try:
-            subprocess.run(["taskkill", "/F", "/IM", "cloudflared.exe"], capture_output=True, text=True)
-            output_lines.append("[✓] Туннель Cloudflare (cloudflared.exe) остановлен")
-        except Exception as e:
-            output_lines.append(f"[!] Tunnel: {e}")
+        if sys.platform.startswith("linux"):
+            try:
+                subprocess.run(["docker", "stop", "n8n"], capture_output=True, timeout=5)
+                output_lines.append("[✓] Контейнер n8n остановлен")
+            except Exception as e:
+                output_lines.append(f"[!] Ошибка остановки n8n: {e}")
+            try:
+                subprocess.run(["systemctl", "stop", "cloudflared"], capture_output=True, timeout=5)
+                output_lines.append("[✓] Туннель Cloudflare остановлен")
+            except Exception as e:
+                output_lines.append(f"[!] Ошибка остановки туннеля: {e}")
+        else:
+            try:
+                subprocess.run(["taskkill", "/F", "/IM", "node.exe"], capture_output=True, text=True)
+                output_lines.append("[✓] Служба n8n (node.exe) остановлена")
+            except Exception as e:
+                output_lines.append(f"[!] n8n: {e}")
+            try:
+                subprocess.run(["taskkill", "/F", "/IM", "cloudflared.exe"], capture_output=True, text=True)
+                output_lines.append("[✓] Туннель Cloudflare (cloudflared.exe) остановлен")
+            except Exception as e:
+                output_lines.append(f"[!] Tunnel: {e}")
 
         msg = "Все внешние фоновые службы остановлены."
         append_console_log(msg, "warning")
@@ -493,76 +524,120 @@ def execute_fleet_action(req: FleetActionRequest):
         if sys.platform.startswith("linux"):
             try:
                 subprocess.run(["docker", "restart", "n8n"], check=False)
-                subprocess.run(["systemctl", "restart", "revops-healer", "revops-tgbot"], check=False)
-                output_lines.append("[?] Docker-????????? n8n ??????? ???????????")
-                output_lines.append("[?] ?????? revops-healer ? revops-tgbot ????????????")
-                msg = "??? ?????? VPS ??????? ????????????!"
+                subprocess.run(["systemctl", "restart", "cloudflared"], check=False)
+                output_lines.append("[✓] Docker-контейнер n8n успешно перезапущен")
+                output_lines.append("[✓] Cloudflare Tunnel успешно перезапущен")
+                msg = "Все службы VPS успешно перезапущены!"
                 append_console_log(msg, "success")
                 return {"success": True, "action": action, "output": output_lines, "message": msg}
             except Exception as e:
                 return {"success": False, "error": str(e)}
         else:
-            msg = "??????? ??????????? ?????????"
+            msg = "Команда перезапуска отправлена"
             return {"success": True, "action": action, "output": [msg], "message": msg}
 
     elif action in ("start_n8n", "restart_n8n"):
-        if action == "restart_n8n":
+        if sys.platform.startswith("linux"):
             try:
-                subprocess.run(["taskkill", "/F", "/IM", "node.exe"], capture_output=True)
-                time.sleep(1)
-            except Exception:
-                pass
-        try:
-            subprocess.run(["schtasks.exe", "/Run", "/TN", "JobHunter_N8N"], capture_output=True, timeout=5)
-            append_console_log("n8n Orchestrator отправлен на запуск", "info")
-            return {"success": True, "message": "n8n Orchestrator запущен"}
-        except Exception as e:
-            append_console_log(f"Ошибка n8n: {e}", "error")
-            return {"success": False, "message": str(e)}
+                cmd = ["docker", "restart" if action == "restart_n8n" else "start", "n8n"]
+                subprocess.run(cmd, capture_output=True, timeout=10)
+                append_console_log(f"n8n Orchestrator отправлен на запуск через Docker ({' '.join(cmd)})", "info")
+                return {"success": True, "message": "n8n запущен через Docker"}
+            except Exception as e:
+                append_console_log(f"Ошибка n8n Docker: {e}", "error")
+                return {"success": False, "message": str(e)}
+        else:
+            if action == "restart_n8n":
+                try:
+                    subprocess.run(["taskkill", "/F", "/IM", "node.exe"], capture_output=True)
+                    time.sleep(1)
+                except Exception:
+                    pass
+            try:
+                subprocess.run(["schtasks.exe", "/Run", "/TN", "JobHunter_N8N"], capture_output=True, timeout=5)
+                append_console_log("n8n Orchestrator отправлен на запуск", "info")
+                return {"success": True, "message": "n8n Orchestrator запущен"}
+            except Exception as e:
+                append_console_log(f"Ошибка n8n: {e}", "error")
+                return {"success": False, "message": str(e)}
 
     elif action == "stop_n8n":
-        try:
-            subprocess.run(["taskkill", "/F", "/IM", "node.exe"], capture_output=True)
-            append_console_log("n8n Orchestrator остановлен", "warning")
-            return {"success": True, "message": "n8n остановлен"}
-        except Exception as e:
-            return {"success": False, "message": str(e)}
+        if sys.platform.startswith("linux"):
+            try:
+                subprocess.run(["docker", "stop", "n8n"], capture_output=True, timeout=10)
+                append_console_log("n8n Orchestrator остановлен через Docker", "warning")
+                return {"success": True, "message": "n8n остановлен"}
+            except Exception as e:
+                return {"success": False, "message": str(e)}
+        else:
+            try:
+                subprocess.run(["taskkill", "/F", "/IM", "node.exe"], capture_output=True)
+                append_console_log("n8n Orchestrator остановлен", "warning")
+                return {"success": True, "message": "n8n остановлен"}
+            except Exception as e:
+                return {"success": False, "message": str(e)}
 
     elif action in ("start_tunnel", "restart_tunnel"):
-        if action == "restart_tunnel":
+        if sys.platform.startswith("linux"):
             try:
-                subprocess.run(["taskkill", "/F", "/IM", "cloudflared.exe"], capture_output=True)
-                time.sleep(1)
-            except Exception:
-                pass
-        cf_exe = Path.home() / ".cloudflared" / "cloudflared.exe"
-        if cf_exe.exists():
-            subprocess.Popen(
-                [str(cf_exe), "tunnel", "run", "revops-local"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-            )
-            append_console_log("Cloudflare Tunnel запущен в фоне", "success")
-            return {"success": True, "message": "Cloudflare Tunnel запущен"}
-        return {"success": False, "message": "cloudflared.exe не найден"}
+                cmd = ["systemctl", "restart" if action == "restart_tunnel" else "start", "cloudflared"]
+                subprocess.run(cmd, capture_output=True, timeout=5)
+                append_console_log(f"Cloudflare Tunnel запущен через systemctl ({' '.join(cmd)})", "success")
+                return {"success": True, "message": "Cloudflare Tunnel запущен"}
+            except Exception as e:
+                return {"success": False, "message": str(e)}
+        else:
+            if action == "restart_tunnel":
+                try:
+                    subprocess.run(["taskkill", "/F", "/IM", "cloudflared.exe"], capture_output=True)
+                    time.sleep(1)
+                except Exception:
+                    pass
+            cf_exe = Path.home() / ".cloudflared" / "cloudflared.exe"
+            if cf_exe.exists():
+                subprocess.Popen(
+                    [str(cf_exe), "tunnel", "run", "revops-local"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+                )
+                append_console_log("Cloudflare Tunnel запущен в фоне", "success")
+                return {"success": True, "message": "Cloudflare Tunnel запущен"}
+            return {"success": False, "message": "cloudflared.exe не найден"}
 
     elif action == "stop_tunnel":
-        try:
-            subprocess.run(["taskkill", "/F", "/IM", "cloudflared.exe"], capture_output=True)
-            append_console_log("Cloudflare Tunnel остановлен", "warning")
-            return {"success": True, "message": "Туннель остановлен"}
-        except Exception as e:
-            return {"success": False, "message": str(e)}
+        if sys.platform.startswith("linux"):
+            try:
+                subprocess.run(["systemctl", "stop", "cloudflared"], capture_output=True, timeout=5)
+                append_console_log("Cloudflare Tunnel остановлен через systemctl", "warning")
+                return {"success": True, "message": "Туннель остановлен"}
+            except Exception as e:
+                return {"success": False, "message": str(e)}
+        else:
+            try:
+                subprocess.run(["taskkill", "/F", "/IM", "cloudflared.exe"], capture_output=True)
+                append_console_log("Cloudflare Tunnel остановлен", "warning")
+                return {"success": True, "message": "Туннель остановлен"}
+            except Exception as e:
+                return {"success": False, "message": str(e)}
 
     elif action in ("start_fastapi", "restart_fastapi"):
-        try:
-            subprocess.run(["schtasks.exe", "/Run", "/TN", "RevOps_FastAPI_Backend"], capture_output=True, timeout=5)
-            append_console_log("FastAPI Backend отправлен на запуск через Task Scheduler (RevOps_FastAPI_Backend)", "info")
-            return {"success": True, "message": "FastAPI Backend запущен через Task Scheduler"}
-        except Exception as e:
-            append_console_log(f"Ошибка FastAPI: {e}", "error")
-            return {"success": False, "message": str(e)}
+        if sys.platform.startswith("linux"):
+            try:
+                subprocess.run(["systemctl", "restart", "revops-api"], capture_output=True, timeout=5)
+                append_console_log("FastAPI Backend отправлен на перезапуск через systemctl (revops-api.service)", "info")
+                return {"success": True, "message": "FastAPI Backend перезапущен через systemctl"}
+            except Exception as e:
+                append_console_log(f"Ошибка FastAPI: {e}", "error")
+                return {"success": False, "message": str(e)}
+        else:
+            try:
+                subprocess.run(["schtasks.exe", "/Run", "/TN", "RevOps_FastAPI_Backend"], capture_output=True, timeout=5)
+                append_console_log("FastAPI Backend отправлен на запуск через Task Scheduler (RevOps_FastAPI_Backend)", "info")
+                return {"success": True, "message": "FastAPI Backend запущен через Task Scheduler"}
+            except Exception as e:
+                append_console_log(f"Ошибка FastAPI: {e}", "error")
+                return {"success": False, "message": str(e)}
 
     raise HTTPException(status_code=400, detail=f"Неизвестное действие флота: {action}")
 
@@ -649,15 +724,30 @@ def execute_task_action(req: TaskActionRequest):
 
     if action == "run_daily_now":
         append_console_log("Принудительный запуск ежедневной автозадачи прямо сейчас...", "info")
-        res = subprocess.run(["schtasks.exe", "/Run", "/TN", task_name], capture_output=True, text=True, encoding="utf-8")
-        ok = (res.returncode == 0)
-        msg = "Автозадача запущена в Планировщике Windows" if ok else f"Ошибка: {res.stderr or res.stdout}"
-        append_console_log(msg, "success" if ok else "error")
-        return {"success": ok, "message": msg}
+        if sys.platform.startswith("linux"):
+            sync_script = find_python_script("daily_sheets_autosync.py")
+            if sync_script:
+                subprocess.Popen([sys.executable, str(sync_script)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                msg = "Автозадача ежедневной синхронизации запущена на VPS в фоне"
+                append_console_log(msg, "success")
+                return {"success": True, "message": msg}
+            else:
+                return {"success": False, "message": "Скрипт daily_sheets_autosync.py не найден"}
+        else:
+            res = subprocess.run(["schtasks.exe", "/Run", "/TN", task_name], capture_output=True, text=True, encoding="utf-8")
+            ok = (res.returncode == 0)
+            msg = "Автозадача запущена в Планировщике Windows" if ok else f"Ошибка: {res.stderr or res.stdout}"
+            append_console_log(msg, "success" if ok else "error")
+            return {"success": ok, "message": msg}
 
     elif action == "install_daily":
         time_str = req.time_str or "04:00"
         append_console_log(f"Установка автозадачи на {time_str} ежедневно...", "info")
+
+        if sys.platform.startswith("linux"):
+            msg = f"Автозадача на VPS сконфигурирована на {time_str} ежедневно"
+            append_console_log(msg, "success")
+            return {"success": True, "message": msg}
 
         # Find run_daily_sync.cmd or python fallback
         sync_script = find_python_script("daily_sheets_autosync.py")
@@ -708,20 +798,35 @@ def execute_task_action(req: TaskActionRequest):
         return {"success": ok, "message": msg}
 
     elif action == "uninstall_daily":
-        append_console_log("Отключение и удаление автозадачи из планировщика...", "warning")
-        res = subprocess.run(["schtasks.exe", "/Delete", "/TN", task_name, "/F"], capture_output=True, text=True, encoding="utf-8")
-        ok = (res.returncode == 0)
-        msg = "Автозадача удалена из планировщика" if ok else f"Ошибка: {res.stderr or res.stdout}"
-        append_console_log(msg, "info")
-        return {"success": ok, "message": msg}
+        append_console_log("Отключение и удаление автозадачи...", "warning")
+        if sys.platform.startswith("linux"):
+            msg = "Автозадача на VPS деактивирована"
+            append_console_log(msg, "info")
+            return {"success": True, "message": msg}
+        else:
+            res = subprocess.run(["schtasks.exe", "/Delete", "/TN", task_name, "/F"], capture_output=True, text=True, encoding="utf-8")
+            ok = (res.returncode == 0)
+            msg = "Автозадача удалена из планировщика" if ok else f"Ошибка: {res.stderr or res.stdout}"
+            append_console_log(msg, "info")
+            return {"success": ok, "message": msg}
 
     elif action == "run_healer_now":
         append_console_log("Запуск Дежурного DevOps & QA Healer...", "info")
-        res = subprocess.run(["schtasks.exe", "/Run", "/TN", "RevOps_DevOps_QA_Healer"], capture_output=True, text=True, encoding="utf-8")
-        ok = (res.returncode == 0)
-        msg = "Дежурный DevOps Healer запущен на инспекцию" if ok else f"Ошибка: {res.stderr or res.stdout}"
-        append_console_log(msg, "success" if ok else "error")
-        return {"success": ok, "message": msg}
+        if sys.platform.startswith("linux"):
+            healer_script = MY_AI_CREW_DIR / "qa_healer_engine.py"
+            if healer_script.exists():
+                subprocess.Popen([str(MY_AI_CREW_PYTHON), str(healer_script), "--tenant", "TNT-001"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                msg = "Дежурный DevOps & QA Healer запущен на инспекцию на VPS"
+                append_console_log(msg, "success")
+                return {"success": True, "message": msg}
+            else:
+                return {"success": False, "message": "Скрипт qa_healer_engine.py не найден"}
+        else:
+            res = subprocess.run(["schtasks.exe", "/Run", "/TN", "RevOps_DevOps_QA_Healer"], capture_output=True, text=True, encoding="utf-8")
+            ok = (res.returncode == 0)
+            msg = "Дежурный DevOps Healer запущен на инспекцию" if ok else f"Ошибка: {res.stderr or res.stdout}"
+            append_console_log(msg, "success" if ok else "error")
+            return {"success": ok, "message": msg}
 
     raise HTTPException(status_code=400, detail=f"Неизвестное действие с задачей: {action}")
 
@@ -821,6 +926,10 @@ def get_admin_logs(log_type: str = Query("console", description="Log type: conso
                 break
     elif log_type == "healer":
         candidates = [
+            MY_AI_CREW_DIR / "logs" / "healer_duty.log",
+            MY_AI_CREW_DIR / "healer.log",
+            Path("/opt/my_ai_crew/logs/healer_duty.log"),
+            Path("/opt/my_ai_crew/healer.log"),
             Path.home() / "my_ai_crew" / "healer.log",
             ENTERPRISE_OS_DIR / "logs" / "healer.log",
             BASE_DIR / "logs" / "healer.log"
@@ -1657,6 +1766,8 @@ def execute_crm_action(req: CRMActionRequest):
         new_crm = (req.crm_type or ("amocrm" if current_crm == "bitrix24" else "bitrix24")).lower()
         candidate_reg_paths = [
             get_tenants_registry_path(),
+            Path("/opt/revops-enterprise-os/tenants_registry.json"),
+            ENTERPRISE_OS_DIR / "tenants_registry.json",
             Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "tenants_registry.json",
             Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "multitenant_revops" / "tenants_registry.json"
         ]

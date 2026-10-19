@@ -37,6 +37,7 @@ def get_service_account_path() -> Optional[Path]:
     if env_path and Path(env_path).exists():
         return Path(env_path)
     candidates = [
+        Path("/opt/revops-enterprise-os/service_account.json"),
         Path(__file__).resolve().parent.parent.parent.parent / "revops-enterprise-os" / "service_account.json",
         Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "service_account.json",
         Path(__file__).resolve().parent.parent.parent / "service_account.json",

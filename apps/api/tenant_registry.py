@@ -28,6 +28,7 @@ def get_tenants_registry_path() -> Optional[Path]:
         return Path(env_path)
 
     candidates = [
+        Path("/opt/revops-enterprise-os/tenants_registry.json"),
         Path(__file__).resolve().parent.parent.parent / "tenants_registry.json",
         Path(__file__).resolve().parent.parent.parent.parent / "revops-enterprise-os" / "tenants_registry.json",
         Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "tenants_registry.json",
