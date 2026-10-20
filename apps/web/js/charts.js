@@ -334,6 +334,71 @@ function initSparklines() {
     return;
   }
 
+  const getWeeklySeries = (id) => {
+    const buckets = [0, 0, 0, 0, 0, 0, 0];
+    const now = new Date();
+    const dealsList = (typeof DEALS_DATA !== 'undefined' && Array.isArray(DEALS_DATA)) ? DEALS_DATA : [];
+    const callsList = (typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA)) ? CALLS_DATA : [];
+
+    if (id === 'sparkRevenue') {
+      if (dealsList.length > 0) {
+        dealsList.forEach(d => {
+          if (d.status === 'won' || String(d.stage || '').includes('Успешно')) {
+            const dt = new Date(d.date || d.closed_at || now);
+            const dayIdx = isNaN(dt.getTime()) ? 0 : (dt.getDay() + 6) % 7;
+            const amt = typeof d.amount === 'number' ? d.amount : (parseFloat(String(d.amount).replace(/[^\d.]/g, '')) || 0);
+            buckets[dayIdx] += Math.round(amt / 1000);
+          }
+        });
+      } else {
+        callsList.filter(c => c.status === 'won').forEach(c => {
+          const dt = new Date(c.date || now);
+          const dayIdx = isNaN(dt.getTime()) ? 0 : (dt.getDay() + 6) % 7;
+          buckets[dayIdx] += 150;
+        });
+      }
+      return buckets;
+    }
+
+    if (id === 'sparkPipeline') {
+      if (dealsList.length > 0) {
+        dealsList.forEach(d => {
+          const dt = new Date(d.date || d.created_at || now);
+          const dayIdx = isNaN(dt.getTime()) ? 0 : (dt.getDay() + 6) % 7;
+          const amt = typeof d.amount === 'number' ? d.amount : (parseFloat(String(d.amount).replace(/[^\d.]/g, '')) || 0);
+          buckets[dayIdx] += Math.round(amt / 1000);
+        });
+      } else {
+        callsList.forEach(c => {
+          const dt = new Date(c.date || now);
+          const dayIdx = isNaN(dt.getTime()) ? 0 : (dt.getDay() + 6) % 7;
+          buckets[dayIdx] += 500;
+        });
+      }
+      return buckets;
+    }
+
+    if (id === 'sparkQuality') {
+      const counts = [0, 0, 0, 0, 0, 0, 0];
+      callsList.forEach(c => {
+        const dt = new Date(c.date || now);
+        const dayIdx = isNaN(dt.getTime()) ? 0 : (dt.getDay() + 6) % 7;
+        const score = typeof c.score === 'number' ? c.score : 0;
+        buckets[dayIdx] += score;
+        counts[dayIdx] += 1;
+      });
+      return buckets.map((sum, idx) => counts[idx] > 0 ? Math.round((sum / counts[idx]) * 10) / 10 : 0);
+    }
+
+    // sparkSla / Volume
+    callsList.forEach(c => {
+      const dt = new Date(c.date || now);
+      const dayIdx = isNaN(dt.getTime()) ? 0 : (dt.getDay() + 6) % 7;
+      buckets[dayIdx] += 1;
+    });
+    return buckets;
+  };
+
   ids.forEach((id, i) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -346,12 +411,14 @@ function initSparklines() {
       try { existing.destroy(); } catch (e) {}
     }
 
+    const seriesData = getWeeklySeries(id);
+
     sparklineChartInstances[id] = new Chart(el, {
       ...sparkDef,
       data: {
         labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
         datasets: [{
-          data: mockWeekly,
+          data: seriesData,
           borderColor: colors[i],
           backgroundColor: colors[i] + '1a',
           fill: true

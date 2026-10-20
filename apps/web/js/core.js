@@ -22,6 +22,30 @@ window.escapeHtml = escapeHtml;
 function getActiveTenantId() {
   try {
     if (typeof window !== 'undefined') {
+      const rawSession = localStorage.getItem('revops_auth_session') || sessionStorage.getItem('revops_auth_session');
+      let isAdmin = false;
+      let sessionTenant = null;
+      if (rawSession) {
+        try {
+          const sess = JSON.parse(rawSession);
+          isAdmin = !!(sess && (sess.is_admin || sess.role === 'Admin / Супервайзер' || (sess.role && String(sess.role).toLowerCase().includes('admin'))));
+          if (sess && sess.tenant) {
+            const match = String(sess.tenant).match(/TNT-[A-Z0-9_-]+/i);
+            sessionTenant = match ? match[0].toUpperCase() : null;
+          }
+        } catch (e) {}
+      }
+
+      const adminKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key');
+      if (adminKey) {
+        isAdmin = true;
+      }
+
+      // Non-admin clients are strictly locked to their session tenant to prevent horizontal privilege escalation
+      if (!isAdmin && sessionTenant) {
+        return sessionTenant;
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
       const urlTenant = urlParams.get('tenant') || urlParams.get('tenant_id');
       if (urlTenant && urlTenant.trim()) {
@@ -35,14 +59,7 @@ function getActiveTenantId() {
         return m ? m[0].toUpperCase() : stored.trim().toUpperCase();
       }
 
-      const rawSession = localStorage.getItem('revops_auth_session');
-      if (rawSession) {
-        const sess = JSON.parse(rawSession);
-        if (sess && sess.tenant) {
-          const match = sess.tenant.match(/TNT-[A-Z0-9_-]+/i);
-          if (match) return match[0].toUpperCase();
-        }
-      }
+      if (sessionTenant) return sessionTenant;
     }
   } catch (e) {
     console.warn('[Tenant] Error resolving active tenant:', e);

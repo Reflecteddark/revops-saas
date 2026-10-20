@@ -314,10 +314,66 @@ function copyRescueScriptByCallId(callId) {
   }
 }
 
+function updateCallsPills(currentMgr, currentSt) {
+  const allCalls = (typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA)) ? CALLS_DATA : [];
+
+  let wonCount = 0;
+  let normCount = 0;
+  let riskCount = 0;
+
+  const managerScopeCalls = (currentMgr === 'all')
+    ? allCalls
+    : allCalls.filter(c => c.manager === currentMgr);
+
+  managerScopeCalls.forEach(c => {
+    if (c.status === 'won') wonCount++;
+    else if (c.status === 'norm') normCount++;
+    else if (c.status === 'risk') riskCount++;
+  });
+
+  const totalInScope = managerScopeCalls.length;
+
+  const btnAll = document.querySelector('#pillStatusGroup .pill-btn[data-status="all"]');
+  if (btnAll) btnAll.textContent = `Все (${totalInScope})`;
+
+  const btnWon = document.querySelector('#pillStatusGroup .pill-btn[data-status="won"]');
+  if (btnWon) btnWon.innerHTML = `<span class="status-dot dot-won"></span> Эталон (${wonCount})`;
+
+  const btnNorm = document.querySelector('#pillStatusGroup .pill-btn[data-status="norm"]');
+  if (btnNorm) btnNorm.innerHTML = `<span class="status-dot dot-norm"></span> Норма (${normCount})`;
+
+  const btnRisk = document.querySelector('#pillStatusGroup .pill-btn[data-status="risk"]');
+  if (btnRisk) btnRisk.innerHTML = `<span class="status-dot dot-risk"></span> Слив (${riskCount})`;
+
+  document.querySelectorAll('#pillStatusGroup .pill-btn').forEach(btn => {
+    if (btn.getAttribute('data-status') === currentSt) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+
+  const mgrGroup = document.querySelector('#pillManagerGroup .segmented-pills-group');
+  if (mgrGroup) {
+    const managersMap = {};
+    allCalls.forEach(c => {
+      const m = c.manager || 'Не указан';
+      managersMap[m] = (managersMap[m] || 0) + 1;
+    });
+
+    let mgrHtml = `<button type="button" class="pill-btn ${currentMgr === 'all' ? 'active' : ''}" data-rep="all" onclick="setPillManagerFilter('all')">Все (${allCalls.length})</button>`;
+    Object.keys(managersMap).sort().forEach(mgrName => {
+      const isActive = currentMgr === mgrName ? 'active' : '';
+      const safeName = typeof escapeHtml === 'function' ? escapeHtml(mgrName) : mgrName;
+      mgrHtml += `<button type="button" class="pill-btn ${isActive}" data-rep="${safeName}" onclick="setPillManagerFilter('${safeName}')">${safeName} (${managersMap[mgrName]})</button>`;
+    });
+    mgrGroup.innerHTML = mgrHtml;
+  }
+}
+
 function filterCallsTable() {
   const mgr = document.getElementById('filterManager')?.value || 'all';
   const st = document.getElementById('filterStatus')?.value || 'all';
   const q = (document.getElementById('transcriptSearch')?.value || '').trim().toLowerCase();
+
+  updateCallsPills(mgr, st);
 
   const listContainer = document.getElementById('callsListContainer');
   if (!listContainer) return;
@@ -767,14 +823,15 @@ function copyPlaybookScript(callId) {
 
 function setPillManagerFilter(repName) {
   const sel = document.getElementById('filterManager');
-  if (sel) sel.value = repName;
-
-  document.querySelectorAll('#pillManagerGroup .pill-btn').forEach(btn => {
-    const r = btn.getAttribute('data-rep');
-    if (r === repName) btn.classList.add('active');
-    else btn.classList.remove('active');
-  });
-
+  if (sel) {
+    if (repName && repName !== 'all' && !Array.from(sel.options).some(o => o.value === repName)) {
+      const opt = document.createElement('option');
+      opt.value = repName;
+      opt.textContent = repName;
+      sel.appendChild(opt);
+    }
+    sel.value = repName;
+  }
   filterCallsTable();
 }
 

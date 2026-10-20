@@ -448,20 +448,10 @@ function handleIncomingLiveCall(newCall) {
   }
 }
 
-function refreshAllDashboardViews() {
-  if (typeof filterCallsTable === 'function') filterCallsTable();
-  if (typeof renderSkillsHeatmap === 'function') renderSkillsHeatmap();
-  if (typeof initSpeechRadarChart === 'function') {
-    const activeRepBtn = document.querySelector('.radar-rep-btn.active');
-    const repName = activeRepBtn ? (activeRepBtn.dataset.rep || 'all') : 'all';
-    initSpeechRadarChart(repName);
-  }
-  if (typeof initRepPerformanceChart === 'function') initRepPerformanceChart();
-  if (typeof updateSimulation === 'function') updateSimulation(false);
+function calculateFinancials(deals = null, calls = null) {
+  const dealsList = deals !== null ? deals : ((typeof window.DEALS_DATA !== 'undefined' && Array.isArray(window.DEALS_DATA)) ? window.DEALS_DATA : []);
+  const callsList = calls !== null ? calls : ((typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA)) ? CALLS_DATA : []);
 
-  // Recalculate Fact, Active Pipeline and SSOT from live DEALS_DATA (with fallback to CALLS_DATA)
-  const dealsList = (typeof window.DEALS_DATA !== 'undefined' && Array.isArray(window.DEALS_DATA)) ? window.DEALS_DATA : [];
-  
   let totalFact = 0;
   let computedPipeline = 0;
   let computedSsot = 0;
@@ -475,31 +465,51 @@ function refreshAllDashboardViews() {
 
       if (isWon) {
         totalFact += amt;
-        computedSsot += amt; // Won deals = 100% in SSOT cash
+        computedSsot += amt;
       } else if (stId >= 1 && stId <= 5) {
-        // Active deals in pipeline (Stages 1..5)
         computedPipeline += amt;
         activeDealsCount++;
-        // Stage-weighted probability for SSOT forecast
         let weight = 0.10;
-        if (stId === 1) weight = 0.10;      // Первичный контакт (10%)
-        else if (stId === 2) weight = 0.20; // Переговоры (20%)
-        else if (stId === 3) weight = 0.25; // Принимают решение (25%)
-        else if (stId === 4) weight = 0.35; // Согласование договора (35%)
-        else if (stId === 5) weight = 0.50; // Счет выставлен (50%)
+        if (stId === 1) weight = 0.10;
+        else if (stId === 2) weight = 0.20;
+        else if (stId === 3) weight = 0.25;
+        else if (stId === 4) weight = 0.35;
+        else if (stId === 5) weight = 0.50;
         computedSsot += Math.round(amt * weight);
       }
     });
   } else {
-    const wonCalls = CALLS_DATA.filter(c => c.status === 'won');
-    totalFact = wonCalls.reduce((acc, c) => acc + getCallAmount(c), 0);
-    computedPipeline = CALLS_DATA.length * 500000;
-    computedSsot = CALLS_DATA.reduce((acc, c) => {
-      const amt = getCallAmount(c);
+    const wonCalls = callsList.filter(c => c.status === 'won');
+    totalFact = wonCalls.reduce((acc, c) => acc + (typeof getCallAmount === 'function' ? getCallAmount(c) : 150000), 0);
+    computedPipeline = callsList.length * 500000;
+    computedSsot = callsList.reduce((acc, c) => {
+      const amt = typeof getCallAmount === 'function' ? getCallAmount(c) : 150000;
       const weight = (c.score >= 10 && c.next_step === 1) ? 0.85 : (c.next_step === 1 ? 0.50 : 0.15);
       return acc + Math.round(amt * weight);
     }, 0);
   }
+
+  return {
+    totalFact,
+    computedPipeline,
+    computedSsot,
+    activeDealsCount
+  };
+}
+
+function refreshAllDashboardViews() {
+  if (typeof filterCallsTable === 'function') filterCallsTable();
+  if (typeof renderSkillsHeatmap === 'function') renderSkillsHeatmap();
+  if (typeof initSpeechRadarChart === 'function') {
+    const activeRepBtn = document.querySelector('.radar-rep-btn.active');
+    const repName = activeRepBtn ? (activeRepBtn.dataset.rep || 'all') : 'all';
+    initSpeechRadarChart(repName);
+  }
+  if (typeof initRepPerformanceChart === 'function') initRepPerformanceChart();
+  if (typeof updateSimulation === 'function') updateSimulation(false);
+
+  // Recalculate Fact, Active Pipeline and SSOT from live DEALS_DATA (with fallback to CALLS_DATA)
+  const { totalFact, computedPipeline, computedSsot, activeDealsCount } = calculateFinancials();
 
   const factVal = document.getElementById('metricFactVal');
   if (factVal) animateCounter(factVal, totalFact, 900);
@@ -1290,3 +1300,4 @@ window.renderFinancialBridgeAndLeaks = renderFinancialBridgeAndLeaks;
 window.renderPulseRecentCalls = renderPulseRecentCalls;
 window.renderPulseFunnel = renderPulseFunnel;
 window.triggerSyncSimulation = triggerSyncSimulation;
+window.calculateFinancials = calculateFinancials;

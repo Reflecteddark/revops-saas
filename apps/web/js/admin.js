@@ -729,7 +729,7 @@ function generateRandomPassword() {
     pass += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   pass += Math.floor(10 + Math.random() * 90) + '!';
-  const passEl = document.getElementById('adminNewUserPass');
+  const passEl = document.getElementById('adminProvPassword') || document.getElementById('adminNewUserPass');
   if (passEl) {
     passEl.value = pass;
     passEl.style.color = '#34d399';

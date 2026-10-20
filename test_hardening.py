@@ -157,8 +157,9 @@ def test_nuances_hardening():
     assert resp_openapi.status_code == 403, f"Expected 403 for unauthorized public /openapi.json, got {resp_openapi.status_code}"
     print("  ✓ /docs and /openapi.json blocked with 403 Forbidden for unauthorized external requests.")
 
-    # With new rotated key via X-Admin-Key header -> 200 OK + Set-Cookie
-    rotated_key = "revops_sec_k9f2b8a74e1d3c0598f42017ae63bc89"
+    # With active admin key via X-Admin-Key header -> 200 OK + Set-Cookie
+    from apps.api.routers.admin_router import REVOPS_ADMIN_KEY
+    rotated_key = REVOPS_ADMIN_KEY
     headers_with_key = {**ext_headers, "X-Admin-Key": rotated_key}
     resp_docs_header = client.get("/docs", headers=headers_with_key)
     assert resp_docs_header.status_code == 200, f"Expected 200 for X-Admin-Key, got {resp_docs_header.status_code}"
