@@ -133,9 +133,23 @@ def sync_git(local_path: Path, commit_msg: str) -> str:
         errors="ignore"
     )
     if cherry_cmd.stdout.strip() or has_changes:
-        log(f"Отправка коммитов в GitHub (origin main)...", symbol="[^]")
+        branch_cmd = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(local_path),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="ignore"
+        )
+        current_branch = branch_cmd.stdout.strip() or "main"
+        log(f"Отправка коммитов в GitHub ({current_branch} -> origin)...", symbol="[^]")
+        
+        push_args = ["git", "push", "origin", current_branch]
+        if current_branch != "main":
+            push_args.append(f"{current_branch}:main")
+            
         push_cmd = subprocess.run(
-            ["git", "push", "origin", "main"],
+            push_args,
             cwd=str(local_path),
             capture_output=True,
             text=True,
@@ -143,7 +157,9 @@ def sync_git(local_path: Path, commit_msg: str) -> str:
             errors="ignore"
         )
         if push_cmd.returncode != 0:
-            log(f"Предупреждение при git push: {push_cmd.stderr.strip()}", symbol="[!]")
+            log(f"❌ Ошибка git push в {local_path.name}: {push_cmd.stderr.strip()}", symbol="[-]")
+            log("Деплой ОТМЕНЁН. Прод не тронут (код не отправлен в GitHub).", symbol="[-]")
+            sys.exit(1)
         else:
             log(f"GitHub обновлен успешно!", symbol="[+]")
     else:
@@ -192,6 +208,9 @@ def wait_for_ci(repo: str, commit_sha: str, timeout_sec: int = 300) -> bool:
             if e.code == 403:
                 log("[!] GitHub API Rate Limit exceeded. Пропускаем проверку CI (деплой продолжится)", symbol="[!]")
                 return True
+            if e.code == 422:
+                log(f"[CI Gate] ❌ Ошибка HTTP 422: коммит {commit_sha[:7]} отсутствует на GitHub. Деплой ОТМЕНЁН. Прод не тронут.", symbol="[-]")
+                return False
             log(f"[CI Gate] Ошибка HTTP {e.code} при обращении к GitHub API: {e.reason}", symbol="[!]")
         except Exception as ex:
             log(f"[CI Gate] Ошибка сети при запросе к GitHub API: {ex}", symbol="[!]")
