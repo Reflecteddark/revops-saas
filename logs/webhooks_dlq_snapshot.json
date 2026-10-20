@@ -1,5 +1,56 @@
 [
   {
+    "id": "wh_1792497537_316d4f",
+    "timestamp": "2026-10-20 14:58:57",
+    "provider": "mango_replay",
+    "tenant_id": "TNT-001",
+    "event": "replay_telephony_call",
+    "status": "success",
+    "headers": {},
+    "payload": {
+      "provider": "mango",
+      "tenant_id": "TNT-001",
+      "call_id": "replay_1792497537_wh_17924",
+      "manager_name": "Дмитрий Федотов",
+      "client_name": "ООО МеталлТрейд",
+      "transcript": "Менеджер: Здравствуйте, согласуем пилот на пятницу? Клиент: Да, согласен, в 12:00.",
+      "duration_sec": 140,
+      "replayed_from": "wh_1792497532_43138f"
+    },
+    "error_msg": null,
+    "execution_time_ms": 2959.3,
+    "sheets_synced": true
+  },
+  {
+    "id": "wh_1792497532_43138f",
+    "timestamp": "2026-10-20 14:58:52",
+    "provider": "mango",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "success",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "346",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "provider": "mango",
+      "tenant_id": "TNT-001",
+      "call_id": "mango_test_1792497531",
+      "manager_name": "Дмитрий Федотов",
+      "client_name": "ООО МеталлТрейд",
+      "transcript": "Менеджер: Здравствуйте, согласуем пилот на пятницу? Клиент: Да, согласен, в 12:00.",
+      "duration_sec": 140
+    },
+    "error_msg": null,
+    "execution_time_ms": 5816.9,
+    "sheets_synced": true
+  },
+  {
     "id": "wh_1792496330_ae816e",
     "timestamp": "2026-10-20 14:38:50",
     "provider": "mango_replay",
