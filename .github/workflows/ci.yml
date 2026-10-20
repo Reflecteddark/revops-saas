@@ -33,11 +33,23 @@ jobs:
 
       - name: Type Check with Mypy
         run: |
-          mypy apps/ packages/ --ignore-missing-imports
+          mypy apps/ packages/ --ignore-missing-imports 2>&1 | tee mypy_output.txt || {
+            echo "### ❌ Mypy Type Check Errors" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            cat mypy_output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
       - name: Run Pytest Test Suite
         run: |
-          pytest tests -v --tb=short
+          pytest tests -v --tb=short 2>&1 | tee pytest_output.txt || {
+            echo "### ❌ Pytest Errors" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            cat pytest_output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
   frontend-vitest:
     name: Frontend Vitest Test Suite
