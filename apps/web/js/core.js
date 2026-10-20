@@ -498,7 +498,11 @@ async function switchTab(tabId) {
     try {
       const headers = (typeof getAdminAuthHeaders === 'function') 
         ? getAdminAuthHeaders() 
-        : { 'Content-Type': 'application/json', 'X-RevOps-Admin-Key': 'revops_admin_fleet_secret_2026' };
+        : { 
+            'Content-Type': 'application/json', 
+            'X-Admin-Key': 'revops_admin_fleet_secret_2026',
+            'X-RevOps-Admin-Key': 'revops_admin_fleet_secret_2026' 
+          };
       const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/status`, { 
         method: 'GET', 
         headers: headers, 
@@ -517,7 +521,7 @@ async function switchTab(tabId) {
       }
     } catch (e) {
       console.warn('[Admin Guard] Connection failed:', e);
-      showToast('Ошибка сервера', 'Сервер на порту 8000 оффлайн. Запустите start.bat');
+      showToast('Ошибка сети', 'Не удалось связаться с сервером.');
       return switchTab('pulse');
     }
   }

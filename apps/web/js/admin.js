@@ -98,14 +98,21 @@ function getAdminAuthHeaders() {
       headers['X-RevOps-Session'] = raw;
     }
   } catch (e) {}
-  const savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key') || 'revops_admin_fleet_secret_2026';
+  let savedKey = null;
+  try {
+    savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key');
+  } catch (e) {}
+  if (!savedKey || savedKey === 'null' || savedKey === 'undefined' || !savedKey.trim()) {
+    savedKey = 'revops_admin_fleet_secret_2026';
+    try { localStorage.setItem('revops_admin_key', savedKey); } catch (e) {}
+  }
   headers['X-Admin-Key'] = savedKey;
   headers['X-RevOps-Admin-Key'] = savedKey;
   return headers;
 }
+if (typeof window !== 'undefined') window.getAdminAuthHeaders = getAdminAuthHeaders;
 
 async function adminFetch(endpoint, options = {}) {
-  const savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key') || 'revops_admin_fleet_secret_2026';
   const url = `${REVOPS_API_BASE}${endpoint}`;
   const authHeaders = getAdminAuthHeaders();
   const mergedHeaders = { ...authHeaders, ...(options.headers || {}) };
