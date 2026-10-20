@@ -52,6 +52,28 @@ class CallIngestPayload(BaseModel):
     tenant_id: str = "TNT-001"
 
 
+def verify_internal_or_admin(request: Request):
+    """Allows requests from localhost/internal docker network or with valid REVOPS_ADMIN_KEY."""
+    client_ip = request.client.host if request.client else ""
+    is_local = client_ip in ("127.0.0.1", "::1", "localhost") or client_ip.startswith("172.") or client_ip.startswith("10.")
+    if is_local:
+        return True
+
+    admin_key = os.getenv("REVOPS_ADMIN_KEY")
+    secret = request.headers.get("X-RevOps-Secret") or request.headers.get("X-Admin-Key")
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        secret = auth_header.split(" ", 1)[1]
+
+    if admin_key and secret == admin_key:
+        return True
+
+    raise HTTPException(
+        status_code=403,
+        detail="Доступ запрещён: эндпоинт доступен только из локальной сети n8n или с ключом администратора"
+    )
+
+
 # In-memory cache for live calls from Google Sheets keyed by tenant_id (TTL: 15s)
 _CALLS_CACHE: Dict[str, Dict[str, Any]] = {}
 
@@ -346,7 +368,8 @@ def get_dashboard_calls_data(
 
 @router.post("/ingest")
 async def ingest_call_from_n8n(
-    payload: CallIngestPayload
+    payload: CallIngestPayload,
+    request: Request
 ):
     """
     Direct n8n Ingestion Webhook:
@@ -354,6 +377,7 @@ async def ingest_call_from_n8n(
     2. Writes the 38-column row into Google Sheets (raw_calls).
     3. Broadcasts the call to all open web dashboard sessions via WebSocket.
     """
+    verify_internal_or_admin(request)
     call_id = payload.id or f"call_{int(time.time())}"
     dur_sec = payload.duration_sec or 120
     if payload.duration and ":" in payload.duration:
@@ -430,8 +454,9 @@ async def ingest_call_from_n8n(
 
 
 @router.post("/sync_sheets")
-def force_sync_from_sheets(tenant_id: str = Query("TNT-001")):
+def force_sync_from_sheets(request: Request, tenant_id: str = Query("TNT-001")):
     """Forces an immediate pull from Google Sheets raw_calls for given tenant."""
+    verify_internal_or_admin(request)
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     if clean_tenant in _CALLS_CACHE:
         _CALLS_CACHE[clean_tenant]["timestamp"] = 0

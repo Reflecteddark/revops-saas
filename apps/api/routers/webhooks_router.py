@@ -16,7 +16,7 @@ from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Re
 from pydantic import BaseModel, Field
 
 from ..websocket_manager import manager
-from .calls_router import CallIngestPayload, append_call_to_sheets
+from .calls_router import CallIngestPayload, append_call_to_sheets, verify_internal_or_admin
 
 logger = logging.getLogger("webhooks_router")
 
@@ -670,8 +670,9 @@ async def receive_telephony_call_scoped(tenant_id: str, request: Request, backgr
 
 @router.post("/test-amo")
 @router.post("/{tenant_id}/test-amo")
-async def test_amocrm_call_simulation(tenant_id: Optional[str] = "TNT-001"):
+async def test_amocrm_call_simulation(request: Request, tenant_id: Optional[str] = "TNT-001"):
     """Simulates a live incoming call audit from amoCRM for any tenant."""
+    verify_internal_or_admin(request)
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     call_id = f"amo_test_{int(time.time())}"
     payload = CallIngestPayload(
@@ -705,8 +706,9 @@ async def test_amocrm_call_simulation(tenant_id: Optional[str] = "TNT-001"):
 
 @router.post("/test-b24")
 @router.post("/{tenant_id}/test-b24")
-async def test_bitrix24_call_simulation(tenant_id: Optional[str] = "TNT-001"):
+async def test_bitrix24_call_simulation(request: Request, tenant_id: Optional[str] = "TNT-001"):
     """Simulates a live incoming call audit from Bitrix24 for any tenant."""
+    verify_internal_or_admin(request)
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     call_id = f"b24_test_{int(time.time())}"
     payload = CallIngestPayload(
