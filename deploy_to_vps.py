@@ -117,7 +117,10 @@ def sync_git(local_path: Path, commit_msg: str) -> str:
     if has_changes:
         log(f"Обнаружены изменения в {local_path.name}. Коммит: '{commit_msg}'", symbol="[+]")
         subprocess.run(["git", "add", "-A"], cwd=str(local_path), check=True)
-        subprocess.run(["git", "commit", "-m", commit_msg], cwd=str(local_path), check=True)
+        res_commit = subprocess.run(["git", "commit", "-m", commit_msg], cwd=str(local_path))
+        if res_commit.returncode != 0:
+            log(f"❌ Коммит в {local_path.name} заблокирован pre-commit хуком (тесты провалены). Деплой ОТМЕНЁН. Прод не тронут.", symbol="[-]")
+            sys.exit(1)
     else:
         log(f"Рабочая копия {local_path.name} чиста.", symbol="[i]")
 
