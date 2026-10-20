@@ -80,7 +80,9 @@ async def get_protected_docs(request: Request):
     else:
         html_content += cleanup_script
 
-    response = HTMLResponse(content=html_content, status_code=200, headers=dict(base_response.headers))
+    resp_headers = dict(base_response.headers)
+    resp_headers.pop("content-length", None)
+    response = HTMLResponse(content=html_content, status_code=200, headers=resp_headers)
 
     existing_cookie = request.cookies.get(COOKIE_ADMIN_AUTH_NAME)
     if not existing_cookie or not verify_admin_cookie_token(existing_cookie):
