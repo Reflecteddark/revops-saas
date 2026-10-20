@@ -596,11 +596,11 @@ function initDevelopSplineChart() {
   applyChartZeroOverlay('developSplineChart', null);
 }
 
-window.getThemeMode = getThemeMode;
-window.setThemeMode = setThemeMode;
-window.toggleThemeMode = toggleThemeMode;
-window.updateThemeToggleUI = updateThemeToggleUI;
-window.updateAllChartsTheme = updateAllChartsTheme;
+if (typeof getThemeMode !== 'undefined') window.getThemeMode = getThemeMode;
+if (typeof setThemeMode !== 'undefined') window.setThemeMode = setThemeMode;
+if (typeof toggleThemeMode !== 'undefined') window.toggleThemeMode = toggleThemeMode;
+if (typeof updateThemeToggleUI !== 'undefined') window.updateThemeToggleUI = updateThemeToggleUI;
+if (typeof updateAllChartsTheme !== 'undefined') window.updateAllChartsTheme = updateAllChartsTheme;
 window.initDevelopDissectionChart = initDevelopDissectionChart;
 window.initDevelopDonutChart = initDevelopDonutChart;
 window.initDevelopSplineChart = initDevelopSplineChart;
@@ -1641,17 +1641,19 @@ function selectFunnelPeriod(periodKey, labelText) {
 }
 
 // Global click-away listeners for RevOps dropdowns
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.revops-dropdown')) {
-    closeAllRevopsDropdowns();
-  }
-});
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.revops-dropdown')) {
+      closeAllRevopsDropdowns();
+    }
+  });
 
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    closeAllRevopsDropdowns();
-  }
-});
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeAllRevopsDropdowns();
+    }
+  });
+}
 
 
 // Expose Charts handlers & instances on window
@@ -1697,4 +1699,11 @@ window.hasCrmData = hasCrmData;
 window.applyChartZeroOverlay = applyChartZeroOverlay;
 window.refreshAllChartZeroOverlays = refreshAllChartZeroOverlays;
 window.safeDestroyChart = safeDestroyChart;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    getDynamicRepMetrics,
+    getDynamicRepList
+  };
+}
 
