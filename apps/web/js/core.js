@@ -1127,17 +1127,19 @@ function handleCmdPaletteKeydown(e) {
 }
 
 // Keyboard trigger: Ctrl+K / Cmd+K
-window.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K' || e.key === 'л' || e.key === 'Л')) {
-    e.preventDefault();
-    toggleCommandPalette();
-  } else if (e.key === 'Escape') {
-    const overlay = document.getElementById('cmdPaletteOverlay');
-    if (overlay && overlay.classList.contains('active')) {
-      overlay.classList.remove('active');
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K' || e.key === 'л' || e.key === 'Л')) {
+      e.preventDefault();
+      toggleCommandPalette();
+    } else if (e.key === 'Escape') {
+      const overlay = document.getElementById('cmdPaletteOverlay');
+      if (overlay && overlay.classList.contains('active')) {
+        overlay.classList.remove('active');
+      }
     }
-  }
-});
+  });
+}
 
 
 
@@ -1180,3 +1182,9 @@ window.handleCmdPaletteSearch = handleCmdPaletteSearch;
 window.renderCmdPaletteResults = renderCmdPaletteResults;
 window.executeCmdPaletteAction = executeCmdPaletteAction;
 window.handleCmdPaletteKeydown = handleCmdPaletteKeydown;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    getActiveTenantId
+  };
+}
