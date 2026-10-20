@@ -368,7 +368,7 @@ function updateCallsPills(currentMgr, currentSt) {
   }
 }
 
-export function filterCallsTable() {
+function filterCallsTable() {
   const mgr = document.getElementById('filterManager')?.value || 'all';
   const st = document.getElementById('filterStatus')?.value || 'all';
   const q = (document.getElementById('transcriptSearch')?.value || '').trim().toLowerCase();
@@ -889,3 +889,11 @@ window.copyPlaybookScript = copyPlaybookScript;
 window.setPillManagerFilter = setPillManagerFilter;
 window.setPillStatusFilter = setPillStatusFilter;
 window.setPillRadarRep = setPillRadarRep;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    filterCallsTable,
+    getPlaybookDiff,
+    PLAYBOOK_DIFFS
+  };
+}
