@@ -87,6 +87,11 @@ class User(Base):
         Index("idx_tenant_user_email", "tenant_id", "email", unique=True),
     )
 
+    @property
+    def is_admin(self) -> bool:
+        return self.role == UserRole.ADMIN or "admin" in str(self.role.value).lower()
+
+
 
 class Workspace(Base):
     """Subdivision / branch / pipeline workspace within a Tenant."""

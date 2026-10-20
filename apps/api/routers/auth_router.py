@@ -83,11 +83,17 @@ def register_tenant(req: TenantRegisterRequest, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, db: Session = Depends(get_db)):
     """Authenticates user and returns JWT scoped to their tenant."""
-    user = db.query(User).filter(User.email == req.email.lower(), User.is_active == True).first()
+    user = db.query(User).filter(User.email == req.email.lower()).first()
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный email или пароль"
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Аккаунт заблокирован"
         )
 
     token = create_access_token({
@@ -224,6 +230,16 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
             "is_admin": is_admin
         }
     }
+
+
+@router.post("/logout")
+def logout_alias(response: Response):
+    """Logs out user, clears session/access cookies and returns 200 OK."""
+    from .admin_router import COOKIE_ADMIN_AUTH_NAME
+    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="revops_client_auth", path="/")
+    response.delete_cookie(key=COOKIE_ADMIN_AUTH_NAME, path="/")
+    return {"status": "logged_out", "message": "Сессия успешно завершена"}
 
 
 @router.post("/client-logout")
