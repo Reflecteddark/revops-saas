@@ -80,10 +80,10 @@ function renderSkillsHeatmap() {
 
     const fallbackAv = ['rep-z', 'rep-n', 'rep-v', 'rep-s'][idx % 4];
     html += `
-      <div class="skill-row" onclick="filterRepAudit('${rep}')" style="display: grid; grid-template-columns: 40px 140px 1fr 60px; align-items: center; gap: 16px; padding: 12px 16px; background: rgba(255,255,255,0.02); border-radius: 10px; cursor: pointer; transition: background 0.15s ease;">
-        <div class="call-avatar ${avatarClasses[rep] || fallbackAv}">${rep[0]}</div>
+      <div class="skill-row" data-action="filter-rep" data-rep="${encodeURIComponent(rep)}" style="display: grid; grid-template-columns: 40px 140px 1fr 60px; align-items: center; gap: 16px; padding: 12px 16px; background: rgba(255,255,255,0.02); border-radius: 10px; cursor: pointer; transition: background 0.15s ease;">
+        <div class="call-avatar ${avatarClasses[rep] || fallbackAv}">${escapeHtml(rep[0])}</div>
         <div>
-          <div style="font-weight: 600; font-size: 0.85rem; color: #fff;">${rep}</div>
+          <div style="font-weight: 600; font-size: 0.85rem; color: #fff;">${escapeHtml(rep)}</div>
           <div style="font-size: 0.7rem; color: rgba(255,255,255,0.45);">${count} ${count === 1 ? 'звонок' : (count < 5 ? 'звонка' : 'звонков')} • ${repRole}</div>
         </div>
         <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
@@ -98,6 +98,16 @@ function renderSkillsHeatmap() {
   });
 
   container.innerHTML = html;
+
+  if (container.dataset.bound !== '1') {
+    container.dataset.bound = '1';
+    container.addEventListener('click', (e) => {
+      const row = e.target.closest('[data-action="filter-rep"]');
+      if (row && typeof filterRepAudit === 'function') {
+        filterRepAudit(decodeURIComponent(row.dataset.rep));
+      }
+    });
+  }
 }
 
 
@@ -1034,21 +1044,32 @@ function renderRadarRepPills() {
     reps.forEach(rep => {
       const rCalls = CALLS_DATA.filter(c => c.manager === rep);
       const rAvg = rCalls.length ? (rCalls.reduce((s, c) => s + (c.score || 0), 0) / rCalls.length).toFixed(1) : '0.0';
-      opts += `<option value="${rep}">${rep} (${rAvg}/13 • ${rCalls.length} звонков)</option>`;
+      opts += `<option value="${escapeHtml(rep)}">${escapeHtml(rep)} (${rAvg}/13 • ${rCalls.length} звонков)</option>`;
     });
     selector.innerHTML = opts;
   }
 
   if (container) {
-    let pills = `<button type="button" class="pill-btn active" data-radar="all" onclick="setPillRadarRep('all')">Все (${totalCalls > 0 ? avgScore : '0'})</button>`;
+    let pills = `<button type="button" class="pill-btn active" data-action="set-radar" data-radar="all">Все (${totalCalls > 0 ? avgScore : '0'})</button>`;
     const avatarMap = { 0: 'rep-z', 1: 'rep-n', 2: 'rep-v', 3: 'rep-s' };
     reps.forEach((rep, idx) => {
       const rCalls = CALLS_DATA.filter(c => c.manager === rep);
       const rAvg = rCalls.length ? (rCalls.reduce((s, c) => s + (c.score || 0), 0) / rCalls.length).toFixed(1) : '0.0';
       const avClass = avatarMap[idx % 4];
-      pills += `<button type="button" class="pill-btn" data-radar="${rep}" onclick="setPillRadarRep('${rep}')"><span class="rep-avatar-xs ${avClass}">${rep[0]}</span> ${rep} (${rAvg})</button>`;
+      pills += `<button type="button" class="pill-btn" data-action="set-radar" data-radar="${encodeURIComponent(rep)}"><span class="rep-avatar-xs ${avClass}">${escapeHtml(rep[0])}</span> ${escapeHtml(rep)} (${rAvg})</button>`;
     });
     container.innerHTML = pills;
+
+    if (container.dataset.bound !== '1') {
+      container.dataset.bound = '1';
+      container.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action="set-radar"]');
+        if (btn && typeof setPillRadarRep === 'function') {
+          const radarVal = btn.dataset.radar === 'all' ? 'all' : decodeURIComponent(btn.dataset.radar);
+          setPillRadarRep(radarVal);
+        }
+      });
+    }
   }
 }
 

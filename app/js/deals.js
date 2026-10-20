@@ -990,16 +990,6 @@ async function triggerSyncSimulation() {
 
 
 
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 function renderDynamicRopPodium() {
   const pCards = document.getElementById('ropPedestalCards');
   const pEmpty = document.getElementById('ropPedestalEmpty');
@@ -1068,7 +1058,7 @@ function renderDynamicRopPodium() {
     const badgeStyle = isRaised ? 'color: #f59e0b; font-weight: 800;' : '';
 
     return `
-      <div class="podium-card ${rankClass}" style="cursor: pointer; ${borderStyle}" onclick="filterRepAudit('${escapeHtml(rep.name).replace(/'/g, "\\'")}')" title="Нажмите для фильтрации звонков ${escapeHtml(rep.name)}">
+      <div class="podium-card ${rankClass}" data-action="filter-rep" data-rep="${encodeURIComponent(rep.name)}" style="cursor: pointer; ${borderStyle}" title="Нажмите для фильтрации звонков ${escapeHtml(rep.name)}">
         <div class="podium-avatar-wrap">
           ${crownHtml}
           <div class="podium-avatar">${initial}</div>
@@ -1104,7 +1094,18 @@ function renderDynamicRopPodium() {
     podiumHtml += renderPodiumCard(top3, 3, 'rank-3', '3 МЕСТО', 'СТАБИЛЬНОСТЬ', false);
   }
 
-  if (grid) grid.innerHTML = podiumHtml;
+  if (grid) {
+    grid.innerHTML = podiumHtml;
+    if (grid.dataset.bound !== '1') {
+      grid.dataset.bound = '1';
+      grid.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-action="filter-rep"]');
+        if (card && typeof filterRepAudit === 'function') {
+          filterRepAudit(decodeURIComponent(card.dataset.rep));
+        }
+      });
+    }
+  }
 
   // Hazard Manager Alert Card
   let hazardRep = null;
@@ -1118,7 +1119,7 @@ function renderDynamicRopPodium() {
     if (hazardRep) {
       const hInitial = escapeHtml(hazardRep.name.charAt(0).toUpperCase());
       hazardBox.innerHTML = `
-        <div class="hazard-alert-strip" style="cursor: pointer;" onclick="filterRepAudit('${escapeHtml(hazardRep.name).replace(/'/g, "\\'")}')" title="Нажмите для разбора критических звонков ${escapeHtml(hazardRep.name)}">
+        <div class="hazard-alert-strip" data-action="filter-rep" data-rep="${encodeURIComponent(hazardRep.name)}" style="cursor: pointer;" title="Нажмите для разбора критических звонков ${escapeHtml(hazardRep.name)}">
           <div style="display: flex; align-items: center; gap: 14px;">
             <div class="hazard-rep-avatar">${hInitial}</div>
             <div>
@@ -1132,12 +1133,22 @@ function renderDynamicRopPodium() {
               </div>
             </div>
           </div>
-          <button class="btn btn-emerald" onclick="event.stopPropagation(); filterRepAudit('${escapeHtml(hazardRep.name).replace(/'/g, "\\'")}')" style="font-size: 0.74rem;">
+          <button class="btn btn-emerald" data-action="filter-rep" data-rep="${encodeURIComponent(hazardRep.name)}" style="font-size: 0.74rem;">
             <span>Разбор звонков (${hazardRep.riskCallsCount} шт.)</span>
           </button>
         </div>
       `;
       hazardBox.style.display = 'block';
+
+      if (hazardBox.dataset.bound !== '1') {
+        hazardBox.dataset.bound = '1';
+        hazardBox.addEventListener('click', (e) => {
+          const el = e.target.closest('[data-action="filter-rep"]');
+          if (el && typeof filterRepAudit === 'function') {
+            filterRepAudit(decodeURIComponent(el.dataset.rep));
+          }
+        });
+      }
     } else {
       hazardBox.innerHTML = '';
       hazardBox.style.display = 'none';
