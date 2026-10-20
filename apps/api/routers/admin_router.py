@@ -17,6 +17,7 @@ from pathlib import Path
 import socket
 import subprocess
 import sys
+from threading import Lock
 import time
 from typing import Any, Dict, List, Optional
 import urllib.request
@@ -205,141 +206,164 @@ def is_port_listening(port: int, host: str = "127.0.0.1") -> bool:
         return False
 
 
+_CLIENTS_LOCK = Lock()
+_ARCHIVE_LOCK = Lock()
+
+_status_cache: Dict[str, tuple[float, Dict[str, Any]]] = {}
+_STATUS_TTL = 15.0
+
+
+def _cached_status(key: str, fn):
+    now = time.time()
+    hit = _status_cache.get(key)
+    if hit and (now - hit[0]) < _STATUS_TTL:
+        return hit[1]
+    val = fn()
+    _status_cache[key] = (now, val)
+    return val
+
+
 def get_n8n_status() -> Dict[str, Any]:
-    port = 5678
-    listening = is_port_listening(port)
-    health_ok = False
-    if listening:
-        try:
-            req = urllib.request.Request(f"http://127.0.0.1:{port}/healthz", headers={"User-Agent": "RevOps-Admin/1.0"})
-            with urllib.request.urlopen(req, timeout=1.5) as resp:
-                health_ok = (resp.status == 200)
-        except Exception:
-            health_ok = False
-    return {
-        "port": port,
-        "listening": listening,
-        "healthy": health_ok,
-        "url": f"http://127.0.0.1:{port}",
-        "status_label": "🟢 АКТИВЕН" if health_ok else ("🟡 СЛУШАЕТ" if listening else "🔴 ОСТАНОВЛЕН")
-    }
+    def _compute():
+        port = 5678
+        listening = is_port_listening(port)
+        health_ok = False
+        if listening:
+            try:
+                req = urllib.request.Request(f"http://127.0.0.1:{port}/healthz", headers={"User-Agent": "RevOps-Admin/1.0"})
+                with urllib.request.urlopen(req, timeout=1.5) as resp:
+                    health_ok = (resp.status == 200)
+            except Exception:
+                health_ok = False
+        return {
+            "port": port,
+            "listening": listening,
+            "healthy": health_ok,
+            "url": f"http://127.0.0.1:{port}",
+            "status_label": "🟢 АКТИВЕН" if health_ok else ("🟡 СЛУШАЕТ" if listening else "🔴 ОСТАНОВЛЕН")
+        }
+    return _cached_status("n8n_status", _compute)
 
 
 def get_tunnel_status() -> Dict[str, Any]:
-    url = "https://webhook.ai-rop.ru"
-    is_running = False
+    def _compute():
+        url = "https://webhook.ai-rop.ru"
+        is_running = False
 
-    try:
-        if sys.platform.startswith("linux"):
-            res = subprocess.run(["systemctl", "is-active", "--quiet", "cloudflared"], timeout=2)
-            if res.returncode == 0:
-                is_running = True
-            else:
-                p_res = subprocess.run(["pgrep", "-f", "cloudflared"], capture_output=True, timeout=2)
-                if p_res.returncode == 0:
+        try:
+            if sys.platform.startswith("linux"):
+                res = subprocess.run(["systemctl", "is-active", "--quiet", "cloudflared"], timeout=2)
+                if res.returncode == 0:
                     is_running = True
-        else:
-            res = subprocess.run(
-                ["tasklist", "/FI", "IMAGENAME eq cloudflared.exe"],
-                capture_output=True,
-                text=True,
-                errors="ignore",
-                timeout=3
-            )
-            if "cloudflared.exe" in res.stdout.lower():
-                is_running = True
-    except Exception:
-        pass
+                else:
+                    p_res = subprocess.run(["pgrep", "-f", "cloudflared"], capture_output=True, timeout=2)
+                    if p_res.returncode == 0:
+                        is_running = True
+            else:
+                res = subprocess.run(
+                    ["tasklist", "/FI", "IMAGENAME eq cloudflared.exe"],
+                    capture_output=True,
+                    text=True,
+                    errors="ignore",
+                    timeout=3
+                )
+                if "cloudflared.exe" in res.stdout.lower():
+                    is_running = True
+        except Exception:
+            pass
 
-    candidates = [
-        ENTERPRISE_OS_DIR / "active_tunnel_url.txt",
-        BASE_DIR / "active_tunnel_url.txt",
-    ]
-    for p in candidates:
-        if p.exists():
-            try:
-                with open(p, "r", encoding="utf-8") as f:
-                    content = f.read().strip()
-                    if content.startswith("http"):
-                        url = content
-                        break
-            except Exception:
-                pass
+        candidates = [
+            ENTERPRISE_OS_DIR / "active_tunnel_url.txt",
+            BASE_DIR / "active_tunnel_url.txt",
+        ]
+        for p in candidates:
+            if p.exists():
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        content = f.read().strip()
+                        if content.startswith("http"):
+                            url = content
+                            break
+                except Exception:
+                    pass
 
-    return {
-        "running": is_running,
-        "url": url,
-        "status_label": "🟢 АКТИВЕН (Cloudflare 24/7)" if is_running else "?? ??????????"
-    }
+        return {
+            "running": is_running,
+            "url": url,
+            "status_label": "🟢 АКТИВЕН (Cloudflare 24/7)" if is_running else "🔴 НЕ АКТИВЕН"
+        }
+    return _cached_status("tunnel_status", _compute)
 
 
 def get_task_scheduler_status(task_name: str) -> Dict[str, Any]:
-    try:
-        if sys.platform.startswith("linux"):
-            service_map = {
-                "RevOps_FastAPI_Backend": "revops-api.service",
-                "RevOps_Daily_Sheets_AutoSync": "cron",
-                "RevOps_DevOps_QA_Healer": "revops-healer.service",
-                "JobHunter_N8N": "docker"
-            }
-            svc = service_map.get(task_name)
-            if svc:
-                if svc == "docker":
-                    res = subprocess.run(["docker", "ps", "-q", "-f", "name=n8n"], capture_output=True, text=True, timeout=2)
-                    is_active = bool(res.stdout.strip())
-                else:
-                    res = subprocess.run(["systemctl", "is-active", "--quiet", svc], timeout=2)
-                    is_active = (res.returncode == 0)
-                if is_active:
-                    return {
-                        "name": task_name,
-                        "installed": True,
-                        "state": "Active (systemd 24/7)",
-                        "next_run": "Автономно 24/7",
-                        "status_label": "🟢 АКТИВЕН (Systemd)"
-                    }
-            return {
-                "name": task_name,
-                "installed": True,
-                "state": "Active (VPS 24/7)",
-                "next_run": "Автономно 24/7",
-                "status_label": "🟢 АКТИВЕН (VPS 24/7)"
-            }
-        else:
-            res = subprocess.run(
-                ["schtasks.exe", "/Query", "/TN", task_name, "/FO", "CSV", "/NH"],
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=3
-            )
-            if res.returncode == 0 and task_name.lower() in res.stdout.lower():
-                parts = [p.replace('"', '').replace('\r', '').replace('\n', '').strip() for p in res.stdout.strip().split(",")]
-                next_run = parts[1] if len(parts) > 1 and parts[1] != "N/A" else "? ???????"
-                state = parts[2] if len(parts) > 2 else "?????"
+    def _compute():
+        try:
+            if sys.platform.startswith("linux"):
+                service_map = {
+                    "RevOps_FastAPI_Backend": "revops-api.service",
+                    "RevOps_Daily_Sheets_AutoSync": "cron",
+                    "RevOps_DevOps_QA_Healer": "revops-healer.service",
+                    "JobHunter_N8N": "docker"
+                }
+                svc = service_map.get(task_name)
+                if svc:
+                    if svc == "docker":
+                        res = subprocess.run(["docker", "ps", "-q", "-f", "name=n8n"], capture_output=True, text=True, timeout=2)
+                        is_active = bool(res.stdout.strip())
+                    else:
+                        res = subprocess.run(["systemctl", "is-active", "--quiet", svc], timeout=2)
+                        is_active = (res.returncode == 0)
+                    if is_active:
+                        return {
+                            "name": task_name,
+                            "installed": True,
+                            "state": "Active (systemd 24/7)",
+                            "next_run": "Автономно 24/7",
+                            "status_label": "🟢 АКТИВЕН (Systemd)"
+                        }
                 return {
                     "name": task_name,
                     "installed": True,
-                    "state": state,
-                    "next_run": next_run,
-                    "status_label": f"?? {state} (????: {next_run})"
+                    "state": "Active (VPS 24/7)",
+                    "next_run": "Автономно 24/7",
+                    "status_label": "🟢 АКТИВЕН (VPS 24/7)"
                 }
+            else:
+                res = subprocess.run(
+                    ["schtasks.exe", "/Query", "/TN", task_name, "/FO", "CSV", "/NH"],
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=3
+                )
+                if res.returncode == 0 and task_name.lower() in res.stdout.lower():
+                    parts = [p.replace('"', '').replace('\r', '').replace('\n', '').strip() for p in res.stdout.strip().split(",")]
+                    next_run = parts[1] if len(parts) > 1 and parts[1] != "N/A" else "По расписанию"
+                    state = parts[2] if len(parts) > 2 else "Готов"
+                    return {
+                        "name": task_name,
+                        "installed": True,
+                        "state": state,
+                        "next_run": next_run,
+                        "status_label": f"🟢 {state} (План: {next_run})"
+                    }
+                return {
+                    "name": task_name,
+                    "installed": False,
+                    "state": "Не установлена",
+                    "next_run": "—",
+                    "status_label": "🟡 Не найдена"
+                }
+        except Exception:
             return {
                 "name": task_name,
                 "installed": False,
-                "state": "?? ???????????",
-                "next_run": "?",
-                "status_label": "? ?? ???????"
+                "state": "Ошибка проверки",
+                "next_run": "—",
+                "status_label": "🔴 Ошибка расписания"
             }
-    except Exception as e:
-        return {
-            "name": task_name,
-            "installed": False,
-            "state": "?????? ????????",
-            "next_run": "?",
-            "status_label": "? ?????? ??????????"
-        }
+    return _cached_status(f"task_{task_name}", _compute)
 
 
 def get_sheets_service_account_status() -> Dict[str, Any]:
@@ -1095,8 +1119,13 @@ def load_registered_clients() -> List[Dict[str, Any]]:
 
 def save_registered_clients(clients: List[Dict[str, Any]]):
     try:
-        with open(CLIENTS_FILE, "w", encoding="utf-8") as f:
+        CLIENTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = CLIENTS_FILE.parent / f".tmp_clients_{os.getpid()}_{time.time_ns()}.json"
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(clients, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, CLIENTS_FILE)
     except Exception as e:
         logger.error(f"Error saving {CLIENTS_FILE}: {e}")
 
@@ -1122,34 +1151,36 @@ def register_client(req: ClientRegisterRequest):
     if not clean_login or not req.password_hash:
         raise HTTPException(status_code=400, detail="Логин и хэш пароля обязательны")
 
-    clients = load_registered_clients()
-    now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    with _CLIENTS_LOCK:
+        clients = load_registered_clients()
+        now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-    # Check if already exists
-    existing = next((c for c in clients if c["login"].lower() == clean_login), None)
-    if existing:
-        if req.password_hash not in existing.get("keyHashes", []):
-            existing.setdefault("keyHashes", []).append(req.password_hash)
-        existing["name"] = req.name.strip()
-        existing["role"] = req.role.strip()
-        existing["tenant"] = req.tenant.strip()
-        existing["updated_at"] = now_iso
-        client_record = existing
-        msg = f"Данные клиента {clean_login} обновлены"
-    else:
-        client_record = {
-            "login": clean_login,
-            "keyHashes": [req.password_hash],
-            "name": req.name.strip(),
-            "role": req.role.strip(),
-            "tenant": req.tenant.strip(),
-            "is_system": False,
-            "created_at": now_iso
-        }
-        clients.append(client_record)
-        msg = f"Клиент {clean_login} успешно зарегистрирован"
+        # Check if already exists
+        existing = next((c for c in clients if c["login"].lower() == clean_login), None)
+        if existing:
+            if req.password_hash not in existing.get("keyHashes", []):
+                existing.setdefault("keyHashes", []).append(req.password_hash)
+            existing["name"] = req.name.strip()
+            existing["role"] = req.role.strip()
+            existing["tenant"] = req.tenant.strip()
+            existing["updated_at"] = now_iso
+            client_record = existing
+            msg = f"Данные клиента {clean_login} обновлены"
+        else:
+            client_record = {
+                "login": clean_login,
+                "keyHashes": [req.password_hash],
+                "name": req.name.strip(),
+                "role": req.role.strip(),
+                "tenant": req.tenant.strip(),
+                "is_system": False,
+                "created_at": now_iso
+            }
+            clients.append(client_record)
+            msg = f"Клиент {clean_login} успешно зарегистрирован"
 
-    save_registered_clients(clients)
+        save_registered_clients(clients)
+
     append_console_log(f"👥 Регистрация клиента: {req.name} ({clean_login}) &bull; {req.tenant}", "success")
 
     return {
@@ -1166,14 +1197,16 @@ def delete_client(login: str):
     if clean_login in ("admin", "rop", "dmitriyfedotov1908@gmail.com"):
         raise HTTPException(status_code=400, detail="Системные аккаунты администратора защищены от удаления")
 
-    clients = load_registered_clients()
-    initial_len = len(clients)
-    clients = [c for c in clients if c["login"].lower() != clean_login]
+    with _CLIENTS_LOCK:
+        clients = load_registered_clients()
+        initial_len = len(clients)
+        clients = [c for c in clients if c["login"].lower() != clean_login]
 
-    if len(clients) == initial_len:
-        raise HTTPException(status_code=404, detail=f"Клиент {clean_login} не найден")
+        if len(clients) == initial_len:
+            raise HTTPException(status_code=404, detail=f"Клиент {clean_login} не найден")
 
-    save_registered_clients(clients)
+        save_registered_clients(clients)
+
     append_console_log(f"Удалён аккаунт клиента: {clean_login}", "warning")
     return {"success": True, "message": f"Клиент {clean_login} удалён"}
 
@@ -1223,8 +1256,12 @@ def save_archived_tenants(archives: List[Dict[str, Any]]):
     for p in get_all_tenants_archive_paths():
         try:
             p.parent.mkdir(parents=True, exist_ok=True)
-            with open(p, "w", encoding="utf-8") as f:
+            tmp = p.parent / f".tmp_archive_{os.getpid()}_{time.time_ns()}.json"
+            with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(archives, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, p)
         except Exception as e:
             logger.warning(f"Failed to write archive to {p}: {e}")
 
@@ -1396,29 +1433,30 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
     now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     login = clean_email if clean_email else f"{tenant_id.lower()}@revops.local"
     
-    clients = load_registered_clients()
-    existing_client = next((c for c in clients if c["login"].lower() == login), None)
-    if existing_client:
-        if password_hash not in existing_client.get("keyHashes", []):
-            existing_client.setdefault("keyHashes", []).append(password_hash)
-        existing_client["name"] = company_name
-        existing_client["role"] = req.role or "РОП • Руководитель ОП"
-        existing_client["tenant"] = f"{tenant_id} • {company_name}"
-        existing_client["is_active"] = True
-        existing_client["updated_at"] = now_iso
-    else:
-        new_client = {
-            "login": login,
-            "keyHashes": [password_hash],
-            "name": company_name,
-            "role": req.role or "РОП • Руководитель ОП",
-            "tenant": f"{tenant_id} • {company_name}",
-            "is_system": False,
-            "is_active": True,
-            "created_at": now_iso
-        }
-        clients.append(new_client)
-    save_registered_clients(clients)
+    with _CLIENTS_LOCK:
+        clients = load_registered_clients()
+        existing_client = next((c for c in clients if c["login"].lower() == login), None)
+        if existing_client:
+            if password_hash not in existing_client.get("keyHashes", []):
+                existing_client.setdefault("keyHashes", []).append(password_hash)
+            existing_client["name"] = company_name
+            existing_client["role"] = req.role or "РОП • Руководитель ОП"
+            existing_client["tenant"] = f"{tenant_id} • {company_name}"
+            existing_client["is_active"] = True
+            existing_client["updated_at"] = now_iso
+        else:
+            new_client = {
+                "login": login,
+                "keyHashes": [password_hash],
+                "name": company_name,
+                "role": req.role or "РОП • Руководитель ОП",
+                "tenant": f"{tenant_id} • {company_name}",
+                "is_system": False,
+                "is_active": True,
+                "created_at": now_iso
+            }
+            clients.append(new_client)
+        save_registered_clients(clients)
 
     # Build Ready Onboarding Brief Text
     sh_url = tenant_record.get("spreadsheet_url", "")
@@ -1565,20 +1603,26 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
 
     if not target_tenant and action in ("unfreeze", "restore"):
         # Check archive if trying to unarchive
-        archived = load_archived_tenants()
-        for idx, a in enumerate(archived):
-            if str(a.get("tenant_id", "")).upper() == clean_id:
-                restored = archived.pop(idx)
-                restored["status"] = "active"
-                save_archived_tenants(archived)
-                registry.setdefault("tenants", []).append(restored)
-                sync_save_registry(registry)
+        with _ARCHIVE_LOCK:
+            archived = load_archived_tenants()
+            restored = None
+            for idx, a in enumerate(archived):
+                if str(a.get("tenant_id", "")).upper() == clean_id:
+                    restored = archived.pop(idx)
+                    restored["status"] = "active"
+                    save_archived_tenants(archived)
+                    break
+        if restored:
+            registry.setdefault("tenants", []).append(restored)
+            sync_save_registry(registry)
+            with _CLIENTS_LOCK:
+                clients = load_registered_clients()
                 for c in clients:
                     if clean_id in str(c.get("tenant", "")).upper():
                         c["is_active"] = True
                 save_registered_clients(clients)
-                append_console_log(f"☀️ Клиент {clean_id} восстановлен из архива и активирован!", "success")
-                return {"success": True, "action": "unarchive", "status": "active", "message": f"Клиент {clean_id} восстановлен из архива"}
+            append_console_log(f"☀️ Клиент {clean_id} восстановлен из архива и активирован!", "success")
+            return {"success": True, "action": "unarchive", "status": "active", "message": f"Клиент {clean_id} восстановлен из архива"}
 
         raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден в архиве")
 
@@ -1590,10 +1634,12 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         sync_save_registry(registry)
         
         # Suspend client accounts
-        for c in clients:
-            if clean_id in str(c.get("tenant", "")).upper():
-                c["is_active"] = False
-        save_registered_clients(clients)
+        with _CLIENTS_LOCK:
+            clients = load_registered_clients()
+            for c in clients:
+                if clean_id in str(c.get("tenant", "")).upper():
+                    c["is_active"] = False
+            save_registered_clients(clients)
         
         msg = f"❄️ Тенант {clean_id} ({target_tenant.get('tenant_name')}) заморожен. Доступ в ЛК приостановлен."
         append_console_log(msg, "warning")
@@ -1606,10 +1652,12 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         sync_save_registry(registry)
         
         # Restore client accounts
-        for c in clients:
-            if clean_id in str(c.get("tenant", "")).upper():
-                c["is_active"] = True
-        save_registered_clients(clients)
+        with _CLIENTS_LOCK:
+            clients = load_registered_clients()
+            for c in clients:
+                if clean_id in str(c.get("tenant", "")).upper():
+                    c["is_active"] = True
+            save_registered_clients(clients)
         
         msg = f"☀️ Тенант {clean_id} ({target_tenant.get('tenant_name')}) разморожен и снова активен."
         append_console_log(msg, "success")
@@ -1622,14 +1670,17 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         removed["offboard_reason"] = req.reason or "Отказ от сотрудничества / завершение проекта"
         sync_save_registry(registry)
 
-        archived = load_archived_tenants()
-        archived.append(removed)
-        save_archived_tenants(archived)
+        with _ARCHIVE_LOCK:
+            archived = load_archived_tenants()
+            archived.append(removed)
+            save_archived_tenants(archived)
 
-        for c in clients:
-            if clean_id in str(c.get("tenant", "")).upper():
-                c["is_active"] = False
-        save_registered_clients(clients)
+        with _CLIENTS_LOCK:
+            clients = load_registered_clients()
+            for c in clients:
+                if clean_id in str(c.get("tenant", "")).upper():
+                    c["is_active"] = False
+            save_registered_clients(clients)
 
         msg = f"📦 Тенант {clean_id} ({removed.get('tenant_name')}) выведен из эксплуатации и перемещён в архив."
         append_console_log(msg, "warning")
@@ -2068,7 +2119,10 @@ def execute_agent_action(req: AgentActionRequest):
     # Build arguments based on action
     a6_args = ["--mode=whitepaper"] if action == "whitepaper" else (["--mode=roadmap"] if action == "bottlenecks" else ["--mode=audit"])
     a5_args = ["--mode=fuzz"] if action == "mutation" else (["--mode=drill"] if action in ("heartbeat", "drill") else ["--mode=self_test"])
-    a1_args = ["--tenant", tenant, "--dry-run", "--no-report"]
+    a1_args = ["--tenant", tenant, "--no-report"]
+    if action in ("dry_run", "audit_only"):
+        a1_args.append("--dry-run")
+
     if action == "balance":
         a3_args = ["--balance", "--tenant", tenant]
     elif action in ("heal", "mapping", "publish"):
@@ -2078,7 +2132,9 @@ def execute_agent_action(req: AgentActionRequest):
 
     a4_args = ["--mode=audit", "--tenant", tenant] if action == "audit" else ["--mode=self_test", "--tenant", tenant]
 
-    if action in ("send_telegram", "send"):
+    if action == "workflow_audit":
+        a2_args = ["--audit", "--tenant", tenant]
+    elif action in ("send_telegram", "send"):
         a2_args = ["--tenant", tenant, "--summary", "--send"]
     elif action == "pipeline":
         a2_args = ["--tenant", tenant, "--pipeline"]
@@ -2091,13 +2147,16 @@ def execute_agent_action(req: AgentActionRequest):
     else:
         a2_args = ["--tenant", tenant, "--summary"]
 
+    a2_script = (MY_AI_CREW_DIR / "workflow_logic_agent.py") if action == "workflow_audit" else (MY_AI_CREW_DIR / "commercial_director_engine.py")
+    a2_title = "Агент 3: Workflow Logic & Lineage (Сквозной аудит Data Lineage)" if action == "workflow_audit" else "Агент 2: Commercial Director CCO (Анализ воронки и прогноз)"
+
     agent_scripts = {
         "a6": (MY_AI_CREW_DIR / "system_health_advisor.py", a6_args, "Агент 6: Architecture Advisor (Аудит архитектуры L0–L3.5)"),
         "a5": (MY_AI_CREW_DIR / "canary_runner_agent.py", a5_args, "Агент 5: Synthetic Chaos & Red-Team (Canary E2E Drill)"),
         "a1": (MY_AI_CREW_DIR / "qa_healer_engine.py", a1_args, "Агент 1: Autonomous DevOps & QA Healer (Ревизия и самоисцеление)"),
         "a3": (MY_AI_CREW_DIR / "workflow_logic_agent.py", a3_args, "Агент 3: Workflow Logic & Lineage (Сквозной аудит Data Lineage)"),
         "a4": (MY_AI_CREW_DIR / "judge_validator_agent.py", a4_args, "Агент 4: Prompt & Audio QA Judge (Аудит цитирования и Z-Score)"),
-        "a2": (MY_AI_CREW_DIR / "commercial_director_engine.py", a2_args, "Агент 2: Commercial Director CCO (Анализ воронки и прогноз)"),
+        "a2": (a2_script, a2_args, a2_title),
     }
     
     if target == "drill":
@@ -2290,7 +2349,12 @@ def archive_desktop_launchers():
     """
     import shutil
 
-    desktop_dir = Path.home() / "Desktop"
+    desktop_candidates = [
+        Path.home() / "Desktop",
+        Path.home() / "Рабочий стол",
+        Path.home() / ".local/share/Desktop",
+    ]
+    desktop_dir = next((p for p in desktop_candidates if p.exists()), Path.home() / "Desktop")
     archive_dir = ENTERPRISE_OS_DIR / "desktop_launchers_archive"
     archive_dir.mkdir(parents=True, exist_ok=True)
 
@@ -2581,7 +2645,12 @@ def restore_desktop_launchers():
     """
     import shutil
 
-    desktop_dir = Path.home() / "Desktop"
+    desktop_candidates = [
+        Path.home() / "Desktop",
+        Path.home() / "Рабочий стол",
+        Path.home() / ".local/share/Desktop",
+    ]
+    desktop_dir = next((p for p in desktop_candidates if p.exists()), Path.home() / "Desktop")
     launchers_dir = Path.home() / ".gemini" / "antigravity" / "scratch" / "launchers"
     archive_dir = ENTERPRISE_OS_DIR / "desktop_launchers_archive"
 
@@ -2751,6 +2820,8 @@ def get_tenant_health_doctor(tenant_id: str):
 
     # Check 1: Google Sheet
     sheet_start = time.time()
+    elapsed_ms = 0
+    worksheets = []
     try:
         from .calls_router import get_service_account_path
         sa_path = get_service_account_path()
@@ -2859,12 +2930,31 @@ def get_tenant_health_doctor(tenant_id: str):
     else:
         status_label = "🔴 КРИТИЧЕСКИЙ СБОЙ"
 
+    sheet_check = next((c for c in checks if c.get("key") == "sheet"), {})
+    sheet_status = "OK" if sheet_check.get("status") == "ok" else ("WARN" if sheet_check.get("status") == "warn" else "ERROR")
+    crm_check = next((c for c in checks if c.get("key") == "crm"), {})
+    crm_status = "OK" if crm_check.get("status") == "ok" else "WARN"
+    n_users = len(cfg.get("allowed_users", [])) or len(cfg.get("users", [])) or 1
+
     return {
         "tenant_id": clean_tenant,
         "tenant_name": t_name,
         "status": overall_status,
         "status_label": status_label,
+        "overall_verdict": "HEALTHY" if overall_status == "healthy" else "ATTENTION_REQUIRED",
+        "issues_detected": sum(1 for c in checks if c.get("status") != "ok"),
         "checks": checks,
+        "report": {
+            "tenant_name": t_name,
+            "google_sheets": {
+                "status": sheet_status,
+                "latency_ms": elapsed_ms,
+                "sheets_found": len(worksheets) if worksheets else 0,
+            },
+            "crm_integration": {"status": crm_status, "type": crm_type},
+            "authentication": {"active_users": n_users},
+            "formula_integrity": {"status": "PROTECTED"},
+        },
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 

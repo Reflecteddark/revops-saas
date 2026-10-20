@@ -59,10 +59,29 @@ function getPlaybookDiff(call) {
 // ==========================================================================
 // MPSTATS CSV EXPORT (AG-GRID DOWNLOAD)
 // ==========================================================================
+function csvCell(v) {
+  let s = String(v ?? '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return `"${s}"`;
+}
+function csvRow(cells) { return cells.map(csvCell).join(';') + '\n'; }
+
 function exportCallsToCSV() {
-  let csv = "Call ID;Сделка;Менеджер;Чек;Длительность;Этап;Next Step;Балл;Статус;Дефекты речи;Рекомендация РОПу\n";
+  let csv = csvRow(["Call ID", "Сделка", "Менеджер", "Чек", "Длительность", "Этап", "Next Step", "Балл", "Статус", "Дефекты речи", "Рекомендация РОПу"]);
   CALLS_DATA.forEach(c => {
-    csv += `"${c.id}";"${c.deal_title}";"${c.manager}";"${c.amount}";"${c.duration}";"${c.stage}";"${c.next_step ? 'Да' : 'Нет'}";"${c.score}/13";"${c.status_label}";"${c.error_summary.replace(/"/g, '""')}";"${c.recommendation.replace(/"/g, '""')}"\n`;
+    csv += csvRow([
+      c.id,
+      c.deal_title,
+      c.manager,
+      c.amount,
+      c.duration,
+      c.stage,
+      c.next_step ? 'Да' : 'Нет',
+      `${c.score}/13`,
+      c.status_label,
+      c.error_summary,
+      c.recommendation
+    ]);
   });
   const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -323,7 +342,7 @@ function filterCallsTable() {
   let totalScore = 0;
 
   filtered.forEach((call) => {
-    call.cr.forEach((val, idx) => {
+    (call.cr || []).forEach((val, idx) => {
       if (val === 1) crSums[idx]++;
     });
     totalScore += call.score;
@@ -355,7 +374,7 @@ function filterCallsTable() {
 
     // 13 criteria heatmap dots
     let crDots = '';
-    call.cr.forEach((val, idx) => {
+    (call.cr || []).forEach((val, idx) => {
       const pass = (val === 1);
       const cls = pass ? 'pass' : 'fail';
       const tip = `${pass ? 'Выполнено' : 'Дефект'}: ${CRITERIA_NAMES[idx]}`;
@@ -502,7 +521,7 @@ function openCallModal(callId) {
   // Pills
   const pillsWrap = document.getElementById('modalCriteriaPills');
   pillsWrap.innerHTML = '';
-  call.cr.forEach((val, idx) => {
+  (call.cr || []).forEach((val, idx) => {
     const span = document.createElement('span');
     span.style.padding = '3px 8px';
     span.style.borderRadius = '4px';

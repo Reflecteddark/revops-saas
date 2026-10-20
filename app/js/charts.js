@@ -216,15 +216,15 @@ function initDevelopDissectionChart() {
     revGrad.addColorStop(1, '#6d28d9');
   }
 
-  const isZero = CALLS_DATA.length === 0;
+  const isEmpty = CALLS_DATA.length === 0;
   developDissectionChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+      labels: isEmpty ? [] : ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
       datasets: [
         {
           label: 'Выручка',
-          data: [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
+          data: isEmpty ? [] : [420, 560, 480, 680, 520, 740, 690, 820, 710, 890, 820, 950],
           backgroundColor: revGrad,
           hoverBackgroundColor: '#c4b5fd',
           borderRadius: 6,
@@ -234,7 +234,7 @@ function initDevelopDissectionChart() {
         },
         {
           label: 'План',
-          data: [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830],
+          data: isEmpty ? [] : [350, 490, 420, 590, 450, 630, 580, 710, 620, 760, 710, 830],
           backgroundColor: isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.10)',
           hoverBackgroundColor: isLight ? 'rgba(15, 23, 42, 0.22)' : 'rgba(255, 255, 255, 0.20)',
           borderRadius: 6,
@@ -308,9 +308,21 @@ function initSparklines() {
     }
   };
 
-  const mockWeekly = [0, 0, 0, 0, 0, 0, 0];
   const ids = ['sparkRevenue', 'sparkPipeline', 'sparkQuality', 'sparkSla'];
   const colors = ['#7c3aed', '#f59e0b', '#06b6d4', '#f43f5e'];
+
+  if (CALLS_DATA.length === 0) {
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (sparklineChartInstances[id]) {
+        try { sparklineChartInstances[id].destroy(); } catch (e) {}
+        sparklineChartInstances[id] = null;
+      }
+      applyChartZeroOverlay(id, null);
+    });
+    return;
+  }
 
   ids.forEach((id, i) => {
     const el = document.getElementById(id);
@@ -346,14 +358,14 @@ function initDevelopDonutChart() {
   developDonutChartInstance = null;
   const isLight = getThemeMode() === 'light'; // FIX: объявлена переменная isLight
 
-  const isZero = CALLS_DATA.length === 0;
+  const isEmpty = CALLS_DATA.length === 0;
   developDonutChartInstance = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Эталонные звонки', 'Встреча назначена', 'Следующий шаг взят', 'Риск срыва сделки', 'Fake Yes сливы'],
+      labels: isEmpty ? [] : ['Эталонные звонки', 'Встреча назначена', 'Следующий шаг взят', 'Риск срыва сделки', 'Fake Yes сливы'],
       datasets: [
         {
-          data: [34, 25, 17, 12, 6],
+          data: isEmpty ? [] : [34, 25, 17, 12, 6],
           backgroundColor: ['#8b5cf6', '#6366f1', '#38bdf8', '#f59e0b', '#f43f5e'],
           borderWidth: 2,
           borderColor: isLight ? '#ffffff' : '#0b0b10',
@@ -409,15 +421,15 @@ function initDevelopSplineChart() {
   const gridColor = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.04)';
   const tickColor = isLight ? '#71717a' : '#52525b';
 
-  const isZero = CALLS_DATA.length === 0;
+  const isEmpty = CALLS_DATA.length === 0;
   developSplineChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+      labels: isEmpty ? [] : ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
       datasets: [
         {
           label: 'SSOT Факт',
-          data: [240, 310, 460, 380, 540, 470, 610],
+          data: isEmpty ? [] : [240, 310, 460, 380, 540, 470, 610],
           borderColor: '#7c3aed',
           backgroundColor: grad1,
           borderWidth: 2.2,
@@ -431,7 +443,7 @@ function initDevelopSplineChart() {
         },
         {
           label: 'Базовый тренд',
-          data: [310, 420, 390, 520, 460, 590, 540],
+          data: isEmpty ? [] : [310, 420, 390, 520, 460, 590, 540],
           borderColor: isLight ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.22)',
           borderDash: [4, 4],
           borderWidth: 1.5,
