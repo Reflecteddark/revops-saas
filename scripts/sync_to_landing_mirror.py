@@ -19,28 +19,7 @@ LANDING_SRC = BASE_DIR / "apps" / "landing"
 WEB_SRC = BASE_DIR / "apps" / "web"
 MIRROR_DIR = BASE_DIR.parent / "ai-rop-landing"
 
-def sync_local_app():
-    """Sync apps/web into root app/ directory for static Vercel resolution."""
-    local_app_dir = BASE_DIR / "app"
-    local_app_dir.mkdir(exist_ok=True)
-    local_app_js = local_app_dir / "js"
-    local_app_js.mkdir(exist_ok=True)
-
-    if (WEB_SRC / "index.html").exists():
-        shutil.copy2(WEB_SRC / "index.html", local_app_dir / "index.html")
-    if (WEB_SRC / "app.js").exists():
-        shutil.copy2(WEB_SRC / "app.js", local_app_dir / "app.js")
-
-    web_js_dir = WEB_SRC / "js"
-    if web_js_dir.exists():
-        for js_file in web_js_dir.glob("*.js"):
-            shutil.copy2(js_file, local_app_js / js_file.name)
-    print("  [OK] Local /app/ directory updated from apps/web/")
-
 def sync_mirror():
-    # 0. Sync local /app in monorepo
-    sync_local_app()
-
     if not MIRROR_DIR.exists():
         print(f"[Mirror] Directory {MIRROR_DIR} not found. Skipping mirror sync.")
         return 0
