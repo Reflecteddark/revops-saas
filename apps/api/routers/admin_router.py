@@ -31,8 +31,14 @@ COOKIE_ADMIN_AUTH_NAME = "revops_admin_token"
 # Strict Zero-Mock & Anti-Stub live data enforcement
 STRICT_LIVE_DATA = os.getenv("STRICT_LIVE_DATA", "True").lower() in ("true", "1", "yes")
 
-# Primary rotated admin secret key (can be overridden via REVOPS_ADMIN_KEY env var)
-REVOPS_ADMIN_KEY = os.getenv("REVOPS_ADMIN_KEY", "revops_sec_k9f2b8a74e1d3c0598f42017ae63bc89")
+# Primary rotated admin secret key (must be provided via REVOPS_ADMIN_KEY env var in production)
+REVOPS_ADMIN_KEY = os.getenv("REVOPS_ADMIN_KEY")
+if not REVOPS_ADMIN_KEY:
+    if os.getenv("REVOPS_ENV", "prod").lower() == "dev":
+        REVOPS_ADMIN_KEY = "dev_only_insecure_key_do_not_use_in_prod"
+        logger.warning("REVOPS_ADMIN_KEY not set, using dev fallback")
+    else:
+        raise RuntimeError("REVOPS_ADMIN_KEY environment variable is required")
 
 # Fallback keys accepted during rolling migration
 ALLOWED_ADMIN_KEYS = {
@@ -175,6 +181,36 @@ for p in candidate_enterprise_dirs:
         ENTERPRISE_OS_DIR = p
         break
 
+candidate_crew_dirs = [
+    Path("/opt/my_ai_crew"),
+    BASE_DIR.parent / "my_ai_crew",
+    Path.home() / "my_ai_crew",
+    Path.home() / ".gemini" / "antigravity" / "scratch" / "my_ai_crew",
+]
+MY_AI_CREW_DIR = Path("/opt/my_ai_crew")
+for d in candidate_crew_dirs:
+    if d.exists():
+        MY_AI_CREW_DIR = d
+        break
+
+if sys.platform.startswith("linux"):
+    if (MY_AI_CREW_DIR / "venv" / "bin" / "python").exists():
+        MY_AI_CREW_PYTHON = MY_AI_CREW_DIR / "venv" / "bin" / "python"
+    elif (BASE_DIR / "venv" / "bin" / "python").exists():
+        MY_AI_CREW_PYTHON = BASE_DIR / "venv" / "bin" / "python"
+    else:
+        MY_AI_CREW_PYTHON = Path(sys.executable)
+else:
+    candidate_py = Path(sys.executable).parent / "python.exe"
+    if candidate_py.exists():
+        MY_AI_CREW_PYTHON = candidate_py
+    elif (MY_AI_CREW_DIR / "venv" / "Scripts" / "python.exe").exists():
+        MY_AI_CREW_PYTHON = MY_AI_CREW_DIR / "venv" / "Scripts" / "python.exe"
+    else:
+        MY_AI_CREW_PYTHON = Path(sys.executable)
+
+FEATURES_CONFIG_FILE = ENTERPRISE_OS_DIR / "features_config.json"
+
 # Global buffer for live admin console output
 _CONSOLE_LOG_BUFFER: List[Dict[str, Any]] = []
 _MAX_CONSOLE_BUFFER = 200
@@ -269,7 +305,7 @@ def get_tunnel_status() -> Dict[str, Any]:
     return {
         "running": is_running,
         "url": url,
-        "status_label": "🟢 АКТИВЕН (Cloudflare 24/7)" if is_running else "?? ??????????"
+        "status_label": "🟢 АКТИВЕН (Cloudflare 24/7)" if is_running else "🔴 ОСТАНОВЛЕН"
     }
 
 
@@ -316,29 +352,29 @@ def get_task_scheduler_status(task_name: str) -> Dict[str, Any]:
             )
             if res.returncode == 0 and task_name.lower() in res.stdout.lower():
                 parts = [p.replace('"', '').replace('\r', '').replace('\n', '').strip() for p in res.stdout.strip().split(",")]
-                next_run = parts[1] if len(parts) > 1 and parts[1] != "N/A" else "? ???????"
-                state = parts[2] if len(parts) > 2 else "?????"
+                next_run = parts[1] if len(parts) > 1 and parts[1] != "N/A" else "Не назначено"
+                state = parts[2] if len(parts) > 2 else "Неизвестно"
                 return {
                     "name": task_name,
                     "installed": True,
                     "state": state,
                     "next_run": next_run,
-                    "status_label": f"?? {state} (????: {next_run})"
+                    "status_label": f"🟢 {state} (След: {next_run})"
                 }
             return {
                 "name": task_name,
                 "installed": False,
-                "state": "?? ???????????",
-                "next_run": "?",
-                "status_label": "? ?? ???????"
+                "state": "Не установлена",
+                "next_run": "—",
+                "status_label": "🔴 Не найдена"
             }
     except Exception as e:
         return {
             "name": task_name,
             "installed": False,
-            "state": "?????? ????????",
-            "next_run": "?",
-            "status_label": "? ?????? ??????????"
+            "state": "Ошибка запроса",
+            "next_run": "—",
+            "status_label": "⚠️ Ошибка планировщика"
         }
 
 
@@ -1727,37 +1763,6 @@ def calibrate_scoring_threshold(req: ScoringCalibrateRequest):
 # ============================================================================
 # CCO AI AGENT & WORKFLOW LOGIC AGENT
 # ============================================================================
-
-candidate_crew_dirs = [
-    Path("/opt/my_ai_crew"),
-    BASE_DIR.parent / "my_ai_crew",
-    Path.home() / "my_ai_crew",
-    Path.home() / ".gemini" / "antigravity" / "scratch" / "my_ai_crew",
-]
-MY_AI_CREW_DIR = Path("/opt/my_ai_crew")
-for d in candidate_crew_dirs:
-    if d.exists():
-        MY_AI_CREW_DIR = d
-        break
-
-if sys.platform.startswith("linux"):
-    if (MY_AI_CREW_DIR / "venv" / "bin" / "python").exists():
-        MY_AI_CREW_PYTHON = MY_AI_CREW_DIR / "venv" / "bin" / "python"
-    elif (BASE_DIR / "venv" / "bin" / "python").exists():
-        MY_AI_CREW_PYTHON = BASE_DIR / "venv" / "bin" / "python"
-    else:
-        MY_AI_CREW_PYTHON = Path(sys.executable)
-else:
-    candidate_py = Path(sys.executable).parent / "python.exe"
-    if candidate_py.exists():
-        MY_AI_CREW_PYTHON = candidate_py
-    elif (MY_AI_CREW_DIR / "venv" / "Scripts" / "python.exe").exists():
-        MY_AI_CREW_PYTHON = MY_AI_CREW_DIR / "venv" / "Scripts" / "python.exe"
-    else:
-        MY_AI_CREW_PYTHON = Path(sys.executable)
-
-FEATURES_CONFIG_FILE = ENTERPRISE_OS_DIR / "features_config.json"
-
 
 class CCOActionRequest(BaseModel):
     action: str = Field(..., description="Action: summary, pipeline, forecast, team, stalled, send_telegram, workflow_audit")
@@ -3367,7 +3372,15 @@ async def execute_terminal_cli_command(req: TerminalExecuteRequest):
         return {"output": out, "status": "ok", "data": {"active": len(active)}}
 
     elif cmd == "/backup":
-        res = trigger_manual_backup()
+        try:
+            backup_res = create_system_backup()
+            b = backup_res.get("backup", {})
+            res = {"filename": b.get("filename"), "size_kb": b.get("size_kb")}
+        except Exception as e:
+            return {
+                "output": f"[{timestamp_str}] ⛔ Ошибка бэкапа: {e}",
+                "status": "error",
+            }
         out = (
             f"[{timestamp_str}] 💾 Создание Disaster Recovery бэкапа:\n"
             f"  Файл: {res.get('filename')}\n"
@@ -3399,7 +3412,7 @@ async def execute_terminal_cli_command(req: TerminalExecuteRequest):
         return {"output": out, "status": "ok"}
 
     elif cmd == "/status":
-        status_res = get_agents_telemetry_status()
+        status_res = get_agents_telemetry()
         kpis = status_res.get("top_kpis", {})
         out = (
             f"[{timestamp_str}] 🤖 Статус флота ИИ-Агентов (Sextet Fleet):\n"

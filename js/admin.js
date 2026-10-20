@@ -89,26 +89,31 @@ async function triggerSelfHealingAudit() {
 // ADMIN DASHBOARD & FLEET CONTROL CENTER
 // ==========================================================================
 
-const REVOPS_ADMIN_KEY_DEFAULT = 'revops_sec_k9f2b8a74e1d3c0598f42017ae63bc89';
-
 function getAdminAuthHeaders() {
   const headers = { 'Content-Type': 'application/json' };
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
     if (raw) {
-      headers['X-RevOps-Session'] = encodeURIComponent(raw);
+      headers['X-RevOps-Session'] = raw;
     }
   } catch (e) {}
-  const savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key') || REVOPS_ADMIN_KEY_DEFAULT;
-  headers['X-Admin-Key'] = savedKey;
-  headers['X-RevOps-Admin-Key'] = savedKey;
+  const savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key');
+  if (savedKey) {
+    headers['X-Admin-Key'] = savedKey;
+    headers['X-RevOps-Admin-Key'] = savedKey;
+  }
   return headers;
 }
 
 async function adminFetch(endpoint, options = {}) {
-  const delim = endpoint.includes('?') ? '&' : '?';
-  const savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key') || REVOPS_ADMIN_KEY_DEFAULT;
-  const url = `${REVOPS_API_BASE}${endpoint}${delim}admin_key=${savedKey}`;
+  const savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key');
+  if (!savedKey) {
+    if (typeof showToast === 'function') {
+      showToast('Внимание', 'Admin key не настроен');
+    }
+    return Promise.reject(new Error('Admin key не настроен'));
+  }
+  const url = `${REVOPS_API_BASE}${endpoint}`;
   const authHeaders = getAdminAuthHeaders();
   const mergedHeaders = { ...authHeaders, ...(options.headers || {}) };
   return fetch(url, { ...options, headers: mergedHeaders, credentials: 'include' });
@@ -1384,10 +1389,6 @@ window.fetchAdminLogs = fetchAdminLogs;
 window.clearAdminConsole = clearAdminConsole;
 window.copyAdminTunnelUrl = copyAdminTunnelUrl;
 window.generateRandomPassword = generateRandomPassword;
-window.renderAdminClientsTable = renderAdminClientsTable;
-window.registerNewClientAccess = registerNewClientAccess;
-window.copyClientInviteMessage = copyClientInviteMessage;
-window.deleteClientAccess = deleteClientAccess;
 window.runCCOAction = runCCOAction;
 window.runHealerAction = runHealerAction;
 window.loadFeaturesConfig = loadFeaturesConfig;
