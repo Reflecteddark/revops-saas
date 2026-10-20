@@ -588,6 +588,9 @@ function refreshAllDashboardViews() {
   renderPulseFunnel();
   // Update Donut, Spline, Dissection and Rings
   updateDevelopBentoCharts();
+  if (typeof initSparklines === 'function') {
+    initSparklines();
+  }
   if (typeof refreshAllChartZeroOverlays === 'function') {
     refreshAllChartZeroOverlays();
   }
