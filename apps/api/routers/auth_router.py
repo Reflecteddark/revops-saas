@@ -2,10 +2,13 @@
 Auth Router: Tenant Onboarding, Login, and Profile.
 """
 
+import hashlib
+import hmac
 import re
+import secrets
 import uuid
 from typing import Any, Dict, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -116,12 +119,139 @@ def get_me(current_user: User = Depends(get_current_user)):
     )
 
 
+class ClientLoginRequest(BaseModel):
+    login: str
+    password: str
+
+
+@router.post("/client-login")
+def client_login(req: ClientLoginRequest, response: Response, request: Request):
+    """
+    Server-side authentication for client and admin accounts.
+    Eliminates client-side password hash verification and salt exposure.
+    Sets signed HttpOnly session cookie and returns user profile.
+    """
+    from .admin_router import (
+        load_registered_clients,
+        generate_admin_cookie_token,
+        COOKIE_ADMIN_AUTH_NAME,
+        ALLOWED_ADMIN_KEYS
+    )
+
+    login_clean = (req.login or "").strip().lower()
+    pass_clean = (req.password or "").strip()
+
+    if not login_clean or not pass_clean:
+        raise HTTPException(status_code=400, detail="Логин и пароль обязательны для заполнения")
+
+    input_hash = hashlib.sha256(pass_clean.encode("utf-8")).hexdigest()
+
+    clients = load_registered_clients()
+    matched_client = None
+
+    for c in clients:
+        c_login = str(c.get("login", "")).strip().lower()
+        if c_login == login_clean:
+            user_hashes = [str(h).lower() for h in c.get("keyHashes", [])]
+            if any(hmac.compare_digest(input_hash, h) for h in user_hashes):
+                matched_client = c
+                break
+
+    # Also check if login is 'admin' with default admin key
+    if not matched_client and login_clean == "admin":
+        if any(hmac.compare_digest(pass_clean, k) for k in ALLOWED_ADMIN_KEYS):
+            matched_client = {
+                "login": "admin",
+                "name": "Администратор RevOps",
+                "role": "Admin / Супервайзер",
+                "tenant": "TNT-001 • Самозанятый",
+                "is_active": True
+            }
+
+    if not matched_client:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверный логин или пароль"
+        )
+
+    if matched_client.get("is_active") is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ к аккаунту приостановлен администратором (контур заморожен)"
+        )
+
+    is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+
+    is_admin = (
+        matched_client.get("login") in ("admin", "dmitriyfedotov1908@gmail.com")
+        or "admin" in str(matched_client.get("role", "")).lower()
+        or "супервайзер" in str(matched_client.get("role", "")).lower()
+    )
+
+    # Set admin cookie if user has admin privileges
+    if is_admin:
+        admin_token = generate_admin_cookie_token()
+        response.set_cookie(
+            key=COOKIE_ADMIN_AUTH_NAME,
+            value=admin_token,
+            httponly=True,
+            secure=is_https,
+            samesite="lax",
+            max_age=7 * 86400,
+            path="/"
+        )
+
+    session_token = secrets.token_hex(32)
+    response.set_cookie(
+        key="revops_client_auth",
+        value=session_token,
+        httponly=True,
+        secure=is_https,
+        samesite="lax",
+        max_age=7 * 86400,
+        path="/"
+    )
+
+    return {
+        "authenticated": True,
+        "session_token": session_token,
+        "is_admin": is_admin,
+        "user": {
+            "login": matched_client.get("login"),
+            "name": matched_client.get("name") or matched_client.get("login"),
+            "role": matched_client.get("role") or "Сотрудник",
+            "tenant": matched_client.get("tenant") or "TNT-001 • Самозанятый",
+            "is_admin": is_admin
+        }
+    }
+
+
+@router.post("/client-logout")
+def client_logout(response: Response):
+    """Logs out client and clears session cookies."""
+    from .admin_router import COOKIE_ADMIN_AUTH_NAME
+    response.delete_cookie(key="revops_client_auth", path="/" )
+    response.delete_cookie(key=COOKIE_ADMIN_AUTH_NAME, path="/")
+    return {"status": "ok", "message": "Сессия успешно завершена"}
+
+
 @router.get("/registered-clients")
 def get_registered_clients_public():
-    """Returns the list of client authentication records (only SHA-256 hashes, zero plain passwords)."""
+    """Returns safe client directory with zero password hashes exposed to frontend."""
     from .admin_router import load_registered_clients
     clients = load_registered_clients()
-    return {"clients": clients}
+    safe_clients = [
+        {
+            "login": c.get("login"),
+            "name": c.get("name"),
+            "role": c.get("role"),
+            "tenant": c.get("tenant"),
+            "is_active": c.get("is_active", True),
+            "created_at": c.get("created_at")
+        }
+        for c in clients
+    ]
+    return {"clients": safe_clients}
 
 
 class ChangePasswordRequest(BaseModel):

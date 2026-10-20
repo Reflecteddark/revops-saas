@@ -559,7 +559,14 @@ async function runTaskAction(action) {
 
 async function saveDailyTaskTime() {
   const input = document.getElementById('adminDailyTimeInput');
-  const timeVal = input ? input.value : '04:00';
+  const timeVal = (input && input.value) ? input.value.trim() : '04:00';
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  if (!timeRegex.test(timeVal)) {
+    const err = 'Некорректный формат времени. Требуется HH:MM (например, 04:00)';
+    appendAdminTerminalLog(`Ошибка: ${err}`, 'error');
+    showToast('Ошибка валидации', err);
+    return;
+  }
   appendAdminTerminalLog(`Переустановка автозадачи на время: ${timeVal}...`, 'info');
 
   try {

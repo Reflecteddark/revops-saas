@@ -100,6 +100,12 @@ function filterRepAudit(repName) {
   switchTab('audit');
   const sel = document.getElementById('filterManager');
   if (sel) {
+    if (repName && !Array.from(sel.options).some(o => o.value === repName)) {
+      const opt = document.createElement('option');
+      opt.value = repName;
+      opt.textContent = repName;
+      sel.appendChild(opt);
+    }
     sel.value = repName;
     filterCallsTable();
   }

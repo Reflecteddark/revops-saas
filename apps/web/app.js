@@ -45,11 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setAccentTheme(savedTheme);
   }
 
-  let savedMode = localStorage.getItem('revops_theme_mode');
-  if (!savedMode || savedMode === 'light') {
-    savedMode = 'dark';
-    try { localStorage.setItem('revops_theme_mode', 'dark'); } catch (e) {}
-  }
+  const savedMode = localStorage.getItem('revops_theme_mode') || 'dark';
   if (typeof setThemeMode === 'function') {
     setThemeMode(savedMode);
   }

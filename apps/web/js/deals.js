@@ -867,11 +867,9 @@ function renderPulseFunnel(periodKey) {
 
   if (period !== 'all') {
     if (dealsList) {
-      const filtered = dealsList.filter(d => (typeof isItemInPeriod === 'function') ? isItemInPeriod(d.created_at || d.date, period) : true);
-      if (filtered.length > 0) dealsList = filtered;
+      dealsList = dealsList.filter(d => (typeof isItemInPeriod === 'function') ? isItemInPeriod(d.created_at || d.date, period) : true);
     }
-    const filteredCalls = callsList.filter(c => (typeof isItemInPeriod === 'function') ? isItemInPeriod(c.date || c.created_at, period) : true);
-    if (filteredCalls.length > 0) callsList = filteredCalls;
+    callsList = callsList.filter(c => (typeof isItemInPeriod === 'function') ? isItemInPeriod(c.date || c.created_at, period) : true);
   }
 
   let val1 = 0, val2 = 0, val3 = 0, val4 = 0, val5 = 0;
@@ -1292,4 +1290,3 @@ window.renderFinancialBridgeAndLeaks = renderFinancialBridgeAndLeaks;
 window.renderPulseRecentCalls = renderPulseRecentCalls;
 window.renderPulseFunnel = renderPulseFunnel;
 window.triggerSyncSimulation = triggerSyncSimulation;
-window.escapeHtml = escapeHtml;

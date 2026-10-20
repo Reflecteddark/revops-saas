@@ -22,12 +22,7 @@
   <script>
     (function() {
       try {
-        var mode = localStorage.getItem('revops_theme_mode');
-        // Force deep black theme if not set or previously set to light
-        if (!mode || mode === 'light') {
-          mode = 'dark';
-          localStorage.setItem('revops_theme_mode', 'dark');
-        }
+        var mode = localStorage.getItem('revops_theme_mode') || 'dark';
         if (mode === 'light') {
           document.documentElement.setAttribute('data-theme', 'light');
         } else {
