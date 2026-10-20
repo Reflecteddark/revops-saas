@@ -92,13 +92,29 @@ function updateSidebarTenantChip(tenantId) {
   const chipContainer = document.getElementById('sidebarTenantChip');
   if (!chipName && !chipAvatar) return;
 
-  const tenantsMap = {
+  const defaultTenantsMap = {
     'TNT-001': { name: 'Самозанятый', initials: 'СЗ' },
     'TNT-002': { name: 'ООО МедТех', initials: 'МТ' },
     'TNT-003': { name: 'КабельЭнерго', initials: 'КЭ' },
     'TNT-004': { name: 'УЗИП Про', initials: 'УП' }
   };
-  const tInfo = tenantsMap[cleanId] || { name: cleanId, initials: cleanId.slice(0, 2) };
+
+  let map = { ...defaultTenantsMap };
+  try {
+    const cached = JSON.parse(localStorage.getItem('revops_admin_tenants_cache') || '[]');
+    if (Array.isArray(cached)) {
+      cached.forEach(t => {
+        if (t && t.tenant_id) {
+          map[t.tenant_id.toUpperCase()] = {
+            name: t.tenant_name || t.tenant_id,
+            initials: (t.tenant_name || t.tenant_id || '').slice(0, 2).toUpperCase()
+          };
+        }
+      });
+    }
+  } catch (e) {}
+
+  const tInfo = map[cleanId] || { name: cleanId, initials: cleanId.slice(0, 2) };
   if (chipName) chipName.textContent = tInfo.name;
   if (chipAvatar) chipAvatar.textContent = tInfo.initials;
   if (chipContainer) chipContainer.setAttribute('data-tooltip', `Клиент: ${tInfo.name} (LIVE)`);

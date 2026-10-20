@@ -180,10 +180,18 @@ async function loadAdminStatus() {
     if (dailyStatusLabel) dailyStatusLabel.textContent = data.tasks.daily_sync.status_label;
     if (dailyNextRun) dailyNextRun.textContent = data.tasks.daily_sync.next_run;
 
-    // Load CRM status, features config, and agents telemetry
-    await loadAdminCrmStatus();
-    loadFeaturesConfig();
-    loadAgentsTelemetry(false);
+    // 4. Update fleet events count badge if present
+    const fleetEventsEl = document.getElementById('fleetEventsCount');
+    const fleetTbody = document.getElementById('fleetEventsTableBody');
+    if (fleetEventsEl && fleetTbody) {
+      const rows = fleetTbody.querySelectorAll('tr').length;
+      fleetEventsEl.textContent = `${rows} последних событий`;
+    }
+
+    // Load CRM status, features config, and agents telemetry safely
+    try { await loadAdminCrmStatus(); } catch (e) { console.warn('[Admin] loadAdminCrmStatus failed:', e); }
+    try { await loadFeaturesConfig(); } catch (e) { console.warn('[Admin] loadFeaturesConfig failed:', e); }
+    try { await loadAgentsTelemetry(false); } catch (e) { console.warn('[Admin] loadAgentsTelemetry failed:', e); }
   } catch (err) {
     console.warn('[Admin] Не удалось загрузить статус:', err);
   }
@@ -206,7 +214,7 @@ async function loadAdminCrmStatus() {
     const amoDomain = document.getElementById('adminAmoDomainPreview');
 
     if (tenantLabel) tenantLabel.textContent = `${data.tenant_id} • ${data.tenant_name}`;
-    if (sheetLabel) sheetLabel.textContent = `${data.spreadsheet_id.slice(0, 16)}...`;
+    if (sheetLabel) sheetLabel.textContent = `${(data.spreadsheet_id || '').slice(0, 16)}...`;
 
     const isB24 = (data.active_crm || 'bitrix24').toLowerCase() === 'bitrix24';
     if (activeBadge) {
