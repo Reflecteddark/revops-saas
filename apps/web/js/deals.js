@@ -448,7 +448,7 @@ function handleIncomingLiveCall(newCall) {
   }
 }
 
-function calculateFinancials(deals = null, calls = null) {
+export function calculateFinancials(deals = null, calls = null) {
   const dealsList = deals !== null ? deals : ((typeof window.DEALS_DATA !== 'undefined' && Array.isArray(window.DEALS_DATA)) ? window.DEALS_DATA : []);
   const callsList = calls !== null ? calls : ((typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA)) ? CALLS_DATA : []);
 

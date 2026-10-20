@@ -368,7 +368,7 @@ function updateCallsPills(currentMgr, currentSt) {
   }
 }
 
-function filterCallsTable() {
+export function filterCallsTable() {
   const mgr = document.getElementById('filterManager')?.value || 'all';
   const st = document.getElementById('filterStatus')?.value || 'all';
   const q = (document.getElementById('transcriptSearch')?.value || '').trim().toLowerCase();

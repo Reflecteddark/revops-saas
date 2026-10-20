@@ -21,6 +21,7 @@ env/
 
 # Node & Frontend
 node_modules/
+coverage/
 .next/
 out/
 build/
