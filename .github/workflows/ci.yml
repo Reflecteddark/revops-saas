@@ -2,7 +2,7 @@ name: RevOps Intelligence SaaS CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, "feat/**" ]
   pull_request:
     branches: [ main ]
 
@@ -39,9 +39,29 @@ jobs:
         run: |
           pytest tests -v --tb=short
 
+  frontend-vitest:
+    name: Frontend Vitest Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Run Vitest Unit Tests
+        run: npm test
+
   docker-build:
     name: Build & Verify Docker Image
-    needs: backend-quality-and-test
+    needs: [backend-quality-and-test, frontend-vitest]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

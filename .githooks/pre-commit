@@ -1,0 +1,16 @@
+#!/bin/sh
+# RevOps SaaS - Pre-commit test runner
+echo "⚡ [pre-commit] Запуск набора юнит-тестов Vitest..."
+npm test
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+  echo ""
+  echo "❌ [pre-commit] Тесты провалены! Коммит отменен."
+  echo "   Запустите 'npm test' локально, чтобы увидеть подробности."
+  echo ""
+  exit 1
+fi
+
+echo "✅ [pre-commit] Все тесты пройдены успешно."
+exit 0
