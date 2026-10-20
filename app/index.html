@@ -9568,12 +9568,172 @@
         </div>
       </div>
 
+      <!-- MODAL: TENANT HEALTH DOCTOR (ЭКСПРЕСС-ДИАГНОСТИКА КЛИЕНТА) -->
+      <div id="tenantHealthDoctorModal" style="display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 20px;">
+        <div style="width: 100%; max-width: 620px; background: #0f121d; border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,0.6); overflow: hidden;">
+          <div style="padding: 16px 20px; background: rgba(52, 211, 153, 0.05); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="healthDoctorIdBadge" class="badge-won" style="font-size: 0.75rem;">TNT-001</span>
+              <strong id="healthDoctorTitle" style="color: #fff; font-size: 0.92rem;">🩺 Экспресс-диагностика клиента</strong>
+            </div>
+            <button onclick="closeTenantHealthDoctorModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</button>
+          </div>
+
+          <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px; max-height: 75vh; overflow-y: auto;">
+            <!-- Traffic Light Banner -->
+            <div id="healthDoctorBanner" style="padding: 14px 16px; border-radius: 10px; background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.4); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Общий статус здоровья:</div>
+                <div id="healthDoctorStatusText" style="font-size: 1.15rem; font-weight: 700; color: #34d399; margin-top: 3px;">
+                  🟢 ВСЕ КОНТУРЫ В НОРМЕ
+                </div>
+              </div>
+              <span id="healthDoctorTimestamp" style="font-size: 0.70rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;"></span>
+            </div>
+
+            <!-- Checks List -->
+            <div id="healthDoctorChecksList" style="display: flex; flex-direction: column; gap: 10px;">
+              <!-- Dynamic check items -->
+            </div>
+          </div>
+
+          <div style="padding: 14px 20px; background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
+            <button id="btnHealthDoctorRecheck" onclick="recheckTenantHealth()" class="btn-modern-ghost" style="padding: 7px 14px; font-size: 0.76rem; color: #34d399; border-color: rgba(52,211,153,0.3);">
+              🔄 Повторить проверку
+            </button>
+            <button onclick="closeTenantHealthDoctorModal()" class="btn-modern-primary" style="padding: 7px 18px; font-size: 0.76rem; font-weight: 700;">
+              Закрыть
+            </button>
+          </div>
+        </div>
+      </div>
+
+
       <!-- ===================================================================
            ADMIN SUBTAB 3: ИНФРАСТРУКТУРА & CRM
            =================================================================== -->
       <div id="admin-pane-infra" class="admin-pane" style="display: none;">
         <!-- Bento Grid: Infrastructure & CRM Modules -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 18px; margin-bottom: 20px;">
+
+        <!-- FEATURE 3: AI TELEMETRY & QUEUE MONITOR KPI RIBBON -->
+        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 6px;">
+          <div class="bento-card" style="padding: 12px 14px; background: rgba(124, 58, 237, 0.08); border-color: rgba(124, 58, 237, 0.25);">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">📞 Звонков сегодня</div>
+            <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 3px;">
+              <span id="aiMetricCallsToday" style="font-size: 1.35rem; font-weight: 700; color: #fff;">18</span>
+              <span class="badge-won" style="font-size: 0.62rem;">100% УСПЕШНО</span>
+            </div>
+            <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px;">Аудит 13 критериев</div>
+          </div>
+
+          <div class="bento-card" style="padding: 12px 14px; background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.25);">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">🎙️ Минут расшифровано</div>
+            <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 3px;">
+              <span id="aiMetricAudioMinutes" style="font-size: 1.35rem; font-weight: 700; color: #38bdf8;">32.5 мин</span>
+              <span class="badge-info" style="font-size: 0.62rem;">Direct Audio</span>
+            </div>
+            <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px;">Gemini 3.5 Speech AI</div>
+          </div>
+
+          <div class="bento-card" style="padding: 12px 14px; background: rgba(52, 211, 153, 0.08); border-color: rgba(52, 211, 153, 0.25);">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">⚡ Скорость аудита</div>
+            <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 3px;">
+              <span id="aiMetricAvgLatency" style="font-size: 1.35rem; font-weight: 700; color: #34d399;">~7.4 сек</span>
+              <span class="badge-won" style="font-size: 0.62rem;">PASS</span>
+            </div>
+            <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px;">Среднее время на звонок</div>
+          </div>
+
+          <div class="bento-card" style="padding: 12px 14px; background: rgba(251, 191, 36, 0.08); border-color: rgba(251, 191, 36, 0.25);">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">💰 Расход Gemini API</div>
+            <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 3px;">
+              <span id="aiMetricEstCost" style="font-size: 1.35rem; font-weight: 700; color: #fbbf24;">$0.04</span>
+              <span id="aiMetricRateLimit" class="badge-won" style="font-size: 0.62rem;">RPM OK</span>
+            </div>
+            <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px;">Тариф Flash Audio $0.0012/мин</div>
+          </div>
+        </div>
+
+        <!-- FEATURE 1: ПЕСОЧНИЦА ТЕЛЕФОНИИ & ИНСПЕКТОР ВХОДЯЩИХ ВЕБХУКОВ -->
+        <div class="bento-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(16, 24, 39, 0.95) 0%, rgba(10, 15, 26, 0.98) 100%); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div class="bento-card-header" style="margin-bottom: 14px;">
+            <span class="bento-card-title">
+              <span class="title-icon" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </span>
+              Тестер телефонии & Инспектор входящих вебхуков (Telephony Sandbox)
+            </span>
+            <span class="badge-won" style="font-size: 0.65rem; background: rgba(56,189,248,0.15); color: #38bdf8;">Universal Telephony Gateway</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+            <!-- Left: Simulator Controls -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.45;">
+                Мгновенная эмуляция звонка от телефонии клиента (Mango, Zadarma, Sipuni, Битрикс24, amoCRM). Звонок сразу проходит аудит 13 критериев, записывается в Google Таблицу и транслируется в ЛК по WebSocket!
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <label style="display: block; font-size: 0.70rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 600;">Тенант (Клиент):</label>
+                  <select id="simTenantSelect" style="width: 100%; box-sizing: border-box; padding: 7px 10px; font-size: 0.78rem; background: #0c0f18; border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+                    <option value="TNT-001">TNT-001 • Самозанятый</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 0.70rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 600;">Провайдер телефонии:</label>
+                  <select id="simProviderSelect" style="width: 100%; box-sizing: border-box; padding: 7px 10px; font-size: 0.78rem; background: #0c0f18; border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+                    <option value="mango">Mango Office</option>
+                    <option value="zadarma">Zadarma</option>
+                    <option value="sipuni">Sipuni</option>
+                    <option value="bitrix24">Битрикс24 REST</option>
+                    <option value="amocrm">amoCRM API v4</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <label style="display: block; font-size: 0.70rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 600;">Менеджер:</label>
+                  <input type="text" id="simManagerName" value="Дмитрий Федотов" style="width: 100%; box-sizing: border-box; padding: 7px 10px; font-size: 0.78rem; background: #0c0f18; border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 0.70rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 600;">Сценарий разговора:</label>
+                  <select id="simScenarioSelect" style="width: 100%; box-sizing: border-box; padding: 7px 10px; font-size: 0.78rem; background: #0c0f18; border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+                    <option value="false">🟢 Эталон (11/13, Next Step закрыт)</option>
+                    <option value="true">🔴 Слив (6/13, Нет Next Step, отказ)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                <button id="btnRunSimCall" onclick="runSimulateCall()" class="btn-modern-primary" style="padding: 8px 16px; font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: rgba(56,189,248,0.5);">
+                  🚀 Отправить тестовый звонок
+                </button>
+                <span id="simCallResultText" style="font-size: 0.72rem; color: var(--text-muted);"></span>
+              </div>
+            </div>
+
+            <!-- Right: Webhook Live Inspector -->
+            <div style="display: flex; flex-direction: column; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; overflow: hidden;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="status-dot dot-won"></span>
+                  <span style="font-size: 0.72rem; font-weight: 700; color: #fff;">Последний входящий вебхук:</span>
+                  <span id="inspWebhookProvider" class="badge-info" style="font-size: 0.62rem;">system</span>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <button onclick="fetchLastIncomingWebhook()" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.65rem;" title="Обновить JSON">🔄 Обновить</button>
+                  <button onclick="copyLastWebhookJson()" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.65rem;" title="Копировать JSON">📋 Копировать</button>
+                </div>
+              </div>
+
+              <pre id="inspWebhookJsonPre" style="margin: 0; padding: 10px; background: #05070f; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #38bdf8; overflow-y: auto; max-height: 160px; line-height: 1.45; white-space: pre-wrap; word-break: break-all; border: 1px solid rgba(56,189,248,0.15);">Загрузка последнего вебхука...</pre>
+            </div>
+          </div>
+        </div>
+
 <!-- MODULE 0: ИНТЕГРАЦИЯ CRM (BITRIX24 & AMOCRM) -->
         <div class="bento-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(22, 18, 38, 0.95) 0%, rgba(12, 12, 22, 0.98) 100%); border: 1px solid rgba(167, 139, 250, 0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.45);">
           <div class="bento-card-header" style="margin-bottom: 14px;">
@@ -9934,6 +10094,52 @@
           <div style="color: var(--text-muted); font-size: 0.75rem;">Загрузка параметров конфигурации модулей...</div>
         </div>
       </div>
+
+      <!-- FEATURE 4: GLOBAL BACKUP & DISASTER RECOVERY -->
+      <div class="bento-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(20, 16, 35, 0.95) 0%, rgba(10, 10, 18, 0.98) 100%); border: 1px solid rgba(167, 139, 250, 0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div class="bento-card-header" style="margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <span class="bento-card-title">
+            <span class="title-icon" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </span>
+            Резервное копирование & Аварийное восстановление (Disaster Recovery)
+          </span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="btnCreateBackup" onclick="runCreateSystemBackup()" class="btn-modern-primary" style="padding: 6px 14px; font-size: 0.74rem; font-weight: 700; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); border-color: rgba(124,58,237,0.5);">
+              📦 Создать полный снэпшот системы
+            </button>
+            <button onclick="loadSystemBackupsList()" class="btn-modern-ghost" style="padding: 6px 10px; font-size: 0.72rem;">
+              🔄 Обновить
+            </button>
+          </div>
+        </div>
+
+        <div style="font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 14px;">
+          Мгновенная архивация состояния SaaS: реестр клиентов <code>tenants_registry.json</code>, конфигурации экосистемы, журналы дежурного ревизора Healer и манифест версии.
+        </div>
+
+        <!-- Backups List Table -->
+        <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: rgba(0,0,0,0.3);">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.74rem; text-align: left;">
+            <thead>
+              <tr style="background: rgba(255,255,255,0.03); color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <th style="padding: 8px 12px;">Архив (Снэпшот)</th>
+                <th style="padding: 8px 12px;">Дата создания</th>
+                <th style="padding: 8px 12px;">Размер</th>
+                <th style="padding: 8px 12px; text-align: right;">Действие</th>
+              </tr>
+            </thead>
+            <tbody id="adminBackupsTableTbody">
+              <tr>
+                <td colspan="4" style="padding: 16px; text-align: center; color: var(--text-muted);">
+                  Загрузка списка резервных копий...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       </div> <!-- /admin-pane-infra -->
 
       <!-- ===================================================================
@@ -9955,8 +10161,16 @@
             </span>
           </div>
 
-          <!-- Log switchers -->
-          <div style="display: flex; align-items: center; gap: 6px;">
+          <!-- Filter and Live Stream controls -->
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <button id="btnAdminLiveStream" onclick="toggleTerminalLiveStream()" class="btn-modern-ghost" style="padding: 3px 10px; font-size: 0.68rem; color: #a78bfa; border-color: rgba(167, 139, 250, 0.4);">
+              🔴 Live Stream: ВЫКЛ
+            </button>
+            <div style="display: inline-flex; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden;">
+              <button onclick="setTerminalFilter('all')" id="btnTermFilterAll" class="btn-modern-ghost active" style="padding: 3px 8px; font-size: 0.68rem; border: none; border-radius: 0; background: rgba(255,255,255,0.1);">Все</button>
+              <button onclick="setTerminalFilter('error')" id="btnTermFilterError" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem; border: none; border-radius: 0; color: var(--accent-rose);">⚠️ Ошибки</button>
+              <button onclick="setTerminalFilter('calls')" id="btnTermFilterCalls" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem; border: none; border-radius: 0; color: #38bdf8;">📞 Звонки</button>
+            </div>
             <button onclick="fetchAdminLogs('console')" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem;">Консоль</button>
             <button onclick="fetchAdminLogs('daily_sync')" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem;">Лог автозадачи</button>
             <button onclick="fetchAdminLogs('healer')" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem;">Лог Healer</button>

@@ -21,6 +21,39 @@ logger = logging.getLogger("webhooks_router")
 
 router = APIRouter(prefix="/webhooks", tags=["CRM & Telephony Webhook Receivers"])
 
+# Global tracker for the last incoming webhook (inspected in Admin UI)
+LAST_INCOMING_WEBHOOK: Dict[str, Any] = {
+    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    "provider": "system",
+    "tenant_id": "TNT-001",
+    "event": "initialized",
+    "headers": {"content-type": "application/json"},
+    "payload": {
+        "status": "ready",
+        "message": "Шлюз приёма вебхуков активен. Ожидание событий от телефонии (Mango, Zadarma, UIS) и CRM (amoCRM, Bitrix24)..."
+    }
+}
+
+
+def record_incoming_webhook(provider: str, tenant_id: str, payload: Any, headers: Optional[Dict[str, str]] = None, event: str = "call_received"):
+    global LAST_INCOMING_WEBHOOK
+    clean_headers = {}
+    if headers:
+        for k, v in headers.items():
+            if str(k).lower() in ("authorization", "x-revops-admin-key", "cookie"):
+                clean_headers[k] = "***REDACTED***"
+            else:
+                clean_headers[k] = str(v)
+    LAST_INCOMING_WEBHOOK = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "provider": provider,
+        "tenant_id": tenant_id,
+        "event": event,
+        "headers": clean_headers,
+        "payload": payload
+    }
+
+
 
 def resolve_webhook_tenant(
     request: Request,
@@ -122,6 +155,7 @@ async def _process_amocrm_webhook(request: Request, tenant_param: Optional[str] 
 
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
+    record_incoming_webhook("amocrm", org_id, body, dict(request.headers), event="amocrm_webhook")
 
     # 1. Check if amoCRM sent a call event or note
     is_call_event = False
@@ -291,6 +325,7 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: Optional[str
 
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
+    record_incoming_webhook("bitrix24", org_id, body, dict(request.headers), event="bitrix24_webhook")
 
     event_name = body.get("event", "") if isinstance(body, dict) else ""
     data_fields = body.get("data", {}).get("FIELDS", {}) if isinstance(body.get("data"), dict) else {}
@@ -426,6 +461,7 @@ async def _process_telephony_call(request: Request, tenant_param: Optional[str] 
 
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
+    record_incoming_webhook(body.get("provider", "telephony"), org_id, body, dict(request.headers), event="telephony_call")
 
     call_id = str(body.get("call_id") or body.get("id") or f"call_{int(time.time())}")
     deal_id = str(body.get("deal_id") or f"D-{int(time.time()) % 10000}")
@@ -519,6 +555,7 @@ async def test_amocrm_call_simulation(tenant_id: Optional[str] = "TNT-001"):
     sheets_ok = append_call_to_sheets(payload)
     formatted = payload.model_dump() if hasattr(payload, 'model_dump') else payload.dict()
     await manager.broadcast(clean_tenant, {"type": "new_call", "call": formatted})
+    record_incoming_webhook("amocrm_simulation", clean_tenant, formatted, event="test_call_simulation")
     return {"status": "ok", "tenant_id": clean_tenant, "source": "amoCRM_test", "call_id": call_id, "sheets_synced": sheets_ok}
 
 
@@ -553,4 +590,12 @@ async def test_bitrix24_call_simulation(tenant_id: Optional[str] = "TNT-001"):
     sheets_ok = append_call_to_sheets(payload)
     formatted = payload.model_dump() if hasattr(payload, 'model_dump') else payload.dict()
     await manager.broadcast(clean_tenant, {"type": "new_call", "call": formatted})
+    record_incoming_webhook("bitrix24_simulation", clean_tenant, formatted, event="test_call_simulation")
     return {"status": "ok", "tenant_id": clean_tenant, "source": "Bitrix24_test", "call_id": call_id, "sheets_synced": sheets_ok}
+
+
+@router.get("/last-incoming")
+def get_last_incoming_webhook():
+    """Returns the most recent incoming webhook payload for live debugging in the Admin UI."""
+    return LAST_INCOMING_WEBHOOK
+

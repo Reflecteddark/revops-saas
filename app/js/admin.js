@@ -583,22 +583,35 @@ async function testGeminiApi() {
   }
 }
 
-async function fetchAdminLogs(logType) {
+let currentTerminalLogType = 'console';
+let currentTerminalFilter = 'all';
+let terminalLiveStreamTimer = null;
+
+async function fetchAdminLogs(logType = currentTerminalLogType, filterLevel = currentTerminalFilter) {
+  currentTerminalLogType = logType || 'console';
+  currentTerminalFilter = filterLevel || 'all';
+
   const modeEl = document.getElementById('adminTerminalMode');
   if (modeEl) {
-    modeEl.textContent = logType === 'console' ? 'Интерактивная консоль' : (logType === 'daily_sync' ? 'Журнал ежедневной автозадачи' : 'Журнал DevOps Healer');
+    const filterTag = currentTerminalFilter !== 'all' ? ` [Фильтр: ${currentTerminalFilter}]` : '';
+    modeEl.textContent = (currentTerminalLogType === 'console' ? 'Интерактивная консоль' : (currentTerminalLogType === 'daily_sync' ? 'Журнал ежедневной автозадачи' : 'Журнал DevOps Healer')) + filterTag;
   }
   try {
-    const res = await adminFetch(`/api/v1/admin/logs?log_type=${logType}`);
+    const res = await adminFetch(`/api/v1/admin/logs?log_type=${currentTerminalLogType}&filter_level=${currentTerminalFilter}`);
     const data = await res.json();
     const term = document.getElementById('adminTerminalBody');
     if (!term) return;
 
-    if (logType === 'console' && data.logs) {
+    if (currentTerminalLogType === 'console' && data.logs) {
       term.innerHTML = '';
-      data.logs.forEach(e => {
-        appendAdminTerminalLog(e.msg, e.level);
-      });
+      if (data.logs.length === 0) {
+        term.innerHTML = `<div style="color: #64748b;">[System] Нет логов, соответствующих фильтру '${currentTerminalFilter}'.</div>`;
+      } else {
+        data.logs.forEach(e => {
+          appendAdminTerminalLog(e.msg, e.level);
+        });
+      }
+      term.scrollTop = term.scrollHeight;
     } else if (data.content) {
       term.innerHTML = '';
       const div = document.createElement('div');
@@ -611,6 +624,53 @@ async function fetchAdminLogs(logType) {
     appendAdminTerminalLog(`Не удалось прочесть лог: ${err.message}`, 'error');
   }
 }
+
+function setTerminalFilter(level) {
+  currentTerminalFilter = level;
+  ['all', 'error', 'calls'].forEach(lvl => {
+    const b = document.getElementById(`btnTermFilter${lvl.charAt(0).toUpperCase() + lvl.slice(1)}`);
+    if (b) {
+      if (lvl === level) {
+        b.classList.add('active');
+        b.style.background = 'rgba(255,255,255,0.18)';
+        b.style.fontWeight = '700';
+      } else {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.fontWeight = 'normal';
+      }
+    }
+  });
+  fetchAdminLogs(currentTerminalLogType, currentTerminalFilter);
+}
+
+function toggleTerminalLiveStream() {
+  const btn = document.getElementById('btnAdminLiveStream');
+  if (terminalLiveStreamTimer) {
+    clearInterval(terminalLiveStreamTimer);
+    terminalLiveStreamTimer = null;
+    if (btn) {
+      btn.innerHTML = '🔴 Live Stream: ВЫКЛ';
+      btn.style.color = '#a78bfa';
+      btn.style.borderColor = 'rgba(167, 139, 250, 0.4)';
+      btn.style.boxShadow = 'none';
+    }
+    showToast('Live Stream', 'Автообновление логов отключено');
+  } else {
+    fetchAdminLogs(currentTerminalLogType, currentTerminalFilter);
+    terminalLiveStreamTimer = setInterval(() => {
+      fetchAdminLogs(currentTerminalLogType, currentTerminalFilter);
+    }, 3000);
+    if (btn) {
+      btn.innerHTML = '<span class="status-dot dot-won"></span> Live Stream: ВКЛ (3с)';
+      btn.style.color = '#34d399';
+      btn.style.borderColor = 'rgba(52, 211, 153, 0.6)';
+      btn.style.boxShadow = '0 0 12px rgba(52, 211, 153, 0.25)';
+    }
+    showToast('Live Stream', 'Автообновление логов каждые 3 секунды активировано');
+  }
+}
+
 
 async function clearAdminConsole() {
   try {
@@ -758,6 +818,7 @@ function renderAdminTenantsTable(tenants) {
         </td>
         <td style="padding: 12px 14px; text-align: right;">
           <div style="display: inline-flex; align-items: center; gap: 6px;">
+            <button onclick="runTenantHealthDoctor('${t.tenant_id}')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.70rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="🩺 Экспресс-диагностика здоровья клиента">🩺 Доктор</button>
             <button onclick="openTenantEditModal('${t.tenant_id}')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.70rem;" title="Редактировать параметры и пароль">⚙️</button>
             <button onclick="toggleTenantFreeze('${t.tenant_id}', '${t.effective_status}')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.70rem; color: ${isFrozen ? '#34d399' : '#38bdf8'};" title="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'}">${isFrozen ? '☀️' : '❄️'}</button>
             <button onclick="offboardTenant('${t.tenant_id}', '${(t.tenant_name || '').replace(/'/g, "\\'")}')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.70rem; color: var(--accent-rose);" title="Вывести в архив (Offboard)">📦</button>
@@ -1354,7 +1415,12 @@ function switchAdminSubtab(subtabId) {
     loadAdminTenants();
   } else if (subtabId === 'infra') {
     loadFeaturesConfig();
+    loadAiTelemetry();
+    fetchLastIncomingWebhook();
+    loadSystemBackupsList();
+    populateSimTenantSelect();
   } else if (subtabId === 'terminal') {
+    fetchAdminLogs(currentTerminalLogType, currentTerminalFilter);
     const term = document.getElementById('adminTerminalBody');
     if (term) term.scrollTop = term.scrollHeight;
   }
@@ -1802,6 +1868,299 @@ async function calibrateZScoreThresholds() {
   }
 }
 
+
+// ==========================================================================
+// 1. TENANT HEALTH DOCTOR (1-CLICK DIAGNOSTICS)
+// ==========================================================================
+
+let activeDoctorTenantId = 'TNT-001';
+
+async function runTenantHealthDoctor(tenantId) {
+  activeDoctorTenantId = tenantId || 'TNT-001';
+  const modal = document.getElementById('tenantHealthDoctorModal');
+  const badge = document.getElementById('healthDoctorIdBadge');
+  const title = document.getElementById('healthDoctorTitle');
+  const banner = document.getElementById('healthDoctorBanner');
+  const statusText = document.getElementById('healthDoctorStatusText');
+  const tsEl = document.getElementById('healthDoctorTimestamp');
+  const list = document.getElementById('healthDoctorChecksList');
+
+  if (modal) modal.style.display = 'flex';
+  if (badge) badge.textContent = activeDoctorTenantId;
+  if (title) title.textContent = `🩺 Экспресс-диагностика клиента (${activeDoctorTenantId})`;
+  if (banner) {
+    banner.style.background = 'rgba(56, 189, 248, 0.08)';
+    banner.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+  }
+  if (statusText) {
+    statusText.style.color = '#38bdf8';
+    statusText.textContent = '⏳ Выполняется глубокая проверка контуров...';
+  }
+  if (list) {
+    list.innerHTML = `
+      <div style="padding: 24px; text-align: center; color: var(--text-muted);">
+        <div class="loader-spinner" style="margin: 0 auto 10px auto;"></div>
+        Опрос Google Sheets API, CRM-токенов и потока звонков...
+      </div>
+    `;
+  }
+
+  try {
+    const res = await adminFetch(`/api/v1/admin/tenants/${activeDoctorTenantId}/health`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (badge) badge.textContent = data.tenant_id;
+    if (title) title.textContent = `🩺 Экспресс-диагностика: ${data.tenant_name}`;
+    if (tsEl) tsEl.textContent = data.timestamp;
+
+    const isHealthy = data.status === 'healthy';
+    const isWarn = data.status === 'warning';
+
+    if (banner) {
+      banner.style.background = isHealthy ? 'rgba(52, 211, 153, 0.1)' : (isWarn ? 'rgba(251, 191, 36, 0.1)' : 'rgba(244, 63, 94, 0.1)');
+      banner.style.borderColor = isHealthy ? 'rgba(52, 211, 153, 0.4)' : (isWarn ? 'rgba(251, 191, 36, 0.4)' : 'rgba(244, 63, 94, 0.4)');
+    }
+    if (statusText) {
+      statusText.style.color = isHealthy ? '#34d399' : (isWarn ? '#fbbf24' : '#f43f5e');
+      statusText.textContent = data.status_label;
+    }
+
+    if (list && data.checks) {
+      list.innerHTML = data.checks.map(c => {
+        const dotColor = c.status === 'ok' ? '#34d399' : (c.status === 'warn' ? '#fbbf24' : '#f43f5e');
+        const icon = c.status === 'ok' ? '✓' : (c.status === 'warn' ? '⚠️' : '✗');
+        return `
+          <div style="padding: 12px 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div>
+              <div style="font-size: 0.80rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
+                <span style="color: ${dotColor};">${icon}</span>
+                <span>${c.title}</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px; font-family: 'JetBrains Mono', monospace;">
+                ${c.detail}
+              </div>
+            </div>
+            <span class="badge-won" style="font-size: 0.65rem; background: ${c.status === 'ok' ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)'}; color: ${dotColor}; border: 1px solid ${dotColor};">
+              ${c.status.toUpperCase()}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+  } catch (err) {
+    if (statusText) {
+      statusText.style.color = '#f43f5e';
+      statusText.textContent = `🔴 Ошибка проверки: ${err.message}`;
+    }
+  }
+}
+
+function recheckTenantHealth() {
+  runTenantHealthDoctor(activeDoctorTenantId);
+}
+
+function closeTenantHealthDoctorModal() {
+  const modal = document.getElementById('tenantHealthDoctorModal');
+  if (modal) modal.style.display = 'none';
+}
+
+
+// ==========================================================================
+// 2. AI TELEMETRY & QUEUE MONITOR
+// ==========================================================================
+
+async function loadAiTelemetry() {
+  try {
+    const res = await adminFetch('/api/v1/admin/metrics/ai-telemetry');
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const callsEl = document.getElementById('aiMetricCallsToday');
+    const audioEl = document.getElementById('aiMetricAudioMinutes');
+    const latEl = document.getElementById('aiMetricAvgLatency');
+    const costEl = document.getElementById('aiMetricEstCost');
+    const rateEl = document.getElementById('aiMetricRateLimit');
+
+    if (callsEl) callsEl.textContent = data.calls_today;
+    if (audioEl) audioEl.textContent = `${data.audio_minutes_today} мин`;
+    if (latEl) latEl.textContent = `~${data.avg_audit_latency_sec} сек`;
+    if (costEl) costEl.textContent = `$${data.estimated_cost_usd} (~${data.estimated_cost_rub} ₽)`;
+    if (rateEl) rateEl.textContent = data.rate_limit_status;
+  } catch (err) {
+    console.debug('[Admin] Telemetry fallback:', err.message);
+  }
+}
+
+
+// ==========================================================================
+// 3. TELEPHONY SANDBOX & WEBHOOK INSPECTOR
+// ==========================================================================
+
+async function fetchLastIncomingWebhook() {
+  const pre = document.getElementById('inspWebhookJsonPre');
+  const provEl = document.getElementById('inspWebhookProvider');
+  try {
+    const res = await adminFetch('/api/v1/admin/webhooks/last-incoming');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (provEl) provEl.textContent = data.provider || 'unknown';
+    if (pre) pre.textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    if (pre) pre.textContent = `[-] Ошибка: ${err.message}`;
+  }
+}
+
+function copyLastWebhookJson() {
+  const pre = document.getElementById('inspWebhookJsonPre');
+  const text = pre ? pre.textContent : '';
+  if (text) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Скопировано', 'JSON последнего вебхука скопирован в буфер');
+    });
+  }
+}
+
+async function runSimulateCall() {
+  const btn = document.getElementById('btnRunSimCall');
+  const resultEl = document.getElementById('simCallResultText');
+  const tenant = (document.getElementById('simTenantSelect')?.value || 'TNT-001').trim();
+  const provider = document.getElementById('simProviderSelect')?.value || 'mango';
+  const manager = document.getElementById('simManagerName')?.value || 'Дмитрий Федотов';
+  const simulateLeak = (document.getElementById('simScenarioSelect')?.value === 'true');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="status-dot dot-cyan"></span> Эмуляция...';
+  }
+  if (resultEl) resultEl.textContent = 'Обработка и аудит звонка...';
+
+  try {
+    const res = await adminFetch('/api/v1/admin/webhooks/simulate-call', {
+      method: 'POST',
+      body: JSON.stringify({
+        tenant_id: tenant,
+        provider: provider,
+        manager_name: manager,
+        duration_sec: 140,
+        simulate_leak: simulateLeak
+      })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (resultEl) {
+      resultEl.innerHTML = `<span style="color: #34d399;">✓ Звонок ${data.call_id} записан (${data.score}/13)!</span>`;
+    }
+    showToast('Тестер телефонии', `Тестовый звонок успешно отправлен и записан в таблицу!`);
+    fetchLastIncomingWebhook();
+    loadAiTelemetry();
+    if (typeof refreshAllDashboardViews === 'function') refreshAllDashboardViews();
+  } catch (err) {
+    if (resultEl) {
+      resultEl.innerHTML = `<span style="color: var(--accent-rose);">[-] ${err.message}</span>`;
+    }
+    showToast('Ошибка эмуляции', err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '🚀 Отправить тестовый звонок';
+    }
+  }
+}
+
+function populateSimTenantSelect() {
+  const sel = document.getElementById('simTenantSelect');
+  if (!sel) return;
+  try {
+    const tenants = JSON.parse(localStorage.getItem('revops_admin_tenants_cache') || '[]');
+    if (tenants.length > 0) {
+      sel.innerHTML = tenants.map(t => `<option value="${t.tenant_id}">${t.tenant_id} • ${t.tenant_name}</option>`).join('');
+    }
+  } catch (e) {}
+}
+
+
+// ==========================================================================
+// 4. GLOBAL SYSTEM BACKUPS & DISASTER RECOVERY
+// ==========================================================================
+
+async function loadSystemBackupsList() {
+  const tbody = document.getElementById('adminBackupsTableTbody');
+  if (!tbody) return;
+
+  try {
+    const res = await adminFetch('/api/v1/admin/backups/list');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (!data.backups || data.backups.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="padding: 18px; text-align: center; color: var(--text-muted);">
+            Резервных копий пока нет. Нажмите «Создать полный снэпшот системы» для создания первого бэкапа.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = data.backups.map(b => `
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <td style="padding: 10px 12px; font-family: 'JetBrains Mono', monospace; color: #c4b5fd;">
+          📦 ${b.filename}
+        </td>
+        <td style="padding: 10px 12px; color: var(--text-secondary);">
+          ${b.created_at}
+        </td>
+        <td style="padding: 10px 12px; color: #34d399;">
+          ${b.size_kb}
+        </td>
+        <td style="padding: 10px 12px; text-align: right;">
+          <a href="/api/v1/admin/backups/${b.filename}/download" target="_blank" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem; color: #38bdf8; border-color: rgba(56,189,248,0.4);" download>
+            ⬇️ Скачать ZIP
+          </a>
+        </td>
+      </tr>
+    `).join('');
+
+  } catch (err) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="padding: 16px; text-align: center; color: var(--accent-rose);">
+          [-] Ошибка загрузки бэкапов: ${err.message}
+        </td>
+      </tr>
+    `;
+  }
+}
+
+async function runCreateSystemBackup() {
+  const btn = document.getElementById('btnCreateBackup');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="status-dot dot-cyan"></span> Архивация...';
+  }
+
+  try {
+    const res = await adminFetch('/api/v1/admin/backups/create', { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    showToast('Disaster Recovery', `Снэпшот ${data.backup.filename} (${data.backup.size_kb}) успешно создан!`);
+    loadSystemBackupsList();
+  } catch (err) {
+    showToast('Ошибка бэкапа', err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '📦 Создать полный снэпшот системы';
+    }
+  }
+}
+
+
 // Window exports
 window.switchAdminSubtab = switchAdminSubtab;
 window.switchAgentSubtab = switchAgentSubtab;
@@ -1844,4 +2203,19 @@ window.toggleTenantFreeze = toggleTenantFreeze;
 window.offboardTenant = offboardTenant;
 window.restoreArchivedTenant = restoreArchivedTenant;
 window.testServiceAccountLive = testServiceAccountLive;
+
+// 5 New Admin Improvements Exports
+window.runTenantHealthDoctor = runTenantHealthDoctor;
+window.recheckTenantHealth = recheckTenantHealth;
+window.closeTenantHealthDoctorModal = closeTenantHealthDoctorModal;
+window.loadAiTelemetry = loadAiTelemetry;
+window.fetchLastIncomingWebhook = fetchLastIncomingWebhook;
+window.copyLastWebhookJson = copyLastWebhookJson;
+window.runSimulateCall = runSimulateCall;
+window.populateSimTenantSelect = populateSimTenantSelect;
+window.loadSystemBackupsList = loadSystemBackupsList;
+window.runCreateSystemBackup = runCreateSystemBackup;
+window.toggleTerminalLiveStream = toggleTerminalLiveStream;
+window.setTerminalFilter = setTerminalFilter;
+
 

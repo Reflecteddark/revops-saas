@@ -1,0 +1,228 @@
+{
+  "/api/v1/diagnostics/self-healing": [
+    {
+      "file": "admin.js",
+      "line": 42
+    }
+  ],
+  "/api/v1/admin/status": [
+    {
+      "file": "admin.js",
+      "line": 116
+    }
+  ],
+  "/api/v1/admin/crm/status?tenant_id=${encodeURIComponent(tenantId)}": [
+    {
+      "file": "admin.js",
+      "line": 185
+    }
+  ],
+  "/api/v1/admin/crm/action": [
+    {
+      "file": "admin.js",
+      "line": 302
+    },
+    {
+      "file": "admin.js",
+      "line": 340
+    }
+  ],
+  "/api/v1/admin/desktop/restore": [
+    {
+      "file": "admin.js",
+      "line": 379
+    }
+  ],
+  "/api/v1/admin/fleet/action": [
+    {
+      "file": "admin.js",
+      "line": 427
+    }
+  ],
+  "/api/v1/admin/sheets/action": [
+    {
+      "file": "admin.js",
+      "line": 456
+    },
+    {
+      "file": "admin.js",
+      "line": 493
+    }
+  ],
+  "/api/v1/admin/tasks/action": [
+    {
+      "file": "admin.js",
+      "line": 523
+    },
+    {
+      "file": "admin.js",
+      "line": 548
+    }
+  ],
+  "/api/v1/admin/ai/test-gemini": [
+    {
+      "file": "admin.js",
+      "line": 573
+    }
+  ],
+  "/api/v1/admin/logs?log_type=${logType}": [
+    {
+      "file": "admin.js",
+      "line": 592
+    }
+  ],
+  "/api/v1/admin/logs/clear": [
+    {
+      "file": "admin.js",
+      "line": 617
+    }
+  ],
+  "/api/v1/admin/tenants": [
+    {
+      "file": "admin.js",
+      "line": 669
+    }
+  ],
+  "/api/v1/admin/tenants/provision": [
+    {
+      "file": "admin.js",
+      "line": 889
+    }
+  ],
+  "/api/v1/admin/tenants/${encodeURIComponent(tenantId)}": [
+    {
+      "file": "admin.js",
+      "line": 996
+    }
+  ],
+  "/api/v1/admin/tenants/${encodeURIComponent(tenantId)}/status": [
+    {
+      "file": "admin.js",
+      "line": 1027
+    },
+    {
+      "file": "admin.js",
+      "line": 1055
+    },
+    {
+      "file": "admin.js",
+      "line": 1081
+    }
+  ],
+  "/api/v1/admin/infra/test-sa": [
+    {
+      "file": "admin.js",
+      "line": 1111
+    }
+  ],
+  "/api/v1/admin/healer/action": [
+    {
+      "file": "admin.js",
+      "line": 1166
+    }
+  ],
+  "/api/v1/admin/features": [
+    {
+      "file": "admin.js",
+      "line": 1197
+    }
+  ],
+  "/api/v1/admin/features/toggle": [
+    {
+      "file": "admin.js",
+      "line": 1238
+    }
+  ],
+  "/api/v1/admin/desktop/archive": [
+    {
+      "file": "admin.js",
+      "line": 1261
+    }
+  ],
+  "/api/v1/admin/agents/action": [
+    {
+      "file": "admin.js",
+      "line": 1523
+    }
+  ],
+  "/api/v1/admin/agents/telemetry?tenant=${encodeURIComponent(tenantId)}": [
+    {
+      "file": "admin.js",
+      "line": 1612
+    }
+  ],
+  "/api/v1/admin/scoring/calibrate": [
+    {
+      "file": "admin.js",
+      "line": 1789
+    }
+  ],
+  "${REVOPS_API_BASE}/api/v1/insights/analyst/overview": [
+    {
+      "file": "analyst.js",
+      "line": 31
+    }
+  ],
+  "${REVOPS_API_BASE}/api/v1/insights/analyst/chat": [
+    {
+      "file": "analyst.js",
+      "line": 194
+    }
+  ],
+  "${REVOPS_API_BASE}/api/v1/tenants": [
+    {
+      "file": "core.js",
+      "line": 103
+    }
+  ],
+  "${REVOPS_API_BASE}/api/v1/auth/registered-clients": [
+    {
+      "file": "core.js",
+      "line": 194
+    }
+  ],
+  "${REVOPS_API_BASE}/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}": [
+    {
+      "file": "deals.js",
+      "line": 166
+    }
+  ],
+  "/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}": [
+    {
+      "file": "deals.js",
+      "line": 168
+    },
+    {
+      "file": "deals.js",
+      "line": 171
+    }
+  ],
+  "${REVOPS_API_BASE}/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}": [
+    {
+      "file": "deals.js",
+      "line": 198
+    }
+  ],
+  "/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}": [
+    {
+      "file": "deals.js",
+      "line": 200
+    },
+    {
+      "file": "deals.js",
+      "line": 203
+    }
+  ],
+  "${REVOPS_API_BASE}/api/v1/settings?tenant_id=${encodeURIComponent(tenantId)}": [
+    {
+      "file": "settings.js",
+      "line": 26
+    }
+  ],
+  "${REVOPS_API_BASE}/api/v1/settings?tenant_id=${encodeURIComponent(activeTenantId)}": [
+    {
+      "file": "settings.js",
+      "line": 275
+    }
+  ]
+}

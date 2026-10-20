@@ -1,0 +1,894 @@
+{
+  "views": [
+    "view-pulse",
+    "view-express",
+    "view-rop",
+    "view-audit",
+    "view-analyst",
+    "view-leaks",
+    "view-impact",
+    "view-montecarlo",
+    "view-skills",
+    "view-settings",
+    "view-admin"
+  ],
+  "admin_buttons": [
+    {
+      "id": "sb-admin",
+      "text": "11. Админ-кабинет",
+      "onclick": "switchTab('admin')"
+    },
+    {
+      "id": "",
+      "text": "📋 Копировать",
+      "onclick": "copyAdminTunnelUrl()"
+    },
+    {
+      "id": "",
+      "text": "Обновить",
+      "onclick": "loadAdminStatus()"
+    },
+    {
+      "id": "admin-tab-btn-agents",
+      "text": "🤖 ИИ-Агенты (Sextet Fleet) 6 Агентов",
+      "onclick": "switchAdminSubtab('agents')"
+    },
+    {
+      "id": "admin-tab-btn-clients",
+      "text": "👥 Клиенты & Доступы",
+      "onclick": "switchAdminSubtab('clients')"
+    },
+    {
+      "id": "admin-tab-btn-infra",
+      "text": "⚙️ Инфраструктура & CRM",
+      "onclick": "switchAdminSubtab('infra')"
+    },
+    {
+      "id": "admin-tab-btn-terminal",
+      "text": "💻 Live Terminal & Логи",
+      "onclick": "switchAdminSubtab('terminal')"
+    },
+    {
+      "id": "",
+      "text": "📄 Журнал healer_duty.log",
+      "onclick": "fetchAdminLogs('healer')"
+    },
+    {
+      "id": "",
+      "text": "🔄 Обновить",
+      "onclick": "loadAdminTenants()"
+    },
+    {
+      "id": "btnAdminProvisionSubmit",
+      "text": "🚀 Развернуть клиентский контур под ключ",
+      "onclick": "submitProvisionTenant()"
+    },
+    {
+      "id": "btnSwitchCrm",
+      "text": "🔄 Переключить CRM",
+      "onclick": "switchAdminCrm()"
+    },
+    {
+      "id": "btnB24Stages",
+      "text": "🔍 Этапы воронки",
+      "onclick": "runAdminCrmAction('show_stages', 'bitrix24')"
+    },
+    {
+      "id": "btnB24DryRun",
+      "text": "🧪 Тест сделок (30 дн)",
+      "onclick": "runAdminCrmAction('dry_run', 'bitrix24')"
+    },
+    {
+      "id": "btnB24Sync",
+      "text": "⚡ Боевая выгрузка сделок в raw_deals",
+      "onclick": "runAdminCrmAction('sync_deals', 'bitrix24')"
+    },
+    {
+      "id": "btnAmoStages",
+      "text": "🔍 Пайплайны и статусы",
+      "onclick": "runAdminCrmAction('show_stages', 'amocrm')"
+    },
+    {
+      "id": "btnAmoDryRun",
+      "text": "🧪 Тест сделок (30 дн)",
+      "onclick": "runAdminCrmAction('dry_run', 'amocrm')"
+    },
+    {
+      "id": "btnAmoSync",
+      "text": "⚡ Боевая выгрузка сделок в raw_deals",
+      "onclick": "runAdminCrmAction('sync_deals', 'amocrm')"
+    },
+    {
+      "id": "",
+      "text": "📄 Показать healer_duty.log",
+      "onclick": "fetchAdminLogs('healer')"
+    },
+    {
+      "id": "",
+      "text": "Консоль",
+      "onclick": "fetchAdminLogs('console')"
+    },
+    {
+      "id": "",
+      "text": "Лог автозадачи",
+      "onclick": "fetchAdminLogs('daily_sync')"
+    },
+    {
+      "id": "",
+      "text": "Лог Healer",
+      "onclick": "fetchAdminLogs('healer')"
+    },
+    {
+      "id": "",
+      "text": "🧹 Очистить",
+      "onclick": "clearAdminConsole()"
+    }
+  ],
+  "cabinet_buttons": [
+    {
+      "id": "btnAuthSubmit",
+      "text": "Войти в аналитический кабинет",
+      "onclick": ""
+    },
+    {
+      "id": "",
+      "text": "",
+      "onclick": "toggleSidebar()"
+    },
+    {
+      "id": "sb-pulse",
+      "text": "1. Пульс выручки",
+      "onclick": "switchTab('pulse')"
+    },
+    {
+      "id": "sb-express",
+      "text": "2. Экспресс 3 цифры",
+      "onclick": "switchTab('express')"
+    },
+    {
+      "id": "sb-rop",
+      "text": "3. Пульт РОПа 15 мин",
+      "onclick": "switchTab('rop')"
+    },
+    {
+      "id": "sb-audit",
+      "text": "4. ИИ-Аудит звонков",
+      "onclick": "switchTab('audit')"
+    },
+    {
+      "id": "sb-impact",
+      "text": "5. AI Impact & Детектор",
+      "onclick": "switchTab('impact')"
+    },
+    {
+      "id": "sb-skills",
+      "text": "6. Навыки & Payroll",
+      "onclick": "switchTab('skills')"
+    },
+    {
+      "id": "sb-analyst",
+      "text": "7. ИИ Аналитик (CCO)",
+      "onclick": "switchTab('analyst')"
+    },
+    {
+      "id": "sb-leaks",
+      "text": "8. Диагностика утечек",
+      "onclick": "switchTab('leaks')"
+    },
+    {
+      "id": "sb-montecarlo",
+      "text": "9. Монте-Карло 3.0",
+      "onclick": "switchTab('montecarlo')"
+    },
+    {
+      "id": "sb-settings",
+      "text": "10. Паспорт & E2E",
+      "onclick": "switchTab('settings')"
+    },
+    {
+      "id": "",
+      "text": "",
+      "onclick": "toggleSidebar()"
+    },
+    {
+      "id": "btnSyncCRM",
+      "text": "Синхронизация",
+      "onclick": "triggerSyncSimulation()"
+    },
+    {
+      "id": "",
+      "text": "Октябрь 2026",
+      "onclick": "toggleRevopsDropdown('dropdownPulsePeriodFact', event)"
+    },
+    {
+      "id": "",
+      "text": "План 5.0M ₽",
+      "onclick": "toggleRevopsDropdown('dropdownPulsePeriodPlan', event)"
+    },
+    {
+      "id": "",
+      "text": "&#x25c6; Спросить AI",
+      "onclick": "openAiAsk('В чем разрыв факт vs план по месяцам?')"
+    },
+    {
+      "id": "",
+      "text": "По месяцам",
+      "onclick": "toggleRevopsDropdown('dropdownDissectionScale', event)"
+    },
+    {
+      "id": "",
+      "text": "Октябрь",
+      "onclick": "toggleRevopsDropdown('dropdownFunnelPeriod', event)"
+    },
+    {
+      "id": "",
+      "text": "Все (0)",
+      "onclick": "toggleRevopsDropdown('dropdownRecentCallsFilter', event)"
+    },
+    {
+      "id": "",
+      "text": "Октябрь",
+      "onclick": "toggleRevopsDropdown('dropdownDonutPeriod', event)"
+    },
+    {
+      "id": "",
+      "text": "13 критериев",
+      "onclick": "toggleRevopsDropdown('dropdownCriteriaScope', event)"
+    },
+    {
+      "id": "",
+      "text": "&#x25c6; Спросить AI",
+      "onclick": "openAiAsk('Какова динамика сходимости SSOT и тренда?')"
+    },
+    {
+      "id": "",
+      "text": "Разбор звонков и дожим (15 мин)",
+      "onclick": "event.stopPropagation(); document.getElementById('script-case01').scrollIntoView({behavior: 'smooth'})"
+    },
+    {
+      "id": "btnRepMetricPipe",
+      "text": "Пайплайн (₽)",
+      "onclick": "setRepChartMetric('pipe')"
+    },
+    {
+      "id": "btnRepMetricScore",
+      "text": "Балл речи (/13)",
+      "onclick": "setRepChartMetric('score')"
+    },
+    {
+      "id": "btnRepMetricStep",
+      "text": "Next Step (%)",
+      "onclick": "setRepChartMetric('step')"
+    },
+    {
+      "id": "btnRepMetricRisk",
+      "text": "Брак в риске (₽)",
+      "onclick": "setRepChartMetric('risk')"
+    },
+    {
+      "id": "",
+      "text": "Скопировать в WhatsApp",
+      "onclick": "copyRescueScript('case01')"
+    },
+    {
+      "id": "",
+      "text": "Скопировать в WhatsApp",
+      "onclick": "copyRescueScript('case02')"
+    },
+    {
+      "id": "",
+      "text": "Скопировать в WhatsApp",
+      "onclick": "copyRescueScript('case03')"
+    },
+    {
+      "id": "",
+      "text": "Скопировать в WhatsApp",
+      "onclick": "copyRescueScript('case04')"
+    },
+    {
+      "id": "",
+      "text": "Скопировать в WhatsApp",
+      "onclick": "copyRescueScript('case05')"
+    },
+    {
+      "id": "",
+      "text": "Все (0)",
+      "onclick": "setPillRadarRep('all')"
+    },
+    {
+      "id": "",
+      "text": "Сбросить",
+      "onclick": "clearSearch()"
+    },
+    {
+      "id": "",
+      "text": "Все (0)",
+      "onclick": "setPillManagerFilter('all')"
+    },
+    {
+      "id": "",
+      "text": "Все",
+      "onclick": "setPillStatusFilter('all')"
+    },
+    {
+      "id": "",
+      "text": "Эталон (0)",
+      "onclick": "setPillStatusFilter('won')"
+    },
+    {
+      "id": "",
+      "text": "Норма (0)",
+      "onclick": "setPillStatusFilter('norm')"
+    },
+    {
+      "id": "",
+      "text": "Слив (0)",
+      "onclick": "setPillStatusFilter('risk')"
+    },
+    {
+      "id": "",
+      "text": "&#x25c6; Спросить AI",
+      "onclick": "openAiAsk('Какие менеджеры чаще всего сливают Next Step?')"
+    },
+    {
+      "id": "",
+      "text": "Столбцы (13) ▾",
+      "onclick": "showToast('Столбцы Ag-Grid', 'Отображены все 13 параметров B2B-аудита речи.')"
+    },
+    {
+      "id": "",
+      "text": "Фильтры",
+      "onclick": "document.getElementById('transcriptSearch').focus()"
+    },
+    {
+      "id": "",
+      "text": "Экспорт CSV",
+      "onclick": "exportCallsToCSV()"
+    },
+    {
+      "id": "btnDensityPro",
+      "text": "Excel Pro (Плотный)",
+      "onclick": "setTableDensity('excel-pro')"
+    },
+    {
+      "id": "btnDensityComfort",
+      "text": "Comfort",
+      "onclick": "setTableDensity('comfort')"
+    },
+    {
+      "id": "",
+      "text": "Сбросить",
+      "onclick": "clearSearch()"
+    },
+    {
+      "id": "btnRefreshAnalyst",
+      "text": "Обновить анализ",
+      "onclick": "initAnalystTab(true)"
+    },
+    {
+      "id": "",
+      "text": "Экспресс-аудит потерь",
+      "onclick": "triggerAnalystQuickPrompt('Где мы теряем больше всего денег?')"
+    },
+    {
+      "id": "",
+      "text": "Очистить",
+      "onclick": "clearAnalystChat()"
+    },
+    {
+      "id": "",
+      "text": "Где теряем деньги?",
+      "onclick": "triggerAnalystQuickPrompt('Где мы теряем больше всего денег?')"
+    },
+    {
+      "id": "",
+      "text": "Слабые места менеджеров",
+      "onclick": "triggerAnalystQuickPrompt('Разбор слабых мест менеджеров')"
+    },
+    {
+      "id": "",
+      "text": "План дожима",
+      "onclick": "triggerAnalystQuickPrompt('План дожима зависших сделок')"
+    },
+    {
+      "id": "",
+      "text": "Прогноз P50",
+      "onclick": "triggerAnalystQuickPrompt('Прогноз выполнения плана месяца')"
+    },
+    {
+      "id": "",
+      "text": "Причины отказов",
+      "onclick": "triggerAnalystQuickPrompt('Анализ причин отказов клиентов')"
+    },
+    {
+      "id": "",
+      "text": "",
+      "onclick": "sendAnalystChat()"
+    },
+    {
+      "id": "",
+      "text": "Открыть речевые аудиты &rarr;",
+      "onclick": "switchTab('audit')"
+    },
+    {
+      "id": "",
+      "text": "Карта утечек &rarr;",
+      "onclick": "switchTab('leaks')"
+    },
+    {
+      "id": "",
+      "text": "Пульт РОПа &rarr;",
+      "onclick": "switchTab('rop')"
+    },
+    {
+      "id": "",
+      "text": "&#x25c6; Спросить AI",
+      "onclick": "openAiAsk('Какова вероятность достижения плана 5M ₽ по симуляции?')"
+    },
+    {
+      "id": "btnReloadSettings",
+      "text": "Обновить",
+      "onclick": "fetchAndPopulateSettings(true)"
+    },
+    {
+      "id": "btnSaveSettingsTop",
+      "text": "Сохранить в Таблицу",
+      "onclick": "submitSystemSettingsForm()"
+    },
+    {
+      "id": "",
+      "text": "3 млн",
+      "onclick": "setTargetPreset(3000000)"
+    },
+    {
+      "id": "",
+      "text": "5 млн",
+      "onclick": "setTargetPreset(5000000)"
+    },
+    {
+      "id": "",
+      "text": "10 млн",
+      "onclick": "setTargetPreset(10000000)"
+    },
+    {
+      "id": "",
+      "text": "15 млн",
+      "onclick": "setTargetPreset(15000000)"
+    },
+    {
+      "id": "",
+      "text": "Текущий месяц",
+      "onclick": "setPeriodPreset('current')"
+    },
+    {
+      "id": "",
+      "text": "Прошлый месяц",
+      "onclick": "setPeriodPreset('prev')"
+    },
+    {
+      "id": "",
+      "text": "4 Квартал",
+      "onclick": "setPeriodPreset('q4')"
+    },
+    {
+      "id": "",
+      "text": "Включить все",
+      "onclick": "toggleAllModules(true)"
+    },
+    {
+      "id": "",
+      "text": "Выключить все",
+      "onclick": "toggleAllModules(false)"
+    },
+    {
+      "id": "",
+      "text": "Отменить изменения",
+      "onclick": "fetchAndPopulateSettings(true)"
+    },
+    {
+      "id": "btnSaveSettingsBottom",
+      "text": "Сохранить все 28 параметров в Google Таб",
+      "onclick": "submitSystemSettingsForm()"
+    },
+    {
+      "id": "btnSelfHealingAuditSettings",
+      "text": "Запустить Self-Healing аудит",
+      "onclick": "triggerSelfHealingAudit()"
+    },
+    {
+      "id": "",
+      "text": "Запустить все службы",
+      "onclick": "runFleetAction('start_all')"
+    },
+    {
+      "id": "",
+      "text": "Остановить все",
+      "onclick": "runFleetAction('stop_all')"
+    },
+    {
+      "id": "",
+      "text": "📦 Очистить Рабочий стол",
+      "onclick": "archiveDesktopLaunchers()"
+    },
+    {
+      "id": "",
+      "text": "📥 Вернуть батники на Desktop",
+      "onclick": "restoreDesktopLaunchers()"
+    },
+    {
+      "id": "agent-pill-overview",
+      "text": "🛸 Общий дашборд флота",
+      "onclick": "switchAgentSubtab('overview')"
+    },
+    {
+      "id": "agent-pill-a6",
+      "text": "📐 Агент 6: Architecture Advisor",
+      "onclick": "switchAgentSubtab('a6')"
+    },
+    {
+      "id": "agent-pill-a5",
+      "text": "🧪 Агент 5: Chaos & Red-Team",
+      "onclick": "switchAgentSubtab('a5')"
+    },
+    {
+      "id": "agent-pill-a1",
+      "text": "🩺 Агент 1: DevOps & QA Healer",
+      "onclick": "switchAgentSubtab('a1')"
+    },
+    {
+      "id": "agent-pill-a3",
+      "text": "🧬 Агент 3: Workflow Logic & Lineage",
+      "onclick": "switchAgentSubtab('a3')"
+    },
+    {
+      "id": "agent-pill-a4",
+      "text": "🎙️ Агент 4: QA Judge & Карантин",
+      "onclick": "switchAgentSubtab('a4')"
+    },
+    {
+      "id": "agent-pill-a2",
+      "text": "💼 Агент 2: Commercial CCO",
+      "onclick": "switchAgentSubtab('a2')"
+    },
+    {
+      "id": "btnRunFullFleetDrill",
+      "text": "⚡ Запустить комплексное учение (Sextet D",
+      "onclick": "runFullFleetDrill(this)"
+    },
+    {
+      "id": "",
+      "text": "📱 Сводка в Telegram",
+      "onclick": "runCCOAction('send_telegram', this)"
+    },
+    {
+      "id": "btnRefreshAgents",
+      "text": "🔄 Обновить",
+      "onclick": "loadAgentsTelemetry(true)"
+    },
+    {
+      "id": "",
+      "text": "📋 Копировать",
+      "onclick": "copyDrawerOutput()"
+    },
+    {
+      "id": "",
+      "text": "🧹 Очистить",
+      "onclick": "clearDrawerOutput()"
+    },
+    {
+      "id": "",
+      "text": "✕ Скрыть",
+      "onclick": "closeDrawerConsole()"
+    },
+    {
+      "id": "btnRunA6",
+      "text": "📐 Аудит архитектуры",
+      "onclick": "runArchitectureAudit(this)"
+    },
+    {
+      "id": "",
+      "text": "Подробнее ➔",
+      "onclick": "switchAgentSubtab('a6')"
+    },
+    {
+      "id": "btnRunA5",
+      "text": "🧪 Запустить Canary Drill",
+      "onclick": "runCanaryDrill(this)"
+    },
+    {
+      "id": "",
+      "text": "Подробнее ➔",
+      "onclick": "switchAgentSubtab('a5')"
+    },
+    {
+      "id": "btnRunA1",
+      "text": "⚡ Самоисцеление сейчас",
+      "onclick": "runHealerAction('run_now', this)"
+    },
+    {
+      "id": "",
+      "text": "Подробнее ➔",
+      "onclick": "switchAgentSubtab('a1')"
+    },
+    {
+      "id": "btnRunA3",
+      "text": "🔬 Аудит Lineage (/lineage)",
+      "onclick": "runWorkflowLineageAudit(this)"
+    },
+    {
+      "id": "",
+      "text": "Подробнее ➔",
+      "onclick": "switchAgentSubtab('a3')"
+    },
+    {
+      "id": "btnRunA4",
+      "text": "🎙️ Аудит Judge (/judge)",
+      "onclick": "runJudgeAudit(this)"
+    },
+    {
+      "id": "",
+      "text": "Карантин ➔",
+      "onclick": "switchAgentSubtab('a4')"
+    },
+    {
+      "id": "btnRunA2",
+      "text": "📋 Экспресс-сводка CCO",
+      "onclick": "runCCOAction('summary', this)"
+    },
+    {
+      "id": "",
+      "text": "Подробнее ➔",
+      "onclick": "switchAgentSubtab('a2')"
+    },
+    {
+      "id": "",
+      "text": "📐 Запустить аудит архитектуры (Meta Audi",
+      "onclick": "runArchitectureAudit()"
+    },
+    {
+      "id": "",
+      "text": "📄 Сгенерировать Whitepaper архитектуры",
+      "onclick": "generateArchitectureWhitepaper()"
+    },
+    {
+      "id": "",
+      "text": "📊 Радар узких мест (Bottlenecks)",
+      "onclick": "inspectSystemBottlenecks()"
+    },
+    {
+      "id": "",
+      "text": "🧪 Запустить Canary Drill прямо сейчас",
+      "onclick": "runCanaryDrill()"
+    },
+    {
+      "id": "",
+      "text": "💉 Проверить инъекцию мутаций",
+      "onclick": "injectSyntheticMutation()"
+    },
+    {
+      "id": "",
+      "text": "💓 Обновить пульс calc_engine!B266",
+      "onclick": "updateSheetsHeartbeatNow()"
+    },
+    {
+      "id": "",
+      "text": "⚡ Внеочередное самоисцеление (Self-Heal ",
+      "onclick": "runHealerAction('run_now')"
+    },
+    {
+      "id": "",
+      "text": "🟢 Включить 15-мин автодежурство",
+      "onclick": "runHealerAction('install')"
+    },
+    {
+      "id": "",
+      "text": "🔴 Отключить дежурство",
+      "onclick": "runHealerAction('uninstall')"
+    },
+    {
+      "id": "",
+      "text": "🔬 Запустить сквозной аудит Lineage & Log",
+      "onclick": "runWorkflowLineageAudit()"
+    },
+    {
+      "id": "",
+      "text": "🔄 Переопубликовать воркфлоу n8n",
+      "onclick": "autoPublishN8nWorkflows()"
+    },
+    {
+      "id": "",
+      "text": "📋 Проверить маппинг полей CRM",
+      "onclick": "inspectCrmFieldMapping()"
+    },
+    {
+      "id": "",
+      "text": "🔄 Обновить список",
+      "onclick": "loadQuarantineCalls()"
+    },
+    {
+      "id": "",
+      "text": "🎙️ Запустить аудит промптов и скоринга (",
+      "onclick": "runJudgeAudit()"
+    },
+    {
+      "id": "",
+      "text": "⚖️ Калибровать пороги отсечения (Z-Score",
+      "onclick": "calibrateZScoreThresholds()"
+    },
+    {
+      "id": "",
+      "text": "📋 Экспресс-сводка CCO Executive Summary ",
+      "onclick": "runCCOAction('summary')"
+    },
+    {
+      "id": "",
+      "text": "📱 Отправить сводку в Telegram Отчёт влад",
+      "onclick": "runCCOAction('send_telegram')"
+    },
+    {
+      "id": "",
+      "text": "📊 Здоровье воронки Pipeline Health & кон",
+      "onclick": "runCCOAction('pipeline')"
+    },
+    {
+      "id": "",
+      "text": "🎯 Прогноз выполнения плана Sales Forecas",
+      "onclick": "runCCOAction('forecast')"
+    },
+    {
+      "id": "",
+      "text": "👥 Разбор команды: cr1..cr13 Качество реч",
+      "onclick": "runCCOAction('team')"
+    },
+    {
+      "id": "",
+      "text": "⚠️ Зависшие сделки (>7 дней) Сделки в зо",
+      "onclick": "runCCOAction('stalled')"
+    },
+    {
+      "id": "",
+      "text": "🔬 Сквозной аудит Data Lineage & Бизнес-л",
+      "onclick": "runCCOAction('workflow_audit')"
+    },
+    {
+      "id": "",
+      "text": "+ Развернуть клиента",
+      "onclick": "scrollToOnboardingWizard()"
+    },
+    {
+      "id": "",
+      "text": "🎲 Сгенерировать",
+      "onclick": "generateProvPassword()"
+    },
+    {
+      "id": "",
+      "text": "📋 Скопировать бриф для клиента",
+      "onclick": "copyProvInviteMessage()"
+    },
+    {
+      "id": "",
+      "text": "&times;",
+      "onclick": "closeTenantEditModal()"
+    },
+    {
+      "id": "",
+      "text": "🎲 Новый пароль",
+      "onclick": "generateModalPassword()"
+    },
+    {
+      "id": "",
+      "text": "Отмена",
+      "onclick": "closeTenantEditModal()"
+    },
+    {
+      "id": "",
+      "text": "Сохранить изменения",
+      "onclick": "saveTenantEdit()"
+    },
+    {
+      "id": "",
+      "text": "🔄",
+      "onclick": "runFleetAction('restart_n8n')"
+    },
+    {
+      "id": "",
+      "text": "🛑",
+      "onclick": "runFleetAction('stop_n8n')"
+    },
+    {
+      "id": "",
+      "text": "🚀 Пуск",
+      "onclick": "runFleetAction('start_tunnel')"
+    },
+    {
+      "id": "",
+      "text": "🛑 Стоп",
+      "onclick": "runFleetAction('stop_tunnel')"
+    },
+    {
+      "id": "btnTestSaLive",
+      "text": "⚡ Проверить пинг",
+      "onclick": "testServiceAccountLive()"
+    },
+    {
+      "id": "",
+      "text": "Обновить ВСЕ таблицы 1 клик для всех баз",
+      "onclick": "runSheetsAction('sync_all')"
+    },
+    {
+      "id": "",
+      "text": "Сканировать Google Диск Аудит формул без",
+      "onclick": "runSheetsAction('scan')"
+    },
+    {
+      "id": "",
+      "text": "⭐ Обновить только Эталонный Шаблон (Clea",
+      "onclick": "runSheetsAction('starter_only')"
+    },
+    {
+      "id": "",
+      "text": "🎯 Обновить",
+      "onclick": "runSheetsTarget()"
+    },
+    {
+      "id": "",
+      "text": "⚡ Запустить сейчас",
+      "onclick": "runTaskAction('run_daily_now')"
+    },
+    {
+      "id": "",
+      "text": "🗑️",
+      "onclick": "runTaskAction('uninstall_daily')"
+    },
+    {
+      "id": "",
+      "text": "💾 Сохранить",
+      "onclick": "saveDailyTaskTime()"
+    },
+    {
+      "id": "",
+      "text": "🩺 Инспекция сейчас",
+      "onclick": "runTaskAction('run_healer_now')"
+    },
+    {
+      "id": "btnTestGemini",
+      "text": "🧪 Тест Gemini API",
+      "onclick": "testGeminiApi()"
+    },
+    {
+      "id": "",
+      "text": "⚡ Внеочередной аудит и самоисцеление пря",
+      "onclick": "runHealerAction('run_now')"
+    },
+    {
+      "id": "",
+      "text": "🟢 Включить автодежурство (каждые 15 мин)",
+      "onclick": "runHealerAction('install')"
+    },
+    {
+      "id": "",
+      "text": "🔴 Отключить дежурство",
+      "onclick": "runHealerAction('uninstall')"
+    },
+    {
+      "id": "",
+      "text": "&times;",
+      "onclick": "closeCallModal()"
+    },
+    {
+      "id": "btnPlayAudio",
+      "text": "▶ Воспроизвести",
+      "onclick": "togglePlaySimulation()"
+    },
+    {
+      "id": "",
+      "text": "Печать / Сохранить в PDF",
+      "onclick": "window.print()"
+    },
+    {
+      "id": "",
+      "text": "&times;",
+      "onclick": "closeOnePagerModal()"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "js_findings": [
+    {
+      "file": "charts.js",
+      "line": 1455,
+      "type": "Toast mentions 'скоро/в разработке'",
+      "snippet": "showToast('Нормативы конверсии', 'Фокус: Критические точки срыва и Fake Yes')"
+    }
+  ],
+  "dead_buttons": [
+    {
+      "text": "Войти в аналитический кабинет",
+      "reason": "Empty or no-op onclick",
+      "attrs": " type=\"submit\" id=\"btnAuthSubmit\" class=\"btn btn-primary\" style=\"width: 100%; justify-content: center; padding: 12px; fo"
+    }
+  ]
+}

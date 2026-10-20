@@ -1,0 +1,1752 @@
+[
+  {
+    "view": "global / header / modal",
+    "id": "btnAuthSubmit",
+    "label": "Войти в аналитический кабинет",
+    "onclick": "",
+    "handler": "",
+    "handler_exists": false,
+    "status": "FORM_SUBMIT",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "",
+    "label": "",
+    "onclick": "toggleSidebar()",
+    "handler": "toggleSidebar",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-pulse",
+    "label": "1. Пульс выручки",
+    "onclick": "switchTab('pulse')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-express",
+    "label": "2. Экспресс 3 цифры",
+    "onclick": "switchTab('express')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-rop",
+    "label": "3. Пульт РОПа 15 мин",
+    "onclick": "switchTab('rop')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-audit",
+    "label": "4. ИИ-Аудит звонков",
+    "onclick": "switchTab('audit')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-impact",
+    "label": "5. AI Impact & Детектор",
+    "onclick": "switchTab('impact')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-skills",
+    "label": "6. Навыки & Payroll",
+    "onclick": "switchTab('skills')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-analyst",
+    "label": "7. ИИ Аналитик (CCO)",
+    "onclick": "switchTab('analyst')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-leaks",
+    "label": "8. Диагностика утечек",
+    "onclick": "switchTab('leaks')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-montecarlo",
+    "label": "9. Монте-Карло 3.0",
+    "onclick": "switchTab('montecarlo')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-settings",
+    "label": "10. Паспорт & E2E",
+    "onclick": "switchTab('settings')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "sb-admin",
+    "label": "11. Админ-кабинет",
+    "onclick": "switchTab('admin')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "",
+    "label": "",
+    "onclick": "toggleSidebar()",
+    "handler": "toggleSidebar",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "global / header / modal",
+    "id": "btnSyncCRM",
+    "label": "Синхронизация",
+    "onclick": "triggerSyncSimulation()",
+    "handler": "triggerSyncSimulation",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-pulse",
+    "id": "",
+    "label": "Октябрь 2026",
+    "onclick": "toggleRevopsDropdown('dropdownPulsePeriodFact', event)",
+    "handler": "toggleRevopsDropdown",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-pulse",
+    "id": "",
+    "label": "План 5.0M ₽",
+    "onclick": "toggleRevopsDropdown('dropdownPulsePeriodPlan', event)",
+    "handler": "toggleRevopsDropdown",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-pulse",
+    "id": "",
+    "label": "&#x25c6; Спросить AI",
+    "onclick": "openAiAsk('В чем разрыв факт vs план по месяцам?')",
+    "handler": "openAiAsk",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-pulse",
+    "id": "",
+    "label": "По месяцам",
+    "onclick": "toggleRevopsDropdown('dropdownDissectionScale', event)",
+    "handler": "toggleRevopsDropdown",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-pulse",
+    "id": "",
+    "label": "Октябрь",
+    "onclick": "toggleRevopsDropdown('dropdownFunnelPeriod', event)",
+    "handler": "toggleRevopsDropdown",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-pulse",
+    "id": "",
+    "label": "Все (0)",
+    "onclick": "toggleRevopsDropdown('dropdownRecentCallsFilter', event)",
+    "handler": "toggleRevopsDropdown",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-pulse",
+    "id": "",
+    "label": "Октябрь",
+    "onclick": "toggleRevopsDropdown('dropdownDonutPeriod', event)",
+    "handler": "toggleRevopsDropdown",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-pulse",
+    "id": "",
+    "label": "13 критериев",
+    "onclick": "toggleRevopsDropdown('dropdownCriteriaScope', event)",
+    "handler": "toggleRevopsDropdown",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-pulse",
+    "id": "",
+    "label": "&#x25c6; Спросить AI",
+    "onclick": "openAiAsk('Какова динамика сходимости SSOT и тренда?')",
+    "handler": "openAiAsk",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "",
+    "label": "Разбор звонков и дожим (15 мин)",
+    "onclick": "event.stopPropagation(); document.getElementById('script-case01').scrollIntoView({behavior: 'smooth'})",
+    "handler": "",
+    "handler_exists": false,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "btnRepMetricPipe",
+    "label": "Пайплайн (₽)",
+    "onclick": "setRepChartMetric('pipe')",
+    "handler": "setRepChartMetric",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "btnRepMetricScore",
+    "label": "Балл речи (/13)",
+    "onclick": "setRepChartMetric('score')",
+    "handler": "setRepChartMetric",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "btnRepMetricStep",
+    "label": "Next Step (%)",
+    "onclick": "setRepChartMetric('step')",
+    "handler": "setRepChartMetric",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "btnRepMetricRisk",
+    "label": "Брак в риске (₽)",
+    "onclick": "setRepChartMetric('risk')",
+    "handler": "setRepChartMetric",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "",
+    "label": "Скопировать в WhatsApp",
+    "onclick": "copyRescueScript('case01')",
+    "handler": "copyRescueScript",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "",
+    "label": "Скопировать в WhatsApp",
+    "onclick": "copyRescueScript('case02')",
+    "handler": "copyRescueScript",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "",
+    "label": "Скопировать в WhatsApp",
+    "onclick": "copyRescueScript('case03')",
+    "handler": "copyRescueScript",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "",
+    "label": "Скопировать в WhatsApp",
+    "onclick": "copyRescueScript('case04')",
+    "handler": "copyRescueScript",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-rop",
+    "id": "",
+    "label": "Скопировать в WhatsApp",
+    "onclick": "copyRescueScript('case05')",
+    "handler": "copyRescueScript",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Все (0)",
+    "onclick": "setPillRadarRep('all')",
+    "handler": "setPillRadarRep",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Сбросить",
+    "onclick": "clearSearch()",
+    "handler": "clearSearch",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Все (0)",
+    "onclick": "setPillManagerFilter('all')",
+    "handler": "setPillManagerFilter",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Все",
+    "onclick": "setPillStatusFilter('all')",
+    "handler": "setPillStatusFilter",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Эталон (0)",
+    "onclick": "setPillStatusFilter('won')",
+    "handler": "setPillStatusFilter",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Норма (0)",
+    "onclick": "setPillStatusFilter('norm')",
+    "handler": "setPillStatusFilter",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Слив (0)",
+    "onclick": "setPillStatusFilter('risk')",
+    "handler": "setPillStatusFilter",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "&#x25c6; Спросить AI",
+    "onclick": "openAiAsk('Какие менеджеры чаще всего сливают Next Step?')",
+    "handler": "openAiAsk",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Столбцы (13) ▾",
+    "onclick": "showToast('Столбцы Ag-Grid', 'Отображены все 13 параметров B2B-аудита речи.')",
+    "handler": "showToast",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Фильтры",
+    "onclick": "document.getElementById('transcriptSearch').focus()",
+    "handler": "",
+    "handler_exists": false,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Экспорт CSV",
+    "onclick": "exportCallsToCSV()",
+    "handler": "exportCallsToCSV",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "btnDensityPro",
+    "label": "Excel Pro (Плотный)",
+    "onclick": "setTableDensity('excel-pro')",
+    "handler": "setTableDensity",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "btnDensityComfort",
+    "label": "Comfort",
+    "onclick": "setTableDensity('comfort')",
+    "handler": "setTableDensity",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-audit",
+    "id": "",
+    "label": "Сбросить",
+    "onclick": "clearSearch()",
+    "handler": "clearSearch",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "btnRefreshAnalyst",
+    "label": "Обновить анализ",
+    "onclick": "initAnalystTab(true)",
+    "handler": "initAnalystTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "Экспресс-аудит потерь",
+    "onclick": "triggerAnalystQuickPrompt('Где мы теряем больше всего денег?')",
+    "handler": "triggerAnalystQuickPrompt",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "Очистить",
+    "onclick": "clearAnalystChat()",
+    "handler": "clearAnalystChat",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "Где теряем деньги?",
+    "onclick": "triggerAnalystQuickPrompt('Где мы теряем больше всего денег?')",
+    "handler": "triggerAnalystQuickPrompt",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "Слабые места менеджеров",
+    "onclick": "triggerAnalystQuickPrompt('Разбор слабых мест менеджеров')",
+    "handler": "triggerAnalystQuickPrompt",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "План дожима",
+    "onclick": "triggerAnalystQuickPrompt('План дожима зависших сделок')",
+    "handler": "triggerAnalystQuickPrompt",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "Прогноз P50",
+    "onclick": "triggerAnalystQuickPrompt('Прогноз выполнения плана месяца')",
+    "handler": "triggerAnalystQuickPrompt",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "Причины отказов",
+    "onclick": "triggerAnalystQuickPrompt('Анализ причин отказов клиентов')",
+    "handler": "triggerAnalystQuickPrompt",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "",
+    "onclick": "sendAnalystChat()",
+    "handler": "sendAnalystChat",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "Открыть речевые аудиты &rarr;",
+    "onclick": "switchTab('audit')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "Карта утечек &rarr;",
+    "onclick": "switchTab('leaks')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-analyst",
+    "id": "",
+    "label": "Пульт РОПа &rarr;",
+    "onclick": "switchTab('rop')",
+    "handler": "switchTab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-montecarlo",
+    "id": "",
+    "label": "&#x25c6; Спросить AI",
+    "onclick": "openAiAsk('Какова вероятность достижения плана 5M ₽ по симуляции?')",
+    "handler": "openAiAsk",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "btnReloadSettings",
+    "label": "Обновить",
+    "onclick": "fetchAndPopulateSettings(true)",
+    "handler": "fetchAndPopulateSettings",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "btnSaveSettingsTop",
+    "label": "Сохранить в Таблицу",
+    "onclick": "submitSystemSettingsForm()",
+    "handler": "submitSystemSettingsForm",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "3 млн",
+    "onclick": "setTargetPreset(3000000)",
+    "handler": "setTargetPreset",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "5 млн",
+    "onclick": "setTargetPreset(5000000)",
+    "handler": "setTargetPreset",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "10 млн",
+    "onclick": "setTargetPreset(10000000)",
+    "handler": "setTargetPreset",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "15 млн",
+    "onclick": "setTargetPreset(15000000)",
+    "handler": "setTargetPreset",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "Текущий месяц",
+    "onclick": "setPeriodPreset('current')",
+    "handler": "setPeriodPreset",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "Прошлый месяц",
+    "onclick": "setPeriodPreset('prev')",
+    "handler": "setPeriodPreset",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "4 Квартал",
+    "onclick": "setPeriodPreset('q4')",
+    "handler": "setPeriodPreset",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "Включить все",
+    "onclick": "toggleAllModules(true)",
+    "handler": "toggleAllModules",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "Выключить все",
+    "onclick": "toggleAllModules(false)",
+    "handler": "toggleAllModules",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "",
+    "label": "Отменить изменения",
+    "onclick": "fetchAndPopulateSettings(true)",
+    "handler": "fetchAndPopulateSettings",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "btnSaveSettingsBottom",
+    "label": "Сохранить все 28 параметров в Google Таблицу",
+    "onclick": "submitSystemSettingsForm()",
+    "handler": "submitSystemSettingsForm",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-settings",
+    "id": "btnSelfHealingAuditSettings",
+    "label": "Запустить Self-Healing аудит",
+    "onclick": "triggerSelfHealingAudit()",
+    "handler": "triggerSelfHealingAudit",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📋 Копировать",
+    "onclick": "copyAdminTunnelUrl()",
+    "handler": "copyAdminTunnelUrl",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Запустить все службы",
+    "onclick": "runFleetAction('start_all')",
+    "handler": "runFleetAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Остановить все",
+    "onclick": "runFleetAction('stop_all')",
+    "handler": "runFleetAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📦 Очистить Рабочий стол",
+    "onclick": "archiveDesktopLaunchers()",
+    "handler": "archiveDesktopLaunchers",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📥 Вернуть батники на Desktop",
+    "onclick": "restoreDesktopLaunchers()",
+    "handler": "restoreDesktopLaunchers",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Обновить",
+    "onclick": "loadAdminStatus()",
+    "handler": "loadAdminStatus",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "admin-tab-btn-agents",
+    "label": "🤖 ИИ-Агенты (Sextet Fleet) 6 Агентов",
+    "onclick": "switchAdminSubtab('agents')",
+    "handler": "switchAdminSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "admin-tab-btn-clients",
+    "label": "👥 Клиенты & Доступы",
+    "onclick": "switchAdminSubtab('clients')",
+    "handler": "switchAdminSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "admin-tab-btn-infra",
+    "label": "⚙️ Инфраструктура & CRM",
+    "onclick": "switchAdminSubtab('infra')",
+    "handler": "switchAdminSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "admin-tab-btn-terminal",
+    "label": "💻 Live Terminal & Логи",
+    "onclick": "switchAdminSubtab('terminal')",
+    "handler": "switchAdminSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "agent-pill-overview",
+    "label": "🛸 Общий дашборд флота",
+    "onclick": "switchAgentSubtab('overview')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "agent-pill-a6",
+    "label": "📐 Агент 6: Architecture Advisor",
+    "onclick": "switchAgentSubtab('a6')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "agent-pill-a5",
+    "label": "🧪 Агент 5: Chaos & Red-Team",
+    "onclick": "switchAgentSubtab('a5')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "agent-pill-a1",
+    "label": "🩺 Агент 1: DevOps & QA Healer",
+    "onclick": "switchAgentSubtab('a1')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "agent-pill-a3",
+    "label": "🧬 Агент 3: Workflow Logic & Lineage",
+    "onclick": "switchAgentSubtab('a3')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "agent-pill-a4",
+    "label": "🎙️ Агент 4: QA Judge & Карантин",
+    "onclick": "switchAgentSubtab('a4')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "agent-pill-a2",
+    "label": "💼 Агент 2: Commercial CCO",
+    "onclick": "switchAgentSubtab('a2')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnRunFullFleetDrill",
+    "label": "⚡ Запустить комплексное учение (Sextet Drill)",
+    "onclick": "runFullFleetDrill(this)",
+    "handler": "runFullFleetDrill",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📱 Сводка в Telegram",
+    "onclick": "runCCOAction('send_telegram', this)",
+    "handler": "runCCOAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnRefreshAgents",
+    "label": "🔄 Обновить",
+    "onclick": "loadAgentsTelemetry(true)",
+    "handler": "loadAgentsTelemetry",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📋 Копировать",
+    "onclick": "copyDrawerOutput()",
+    "handler": "copyDrawerOutput",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🧹 Очистить",
+    "onclick": "clearDrawerOutput()",
+    "handler": "clearDrawerOutput",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "✕ Скрыть",
+    "onclick": "closeDrawerConsole()",
+    "handler": "closeDrawerConsole",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnRunA6",
+    "label": "📐 Аудит архитектуры",
+    "onclick": "runArchitectureAudit(this)",
+    "handler": "runArchitectureAudit",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Подробнее ➔",
+    "onclick": "switchAgentSubtab('a6')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnRunA5",
+    "label": "🧪 Запустить Canary Drill",
+    "onclick": "runCanaryDrill(this)",
+    "handler": "runCanaryDrill",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Подробнее ➔",
+    "onclick": "switchAgentSubtab('a5')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnRunA1",
+    "label": "⚡ Самоисцеление сейчас",
+    "onclick": "runHealerAction('run_now', this)",
+    "handler": "runHealerAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Подробнее ➔",
+    "onclick": "switchAgentSubtab('a1')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnRunA3",
+    "label": "🔬 Аудит Lineage (/lineage)",
+    "onclick": "runWorkflowLineageAudit(this)",
+    "handler": "runWorkflowLineageAudit",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Подробнее ➔",
+    "onclick": "switchAgentSubtab('a3')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnRunA4",
+    "label": "🎙️ Аудит Judge (/judge)",
+    "onclick": "runJudgeAudit(this)",
+    "handler": "runJudgeAudit",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Карантин ➔",
+    "onclick": "switchAgentSubtab('a4')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnRunA2",
+    "label": "📋 Экспресс-сводка CCO",
+    "onclick": "runCCOAction('summary', this)",
+    "handler": "runCCOAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Подробнее ➔",
+    "onclick": "switchAgentSubtab('a2')",
+    "handler": "switchAgentSubtab",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📐 Запустить аудит архитектуры (Meta Audit)",
+    "onclick": "runArchitectureAudit()",
+    "handler": "runArchitectureAudit",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📄 Сгенерировать Whitepaper архитектуры",
+    "onclick": "generateArchitectureWhitepaper()",
+    "handler": "generateArchitectureWhitepaper",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📊 Радар узких мест (Bottlenecks)",
+    "onclick": "inspectSystemBottlenecks()",
+    "handler": "inspectSystemBottlenecks",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🧪 Запустить Canary Drill прямо сейчас",
+    "onclick": "runCanaryDrill()",
+    "handler": "runCanaryDrill",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "💉 Проверить инъекцию мутаций",
+    "onclick": "injectSyntheticMutation()",
+    "handler": "injectSyntheticMutation",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "💓 Обновить пульс calc_engine!B266",
+    "onclick": "updateSheetsHeartbeatNow()",
+    "handler": "updateSheetsHeartbeatNow",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "⚡ Внеочередное самоисцеление (Self-Heal Now)",
+    "onclick": "runHealerAction('run_now')",
+    "handler": "runHealerAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🟢 Включить 15-мин автодежурство",
+    "onclick": "runHealerAction('install')",
+    "handler": "runHealerAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📄 Журнал healer_duty.log",
+    "onclick": "fetchAdminLogs('healer')",
+    "handler": "fetchAdminLogs",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🔴 Отключить дежурство",
+    "onclick": "runHealerAction('uninstall')",
+    "handler": "runHealerAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🔬 Запустить сквозной аудит Lineage & Logic (/lineage)",
+    "onclick": "runWorkflowLineageAudit()",
+    "handler": "runWorkflowLineageAudit",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🔄 Переопубликовать воркфлоу n8n",
+    "onclick": "autoPublishN8nWorkflows()",
+    "handler": "autoPublishN8nWorkflows",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📋 Проверить маппинг полей CRM",
+    "onclick": "inspectCrmFieldMapping()",
+    "handler": "inspectCrmFieldMapping",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🔄 Обновить список",
+    "onclick": "loadQuarantineCalls()",
+    "handler": "loadQuarantineCalls",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🎙️ Запустить аудит промптов и скоринга (/judge)",
+    "onclick": "runJudgeAudit()",
+    "handler": "runJudgeAudit",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "⚖️ Калибровать пороги отсечения (Z-Score)",
+    "onclick": "calibrateZScoreThresholds()",
+    "handler": "calibrateZScoreThresholds",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📋 Экспресс-сводка CCO Executive Summary для собственника ➔",
+    "onclick": "runCCOAction('summary')",
+    "handler": "runCCOAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📱 Отправить сводку в Telegram Отчёт владельцу в @RevOps_Supe",
+    "onclick": "runCCOAction('send_telegram')",
+    "handler": "runCCOAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📊 Здоровье воронки Pipeline Health & конверсии ➔",
+    "onclick": "runCCOAction('pipeline')",
+    "handler": "runCCOAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🎯 Прогноз выполнения плана Sales Forecast & взвешенный пайпл",
+    "onclick": "runCCOAction('forecast')",
+    "handler": "runCCOAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "👥 Разбор команды: cr1..cr13 Качество речи vs потерянные день",
+    "onclick": "runCCOAction('team')",
+    "handler": "runCCOAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "⚠️ Зависшие сделки (>7 дней) Сделки в зоне риска срыва ➔",
+    "onclick": "runCCOAction('stalled')",
+    "handler": "runCCOAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🔬 Сквозной аудит Data Lineage & Бизнес-логики воркфлоу Сверк",
+    "onclick": "runCCOAction('workflow_audit')",
+    "handler": "runCCOAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🔄 Обновить",
+    "onclick": "loadAdminTenants()",
+    "handler": "loadAdminTenants",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "+ Развернуть клиента",
+    "onclick": "scrollToOnboardingWizard()",
+    "handler": "scrollToOnboardingWizard",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🎲 Сгенерировать",
+    "onclick": "generateProvPassword()",
+    "handler": "generateProvPassword",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnAdminProvisionSubmit",
+    "label": "🚀 Развернуть клиентский контур под ключ",
+    "onclick": "submitProvisionTenant()",
+    "handler": "submitProvisionTenant",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📋 Скопировать бриф для клиента",
+    "onclick": "copyProvInviteMessage()",
+    "handler": "copyProvInviteMessage",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "&times;",
+    "onclick": "closeTenantEditModal()",
+    "handler": "closeTenantEditModal",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🎲 Новый пароль",
+    "onclick": "generateModalPassword()",
+    "handler": "generateModalPassword",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Отмена",
+    "onclick": "closeTenantEditModal()",
+    "handler": "closeTenantEditModal",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Сохранить изменения",
+    "onclick": "saveTenantEdit()",
+    "handler": "saveTenantEdit",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnSwitchCrm",
+    "label": "🔄 Переключить CRM",
+    "onclick": "switchAdminCrm()",
+    "handler": "switchAdminCrm",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnB24Stages",
+    "label": "🔍 Этапы воронки",
+    "onclick": "runAdminCrmAction('show_stages', 'bitrix24')",
+    "handler": "runAdminCrmAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnB24DryRun",
+    "label": "🧪 Тест сделок (30 дн)",
+    "onclick": "runAdminCrmAction('dry_run', 'bitrix24')",
+    "handler": "runAdminCrmAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnB24Sync",
+    "label": "⚡ Боевая выгрузка сделок в raw_deals",
+    "onclick": "runAdminCrmAction('sync_deals', 'bitrix24')",
+    "handler": "runAdminCrmAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnAmoStages",
+    "label": "🔍 Пайплайны и статусы",
+    "onclick": "runAdminCrmAction('show_stages', 'amocrm')",
+    "handler": "runAdminCrmAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnAmoDryRun",
+    "label": "🧪 Тест сделок (30 дн)",
+    "onclick": "runAdminCrmAction('dry_run', 'amocrm')",
+    "handler": "runAdminCrmAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnAmoSync",
+    "label": "⚡ Боевая выгрузка сделок в raw_deals",
+    "onclick": "runAdminCrmAction('sync_deals', 'amocrm')",
+    "handler": "runAdminCrmAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🔄",
+    "onclick": "runFleetAction('restart_n8n')",
+    "handler": "runFleetAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🛑",
+    "onclick": "runFleetAction('stop_n8n')",
+    "handler": "runFleetAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🚀 Пуск",
+    "onclick": "runFleetAction('start_tunnel')",
+    "handler": "runFleetAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🛑 Стоп",
+    "onclick": "runFleetAction('stop_tunnel')",
+    "handler": "runFleetAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnTestSaLive",
+    "label": "⚡ Проверить пинг",
+    "onclick": "testServiceAccountLive()",
+    "handler": "testServiceAccountLive",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Обновить ВСЕ таблицы 1 клик для всех баз и шаблонов",
+    "onclick": "runSheetsAction('sync_all')",
+    "handler": "runSheetsAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Сканировать Google Диск Аудит формул без изменений",
+    "onclick": "runSheetsAction('scan')",
+    "handler": "runSheetsAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "⭐ Обновить только Эталонный Шаблон (Clean Client Starter) Ma",
+    "onclick": "runSheetsAction('starter_only')",
+    "handler": "runSheetsAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🎯 Обновить",
+    "onclick": "runSheetsTarget()",
+    "handler": "runSheetsTarget",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "⚡ Запустить сейчас",
+    "onclick": "runTaskAction('run_daily_now')",
+    "handler": "runTaskAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🗑️",
+    "onclick": "runTaskAction('uninstall_daily')",
+    "handler": "runTaskAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "💾 Сохранить",
+    "onclick": "saveDailyTaskTime()",
+    "handler": "saveDailyTaskTime",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🩺 Инспекция сейчас",
+    "onclick": "runTaskAction('run_healer_now')",
+    "handler": "runTaskAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnTestGemini",
+    "label": "🧪 Тест Gemini API",
+    "onclick": "testGeminiApi()",
+    "handler": "testGeminiApi",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "⚡ Внеочередной аудит и самоисцеление прямо сейчас",
+    "onclick": "runHealerAction('run_now')",
+    "handler": "runHealerAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🟢 Включить автодежурство (каждые 15 мин)",
+    "onclick": "runHealerAction('install')",
+    "handler": "runHealerAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "📄 Показать healer_duty.log",
+    "onclick": "fetchAdminLogs('healer')",
+    "handler": "fetchAdminLogs",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🔴 Отключить дежурство",
+    "onclick": "runHealerAction('uninstall')",
+    "handler": "runHealerAction",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Консоль",
+    "onclick": "fetchAdminLogs('console')",
+    "handler": "fetchAdminLogs",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Лог автозадачи",
+    "onclick": "fetchAdminLogs('daily_sync')",
+    "handler": "fetchAdminLogs",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Лог Healer",
+    "onclick": "fetchAdminLogs('healer')",
+    "handler": "fetchAdminLogs",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "🧹 Очистить",
+    "onclick": "clearAdminConsole()",
+    "handler": "clearAdminConsole",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "&times;",
+    "onclick": "closeCallModal()",
+    "handler": "closeCallModal",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "btnPlayAudio",
+    "label": "▶ Воспроизвести",
+    "onclick": "togglePlaySimulation()",
+    "handler": "togglePlaySimulation",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "Печать / Сохранить в PDF",
+    "onclick": "window.print()",
+    "handler": "",
+    "handler_exists": false,
+    "status": "OK",
+    "notes": ""
+  },
+  {
+    "view": "view-admin",
+    "id": "",
+    "label": "&times;",
+    "onclick": "closeOnePagerModal()",
+    "handler": "closeOnePagerModal",
+    "handler_exists": true,
+    "status": "OK",
+    "notes": ""
+  }
+]

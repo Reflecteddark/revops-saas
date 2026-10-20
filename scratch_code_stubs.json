@@ -1,0 +1,590 @@
+[
+  {
+    "file": "apps/web/js\\analyst.js",
+    "line": 120,
+    "kw": "fake",
+    "text": "const fakeYes = cnt - nextSteps;"
+  },
+  {
+    "file": "apps/web/js\\analyst.js",
+    "line": 121,
+    "kw": "fake",
+    "text": "const leakRub = fakeYes * 500000;"
+  },
+  {
+    "file": "apps/web/js\\analyst.js",
+    "line": 124,
+    "kw": "fake",
+    "text": "executive_summary: `**Стратегический вердикт CCO**: В выборке из ${cnt} звонков ЛК ${fakeYes} завершились без фиксации даты следующего конта"
+  },
+  {
+    "file": "apps/web/js\\analyst.js",
+    "line": 128,
+    "kw": "fake",
+    "text": "{ id: '3', title: 'Локализованные утечки', value: `${leakRub.toLocaleString('ru-RU')} ₽`, delta: `${fakeYes} сливов в звонках`, delta_type: "
+  },
+  {
+    "file": "apps/web/js\\analyst.js",
+    "line": 132,
+    "kw": "fake",
+    "text": "{ id: '1', priority: 'HIGH', title: 'Слив без фиксации даты контакта (Fake Yes)', impact_rub: leakRub, root_cause: 'Менеджеры отпускают клие"
+  },
+  {
+    "file": "apps/web/js\\analyst.js",
+    "line": 188,
+    "kw": "fake",
+    "text": "fake_yes_count: liveCalls.length - nextSteps || 2,"
+  },
+  {
+    "file": "apps/web/js\\calls.js",
+    "line": 3,
+    "kw": "simulation",
+    "text": "* Responsibilities: CALLS_DATA, 13 criteria, table rendering, filters, density, audio player simulation, waveform, playbook diffs."
+  },
+  {
+    "file": "apps/web/js\\calls.js",
+    "line": 547,
+    "kw": "simulation",
+    "text": "togglePlaySimulation();"
+  },
+  {
+    "file": "apps/web/js\\calls.js",
+    "line": 569,
+    "kw": "simulation",
+    "text": "function togglePlaySimulation() {"
+  },
+  {
+    "file": "apps/web/js\\calls.js",
+    "line": 598,
+    "kw": "simulation",
+    "text": "togglePlaySimulation();"
+  },
+  {
+    "file": "apps/web/js\\calls.js",
+    "line": 800,
+    "kw": "simulation",
+    "text": "window.togglePlaySimulation = togglePlaySimulation;"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 3,
+    "kw": "simulation",
+    "text": "* Responsibilities: Chart.js instances, Monte-Carlo simulation, Rep performance, 13 criteria radar, skills heatmap, develop bento charts."
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 311,
+    "kw": "mock",
+    "text": "const mockWeekly = [0, 0, 0, 0, 0, 0, 0];"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 332,
+    "kw": "mock",
+    "text": "data: mockWeekly,"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 353,
+    "kw": "fake",
+    "text": "labels: ['Эталонные звонки', 'Встреча назначена', 'Следующий шаг взят', 'Риск срыва сделки', 'Fake Yes сливы'],"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 594,
+    "kw": "simulation",
+    "text": "runMonteCarloSimulation(false);"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 598,
+    "kw": "simulation",
+    "text": "function runMonteCarloSimulation(notify = false) {"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 709,
+    "kw": "simulation",
+    "text": "function updateSimulation(notify = true) {"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 710,
+    "kw": "simulation",
+    "text": "runMonteCarloSimulation(notify);"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1107,
+    "kw": "fake",
+    "text": "function renderAiImpactAndFakeYes() {"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1109,
+    "kw": "fake",
+    "text": "const fakeYesBody = document.getElementById('fakeYesTableBody');"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1110,
+    "kw": "fake",
+    "text": "const fakeYesBadge = document.getElementById('fakeYesBadge');"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1142,
+    "kw": "fake",
+    "text": "if (fakeYesBody) {"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1143,
+    "kw": "fake",
+    "text": "fakeYesBody.innerHTML = `"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1144,
+    "kw": "fake",
+    "text": "<tr id=\"fakeYesEmptyRow\">"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1151,
+    "kw": "fake",
+    "text": "if (fakeYesBadge) fakeYesBadge.textContent = '0 АЛЕРТОВ';"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1201,
+    "kw": "fake",
+    "text": "const fakeYesCalls = CALLS_DATA.filter(c => c.cr && c.cr[7] === 0 && (c.next_step === 0 || c.status === 'risk'));"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1202,
+    "kw": "fake",
+    "text": "if (fakeYesBadge) fakeYesBadge.textContent = `${fakeYesCalls.length} АЛЕРТОВ`;"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1203,
+    "kw": "fake",
+    "text": "if (fakeYesBody) {"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1204,
+    "kw": "fake",
+    "text": "if (fakeYesCalls.length === 0) {"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1205,
+    "kw": "fake",
+    "text": "fakeYesBody.innerHTML = `"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1206,
+    "kw": "fake",
+    "text": "<tr id=\"fakeYesEmptyRow\">"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1214,
+    "kw": "fake",
+    "text": "fakeYesCalls.forEach(call => {"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1228,
+    "kw": "fake",
+    "text": "fakeYesBody.innerHTML = rows;"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1455,
+    "kw": "fake",
+    "text": "showToast('Нормативы конверсии', 'Фокус: Критические точки срыва и Fake Yes');"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1521,
+    "kw": "simulation",
+    "text": "window.runMonteCarloSimulation = runMonteCarloSimulation;"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1522,
+    "kw": "simulation",
+    "text": "window.updateSimulation = updateSimulation;"
+  },
+  {
+    "file": "apps/web/js\\charts.js",
+    "line": 1533,
+    "kw": "fake",
+    "text": "window.renderAiImpactAndFakeYes = renderAiImpactAndFakeYes;"
+  },
+  {
+    "file": "apps/web/js\\core.js",
+    "line": 1070,
+    "kw": "fake",
+    "text": "{ type: 'Раздел', icon: '→', label: '6. AI Impact & Детектор Fake Yes', action: () => switchTab('impact') },"
+  },
+  {
+    "file": "apps/web/js\\core.js",
+    "line": 1078,
+    "kw": "simulation",
+    "text": "{ type: 'Действие', icon: '↵', label: 'Синхронизировать CRM & n8n (SSOT Re-Sync)', action: () => triggerSyncSimulation() },"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 294,
+    "kw": "simulation",
+    "text": "if (typeof updateSimulation === 'function') updateSimulation(false);"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 517,
+    "kw": "fake",
+    "text": "// Update Tab 6 AI Impact & Fake Yes Detector"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 518,
+    "kw": "fake",
+    "text": "if (typeof renderAiImpactAndFakeYes === 'function') renderAiImpactAndFakeYes();"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 549,
+    "kw": "fake",
+    "text": "// 3. Fake Yes / zombie leak"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 550,
+    "kw": "fake",
+    "text": "const fakeCalls = CALLS_DATA.filter(c => c.cr && c.cr[7] === 0 && (c.next_step === 0 || c.status === 'risk'));"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 551,
+    "kw": "fake",
+    "text": "const fakeLeakAmt = fakeCalls.reduce((acc, c) => acc + getCallAmount(c), 0);"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 557,
+    "kw": "fake",
+    "text": "const totalLeaks = nsLeakAmt + scoreLeakAmt + fakeLeakAmt + dsoAmt;"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 610,
+    "kw": "fake",
+    "text": "// Step 4: Fake Yes"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 611,
+    "kw": "fake",
+    "text": "const step4Rem = Math.max(0, step3Rem - fakeLeakAmt);"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 612,
+    "kw": "fake",
+    "text": "const s4Delta = document.getElementById('lossStepFakeDelta');"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 613,
+    "kw": "fake",
+    "text": "const s4Amt = document.getElementById('lossStepFakeAmt');"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 614,
+    "kw": "fake",
+    "text": "const s4Desc = document.getElementById('lossStepFakeDesc');"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 615,
+    "kw": "fake",
+    "text": "const s4Bar = document.getElementById('lossStepFakeBar');"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 616,
+    "kw": "fake",
+    "text": "if (s4Delta) s4Delta.innerHTML = `<span class=\"delta-dot\"></span>-${fakeLeakAmt.toLocaleString('ru-RU')} ₽`;"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 618,
+    "kw": "fake",
+    "text": "if (s4Desc) s4Desc.textContent = `${fakeCalls.length} сделок со сливом на почту без ЛПР (ложное согласие)`;"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 754,
+    "kw": "simulation",
+    "text": "async function triggerSyncSimulation() {"
+  },
+  {
+    "file": "apps/web/js\\deals.js",
+    "line": 811,
+    "kw": "simulation",
+    "text": "window.triggerSyncSimulation = triggerSyncSimulation;"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 2021,
+    "kw": "placeholder",
+    "text": ".cmd-palette-input::placeholder {"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 5296,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"authLogin\" class=\"auth-input\" placeholder=\"dmitriyfedotov1908@gmail.com\" autocomplete=\"username\" required>"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 5303,
+    "kw": "placeholder",
+    "text": "<input type=\"password\" id=\"authPassword\" class=\"auth-input\" placeholder=\"••••••••••••\" autocomplete=\"current-password\" required>"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 5367,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"sidebarToolSearch\" placeholder=\"Поиск витрин...\" oninput=\"filterSidebarItems()\">"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 5496,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"globalDevelopSearch\" placeholder=\"Поиск сделок...\" onkeydown=\"if(event.key==='Enter') openCommandPalette()\">"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 5512,
+    "kw": "simulation",
+    "text": "<button id=\"btnSyncCRM\" class=\"btn btn-ghost\" onclick=\"triggerSyncSimulation()\" title=\"Синхронизировать SSOT с amoCRM & Bitrix24\" style=\"pad"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 5808,
+    "kw": "fake",
+    "text": "<div class=\"donut-legend-item\"><span class=\"legend-color-dot\" style=\"background: #f43f5e;\"></span><span>Fake Yes сливы (0%)</span></div>"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 6220,
+    "kw": "placeholder",
+    "text": "<!-- Zero State Placeholder for Podium -->"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 6266,
+    "kw": "placeholder",
+    "text": "<!-- Zero State Placeholder for Rescue Deals -->"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 6551,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"transcriptSearch\" class=\"auth-input\" style=\"padding-left: 36px; font-size: 0.82rem;\" placeholder=\"Смысловой поиск по "
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 6741,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"analystChatInput\" placeholder=\"Задайте вопрос Коммерческому Директору по воронке, звонкам, менеджерам...\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 6936,
+    "kw": "fake",
+    "text": "<div id=\"lossStepFakeBar\" class=\"funnel-step-bar\" style=\"width: 55%; background: linear-gradient(90deg, #ef4444, #dc2626);\"></div>"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 6941,
+    "kw": "fake",
+    "text": "<div class=\"step-title-text\">Утечка: «Черный ящик» CRM &bull; Ложное согласие (Fake Yes)</div>"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 6942,
+    "kw": "fake",
+    "text": "<div id=\"lossStepFakeDesc\" class=\"step-desc-text\">Слив клиента на «отправьте на почту» без выявления ЛПР</div>"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 6946,
+    "kw": "fake",
+    "text": "<span id=\"lossStepFakeDelta\" class=\"delta-badge delta-neg\"><span class=\"delta-dot\"></span>-0 ₽</span>"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 6947,
+    "kw": "fake",
+    "text": "<span id=\"lossStepFakeAmt\" class=\"step-amount-val\" style=\"color: #f87171;\">0 ₽</span>"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 7357,
+    "kw": "fake",
+    "text": "<!-- Детектор Ложных Согласий (Fake Yes Detector) -->"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 7360,
+    "kw": "fake",
+    "text": "<span class=\"bento-card-title\"><span class=\"title-icon\" style=\"color: #fb7185;\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"><"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 7361,
+    "kw": "fake",
+    "text": "<span class=\"badge-won\" id=\"fakeYesBadge\">0 АЛЕРТОВ</span>"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 7380,
+    "kw": "fake",
+    "text": "<tbody id=\"fakeYesTableBody\">"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 7381,
+    "kw": "fake",
+    "text": "<tr id=\"fakeYesEmptyRow\">"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 7491,
+    "kw": "simulation",
+    "text": "<input type=\"range\" id=\"rngLeads\" min=\"5\" max=\"50\" value=\"10\" oninput=\"updateSimulation()\" style=\"width: 100%; accent-color: var(--accent-pu"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 7497,
+    "kw": "simulation",
+    "text": "<input type=\"range\" id=\"rngQual\" min=\"20\" max=\"95\" value=\"60\" oninput=\"updateSimulation()\" style=\"width: 100%; accent-color: var(--accent-cy"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 7503,
+    "kw": "simulation",
+    "text": "<input type=\"range\" id=\"rngClose\" min=\"10\" max=\"70\" value=\"35\" oninput=\"updateSimulation()\" style=\"width: 100%; accent-color: #34d399;\">"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 8022,
+    "kw": "fake",
+    "text": "Аудит 100% звонков по 13 критериям, перехват саботажа регламентов, локализация Fake Yes и синтез спасательных скриптов."
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9403,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"adminProvName\" placeholder=\"Например: ООО 'Альфа Трейд'\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9410,
+    "kw": "placeholder",
+    "text": "<input type=\"email\" id=\"adminProvEmail\" placeholder=\"client@company.ru\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9420,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"adminProvPassword\" placeholder=\"Оставьте пустым для автогенерации\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9437,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"adminProvAmoDomain\" placeholder=\"company.amocrm.ru\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9444,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"adminProvAmoToken\" placeholder=\"eyJ0eXAiOiJKV1QiLC...\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9451,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"adminProvB24Webhook\" placeholder=\"https://portal.bitrix24.ru/rest/1/abc123xyz/\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9458,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"adminProvNiche\" placeholder=\"Например: Строительные материалы\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9465,
+    "kw": "placeholder",
+    "text": "<input type=\"number\" id=\"adminProvAvgCheck\" placeholder=\"150000\" value=\"150000\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9472,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"adminProvSheetId\" placeholder=\"Пусто = авто-клон из Clean Template\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9549,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"modalTenantAmoDomain\" placeholder=\"company.amocrm.ru\" style=\"width: 100%; box-sizing: border-box; padding: 8px 12px; "
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9554,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"modalTenantAmoToken\" placeholder=\"Оставьте пустым, если не менялся\" style=\"width: 100%; box-sizing: border-box; paddi"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9559,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"modalTenantB24Webhook\" placeholder=\"https://portal.bitrix24.ru/rest/1/abc123xyz/\" style=\"width: 100%; box-sizing: bor"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9584,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"modalTenantNewPass\" placeholder=\"Оставьте пустым, чтобы не менять пароль\" style=\"width: 100%; box-sizing: border-box;"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 9806,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"adminTargetSheetId\" placeholder=\"Вставьте Spreadsheet ID (например: 1KoKhFJR_...)\""
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 10025,
+    "kw": "simulation",
+    "text": "<button id=\"btnPlayAudio\" onclick=\"togglePlaySimulation()\" class=\"btn btn-primary\" style=\"padding: 8px 16px; border-radius: var(--radius-pil"
+  },
+  {
+    "file": "apps/web/index.html",
+    "line": 10275,
+    "kw": "placeholder",
+    "text": "<input type=\"text\" id=\"cmdPaletteInput\" class=\"cmd-palette-input\" placeholder=\"Введите раздел, сделку, менеджера или действие...\" oninput=\"h"
+  }
+]
