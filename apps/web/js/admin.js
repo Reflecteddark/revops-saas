@@ -95,7 +95,15 @@ function getAdminAuthHeaders() {
     const storageKey = (typeof window !== 'undefined' && window.AUTH_STORAGE_KEY) || 'revops_enterprise_session_v1';
     const raw = localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey);
     if (raw) {
-      headers['X-RevOps-Session'] = raw;
+      try {
+        const parsed = JSON.parse(raw);
+        const asciiSession = {
+          login: String(parsed.login || '').trim(),
+          timestamp: Number(parsed.timestamp) || 0,
+          signature: String(parsed.signature || '').trim()
+        };
+        headers['X-RevOps-Session'] = JSON.stringify(asciiSession);
+      } catch (e) {}
     }
   } catch (e) {}
   let savedKey = null;
