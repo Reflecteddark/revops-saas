@@ -10,6 +10,7 @@ Replaces all desktop batch files (.bat) with a unified, secure REST & Web GUI co
 
 from datetime import datetime, timezone
 import hashlib
+import hmac
 import json
 import logging
 import os
@@ -106,8 +107,8 @@ def verify_admin_access(request: Request):
     # If traffic passed through Cloudflare tunnel (e.g. report.ai-rop.ru)
     is_tunnel = bool(cf_connecting_ip or ("ai-rop.ru" in host_header))
 
-    # Allow local development and pytest testclient
-    if not is_tunnel and (
+    # Allow local development and pytest testclient ONLY in dev mode
+    if (os.getenv("REVOPS_ENV", "prod").lower() == "dev" or client_ip == "testclient") and not is_tunnel and (
         client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
         or "localhost" in host_header
         or "127.0.0.1" in host_header
@@ -126,7 +127,7 @@ def verify_admin_access(request: Request):
         or request.headers.get("x-revops-admin-key")
         or request.query_params.get("admin_key")
     )
-    if admin_key and (admin_key in ALLOWED_ADMIN_KEYS):
+    if admin_key and any(hmac.compare_digest(admin_key, k) for k in ALLOWED_ADMIN_KEYS):
         return True
 
     # 2. Cryptographic session signature check
@@ -145,7 +146,7 @@ def verify_admin_access(request: Request):
                     for valid_hash in ADMIN_KEY_HASHES:
                         candidate = f"{login}:{valid_hash}:{ts}:{AUTH_SIGN_SALT}"
                         expected_sig = hashlib.sha256(candidate.encode("utf-8")).hexdigest()
-                        if expected_sig == sig:
+                        if hmac.compare_digest(expected_sig, sig):
                             return True
         except Exception as e:
             logger.debug(f"Session verification failed: {e}")

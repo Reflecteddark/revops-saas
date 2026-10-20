@@ -800,21 +800,21 @@ function renderAdminTenantsTable(tenants) {
       ? t.connected_clients.map(c => `
           <div style="font-size: 0.70rem; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 4px;">
             <span style="color: ${c.is_active ? '#34d399' : '#94a3b8'};">●</span>
-            <span style="color: #e2e8f0;">${c.login}</span>
-            <span style="color: var(--text-muted); font-size: 0.65rem;">(${c.role})</span>
+            <span style="color: #e2e8f0;">${escapeHtml(c.login || '')}</span>
+            <span style="color: var(--text-muted); font-size: 0.65rem;">(${escapeHtml(c.role || '')})</span>
           </div>
         `).join('')
-      : `<span style="color: var(--text-muted); font-size: 0.70rem;">${t.client_email || 'Нет пользователей'}</span>`;
+      : `<span style="color: var(--text-muted); font-size: 0.70rem;">${escapeHtml(t.client_email || 'Нет пользователей')}</span>`;
 
     return `
       <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s ease;">
         <td style="padding: 12px 14px;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <strong style="color: #c4b5fd; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">${t.tenant_id}</strong>
-            <span style="font-weight: 600; color: #fff;">${t.tenant_name}</span>
+            <strong style="color: #c4b5fd; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">${escapeHtml(t.tenant_id)}</strong>
+            <span style="font-weight: 600; color: #fff;">${escapeHtml(t.tenant_name || '')}</span>
           </div>
           <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 3px;">
-            Ниша: <span style="color: #cbd5e1;">${t.niche_name || 'B2B'}</span> &bull; Чек: <span style="color: #cbd5e1;">${(t.avg_deal_check || 150000).toLocaleString('ru-RU')} ₽</span>
+            Ниша: <span style="color: #cbd5e1;">${escapeHtml(t.niche_name || 'B2B')}</span> &bull; Чек: <span style="color: #cbd5e1;">${(t.avg_deal_check || 150000).toLocaleString('ru-RU')} ₽</span>
           </div>
         </td>
         <td style="padding: 12px 14px;">
@@ -840,17 +840,32 @@ function renderAdminTenantsTable(tenants) {
         </td>
         <td style="padding: 12px 14px; text-align: right;">
           <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
-            <button onclick="impersonateTenant('${t.tenant_id}', '${(t.tenant_name || '').replace(/'/g, "\\'")}')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.70rem; color: #c4b5fd; border-color: rgba(167, 139, 250, 0.4);" title="👁️ Войти в ЛК как клиент (Shadow Mode / Read-Only)">👁️ Войти</button>
-            <button onclick="copyTenantBrief('${t.tenant_id}')" class="btn-modern-ghost" style="padding: 4px 6px; font-size: 0.70rem;" title="Скопировать бриф подключения (вебхуки, доступы)">📋</button>
-            <button onclick="runTenantHealthDoctor('${t.tenant_id}')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.70rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="🩺 Экспресс-диагностика здоровья клиента">🩺 Доктор</button>
-            <button onclick="openTenantEditModal('${t.tenant_id}')" class="btn-modern-ghost" style="padding: 4px 6px; font-size: 0.70rem;" title="Редактировать параметры и пароль">⚙️</button>
-            <button onclick="toggleTenantFreeze('${t.tenant_id}', '${t.effective_status}')" class="btn-modern-ghost" style="padding: 4px 6px; font-size: 0.70rem; color: ${isFrozen ? '#34d399' : '#38bdf8'};" title="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'}">${isFrozen ? '☀️' : '❄️'}</button>
-            <button onclick="offboardTenant('${t.tenant_id}', '${(t.tenant_name || '').replace(/'/g, "\\'")}')" class="btn-modern-ghost" style="padding: 4px 6px; font-size: 0.70rem; color: var(--accent-rose);" title="Вывести в архив (Offboard)">📦</button>
+            <button class="btn-modern-ghost" data-action="impersonate" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 8px; font-size: 0.70rem; color: #c4b5fd; border-color: rgba(167, 139, 250, 0.4);" title="👁️ Войти в ЛК как клиент (Shadow Mode / Read-Only)">👁️ Войти</button>
+            <button class="btn-modern-ghost" data-action="copy-brief" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Скопировать бриф подключения (вебхуки, доступы)">📋</button>
+            <button class="btn-modern-ghost" data-action="health" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 8px; font-size: 0.70rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="🩺 Экспресс-диагностика здоровья клиента">🩺 Доктор</button>
+            <button class="btn-modern-ghost" data-action="edit" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Редактировать параметры и пароль">⚙️</button>
+            <button class="btn-modern-ghost" data-action="freeze" data-tenant-id="${escapeHtml(t.tenant_id)}" data-status="${escapeHtml(t.effective_status || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: ${isFrozen ? '#34d399' : '#38bdf8'};" title="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'}">${isFrozen ? '☀️' : '❄️'}</button>
+            <button class="btn-modern-ghost" data-action="offboard" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: var(--accent-rose);" title="Вывести в архив (Offboard)">📦</button>
           </div>
         </td>
       </tr>
     `;
   }).join('');
+
+  if (tbody.dataset.bound !== '1') {
+    tbody.dataset.bound = '1';
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const a = btn.dataset.action;
+      if (a === 'impersonate') impersonateTenant(btn.dataset.tenantId, btn.dataset.tenantName);
+      else if (a === 'copy-brief') copyTenantBrief(btn.dataset.tenantId);
+      else if (a === 'health') runTenantHealthDoctor(btn.dataset.tenantId);
+      else if (a === 'edit') openTenantEditModal(btn.dataset.tenantId);
+      else if (a === 'freeze') toggleTenantFreeze(btn.dataset.tenantId, btn.dataset.status);
+      else if (a === 'offboard') offboardTenant(btn.dataset.tenantId, btn.dataset.tenantName);
+    });
+  }
 }
 
 function renderAdminArchivedTenants(archived) {
@@ -1490,11 +1505,6 @@ function switchAgentSubtab(agentId) {
 
 let agentExecutionTimerInterval = null;
 let agentExecutionStartTime = null;
-
-function escapeHtml(str) {
-  if (typeof str !== 'string') return String(str ?? '');
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
 
 function appendDrawerOutput(text, type = 'info') {
   const out = document.getElementById('agentDrawerOutput');

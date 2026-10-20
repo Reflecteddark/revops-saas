@@ -49,10 +49,10 @@ async function fetchAndPopulateSettings(forceToast = false) {
     const stagesBody = document.getElementById('cfgStagesTableBody');
     if (stagesBody && data.stages && data.stages.length) {
       stagesBody.innerHTML = data.stages.map((st) => `
-        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" data-stage-id="${st.id}">
-          <td style="padding: 8px; color: var(--text-muted); font-family: monospace;">${st.id}</td>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" data-stage-id="${escapeHtml(st.id)}">
+          <td style="padding: 8px; color: var(--text-muted); font-family: monospace;">${escapeHtml(st.id)}</td>
           <td style="padding: 8px; font-weight: 600; color: #fff;">
-            <input type="text" class="cfg-inline-input cfg-stage-name" value="${st.name}" style="font-weight: 600;">
+            <input type="text" class="cfg-inline-input cfg-stage-name" value="${escapeHtml(st.name)}" style="font-weight: 600;">
           </td>
           <td style="padding: 8px;">
             <div style="display: flex; align-items: center; gap: 4px;">
@@ -77,13 +77,13 @@ async function fetchAndPopulateSettings(forceToast = false) {
     const mgrsBody = document.getElementById('cfgManagersTableBody');
     if (mgrsBody && data.managers && data.managers.length) {
       mgrsBody.innerHTML = data.managers.map((m) => `
-        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" data-mgr-id="${m.id}">
-          <td style="padding: 8px; color: var(--text-muted); font-family: monospace;">${m.id}</td>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" data-mgr-id="${escapeHtml(m.id)}">
+          <td style="padding: 8px; color: var(--text-muted); font-family: monospace;">${escapeHtml(m.id)}</td>
           <td style="padding: 8px; font-weight: 600; color: #fff;">
-            <input type="text" class="cfg-inline-input cfg-mgr-name" value="${m.name}" style="font-weight: 600;">
+            <input type="text" class="cfg-inline-input cfg-mgr-name" value="${escapeHtml(m.name)}" style="font-weight: 600;">
           </td>
           <td style="padding: 8px; color: var(--text-secondary);">
-            <input type="text" class="cfg-inline-input cfg-mgr-role" value="${m.role}">
+            <input type="text" class="cfg-inline-input cfg-mgr-role" value="${escapeHtml(m.role || '')}">
           </td>
           <td style="padding: 8px;">
             <div style="display: flex; align-items: center; gap: 4px;">
@@ -102,10 +102,10 @@ async function fetchAndPopulateSettings(forceToast = false) {
     const lossBody = document.getElementById('cfgLossReasonsTableBody');
     if (lossBody && data.loss_reasons && data.loss_reasons.length) {
       lossBody.innerHTML = data.loss_reasons.map((lr) => `
-        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" data-loss-code="${lr.code}">
-          <td style="padding: 6px; font-weight: 700; color: #fb7185; font-family: monospace;">${lr.code}</td>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" data-loss-code="${escapeHtml(lr.code)}">
+          <td style="padding: 6px; font-weight: 700; color: #fb7185; font-family: monospace;">${escapeHtml(lr.code)}</td>
           <td style="padding: 6px; color: #fff;">
-            <input type="text" class="cfg-inline-input cfg-loss-reason" value="${lr.reason}">
+            <input type="text" class="cfg-inline-input cfg-loss-reason" value="${escapeHtml(lr.reason)}">
           </td>
           <td style="padding: 6px;">
             <div style="display: flex; align-items: center; gap: 4px;">

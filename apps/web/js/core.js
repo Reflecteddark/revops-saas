@@ -7,6 +7,17 @@ const REVOPS_API_BASE = (typeof window !== 'undefined' && (window.location.hostn
   ? ''
   : (typeof window !== 'undefined' && window.location.hostname.includes('ai-rop.ru') && !window.location.hostname.startsWith('report.') ? 'https://report.ai-rop.ru' : '');
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+window.escapeHtml = escapeHtml;
+
 
 function getActiveTenantId() {
   try {
@@ -318,9 +329,6 @@ function isAdminAuthorized() {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   if (isLocal) return true;
   try {
-    if (sessionStorage.getItem('revops_admin_override') === 'true' || localStorage.getItem('revops_admin_override') === 'true') {
-      return true;
-    }
     const rawSession = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
     if (!rawSession) return false;
     const session = JSON.parse(rawSession);
@@ -334,30 +342,6 @@ function isAdminAuthorized() {
       role.includes('супервайзер')
     );
   } catch (e) {
-    return false;
-  }
-}
-
-async function promptAdminUnlock() {
-  const enteredKey = window.prompt('🔐 Вход в Админ-кабинет RevOps\n\nВы находитесь на удаленном сервере. Введите пароль администратора или мастер-ключ:');
-  if (!enteredKey) return false;
-  const trimmed = enteredKey.trim();
-  const inputHash = await sha256Hex(trimmed);
-  const validAdminHashes = [
-    'f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b',
-    '00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af',
-    'dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd',
-    '9d3ba5c08978d3354103973088fcc0df35ece2ea9de24c9dfc250d46375c9eec',
-    'd7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410'
-  ];
-  if (validAdminHashes.includes(inputHash)) {
-    sessionStorage.setItem('revops_admin_override', 'true');
-    const sbAdmin = document.getElementById('sb-admin');
-    if (sbAdmin) sbAdmin.style.display = 'flex';
-    showToast('Доступ открыт', 'Админ-кабинет успешно активирован');
-    return true;
-  } else {
-    showToast('Ошибка доступа', 'Неверный пароль администратора');
     return false;
   }
 }
@@ -605,17 +589,26 @@ function animateCardsIn(container) {
 }
 
 async function switchTab(tabId) {
-  if (tabId === 'admin' && !isAdminAuthorized()) {
-    const unlocked = await promptAdminUnlock();
-    if (!unlocked) {
-      showToast('Доступ ограничен', 'Раздел управления доступен только Администратору.');
-      try {
-        const url = new URL(window.location.href);
-        if (url.searchParams.get('tab') === 'admin') {
-          url.searchParams.delete('tab');
-          window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
-        }
-      } catch (e) {}
+  if (tabId === 'admin') {
+    try {
+      const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/status`, { 
+        method: 'GET', 
+        headers: typeof getAdminAuthHeaders === 'function' ? getAdminAuthHeaders() : {}, 
+        credentials: 'include' 
+      });
+      if (res.status === 403) {
+        showToast('Доступ ограничен', 'Раздел управления доступен только Администратору.');
+        try {
+          const url = new URL(window.location.href);
+          if (url.searchParams.get('tab') === 'admin') {
+            url.searchParams.delete('tab');
+            window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+          }
+        } catch (e) {}
+        return switchTab('pulse');
+      }
+    } catch (e) {
+      showToast('Ошибка', 'Не удалось проверить права на админку');
       return switchTab('pulse');
     }
   }
@@ -1243,7 +1236,6 @@ window.initTenantsSelector = initTenantsSelector;
 window.checkAuth = checkAuth;
 window.showAuthGate = showAuthGate;
 window.isAdminAuthorized = isAdminAuthorized;
-window.promptAdminUnlock = promptAdminUnlock;
 window.applyAuthenticatedSession = applyAuthenticatedSession;
 window.handleAuthSubmit = handleAuthSubmit;
 window.logout = logout;
