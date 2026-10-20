@@ -9,10 +9,12 @@ import sys
 import os
 import io
 import time
+import json
 import tarfile
 import argparse
 import subprocess
 import urllib.request
+import urllib.error
 import py_compile
 from pathlib import Path
 from datetime import datetime
@@ -41,14 +43,18 @@ PROJECTS = {
         "local_path": HOME / "my_ai_crew",
         "vps_path": "/opt/my_ai_crew",
         "services": ["revops-healer", "revops-tgbot"],
-        "git_url": "https://github.com/Reflecteddark/my-ai-crew.git"
+        "git_url": "https://github.com/Reflecteddark/my-ai-crew.git",
+        "repo": "Reflecteddark/my-ai-crew",
+        "has_ci": False
     },
     "saas": {
         "name": "RevOps SaaS Backend (revops-saas)",
         "local_path": HOME / ".gemini" / "antigravity" / "scratch" / "revops-saas",
         "vps_path": "/opt/revops-saas",
         "services": ["revops-api"],
-        "git_url": "https://github.com/Reflecteddark/revops-saas.git"
+        "git_url": "https://github.com/Reflecteddark/revops-saas.git",
+        "repo": "Reflecteddark/revops-saas",
+        "has_ci": True
     }
 }
 
@@ -150,6 +156,73 @@ def sync_git(local_path: Path, commit_msg: str) -> str:
     )
     commit_hash = hash_cmd.stdout.strip() or "unknown"
     return commit_hash
+
+def wait_for_ci(repo: str, commit_sha: str, timeout_sec: int = 300) -> bool:
+    """
+    Ожидает завершения проверок GitHub Actions (CI) для коммита commit_sha.
+    Использует GitHub REST API (check-runs).
+    При превышении Rate Limit (403) выводит предупреждение и возвращает True,
+    чтобы не блокировать деплой из-за ограничений GitHub.
+    """
+    log(f"[CI Gate] Запрос статуса GitHub Actions для {repo}@{commit_sha[:7]} (таймаут {timeout_sec}с)...", symbol="[?]")
+    url = f"https://api.github.com/repos/{repo}/commits/{commit_sha}/check-runs"
+    
+    headers = {
+        "User-Agent": "RevOps-Deploy/1.0",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    github_token = os.getenv("GITHUB_TOKEN")
+    if github_token:
+        headers["Authorization"] = f"Bearer {github_token.strip()}"
+        
+    start_time = time.time()
+    poll_interval = 10
+    
+    while True:
+        elapsed = int(time.time() - start_time)
+        data = None
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code == 403:
+                log("[!] GitHub API Rate Limit exceeded. Пропускаем проверку CI (деплой продолжится)", symbol="[!]")
+                return True
+            log(f"[CI Gate] Ошибка HTTP {e.code} при обращении к GitHub API: {e.reason}", symbol="[!]")
+        except Exception as ex:
+            log(f"[CI Gate] Ошибка сети при запросе к GitHub API: {ex}", symbol="[!]")
+
+        check_runs = data.get("check_runs", []) if isinstance(data, dict) else []
+        
+        if not check_runs:
+            status_summary = "pending (ожидание регистрации проверок)"
+        else:
+            failures = [
+                cr.get("name", "Unknown") for cr in check_runs 
+                if cr.get("conclusion") in ["failure", "cancelled", "timed_out"]
+            ]
+            if failures:
+                log(f"[CI Gate] ❌ Обнаружены упавшие проверки CI: {', '.join(failures)}", symbol="[-]")
+                return False
+                
+            all_completed = all(cr.get("status") == "completed" for cr in check_runs)
+            all_success = all(cr.get("conclusion") in ["success", "neutral", "skipped"] for cr in check_runs)
+            
+            if all_completed and all_success:
+                passed_names = [cr.get("name", "Unknown") for cr in check_runs if cr.get("conclusion") == "success"]
+                log(f"[CI Gate] ✅ Все проверки CI пройдены успешно ({len(passed_names)}: {', '.join(passed_names)})", symbol="[+]")
+                return True
+                
+            in_progress = [cr.get("name", "Unknown") for cr in check_runs if cr.get("status") != "completed"]
+            status_summary = f"в процессе ({len(in_progress)}: {', '.join(in_progress[:3])})"
+
+        if elapsed >= timeout_sec:
+            log(f"[CI Gate] ❌ Таймаут ожидания CI ({timeout_sec}с). Статус: {status_summary}", symbol="[-]")
+            return False
+            
+        log(f"[CI Gate] Ожидание CI... ({elapsed}с / {timeout_sec}с) — {status_summary}", symbol="[i]")
+        time.sleep(poll_interval)
 
 def check_ssh_reachability(timeout_sec: int = 4) -> bool:
     """Быстрая проверка доступности SSH на VPS перед стримингом."""
@@ -350,13 +423,47 @@ def main():
 
     # Шаг 2: Синхронизация с GitHub и сбор коммит-хешей
     hashes = {}
+    full_hashes = {}
     for t in targets:
         proj = PROJECTS[t]
         if not args.skip_git:
             h = sync_git(proj["local_path"], commit_msg)
             hashes[t] = h
         else:
-            hashes[t] = "skip-git"
+            log(f"Пропуск отправки Git для {proj['name']} (--skip-git)", symbol="[i]")
+            hash_cmd = subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"],
+                cwd=str(proj["local_path"]),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="ignore"
+            )
+            hashes[t] = hash_cmd.stdout.strip() or "skip-git"
+
+        full_cmd = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(proj["local_path"]),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="ignore"
+        )
+        full_hashes[t] = full_cmd.stdout.strip()
+
+    # Шаг 2.5: CI Pre-Deploy Gate (Ожидание GitHub Actions)
+    if not args.skip_vps:
+        for t in targets:
+            proj = PROJECTS[t]
+            if proj.get("has_ci"):
+                commit_sha = full_hashes.get(t) or hashes.get(t)
+                if commit_sha and commit_sha not in ["unknown", "skip-git"]:
+                    log(f"[CI Gate] Ждём GitHub Actions для коммита {commit_sha[:7]}...", symbol="[?]")
+                    ci_ok = wait_for_ci(proj["repo"], commit_sha, timeout_sec=300)
+                    if not ci_ok:
+                        log("[CI Gate] ❌ CI не прошёл. Деплой ОТМЕНЁН. Прод не тронут.", symbol="[-]")
+                        sys.exit(1)
+                    log("[CI Gate] ✅ CI зелёный. Начинаем стриминг на VPS.", symbol="[+]")
 
     # Шаг 3: Синхронизация с VPS
     if not args.skip_vps:
