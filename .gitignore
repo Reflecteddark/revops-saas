@@ -1,6 +1,7 @@
 # Environments & Local Data
 .env
 .env.local
+deploy.env
 data/
 logs/
 *.db

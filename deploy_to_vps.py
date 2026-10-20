@@ -178,6 +178,46 @@ def sync_git(local_path: Path, commit_msg: str) -> str:
     commit_hash = hash_cmd.stdout.strip() or "unknown"
     return commit_hash
 
+def load_github_token() -> Optional[str]:
+    """
+    Загружает GitHub Personal Access Token для авторизации в GitHub REST API.
+    Приоритет:
+    1. Переменная окружения GITHUB_TOKEN / GH_TOKEN.
+    2. Файл deploy.env в корне проекта.
+    3. Файл .env в корне проекта.
+    """
+    token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
+    if token and token.strip() and token.strip() != "your_personal_access_token_here":
+        return token.strip()
+
+    candidate_files = [
+        Path(__file__).resolve().parent / "deploy.env",
+        Path(__file__).resolve().parent / ".env",
+        PROJECTS.get("saas", {}).get("local_path", Path(".")) / "deploy.env",
+        PROJECTS.get("saas", {}).get("local_path", Path(".")) / ".env",
+        Path("deploy.env"),
+        Path(".env"),
+    ]
+    for env_file in candidate_files:
+        try:
+            if env_file.exists():
+                with open(env_file, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line or line.startswith("#"):
+                            continue
+                        if "=" in line:
+                            key, val = line.split("=", 1)
+                            key = key.strip()
+                            val = val.strip().strip("'\"")
+                            if key in ("GITHUB_TOKEN", "GH_TOKEN") and val and val != "your_personal_access_token_here":
+                                return val
+        except Exception:
+            pass
+
+    return None
+
+
 def wait_for_ci(repo: str, commit_sha: str, timeout_sec: int = 300) -> bool:
     """
     Ожидает завершения проверок GitHub Actions (CI) для коммита commit_sha.
@@ -192,9 +232,12 @@ def wait_for_ci(repo: str, commit_sha: str, timeout_sec: int = 300) -> bool:
         "User-Agent": "RevOps-Deploy/1.0",
         "Accept": "application/vnd.github.v3+json"
     }
-    github_token = os.getenv("GITHUB_TOKEN")
+    github_token = load_github_token()
     if github_token:
-        headers["Authorization"] = f"Bearer {github_token.strip()}"
+        headers["Authorization"] = f"Bearer {github_token}"
+        log("[i] [CI Gate] Авторизация в GitHub API активна (лимит 5000 запросов/час)", symbol="[i]")
+    else:
+        log("[!] [CI Gate] Анонимный режим GitHub API (лимит 60 запросов/час). Укажите GITHUB_TOKEN в deploy.env для расширения лимита", symbol="[!]")
         
     start_time = time.time()
     poll_interval = 10
