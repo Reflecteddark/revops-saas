@@ -419,6 +419,18 @@ async function handleAuthSubmit(e) {
     }
 
     if (!foundUser) {
+      errorBox.textContent = 'Неверный логин или пароль';
+      errorBox.style.display = 'block';
+      if (card) {
+        card.classList.add('shake');
+        setTimeout(() => card.classList.remove('shake'), 400);
+      }
+      if (submitBtn) submitBtn.disabled = false;
+      return false;
+    }
+
+    if (foundUser.is_active === false) {
+      errorBox.textContent = 'Доступ к аккаунту приостановлен администратором (контур заморожен)';
       errorBox.style.display = 'block';
       if (card) {
         card.classList.add('shake');

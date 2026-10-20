@@ -13,10 +13,16 @@ function getActiveTenantId() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const urlTenant = urlParams.get('tenant') || urlParams.get('tenant_id');
-      if (urlTenant && urlTenant.trim()) return urlTenant.trim().toUpperCase();
+      if (urlTenant && urlTenant.trim()) {
+        const m = urlTenant.match(/TNT-[A-Z0-9_-]+/i);
+        return m ? m[0].toUpperCase() : urlTenant.trim().toUpperCase();
+      }
 
       const stored = localStorage.getItem('revops_active_tenant');
-      if (stored && stored.trim()) return stored.trim().toUpperCase();
+      if (stored && stored.trim()) {
+        const m = stored.match(/TNT-[A-Z0-9_-]+/i);
+        return m ? m[0].toUpperCase() : stored.trim().toUpperCase();
+      }
 
       const rawSession = localStorage.getItem('revops_auth_session');
       if (rawSession) {
@@ -59,6 +65,9 @@ async function onTenantSelected(tenantId) {
   // Re-fetch data for the newly selected tenant
   if (typeof fetchLiveCallsData === 'function') {
     await fetchLiveCallsData(true);
+  }
+  if (typeof fetchLiveDealsData === 'function') {
+    await fetchLiveDealsData(false);
   }
   if (typeof fetchAndPopulateSettings === 'function') {
     await fetchAndPopulateSettings(false);
@@ -410,6 +419,18 @@ async function handleAuthSubmit(e) {
     }
 
     if (!foundUser) {
+      errorBox.textContent = 'Неверный логин или пароль';
+      errorBox.style.display = 'block';
+      if (card) {
+        card.classList.add('shake');
+        setTimeout(() => card.classList.remove('shake'), 400);
+      }
+      if (submitBtn) submitBtn.disabled = false;
+      return false;
+    }
+
+    if (foundUser.is_active === false) {
+      errorBox.textContent = 'Доступ к аккаунту приостановлен администратором (контур заморожен)';
       errorBox.style.display = 'block';
       if (card) {
         card.classList.add('shake');
@@ -539,7 +560,7 @@ function animateCounter(el, target, duration = 900) {
     if (heroRev && heroRev !== el) {
       animateCounter(heroRev, target, duration);
     }
-  } else if (el.id === 'metricSsotVal') {
+  } else if (el.id === 'metricPipeVal') {
     const heroPipe = document.getElementById('heroPipeline');
     if (heroPipe && heroPipe !== el) {
       animateCounter(heroPipe, target, duration);

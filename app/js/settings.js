@@ -28,6 +28,9 @@ async function fetchAndPopulateSettings(forceToast = false) {
     const data = await res.json();
     SYSTEM_SETTINGS = data;
 
+    // Load account and CRM settings for active tenant
+    loadTenantAccountSettings(tenantId);
+
     // 1. General & Period
     const g = data.general || {};
     const inpTarget = document.getElementById('cfgMonthlyTarget');
@@ -342,6 +345,188 @@ function toggleAllModules(enableAll) {
 }
 
 
+// ==========================================================================
+// CLIENT ACCOUNT, CRM TELEPHONY & DATA EXPORT HANDLERS
+// ==========================================================================
+
+async function loadTenantAccountSettings(tId = null) {
+  const tenantId = tId || getActiveTenantId();
+  try {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants/${encodeURIComponent(tenantId)}/passport`);
+    if (!res.ok) return;
+    const p = await res.json();
+
+    const inpEmail = document.getElementById('clientAccEmail');
+    const inpName = document.getElementById('clientAccName');
+    const inpTg = document.getElementById('clientAccTg');
+    const inpWebhook = document.getElementById('clientTelephonyWebhookUrl');
+    const inpAmoDomain = document.getElementById('clientAmoDomain');
+    const inpB24Webhook = document.getElementById('clientB24Webhook');
+    const liveStatus = document.getElementById('clientCrmLiveStatusBadge');
+
+    if (inpEmail && p.email) inpEmail.value = p.email;
+    if (inpName && p.contact_name) inpName.value = p.contact_name;
+    if (inpTg) {
+      inpTg.value = (SYSTEM_SETTINGS && SYSTEM_SETTINGS.telegram && SYSTEM_SETTINGS.telegram.rop_chat_id) || '@rop_ai_channel';
+    }
+    if (inpWebhook && p.webhooks && p.webhooks.telephony_call_url) {
+      inpWebhook.value = p.webhooks.telephony_call_url;
+    }
+    if (inpAmoDomain && p.crm && p.crm.amo_domain) {
+      inpAmoDomain.value = p.crm.amo_domain;
+    }
+    if (liveStatus) {
+      liveStatus.textContent = p.status === 'active' ? 'ГОТОВ К ПРИЁМУ ✓' : 'ОГРАНИЧЕН';
+      liveStatus.className = p.status === 'active' ? 'badge-won' : 'badge-risk';
+    }
+  } catch (err) {
+    console.warn('Could not load tenant passport:', err);
+  }
+}
+
+async function submitChangePassword() {
+  const currPass = document.getElementById('clientAccCurrPass')?.value || '';
+  const newPass = document.getElementById('clientAccNewPass')?.value || '';
+  const confirmPass = document.getElementById('clientAccNewPassConfirm')?.value || '';
+
+  if (!currPass) {
+    showToast('Ошибка', 'Введите текущий пароль');
+    return;
+  }
+  if (!newPass || newPass.length < 4) {
+    showToast('Ошибка', 'Новый пароль должен содержать не менее 4 символов');
+    return;
+  }
+  if (newPass !== confirmPass) {
+    showToast('Ошибка', 'Новый пароль и подтверждение не совпадают');
+    return;
+  }
+
+  const tenantId = getActiveTenantId();
+  try {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/auth/change-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        current_password: currPass,
+        new_password: newPass
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+
+    showToast('Пароль изменён', data.message || 'Новый пароль успешно активирован!');
+    const p1 = document.getElementById('clientAccCurrPass');
+    const p2 = document.getElementById('clientAccNewPass');
+    const p3 = document.getElementById('clientAccNewPassConfirm');
+    if (p1) p1.value = '';
+    if (p2) p2.value = '';
+    if (p3) p3.value = '';
+  } catch (err) {
+    showToast('Ошибка смены пароля', err.message);
+  }
+}
+
+async function submitUpdateProfile() {
+  const email = document.getElementById('clientAccEmail')?.value || '';
+  const name = document.getElementById('clientAccName')?.value || '';
+  const tg = document.getElementById('clientAccTg')?.value || '';
+  const tenantId = getActiveTenantId();
+
+  try {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/auth/update-profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        email: email,
+        full_name: name,
+        tg_contact: tg
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    showToast('Профиль обновлен', 'Контактные данные клиента сохранены.');
+  } catch (err) {
+    showToast('Ошибка сохранения', err.message);
+  }
+}
+
+async function submitUpdateCrmSettings() {
+  const amoDomain = document.getElementById('clientAmoDomain')?.value || '';
+  const amoToken = document.getElementById('clientAmoToken')?.value || '';
+  const b24Webhook = document.getElementById('clientB24Webhook')?.value || '';
+  const tenantId = getActiveTenantId();
+
+  try {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants/${encodeURIComponent(tenantId)}/crm`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amo_domain: amoDomain,
+        amo_token: amoToken || undefined,
+        b24_webhook_url: b24Webhook || undefined
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    showToast('CRM обновлена', 'Реквизиты подключения сохранены.');
+  } catch (err) {
+    showToast('Ошибка CRM', err.message);
+  }
+}
+
+async function testClientCrmLive() {
+  const pingEl = document.getElementById('clientCrmPingResult');
+  if (pingEl) pingEl.innerHTML = '<span class="status-dot dot-cyan"></span> Тестирование связи...';
+
+  const tenantId = getActiveTenantId();
+  try {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants/${encodeURIComponent(tenantId)}/test-crm`, {
+      method: 'POST'
+    });
+    const data = await res.json();
+    if (pingEl) {
+      if (data.connected) {
+        pingEl.innerHTML = `<span class="badge-won">🟢 ${data.crm}: ${data.latency_ms} ms ✓</span>`;
+        showToast('Связь подтверждена', `${data.message} (${data.latency_ms} мс)`);
+      } else {
+        pingEl.innerHTML = `<span class="badge-risk">🔴 ${data.error || 'Ошибка связи'}</span>`;
+        showToast('Ошибка CRM', data.error || 'Не удалось подключиться к API CRM');
+      }
+    }
+  } catch (err) {
+    if (pingEl) pingEl.innerHTML = `<span class="badge-risk">🔴 Сетевая ошибка</span>`;
+    showToast('Ошибка проверки', err.message);
+  }
+}
+
+function downloadTenantDataArchive() {
+  const tenantId = getActiveTenantId();
+  const url = `${REVOPS_API_BASE}/api/v1/tenants/${encodeURIComponent(tenantId)}/export-archive`;
+  showToast('Формирование архива', 'Подготовка полного архива данных компании (ZIP)...');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `revops_archive_${tenantId}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function copyTelephonyWebhookUrl() {
+  const el = document.getElementById('clientTelephonyWebhookUrl');
+  if (el) {
+    navigator.clipboard.writeText(el.value).then(() => {
+      showToast('Скопировано', 'URL вебхука телефонии скопирован в буфер обмена.');
+    }).catch(() => {
+      el.select();
+      document.execCommand('copy');
+      showToast('Скопировано', 'URL скопирован в буфер.');
+    });
+  }
+}
+
 
 // Expose Settings handlers on window
 window.getMonthlyTarget = getMonthlyTarget;
@@ -351,3 +536,10 @@ window.submitSystemSettingsForm = submitSystemSettingsForm;
 window.setTargetPreset = setTargetPreset;
 window.setPeriodPreset = setPeriodPreset;
 window.toggleAllModules = toggleAllModules;
+window.loadTenantAccountSettings = loadTenantAccountSettings;
+window.submitChangePassword = submitChangePassword;
+window.submitUpdateProfile = submitUpdateProfile;
+window.submitUpdateCrmSettings = submitUpdateCrmSettings;
+window.testClientCrmLive = testClientCrmLive;
+window.downloadTenantDataArchive = downloadTenantDataArchive;
+window.copyTelephonyWebhookUrl = copyTelephonyWebhookUrl;
