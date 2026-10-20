@@ -9,6 +9,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import threading
 import time
 from typing import Any, Dict, List, Optional
 
@@ -16,10 +17,76 @@ logger = logging.getLogger("tenant_registry")
 
 DEFAULT_SPREADSHEET_ID = os.getenv("REVOPS_SPREADSHEET_ID", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk")
 
+_REGISTRY_LOCK = threading.Lock()
+
 _REGISTRY_CACHE: Dict[str, Any] = {
     "timestamp": 0,
     "data": None
 }
+
+
+def get_all_candidate_registry_paths() -> List[Path]:
+    candidates = [
+        Path("/opt/revops-enterprise-os/tenants_registry.json"),
+        Path("/opt/revops-saas/tenants_registry.json"),
+        Path(__file__).resolve().parent.parent.parent / "tenants_registry.json",
+        Path(__file__).resolve().parent.parent.parent.parent / "revops-enterprise-os" / "tenants_registry.json",
+        Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "tenants_registry.json",
+        Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "multitenant_revops" / "tenants_registry.json",
+        Path("tenants_registry.json"),
+    ]
+    env_path = os.getenv("TENANTS_REGISTRY_PATH")
+    if env_path:
+        candidates.insert(0, Path(env_path))
+    return candidates
+
+
+def save_tenants_registry(data: Dict[str, Any], target_path: Optional[Path] = None, sync_mirrors: bool = True) -> bool:
+    """
+    Thread-safe & process-safe atomic writer for tenants_registry.json.
+    Prevents race conditions using a threading Lock, writes to a unique temporary file,
+    forces disk flush/fsync, and replaces atomically using os.replace.
+    Optionally syncs data across all known mirror locations on the system.
+    """
+    with _REGISTRY_LOCK:
+        primary_path = target_path or get_tenants_registry_path()
+        if not primary_path:
+            primary_path = Path(__file__).resolve().parent.parent.parent / "tenants_registry.json"
+
+        paths_to_write = [primary_path]
+        if sync_mirrors:
+            for cand in get_all_candidate_registry_paths():
+                try:
+                    if cand.exists() and cand.resolve() != primary_path.resolve():
+                        paths_to_write.append(cand)
+                except Exception:
+                    pass
+
+        success = True
+        for p in paths_to_write:
+            tmp_file = None
+            try:
+                p.parent.mkdir(parents=True, exist_ok=True)
+                tmp_file = p.parent / f".tmp_{p.stem}_{os.getpid()}_{time.time_ns()}.json"
+                with open(tmp_file, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_file, p)
+                logger.info(f"Atomically saved tenants registry to {p}")
+            except Exception as ex:
+                logger.error(f"Failed to atomic save tenants registry to {p}: {ex}")
+                if tmp_file and tmp_file.exists():
+                    try:
+                        tmp_file.unlink()
+                    except Exception:
+                        pass
+                success = False
+
+        _REGISTRY_CACHE["data"] = data
+        _REGISTRY_CACHE["timestamp"] = time.time()
+        return success
+
 
 
 def get_tenants_registry_path() -> Optional[Path]:

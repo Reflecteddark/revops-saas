@@ -149,7 +149,7 @@ def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db)):
     """
     import hashlib
     from .admin_router import load_registered_clients, save_registered_clients
-    from ..tenant_registry import get_tenants_registry_path, load_tenants_registry, _REGISTRY_CACHE
+    from ..tenant_registry import get_tenants_registry_path, load_tenants_registry, save_tenants_registry
 
     target_login = (req.login or "").strip().lower()
     target_tenant = (req.tenant_id or "TNT-001").strip().upper()
@@ -195,20 +195,19 @@ def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db)):
     save_registered_clients(clients)
 
     # 2. Check & Update in tenants_registry.json
-    reg_path = get_tenants_registry_path()
-    if reg_path and reg_path.exists():
-        try:
-            registry = load_tenants_registry()
-            for t in registry.get("tenants", []):
-                if str(t.get("tenant_id", "")).upper() == target_tenant or target_login and str(t.get("email", "")).lower() == target_login:
-                    t["password_hash"] = new_hash
-                    t["updated_at"] = datetime.now().isoformat()
-                    with open(reg_path, "w", encoding="utf-8") as f:
-                        json.dump(registry, f, ensure_ascii=False, indent=2)
-                    _REGISTRY_CACHE["timestamp"] = 0
-                    break
-        except Exception as e:
-            logger.warning(f"Failed to update tenant password in registry: {e}")
+    try:
+        registry = load_tenants_registry()
+        updated = False
+        for t in registry.get("tenants", []):
+            if str(t.get("tenant_id", "")).upper() == target_tenant or (target_login and str(t.get("email", "")).lower() == target_login):
+                t["password_hash"] = new_hash
+                t["updated_at"] = datetime.now().isoformat()
+                updated = True
+                break
+        if updated:
+            save_tenants_registry(registry)
+    except Exception as e:
+        logger.warning(f"Failed to update tenant password in registry: {e}")
 
     # 3. Update in Database if user exists
     db_user = None
@@ -225,38 +224,35 @@ def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db)):
 def update_profile(req: UpdateProfileRequest):
     """Updates client contact info (Email, Full Name, Telegram) in registry and auth config."""
     from .admin_router import load_registered_clients, save_registered_clients
-    from ..tenant_registry import get_tenants_registry_path, load_tenants_registry, _REGISTRY_CACHE
+    from ..tenant_registry import get_tenants_registry_path, load_tenants_registry, save_tenants_registry
 
     target_tenant = (req.tenant_id or "TNT-001").strip().upper()
     target_login = (req.login or "").strip().lower()
 
     # 1. Update in tenants_registry.json
-    reg_path = get_tenants_registry_path()
-    updated_tenant = None
-    if reg_path and reg_path.exists():
-        try:
-            registry = load_tenants_registry()
-            for t in registry.get("tenants", []):
-                if str(t.get("tenant_id", "")).upper() == target_tenant:
-                    if req.email:
-                        t["email"] = req.email.strip()
-                        t["client_email"] = req.email.strip()
-                    if req.full_name:
-                        t["contact_name"] = req.full_name.strip()
-                        t["name"] = req.full_name.strip()
-                    if req.tg_contact:
-                        t["tg_chat_id"] = req.tg_contact.strip()
-                        t["tg_username"] = req.tg_contact.strip()
-                    if req.phone:
-                        t["phone"] = req.phone.strip()
-                    t["updated_at"] = datetime.now().isoformat()
-                    updated_tenant = t
-                    with open(reg_path, "w", encoding="utf-8") as f:
-                        json.dump(registry, f, ensure_ascii=False, indent=2)
-                    _REGISTRY_CACHE["timestamp"] = 0
-                    break
-        except Exception as e:
-            logger.warning(f"Failed to update profile in tenants_registry: {e}")
+    try:
+        registry = load_tenants_registry()
+        updated = False
+        for t in registry.get("tenants", []):
+            if str(t.get("tenant_id", "")).upper() == target_tenant:
+                if req.email:
+                    t["email"] = req.email.strip()
+                    t["client_email"] = req.email.strip()
+                if req.full_name:
+                    t["contact_name"] = req.full_name.strip()
+                    t["name"] = req.full_name.strip()
+                if req.tg_contact:
+                    t["tg_chat_id"] = req.tg_contact.strip()
+                    t["tg_username"] = req.tg_contact.strip()
+                if req.phone:
+                    t["phone"] = req.phone.strip()
+                t["updated_at"] = datetime.now().isoformat()
+                updated = True
+                break
+        if updated:
+            save_tenants_registry(registry)
+    except Exception as e:
+        logger.warning(f"Failed to update profile in tenants_registry: {e}")
 
     # 2. Update in registered_clients.json
     clients = load_registered_clients()

@@ -8438,28 +8438,29 @@
               <span>Полное управление службами, базами Google Таблиц, автозадачами Windows и ИИ взамен батников</span>
               <span style="color: rgba(255,255,255,0.2);">&bull;</span>
               <span style="display: inline-flex; align-items: center; gap: 6px;">
-                <span style="color: var(--accent-cyan);">🌐 Внешний Вебхук:</span>
-                <a id="adminTunnelLink" href="https://webhook.ai-rop.ru" target="_blank" rel="noopener noreferrer" style="color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-decoration: underline; text-underline-offset: 3px;">https://webhook.ai-rop.ru</a>
-                <button onclick="copyAdminTunnelUrl()" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.65rem; height: auto;" title="Скопировать URL туннеля">📋 Копировать</button>
+                <span style="color: var(--accent-cyan);">🌐 Шлюз телефонии (Вебхук):</span>
+                <a id="adminTenantWebhookLink" href="https://report.ai-rop.ru/api/v1/webhooks/TNT-001/call" target="_blank" rel="noopener noreferrer" style="color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-decoration: underline; text-underline-offset: 3px;">https://report.ai-rop.ru/api/v1/webhooks/TNT-001/call</a>
+                <button onclick="copyAdminTenantWebhookUrl()" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.65rem; height: auto;" title="Скопировать URL вебхука телефонии">📋 Копировать</button>
               </span>
             </div>
           </div>
 
           <!-- Master Fleet Actions -->
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 8px; font-size: 0.76rem; color: #34d399; font-weight: 600;">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; display: inline-block;"></span>
+              <span>Cloud Workers: Active</span>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; font-size: 0.76rem; color: #38bdf8; font-weight: 600;">
+              <span>⚡ Async Queue: Ready</span>
+            </div>
             <button onclick="runFleetAction('start_all')" class="btn-modern-primary" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; font-size: 0.8rem; font-weight: 600;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <span>Запустить все службы</span>
+              <span>Запустить службы</span>
             </button>
             <button onclick="runFleetAction('stop_all')" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 0.8rem; color: var(--accent-rose); border-color: rgba(243, 101, 148, 0.35);">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
-              <span>Остановить все</span>
-            </button>
-            <button onclick="archiveDesktopLaunchers()" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 0.8rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="Перенести все батники с Рабочего стола в защищённый архив">
-              <span>📦 Очистить Рабочий стол</span>
-            </button>
-            <button onclick="restoreDesktopLaunchers()" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 0.8rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);" title="Скопировать ключевые батники обратно на Рабочий стол">
-              <span>📥 Вернуть батники на Desktop</span>
+              <span>Остановить</span>
             </button>
             <button onclick="loadAdminStatus()" class="btn-modern-ghost" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 0.8rem;" title="Обновить статус служб">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -9325,13 +9326,14 @@
                   <th style="padding: 10px 14px;">Статус</th>
                   <th style="padding: 10px 14px;">CRM-контур</th>
                   <th style="padding: 10px 14px;">Google Таблица</th>
+                  <th style="padding: 10px 14px;">Активность & Квота ИИ</th>
                   <th style="padding: 10px 14px;">Пользователи ЛК</th>
                   <th style="padding: 10px 14px; text-align: right;">Управление</th>
                 </tr>
               </thead>
               <tbody id="adminTenantsFleetTbody">
                 <tr>
-                  <td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted);">
+                  <td colspan="7" style="padding: 24px; text-align: center; color: var(--text-muted);">
                     <div class="loader-spinner" style="margin: 0 auto 8px auto;"></div>
                     Загрузка флота клиентов...
                   </td>
@@ -9729,7 +9731,18 @@
                 </div>
               </div>
 
-              <pre id="inspWebhookJsonPre" style="margin: 0; padding: 10px; background: #05070f; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #38bdf8; overflow-y: auto; max-height: 160px; line-height: 1.45; white-space: pre-wrap; word-break: break-all; border: 1px solid rgba(56,189,248,0.15);">Загрузка последнего вебхука...</pre>
+              <pre id="inspWebhookJsonPre" style="margin: 0; padding: 10px; background: #05070f; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #38bdf8; overflow-y: auto; max-height: 140px; line-height: 1.45; white-space: pre-wrap; word-break: break-all; border: 1px solid rgba(56,189,248,0.15);">Загрузка последнего вебхука...</pre>
+
+              <!-- Dead Letter Queue (DLQ) & Webhook History Buffer -->
+              <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <span style="font-size: 0.70rem; font-weight: 700; color: #fff;">Очередь событий (DLQ & История 10 вебхуков):</span>
+                  <button onclick="fetchWebhooksHistory()" class="btn-modern-ghost" style="padding: 1px 6px; font-size: 0.62rem;">🔄 Обновить очередь</button>
+                </div>
+                <div id="dlqHistoryTableContainer" style="max-height: 120px; overflow-y: auto; font-size: 0.68rem; font-family: 'JetBrains Mono', monospace;">
+                  <div style="color: var(--text-muted); padding: 4px;">Загрузка очереди входящих вебхуков...</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -10180,8 +10193,15 @@
 
         <!-- Terminal Output Screen -->
         <div id="adminTerminalBody" style="background: #040407; padding: 14px 16px; min-height: 220px; max-height: 380px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; line-height: 1.6; color: #e2e8f0; white-space: pre-wrap; word-break: break-all;">
-          <div style="color: #64748b;">[System] RevOps Live Console запущена. Нажмите любую кнопку управления выше для выполнения команды...</div>
+          <div style="color: #64748b;">[System] RevOps Live Console запущена. Нажмите любую кнопку управления выше или введите команду ниже...</div>
         </div>
+
+        <!-- Terminal Interactive CLI Bar -->
+        <form id="adminCliForm" onsubmit="handleAdminCliSubmit(event)" style="display: flex; align-items: center; background: #07070d; border-top: 1px solid rgba(255, 255, 255, 0.08); padding: 8px 12px; gap: 8px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: #34d399; font-weight: 700; white-space: nowrap;">root@revops-os:~#</span>
+          <input type="text" id="adminCliInput" placeholder="Команда (например: /help, /doctor TNT-001, /test-call, /quarantine, /backup, /ping, /webhooks)..." style="flex: 1; background: transparent; border: none; outline: none; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: #fff;" autocomplete="off" />
+          <button type="submit" class="btn-modern-primary" style="padding: 4px 12px; font-size: 0.70rem; border-radius: 6px;">Отправить ↵</button>
+        </form>
       </div>
 
     </div>

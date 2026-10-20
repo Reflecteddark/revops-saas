@@ -11,7 +11,7 @@ import os
 import time
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Header, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from ..websocket_manager import manager
@@ -23,10 +23,12 @@ router = APIRouter(prefix="/webhooks", tags=["CRM & Telephony Webhook Receivers"
 
 # Global tracker for the last incoming webhook (inspected in Admin UI)
 LAST_INCOMING_WEBHOOK: Dict[str, Any] = {
+    "id": "wh_init",
     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     "provider": "system",
     "tenant_id": "TNT-001",
     "event": "initialized",
+    "status": "success",
     "headers": {"content-type": "application/json"},
     "payload": {
         "status": "ready",
@@ -34,9 +36,20 @@ LAST_INCOMING_WEBHOOK: Dict[str, Any] = {
     }
 }
 
+# Ring buffer of incoming webhooks (Dead Letter Queue & Inspection)
+WEBHOOKS_HISTORY: List[Dict[str, Any]] = [LAST_INCOMING_WEBHOOK]
+MAX_WEBHOOKS_HISTORY = 20
 
-def record_incoming_webhook(provider: str, tenant_id: str, payload: Any, headers: Optional[Dict[str, str]] = None, event: str = "call_received"):
-    global LAST_INCOMING_WEBHOOK
+
+def record_incoming_webhook(
+    provider: str,
+    tenant_id: str,
+    payload: Any,
+    headers: Optional[Dict[str, str]] = None,
+    event: str = "call_received",
+    status: str = "queued"
+) -> str:
+    global LAST_INCOMING_WEBHOOK, WEBHOOKS_HISTORY
     clean_headers = {}
     if headers:
         for k, v in headers.items():
@@ -44,14 +57,55 @@ def record_incoming_webhook(provider: str, tenant_id: str, payload: Any, headers
                 clean_headers[k] = "***REDACTED***"
             else:
                 clean_headers[k] = str(v)
-    LAST_INCOMING_WEBHOOK = {
+
+    webhook_id = f"wh_{int(time.time())}_{os.urandom(3).hex()}"
+    record = {
+        "id": webhook_id,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "provider": provider,
         "tenant_id": tenant_id,
         "event": event,
+        "status": status,
         "headers": clean_headers,
-        "payload": payload
+        "payload": payload,
+        "error_msg": None,
+        "execution_time_ms": None,
+        "sheets_synced": False
     }
+    LAST_INCOMING_WEBHOOK = record
+    WEBHOOKS_HISTORY.insert(0, record)
+    if len(WEBHOOKS_HISTORY) > MAX_WEBHOOKS_HISTORY:
+        WEBHOOKS_HISTORY.pop()
+    return webhook_id
+
+
+def update_webhook_status(
+    webhook_id: str,
+    status: str,
+    error_msg: Optional[str] = None,
+    execution_time_ms: Optional[float] = None,
+    sheets_synced: Optional[bool] = None
+):
+    global WEBHOOKS_HISTORY, LAST_INCOMING_WEBHOOK
+    for wh in WEBHOOKS_HISTORY:
+        if wh.get("id") == webhook_id:
+            wh["status"] = status
+            if error_msg is not None:
+                wh["error_msg"] = error_msg
+            if execution_time_ms is not None:
+                wh["execution_time_ms"] = execution_time_ms
+            if sheets_synced is not None:
+                wh["sheets_synced"] = sheets_synced
+            break
+    if LAST_INCOMING_WEBHOOK.get("id") == webhook_id:
+        LAST_INCOMING_WEBHOOK["status"] = status
+        if error_msg is not None:
+            LAST_INCOMING_WEBHOOK["error_msg"] = error_msg
+        if execution_time_ms is not None:
+            LAST_INCOMING_WEBHOOK["execution_time_ms"] = execution_time_ms
+        if sheets_synced is not None:
+            LAST_INCOMING_WEBHOOK["sheets_synced"] = sheets_synced
+
 
 
 
@@ -452,8 +506,37 @@ class UniversalCallPayload(BaseModel):
     tenant_id: Optional[str] = None
 
 
-async def _process_telephony_call(request: Request, tenant_param: Optional[str] = None):
-    """Universal gateway for Mango Office, Zadarma, Sipuni, Asterisk, and n8n."""
+async def _execute_telephony_background(
+    call_payload: CallIngestPayload,
+    org_id: str,
+    webhook_id: str,
+    t_start: float
+):
+    """Executes heavy Google Sheets writes and WebSocket broadcasts asynchronously in the background."""
+    try:
+        sheets_ok = append_call_to_sheets(call_payload)
+        formatted = call_payload.model_dump() if hasattr(call_payload, "model_dump") else call_payload.dict()
+        await manager.broadcast(org_id, {"type": "new_call", "call": formatted})
+        elapsed = round((time.time() - t_start) * 1000, 1)
+        update_webhook_status(webhook_id, status="success", execution_time_ms=elapsed, sheets_synced=sheets_ok)
+        logger.info(f"Telephony call {call_payload.id} successfully processed in background in {elapsed}ms (sheets={sheets_ok})")
+    except Exception as ex:
+        elapsed = round((time.time() - t_start) * 1000, 1)
+        logger.error(f"Error in background telephony processing for call {call_payload.id}: {ex}")
+        update_webhook_status(webhook_id, status="error", error_msg=str(ex), execution_time_ms=elapsed)
+
+
+async def _process_telephony_call(
+    request: Request,
+    tenant_param: Optional[str] = None,
+    background_tasks: Optional[BackgroundTasks] = None
+):
+    """
+    Universal gateway for Mango Office, Zadarma, Sipuni, Asterisk, and n8n.
+    Responds with HTTP 200 within <50ms, queuing AI scoring and Google Sheets sync
+    in FastAPI BackgroundTasks to eliminate telephony provider timeouts.
+    """
+    t_start = time.time()
     try:
         body = await request.json()
     except Exception:
@@ -461,7 +544,9 @@ async def _process_telephony_call(request: Request, tenant_param: Optional[str] 
 
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
-    record_incoming_webhook(body.get("provider", "telephony"), org_id, body, dict(request.headers), event="telephony_call")
+
+    provider_name = body.get("provider") or body.get("telephony_provider") or "telephony"
+    webhook_id = record_incoming_webhook(provider_name, org_id, body, dict(request.headers), event="telephony_call", status="queued")
 
     call_id = str(body.get("call_id") or body.get("id") or f"call_{int(time.time())}")
     deal_id = str(body.get("deal_id") or f"D-{int(time.time()) % 10000}")
@@ -494,30 +579,43 @@ async def _process_telephony_call(request: Request, tenant_param: Optional[str] 
         tenant_id=org_id
     )
 
-    sheets_ok = append_call_to_sheets(call_payload)
-    formatted = call_payload.model_dump() if hasattr(call_payload, "model_dump") else call_payload.dict()
-    await manager.broadcast(org_id, {"type": "new_call", "call": formatted})
-
-    return {
-        "status": "ok",
-        "tenant_id": org_id,
-        "call_id": call_id,
-        "sheets_synced": sheets_ok,
-        "score": score,
-        "next_step": next_step
-    }
+    if background_tasks:
+        background_tasks.add_task(_execute_telephony_background, call_payload, org_id, webhook_id, t_start)
+        response_time_ms = round((time.time() - t_start) * 1000, 2)
+        return {
+            "status": "queued",
+            "message": "Вебхук принят и поставлен в очередь асинхронной обработки (Zero-Timeout)",
+            "tenant_id": org_id,
+            "call_id": call_id,
+            "webhook_id": webhook_id,
+            "score": score,
+            "next_step": next_step,
+            "ack_latency_ms": response_time_ms
+        }
+    else:
+        # Fallback synchronous execution if background_tasks not injected
+        await _execute_telephony_background(call_payload, org_id, webhook_id, t_start)
+        return {
+            "status": "ok",
+            "tenant_id": org_id,
+            "call_id": call_id,
+            "webhook_id": webhook_id,
+            "score": score,
+            "next_step": next_step
+        }
 
 
 @router.post("/call")
-async def receive_telephony_call(request: Request):
-    """Universal Telephony receiver endpoint (Legacy / query param based)."""
-    return await _process_telephony_call(request, None)
+async def receive_telephony_call(request: Request, background_tasks: BackgroundTasks):
+    """Universal Telephony receiver endpoint (queued with BackgroundTasks, <50ms response)."""
+    return await _process_telephony_call(request, None, background_tasks)
 
 
 @router.post("/{tenant_id}/call")
-async def receive_telephony_call_scoped(tenant_id: str, request: Request):
+async def receive_telephony_call_scoped(tenant_id: str, request: Request, background_tasks: BackgroundTasks):
     """Universal Telephony receiver scoped to specific tenant in URL."""
-    return await _process_telephony_call(request, tenant_id)
+    return await _process_telephony_call(request, tenant_id, background_tasks)
+
 
 
 # ==========================================================================
@@ -598,4 +696,99 @@ async def test_bitrix24_call_simulation(tenant_id: Optional[str] = "TNT-001"):
 def get_last_incoming_webhook():
     """Returns the most recent incoming webhook payload for live debugging in the Admin UI."""
     return LAST_INCOMING_WEBHOOK
+
+
+@router.get("/history")
+def get_webhooks_history(limit: int = 15):
+    """Returns the ring buffer of recent incoming webhooks for the Dead Letter Queue (DLQ) inspector."""
+    return {
+        "status": "ok",
+        "total": len(WEBHOOKS_HISTORY),
+        "history": WEBHOOKS_HISTORY[:limit]
+    }
+
+
+@router.post("/{webhook_id}/replay")
+async def replay_webhook(
+    webhook_id: str,
+    background_tasks: BackgroundTasks
+):
+    """
+    Replays a specific webhook from history or Dead Letter Queue (DLQ).
+    Re-ingests the payload through the standard processing pipeline.
+    """
+    target = None
+    for wh in WEBHOOKS_HISTORY:
+        if wh.get("id") == webhook_id:
+            target = wh
+            break
+
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Вебхук с ID '{webhook_id}' не найден в очереди истории.")
+
+    raw_payload = target.get("payload", {})
+    provider = target.get("provider", "telephony")
+    org_id = target.get("tenant_id", "TNT-001")
+
+    # Clone payload for replaying
+    if isinstance(raw_payload, dict):
+        replay_payload = dict(raw_payload)
+    else:
+        replay_payload = {"raw": str(raw_payload)}
+
+    replay_payload["call_id"] = f"replay_{int(time.time())}_{target.get('id', 'wh')[:8]}"
+    replay_payload["replayed_from"] = webhook_id
+
+    # Record replay
+    new_wh_id = record_incoming_webhook(
+        provider=f"{provider}_replay",
+        tenant_id=org_id,
+        payload=replay_payload,
+        event=f"replay_{target.get('event', 'call')}",
+        status="queued"
+    )
+
+    call_id = replay_payload["call_id"]
+    deal_id = str(replay_payload.get("deal_id") or f"D-REPLAY-{int(time.time()) % 1000}")
+    transcript = replay_payload.get("transcript") or "Повторная обработка архивного звонка"
+    parsed = parse_call_from_text(transcript, replay_payload.get("manager_name", "Менеджер"))
+
+    dur_sec = int(replay_payload.get("duration_sec", 120))
+    score = int(replay_payload.get("score")) if replay_payload.get("score") is not None else parsed["score"]
+    next_step = int(replay_payload.get("next_step")) if replay_payload.get("next_step") is not None else parsed["next_step"]
+    cr = replay_payload.get("cr") if replay_payload.get("cr") and len(replay_payload.get("cr")) == 13 else parsed["cr"]
+
+    call_payload = CallIngestPayload(
+        id=call_id,
+        deal_id=deal_id,
+        deal_title=replay_payload.get("deal_title") or f"Повторный аудит #{call_id}",
+        manager=replay_payload.get("manager_name") or replay_payload.get("manager") or "Дмитрий Федотов",
+        client=replay_payload.get("client_name") or replay_payload.get("client") or "Клиент",
+        duration_sec=dur_sec,
+        duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
+        amount=replay_payload.get("amount") or "300 000 ₽",
+        score=score,
+        status="won" if next_step == 1 and score >= 10 else ("warn" if score >= 8 else "risk"),
+        status_label="ЭТАЛОН" if score >= 10 else ("СЛИВ (НЕТ NEXT STEP)" if next_step == 0 else "В РАБОТЕ"),
+        next_step=next_step,
+        cr=cr,
+        error_summary=replay_payload.get("error_summary") or "Повторный прогон через очередь DLQ",
+        recommendation=replay_payload.get("recommendation") or "Проверено",
+        transcript=transcript,
+        sync_to_sheets=True,
+        tenant_id=org_id
+    )
+
+    t_start = time.time()
+    background_tasks.add_task(_execute_telephony_background, call_payload, org_id, new_wh_id, t_start)
+
+    return {
+        "status": "queued",
+        "message": f"Вебхук {webhook_id} успешно отправлен на повторную обработку (Replay ID: {new_wh_id})",
+        "replayed_id": webhook_id,
+        "new_webhook_id": new_wh_id,
+        "tenant_id": org_id,
+        "call_id": call_id
+    }
+
 

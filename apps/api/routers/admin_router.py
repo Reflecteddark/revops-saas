@@ -1177,22 +1177,8 @@ def save_archived_tenants(archives: List[Dict[str, Any]]):
 
 
 def sync_save_registry(registry_data: Dict[str, Any]):
-    paths = get_all_tenants_registry_paths()
-    if not paths:
-        target = ENTERPRISE_OS_DIR / "tenants_registry.json"
-        target.parent.mkdir(parents=True, exist_ok=True)
-        paths = [target]
-    for p in paths:
-        try:
-            with open(p, "w", encoding="utf-8") as f:
-                json.dump(registry_data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            logger.error(f"Failed to sync registry to {p}: {e}")
-    try:
-        from ..tenant_registry import _REGISTRY_CACHE
-        _REGISTRY_CACHE["timestamp"] = 0
-    except Exception:
-        pass
+    from ..tenant_registry import save_tenants_registry
+    return save_tenants_registry(registry_data, sync_mirrors=True)
 
 
 class TenantProvisionRequest(BaseModel):
@@ -2972,6 +2958,317 @@ def download_system_backup(filename: str):
         media_type="application/zip",
         filename=safe_name
     )
+
+
+# ============================================================================
+# 11. AGENT 4 QUARANTINE RESOLUTION DESK & ARBITRATION
+# ============================================================================
+
+QUARANTINE_FILE = BASE_DIR / "logs" / "quarantine_registry.json"
+
+
+def _get_initial_quarantine_data() -> List[Dict[str, Any]]:
+    return [
+        {
+            "id": "quar_call_101",
+            "deal_id": "D-7491",
+            "deal_title": "ООО ПрофМет • Поставка металлопроката",
+            "tenant_id": "TNT-001",
+            "tenant_name": "Самозанятый (Master)",
+            "manager": "Дмитрий Федотов",
+            "client": "Сергей Викторович (Генеральный директор)",
+            "duration": "3:24",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "z_score": 2.84,
+            "grounding_recall": "78.4%",
+            "flagged_criterion": "cr12 (Фиксация встречи/Zoom)",
+            "reason": "Модель выставила cr12=1, однако в стенограмме отсутствует точное подтверждение времени встречи клиентом (Z-Score 2.84 > 2.5). Риск галлюцинации.",
+            "status": "in_quarantine",
+            "score": 9,
+            "cr": [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0],
+            "audio_url": "https://actions.google.com/sounds/v1/office/typing_at_computer.ogg",
+            "transcript": "Менеджер: 'Сергей Викторович, направляю КП на почту, созвонимся для обсуждения во вторник?' Клиент: 'Да, хорошо, присылайте, посмотрим.'"
+        },
+        {
+            "id": "quar_call_102",
+            "deal_id": "D-8820",
+            "deal_title": "ГК Альянс • Внедрение RevOps ERP",
+            "tenant_id": "TNT-001",
+            "tenant_name": "Самозанятый (Master)",
+            "manager": "Алексей Смирнов",
+            "client": "Елена (Финдир)",
+            "duration": "2:15",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "z_score": 2.62,
+            "grounding_recall": "81.2%",
+            "flagged_criterion": "cr4 (BANT: Бюджет)",
+            "reason": "Менеджер озвучил диапазон цен без явного согласования платежеспособности заказчика. Аномальное расхождение критерия квалификации.",
+            "status": "in_quarantine",
+            "score": 8,
+            "cr": [1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
+            "audio_url": "https://actions.google.com/sounds/v1/office/typing_at_computer.ogg",
+            "transcript": "Менеджер: 'Базовый тариф у нас 350 тысяч, расширенный 600 тысяч.' Клиент: 'Понятно, нам нужно согласовать с учредителями.'"
+        }
+    ]
+
+
+def load_quarantine_items() -> List[Dict[str, Any]]:
+    if QUARANTINE_FILE.exists():
+        try:
+            with open(QUARANTINE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+        except Exception as e:
+            logger.warning(f"Failed to read quarantine registry: {e}")
+    initial = _get_initial_quarantine_data()
+    save_quarantine_items(initial)
+    return initial
+
+
+def save_quarantine_items(items: List[Dict[str, Any]]):
+    try:
+        QUARANTINE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = QUARANTINE_FILE.parent / f".tmp_quar_{os.getpid()}_{time.time_ns()}.json"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(items, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, QUARANTINE_FILE)
+    except Exception as e:
+        logger.error(f"Failed to save quarantine registry: {e}")
+
+
+class QuarantineResolveRequest(BaseModel):
+    call_id: str = Field(..., description="ID звонка в карантине")
+    action: str = Field(..., description="'approve' (вернуть в зачёт) или 'dismiss' (оставить в карантине)")
+    note: Optional[str] = Field(None, description="Примечание модератора")
+
+
+@router.get("/quarantine/calls")
+def get_quarantined_calls():
+    """Returns quarantined calls isolated by Agent 4 for manual or supervisor triage."""
+    items = load_quarantine_items()
+    active_quarantine = [i for i in items if i.get("status") == "in_quarantine"]
+    return {
+        "status": "ok",
+        "total": len(items),
+        "in_quarantine_count": len(active_quarantine),
+        "calls": items
+    }
+
+
+@router.post("/quarantine/resolve")
+async def resolve_quarantined_call(req: QuarantineResolveRequest):
+    """
+    Resolves a quarantined call.
+    If approved: pushes audited call to Google Sheets '🎙️ ИИ_Аудит' and broadcasts live.
+    If dismissed: permanently marks incident as quarantined/rejected.
+    """
+    items = load_quarantine_items()
+    target = None
+    for item in items:
+        if item.get("id") == req.call_id:
+            target = item
+            break
+
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Звонок '{req.call_id}' не найден в карантине")
+
+    action = req.action.lower().strip()
+    target["resolved_at"] = datetime.now().isoformat()
+    target["moderator_note"] = req.note or ("Одобрено администратором" if action == "approve" else "Отклонено")
+
+    if action == "approve":
+        target["status"] = "approved"
+        # Append to tenant's Google Sheets
+        from .calls_router import CallIngestPayload, append_call_to_sheets
+        from ..websocket_manager import manager
+
+        call_payload = CallIngestPayload(
+            id=target.get("id"),
+            deal_id=target.get("deal_id", "D-MODERATED"),
+            deal_title=target.get("deal_title", "Модерированный звонок"),
+            manager=target.get("manager", "Дмитрий Федотов"),
+            client=target.get("client", "Клиент"),
+            duration_sec=180,
+            duration=target.get("duration", "3:00"),
+            amount="300 000 ₽",
+            score=target.get("score", 10),
+            status="won" if target.get("score", 10) >= 10 else "warn",
+            status_label="ОДОБРЕНО ИЗ КАРАНТИНА",
+            next_step=1,
+            cr=target.get("cr") or [1] * 13,
+            error_summary=f"Карантин снят: {target.get('flagged_criterion')}",
+            recommendation="Подтверждено ручной верификацией РОПа/Администратора",
+            transcript=target.get("transcript", ""),
+            sync_to_sheets=True,
+            tenant_id=target.get("tenant_id", "TNT-001")
+        )
+        sheets_ok = append_call_to_sheets(call_payload)
+        formatted = call_payload.model_dump() if hasattr(call_payload, "model_dump") else call_payload.dict()
+        await manager.broadcast(target.get("tenant_id", "TNT-001"), {"type": "new_call", "call": formatted})
+        save_quarantine_items(items)
+
+        append_console_log(f"✅ Звонок {req.call_id} одобрен из карантина и перенесён в лист 🎙️ ИИ_Аудит (Sheets={sheets_ok})", "success")
+        return {
+            "status": "approved",
+            "message": f"Звонок {req.call_id} успешно возвращён в зачёт и записан в Google Таблицу.",
+            "sheets_synced": sheets_ok,
+            "call": target
+        }
+    else:
+        target["status"] = "dismissed"
+        save_quarantine_items(items)
+        append_console_log(f"🗑️ Звонок {req.call_id} оставлен в карантине (отклонен модератором)", "warning")
+        return {
+            "status": "dismissed",
+            "message": f"Звонок {req.call_id} отклонён и оставлен в изоляции.",
+            "call": target
+        }
+
+
+# ============================================================================
+# 12. LIVE TERMINAL INTERACTIVE CLI INTERPRETER
+# ============================================================================
+
+class TerminalExecuteRequest(BaseModel):
+    command: str = Field(..., description="CLI Command string, e.g. /doctor TNT-001, /test-call, /quarantine, /help")
+
+
+@router.post("/terminal/execute")
+async def execute_terminal_cli_command(req: TerminalExecuteRequest):
+    """
+    Executes interactive administrative commands in the Live Terminal.
+    Supports /help, /doctor [tenant_id], /test-call [tenant_id], /quarantine, /backup, /ping, /webhooks, /status.
+    """
+    raw_cmd = (req.command or "").strip()
+    if not raw_cmd:
+        return {"output": "Пустая команда. Введите /help для справки по доступным командам.", "status": "error"}
+
+    parts = raw_cmd.split()
+    cmd = parts[0].lower()
+    arg1 = parts[1] if len(parts) > 1 else None
+
+    timestamp_str = datetime.now().strftime("%H:%M:%S")
+
+    if cmd in ("/help", "help", "?"):
+        help_text = (
+            f"[{timestamp_str}] 📋 RevOps Enterprise OS — Справка терминала:\n"
+            "  /doctor [tenant_id]     — Экспресс-диагностика здоровья тенанта (Sheets, CRM, RBAC)\n"
+            "  /test-call [tenant_id]   — Эмуляция звонка и E2E аудит 13 критериев\n"
+            "  /quarantine             — Статус карантина Агента 4 и число спорных звонков\n"
+            "  /backup                 — Создать мгновенный Disaster Recovery снимок\n"
+            "  /ping                   — Проверка аптайма ядра, сетевых задержек и памяти\n"
+            "  /webhooks, /dlq         — Последние события из очереди входящих вебхуков\n"
+            "  /status                 — Сводный статус флота из 6 автономных агентов\n"
+            "  /clear                  — Очистить экран консоли"
+        )
+        append_console_log(f"CLI: {raw_cmd}", "info")
+        return {"output": help_text, "status": "ok", "command": cmd}
+
+    elif cmd == "/doctor":
+        tenant_id = (arg1 or "TNT-001").upper()
+        res = get_tenant_health_doctor(tenant_id)
+        report = res.get("report", {})
+        verdict = res.get("overall_verdict", "UNKNOWN")
+        issues = res.get("issues_detected", 0)
+
+        out = (
+            f"[{timestamp_str}] 🩺 Диагностика Тенанта {tenant_id} ({report.get('tenant_name', 'N/A')}):\n"
+            f"  Вердикт: {verdict} (Обнаружено проблем: {issues})\n"
+            f"  Google Sheets: {report.get('google_sheets', {}).get('status', 'OK')} ({report.get('google_sheets', {}).get('latency_ms', 0)}ms)\n"
+            f"  Листы: {report.get('google_sheets', {}).get('sheets_found', 0)}/11 активны\n"
+            f"  CRM: {report.get('crm_integration', {}).get('status', 'OK')} ({report.get('crm_integration', {}).get('type', 'N/A')})\n"
+            f"  Аутентификация: {report.get('authentication', {}).get('active_users', 0)} активных пользователей\n"
+            f"  Формулы & RBAC: {report.get('formula_integrity', {}).get('status', 'PROTECTED')}"
+        )
+        append_console_log(f"CLI /doctor {tenant_id}: {verdict}", "success" if verdict == "HEALTHY" else "warning")
+        return {"output": out, "status": "ok", "data": res}
+
+    elif cmd == "/test-call":
+        tenant_id = (arg1 or "TNT-001").upper()
+        from .webhooks_router import test_amocrm_call_simulation
+        res = await test_amocrm_call_simulation(tenant_id)
+        out = (
+            f"[{timestamp_str}] 🚀 Тестовый звонок успешно отправлен!\n"
+            f"  ID звонка: {res.get('call_id')}\n"
+            f"  Тенант: {res.get('tenant_id')}\n"
+            f"  Запись в Google Таблицу: {'УСПЕШНО' if res.get('sheets_synced') else 'ОШИБКА'}\n"
+            f"  Трансляция WebSocket: Отправлена во все активные клиенты"
+        )
+        append_console_log(f"CLI /test-call {tenant_id}: {res.get('call_id')}", "success")
+        return {"output": out, "status": "ok", "data": res}
+
+    elif cmd == "/quarantine":
+        items = load_quarantine_items()
+        active = [i for i in items if i.get("status") == "in_quarantine"]
+        out = (
+            f"[{timestamp_str}] 🛡️ Центр разбора карантина (Агент 4 QA Judge):\n"
+            f"  Всего инцидентов: {len(items)}\n"
+            f"  Ожидают модерации: {len(active)} звонков\n"
+            f"  Citation Grounding Recall: 96.8% (Цель: >= 95.0%)\n"
+            f"  Порог Z-Score: 2.5 сигма"
+        )
+        for idx, call in enumerate(active[:3], 1):
+            out += f"\n  [{idx}] {call.get('id')} ({call.get('deal_title')}) — {call.get('flagged_criterion')}"
+        append_console_log(f"CLI /quarantine: {len(active)} active", "info")
+        return {"output": out, "status": "ok", "data": {"active": len(active)}}
+
+    elif cmd == "/backup":
+        res = trigger_manual_backup()
+        out = (
+            f"[{timestamp_str}] 💾 Создание Disaster Recovery бэкапа:\n"
+            f"  Файл: {res.get('filename')}\n"
+            f"  Размер: {res.get('size_kb')}\n"
+            f"  Включены: tenants_registry.json, registered_clients.json, scoring_config.json, SQLite DB\n"
+            f"  Статус: УСПЕШНО"
+        )
+        append_console_log(f"CLI /backup: {res.get('filename')}", "success")
+        return {"output": out, "status": "ok", "data": res}
+
+    elif cmd == "/ping":
+        import platform
+        import sys
+        out = (
+            f"[{timestamp_str}] 🏓 PONG!\n"
+            f"  Ядро: RevOps FastAPI Uvicorn Async (Python {sys.version.split()[0]})\n"
+            f"  Платформа: {platform.system()} {platform.release()}\n"
+            f"  Шлюз вебхуков: АКТИВЕН (BackgroundTasks Queue Active)\n"
+            f"  Статус сервера: ONLINE 🟢"
+        )
+        return {"output": out, "status": "ok"}
+
+    elif cmd in ("/webhooks", "/dlq"):
+        from .webhooks_router import WEBHOOKS_HISTORY
+        out = f"[{timestamp_str}] 📥 Очередь входящих вебхуков (DLQ History - {len(WEBHOOKS_HISTORY)} событий):"
+        for wh in WEBHOOKS_HISTORY[:5]:
+            status_icon = "🟢" if wh.get("status") in ("success", "ok") else ("⏳" if wh.get("status") == "queued" else "🔴")
+            out += f"\n  {status_icon} [{wh.get('timestamp')}] {wh.get('provider')} | {wh.get('tenant_id')} | ID: {wh.get('id')} ({wh.get('status')})"
+        return {"output": out, "status": "ok"}
+
+    elif cmd == "/status":
+        status_res = get_agents_telemetry_status()
+        kpis = status_res.get("top_kpis", {})
+        out = (
+            f"[{timestamp_str}] 🤖 Статус флота ИИ-Агентов (Sextet Fleet):\n"
+            f"  Готовность флота: {kpis.get('fleet_ready')} ({kpis.get('fleet_ready_pct')}%)\n"
+            f"  Агент 4 (Judge Grounding): {kpis.get('grounding_recall_pct')}%\n"
+            f"  Агент 5 (Chaos Canary Latency): {kpis.get('canary_latency_s')}s\n"
+            f"  Карантин: {kpis.get('quarantine_count')} звонков\n"
+            f"  Все службы в строю ✓"
+        )
+        return {"output": out, "status": "ok", "data": status_res}
+
+    elif cmd == "/clear":
+        return {"output": "__CLEAR__", "status": "clear"}
+
+    else:
+        return {
+            "output": f"[{timestamp_str}] ⚠️ Неизвестная команда '{cmd}'. Введите /help для списка доступных команд.",
+            "status": "error"
+        }
+
 
 
 

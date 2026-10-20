@@ -32,6 +32,7 @@ from ..tenant_registry import (
     get_tenant_spreadsheet_id,
     get_tenants_registry_path,
     load_tenants_registry,
+    save_tenants_registry,
     _REGISTRY_CACHE,
 )
 
@@ -235,11 +236,7 @@ def update_tenant_crm(tenant_id: str, req: UpdateTenantCrmRequest):
         target_tenant["crm_webhook_url"] = req.b24_webhook_url.strip()
 
     target_tenant["updated_at"] = datetime.now().isoformat()
-
-    with open(reg_path, "w", encoding="utf-8") as f:
-        json.dump(registry, f, ensure_ascii=False, indent=2)
-
-    _REGISTRY_CACHE["timestamp"] = 0
+    save_tenants_registry(registry)
     return {"status": "updated", "tenant": target_tenant}
 
 
@@ -438,11 +435,7 @@ def offboard_tenant(tenant_id: str):
 
     target["status"] = "archived"
     target["offboarded_at"] = datetime.now().isoformat()
-
-    with open(reg_path, "w", encoding="utf-8") as f:
-        json.dump(registry, f, ensure_ascii=False, indent=2)
-
-    _REGISTRY_CACHE["timestamp"] = 0
+    save_tenants_registry(registry)
     logger.info(f"Tenant {clean_id} successfully offboarded and archived.")
     return {
         "status": "offboarded",
@@ -493,9 +486,7 @@ def register_tenant(req: RegisterTenantRequest):
             if req.avg_deal_check is not None:
                 t["avg_deal_check"] = req.avg_deal_check
 
-            with open(reg_path, "w", encoding="utf-8") as f:
-                json.dump(registry, f, ensure_ascii=False, indent=2)
-            _REGISTRY_CACHE["timestamp"] = 0
+            save_tenants_registry(registry)
             return {"status": "updated", "tenant": t}
 
     # Append new tenant
@@ -521,9 +512,6 @@ def register_tenant(req: RegisterTenantRequest):
     }
     tenants_list.append(new_tenant)
 
-    with open(reg_path, "w", encoding="utf-8") as f:
-        json.dump(registry, f, ensure_ascii=False, indent=2)
-
-    _REGISTRY_CACHE["timestamp"] = 0
+    save_tenants_registry(registry)
     logger.info(f"Registered new client tenant {clean_id} ({req.tenant_name})")
     return {"status": "created", "tenant": new_tenant}
