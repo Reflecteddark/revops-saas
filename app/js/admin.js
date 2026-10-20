@@ -89,6 +89,8 @@ async function triggerSelfHealingAudit() {
 // ADMIN DASHBOARD & FLEET CONTROL CENTER
 // ==========================================================================
 
+const REVOPS_ADMIN_KEY_DEFAULT = 'revops_sec_k9f2b8a74e1d3c0598f42017ae63bc89';
+
 function getAdminAuthHeaders() {
   const headers = { 'Content-Type': 'application/json' };
   try {
@@ -97,16 +99,19 @@ function getAdminAuthHeaders() {
       headers['X-RevOps-Session'] = encodeURIComponent(raw);
     }
   } catch (e) {}
-  headers['X-RevOps-Admin-Key'] = 'revops_admin_fleet_secret_2026';
+  const savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key') || REVOPS_ADMIN_KEY_DEFAULT;
+  headers['X-Admin-Key'] = savedKey;
+  headers['X-RevOps-Admin-Key'] = savedKey;
   return headers;
 }
 
 async function adminFetch(endpoint, options = {}) {
   const delim = endpoint.includes('?') ? '&' : '?';
-  const url = `${REVOPS_API_BASE}${endpoint}${delim}admin_key=revops_admin_fleet_secret_2026`;
+  const savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key') || REVOPS_ADMIN_KEY_DEFAULT;
+  const url = `${REVOPS_API_BASE}${endpoint}${delim}admin_key=${savedKey}`;
   const authHeaders = getAdminAuthHeaders();
   const mergedHeaders = { ...authHeaders, ...(options.headers || {}) };
-  return fetch(url, { ...options, headers: mergedHeaders });
+  return fetch(url, { ...options, headers: mergedHeaders, credentials: 'include' });
 }
 
 let isAdminActionRunning = false;

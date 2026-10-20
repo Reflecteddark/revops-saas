@@ -157,10 +157,34 @@ def test_nuances_hardening():
     assert resp_openapi.status_code == 403, f"Expected 403 for unauthorized public /openapi.json, got {resp_openapi.status_code}"
     print("  ✓ /docs and /openapi.json blocked with 403 Forbidden for unauthorized external requests.")
 
-    # With admin_key -> 200 OK
-    resp_docs_auth = client.get("/docs?admin_key=revops_admin_fleet_secret_2026", headers=ext_headers)
-    assert resp_docs_auth.status_code == 200, f"Expected 200 for authorized /docs, got {resp_docs_auth.status_code}"
-    print("  ✓ /docs accessible with valid admin_key (HTTP 200).")
+    # With new rotated key via X-Admin-Key header -> 200 OK + Set-Cookie
+    rotated_key = "revops_sec_k9f2b8a74e1d3c0598f42017ae63bc89"
+    headers_with_key = {**ext_headers, "X-Admin-Key": rotated_key}
+    resp_docs_header = client.get("/docs", headers=headers_with_key)
+    assert resp_docs_header.status_code == 200, f"Expected 200 for X-Admin-Key, got {resp_docs_header.status_code}"
+    assert "revops_admin_token" in resp_docs_header.cookies, "Set-Cookie missing revops_admin_token"
+    cookie_token = resp_docs_header.cookies["revops_admin_token"]
+    print("  ✓ /docs accessible via X-Admin-Key header and established HttpOnly cookie.")
+
+    # Access /docs using ONLY the established cookie (zero headers, zero query params)
+    resp_docs_cookie = client.get("/docs", headers=ext_headers, cookies={"revops_admin_token": cookie_token})
+    assert resp_docs_cookie.status_code == 200, f"Expected 200 for cookie-only access, got {resp_docs_cookie.status_code}"
+    print("  ✓ /docs accessible purely via HttpOnly cookie (clean URL, zero params in history).")
+
+    # Access /openapi.json using ONLY the cookie
+    resp_openapi_cookie = client.get("/openapi.json", headers=ext_headers, cookies={"revops_admin_token": cookie_token})
+    assert resp_openapi_cookie.status_code == 200, f"Expected 200 for /openapi.json via cookie, got {resp_openapi_cookie.status_code}"
+    print("  ✓ /openapi.json accessible purely via HttpOnly cookie.")
+
+    # Forged cookie -> 403 Forbidden
+    resp_fake_cookie = client.get("/docs", headers=ext_headers, cookies={"revops_admin_token": "9999999.forged_signature"})
+    assert resp_fake_cookie.status_code == 403, f"Expected 403 for forged cookie, got {resp_fake_cookie.status_code}"
+    print("  ✓ Forged cookie strictly rejected with HTTP 403 Forbidden.")
+
+    # Migration fallback key check
+    resp_docs_fallback = client.get("/docs?admin_key=revops_admin_fleet_secret_2026", headers=ext_headers)
+    assert resp_docs_fallback.status_code == 200, f"Expected 200 for migration fallback key, got {resp_docs_fallback.status_code}"
+    print("  ✓ Migration fallback key accepted during transition window.")
 
     # Nuance 2: CLI Whitelist & Sanitization
     # Disallowed command

@@ -45,7 +45,13 @@ async def lifespan(app: FastAPI):
 
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
-from .routers.admin_router import verify_admin_access
+from starlette.responses import HTMLResponse, JSONResponse
+from .routers.admin_router import (
+    verify_admin_access,
+    COOKIE_ADMIN_AUTH_NAME,
+    generate_admin_cookie_token,
+    verify_admin_cookie_token,
+)
 
 app = FastAPI(
     title="RevOps Intelligence — Enterprise SaaS API",
@@ -59,19 +65,58 @@ app = FastAPI(
 
 @app.get("/docs", include_in_schema=False)
 async def get_protected_docs(request: Request):
-    """Admin-only protected Swagger UI."""
+    """Admin-only protected Swagger UI with automatic HttpOnly Cookie establishment."""
     verify_admin_access(request)
-    admin_key_param = f"?admin_key={request.query_params.get('admin_key', '')}" if request.query_params.get('admin_key') else ""
-    return get_swagger_ui_html(
-        openapi_url=f"/openapi.json{admin_key_param}",
-        title="RevOps Intelligence SaaS — API Documentation"
+
+    base_response = get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="RevOps Intelligence SaaS — API Documentation",
+        swagger_ui_parameters={"persistAuthorization": True}
     )
+    html_content = base_response.body.decode("utf-8")
+    cleanup_script = "<script>if(window.location.search.includes('admin_key')){window.history.replaceState({},document.title,window.location.pathname);}</script></body>"
+    if "</body>" in html_content:
+        html_content = html_content.replace("</body>", cleanup_script)
+    else:
+        html_content += cleanup_script
+
+    response = HTMLResponse(content=html_content, status_code=200, headers=dict(base_response.headers))
+
+    existing_cookie = request.cookies.get(COOKIE_ADMIN_AUTH_NAME)
+    if not existing_cookie or not verify_admin_cookie_token(existing_cookie):
+        is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+        new_token = generate_admin_cookie_token()
+        response.set_cookie(
+            key=COOKIE_ADMIN_AUTH_NAME,
+            value=new_token,
+            httponly=True,
+            secure=is_https,
+            samesite="lax",
+            max_age=7 * 86400,
+            path="/"
+        )
+    return response
 
 @app.get("/openapi.json", include_in_schema=False)
 async def get_protected_openapi(request: Request):
-    """Admin-only protected OpenAPI schema."""
+    """Admin-only protected OpenAPI schema with HttpOnly cookie maintenance."""
     verify_admin_access(request)
-    return get_openapi(title=app.title, version=app.version, routes=app.routes)
+    schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
+    response = JSONResponse(content=schema)
+
+    existing_cookie = request.cookies.get(COOKIE_ADMIN_AUTH_NAME)
+    if not existing_cookie or not verify_admin_cookie_token(existing_cookie):
+        is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+        response.set_cookie(
+            key=COOKIE_ADMIN_AUTH_NAME,
+            value=generate_admin_cookie_token(),
+            httponly=True,
+            secure=is_https,
+            samesite="lax",
+            max_age=7 * 86400,
+            path="/"
+        )
+    return response
 
 # Latency & Telemetry Middleware (Prometheus & Sentry Observability)
 @app.middleware("http")

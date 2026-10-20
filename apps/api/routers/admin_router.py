@@ -26,8 +26,48 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger("admin_router")
 
-# Allowed admin secret key for remote administration via Cloudflare Tunnel
-REVOPS_ADMIN_KEY = os.getenv("REVOPS_ADMIN_KEY", "revops_admin_fleet_secret_2026")
+COOKIE_ADMIN_AUTH_NAME = "revops_admin_token"
+
+# Primary rotated admin secret key (can be overridden via REVOPS_ADMIN_KEY env var)
+REVOPS_ADMIN_KEY = os.getenv("REVOPS_ADMIN_KEY", "revops_sec_k9f2b8a74e1d3c0598f42017ae63bc89")
+
+# Fallback keys accepted during rolling migration
+ALLOWED_ADMIN_KEYS = {
+    REVOPS_ADMIN_KEY,
+    "revops_admin_fleet_secret_2026",  # legacy migration fallback
+}
+if os.getenv("REVOPS_ADMIN_FALLBACK_KEY"):
+    ALLOWED_ADMIN_KEYS.add(os.getenv("REVOPS_ADMIN_FALLBACK_KEY"))
+
+
+def generate_admin_cookie_token(secret: str = REVOPS_ADMIN_KEY) -> str:
+    """Generate a tamper-proof HMAC-signed cookie token based on REVOPS_ADMIN_KEY."""
+    import hashlib
+    import hmac
+    ts = str(int(time.time()))
+    sig = hmac.new(secret.encode("utf-8"), f"revops_admin_auth:{ts}".encode("utf-8"), hashlib.sha256).hexdigest()
+    return f"{ts}.{sig}"
+
+
+def verify_admin_cookie_token(token: str, max_age_sec: int = 7 * 86400) -> bool:
+    """Verify signed cookie token and expiration (7 days TTL)."""
+    if not token or "." not in token:
+        return False
+    try:
+        import hashlib
+        import hmac
+        ts_str, signature = token.split(".", 1)
+        ts = int(ts_str)
+        now = time.time()
+        if (now - ts) > max_age_sec or ts > (now + 300):
+            return False
+        for cand in ALLOWED_ADMIN_KEYS:
+            expected = hmac.new(cand.encode("utf-8"), f"revops_admin_auth:{ts_str}".encode("utf-8"), hashlib.sha256).hexdigest()
+            if hmac.compare_digest(expected, signature):
+                return True
+        return False
+    except Exception:
+        return False
 
 AUTH_SIGN_SALT = "revops_tnt001_enterprise_sec_v20_2"
 ADMIN_KEY_HASHES = [
@@ -45,8 +85,9 @@ def verify_admin_access(request: Request):
     Guarantees zero unauthorized access to admin fleet actions.
     Public requests via Cloudflare Tunnel / Vercel are allowed if:
     1. Localhost direct request without public proxy headers, OR
-    2. Valid X-RevOps-Admin-Key header, OR
-    3. Valid X-RevOps-Session header with verified cryptographic signature.
+    2. Valid HttpOnly signed cookie (revops_admin_token), OR
+    3. Valid X-Admin-Key or X-RevOps-Admin-Key header, OR
+    4. Valid X-RevOps-Session header with verified cryptographic signature.
     Otherwise returns 403 Forbidden.
     """
     client_ip = request.client.host if request.client else ""
@@ -65,9 +106,18 @@ def verify_admin_access(request: Request):
     ):
         return True
 
-    # 1. Direct secret admin key check
-    admin_key = request.headers.get("x-revops-admin-key") or request.query_params.get("admin_key")
-    if admin_key and admin_key == REVOPS_ADMIN_KEY:
+    # 1. HttpOnly signed cookie check
+    cookie_token = request.cookies.get(COOKIE_ADMIN_AUTH_NAME)
+    if cookie_token and verify_admin_cookie_token(cookie_token):
+        return True
+
+    # 2. Direct secret admin key check (X-Admin-Key, X-RevOps-Admin-Key, or query param)
+    admin_key = (
+        request.headers.get("x-admin-key")
+        or request.headers.get("x-revops-admin-key")
+        or request.query_params.get("admin_key")
+    )
+    if admin_key and (admin_key in ALLOWED_ADMIN_KEYS):
         return True
 
     # 2. Cryptographic session signature check
