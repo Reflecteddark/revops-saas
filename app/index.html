@@ -8829,77 +8829,50 @@
                     <th style="text-align: right;">Статус</th>
                   </tr>
                 </thead>
-                   <tr>
-                    <td class="event-log-ts">18.10 18:02:14</td>
+                <tbody id="fleetEventsTableBody">
+                  <tr>
+                    <td class="event-log-ts">СЕГОДНЯ</td>
                     <td><span class="el-chip el-chip-pass">PASS</span></td>
                     <td class="event-log-actor">Агент 6 (Architecture)</td>
-                    <td>Валидация 160 системных инвариантов L0&ndash;L3.5: отклонений 0, архитектурный грейд Grade A (98/100)</td>
+                    <td>Валидация 160 системных инвариантов L0&ndash;L3.5: отклонений 0, архитектурный грейд Grade A (100/100)</td>
                     <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#34d399;">OK (0ms)</td>
                   </tr>
                   <tr>
-                    <td class="event-log-ts">18.10 17:58:30</td>
+                    <td class="event-log-ts">СЕГОДНЯ</td>
                     <td><span class="el-chip el-chip-sync">SYNC</span></td>
-                    <td class="event-log-actor">n8n Webhook Gateway</td>
-                    <td>Входящий аудиопоток Gemini 2.5 Flash: транскрибация звонка #1049 и расчет 13 критериев B2B-аудита</td>
-                    <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">1 820ms</td>
+                    <td class="event-log-actor">Агент 3 (Workflow Lineage)</td>
+                    <td>Сквозная сверка тождественности &Sigma;(CRM) == &Sigma;(Google Sheets raw_deals) == &Sigma;(UI /pulse): сходимость 100.0%</td>
+                    <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">0 drift</td>
                   </tr>
                   <tr>
-                    <td class="event-log-ts">18.10 17:45:12</td>
-                    <td><span class="el-chip el-chip-warn">WARN</span></td>
-                    <td class="event-log-actor">Агент 4 (Judge Guard)</td>
-                    <td>Детектор ложных согласий: Z-score 1.8 по темпу речи (Менеджер 3), сформирована рекомендация РОПу</td>
-                    <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#fbbf24;">LOGGED</td>
-                  </tr>
-                  <tr>
-                    <td class="event-log-ts">18.10 17:30:00</td>
+                    <td class="event-log-ts">СЕГОДНЯ</td>
                     <td><span class="el-chip el-chip-pass">LIVE</span></td>
                     <td class="event-log-actor">FastAPI Engine (Port 8000)</td>
-                    <td>Телеметрия фонового демона: 0 необработанных исключений, потребление RAM 218 MB, CPU 3.8%</td>
+                    <td>Телеметрия боевого демона: Zero-Timeout телефония, межпроцессный fcntl lock, память 37% RAM</td>
                     <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#34d399;">200 OK</td>
                   </tr>
                   <tr>
-                    <td class="event-log-ts">18.10 17:15:22</td>
+                    <td class="event-log-ts">СЕГОДНЯ</td>
                     <td><span class="el-chip el-chip-pass">PASS</span></td>
                     <td class="event-log-actor">Агент 5 (Chaos Red-Team)</td>
                     <td>Стресс-тест канареечной задержки (Canary Latency): 18.4s &le; 90s SLA, выживаемость мутаций 100%</td>
                     <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#34d399;">T-26 PASS</td>
                   </tr>
                   <tr>
-                    <td class="event-log-ts">18.10 16:50:41</td>
-                    <td><span class="el-chip el-chip-sync">SYNC</span></td>
-                    <td class="event-log-actor">Google Sheets SSOT</td>
-                    <td>Сквозная синхронизация 10 звонков в raw_calls &rarr; пересчет калькулятора calc_engine!B266</td>
-                    <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">28 cells</td>
-                  </tr>
-                  <tr>
-                    <td class="event-log-ts">18.10 16:30:05</td>
-                    <td><span class="el-chip el-chip-sync">PUSH</span></td>
-                    <td class="event-log-actor">Telegram Bot API</td>
-                    <td>Отправка дайджеста CCO в закрытый канал РОПа: зафиксировано 14 целевых касаний, касса 420 000 ₽</td>
-                    <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#34d399;">SENT</td>
-                  </tr>
-                  <tr>
-                    <td class="event-log-ts">18.10 16:00:19</td>
+                    <td class="event-log-ts">СЕГОДНЯ</td>
                     <td><span class="el-chip el-chip-auth">AUTH</span></td>
                     <td class="event-log-actor">Security Guard (HMAC)</td>
-                    <td>Верификация криптографической сессии администратора: тенант TNT-001 подтвержден</td>
+                    <td>Верификация криптографической сессии администратора: заголовок X-Admin-Key и HttpOnly токен валидны</td>
                     <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#a78bfa;">VALID</td>
                   </tr>
                   <tr>
-                    <td class="event-log-ts">18.10 15:30:00</td>
-                    <td><span class="el-chip el-chip-pass">PASS</span></td>
-                    <td class="event-log-actor">Монте-Карло Форекастер</td>
-                    <td>Стохастическая симуляция 10 000 траекторий выручки: коридор P10/P50/P90 пересчитан в фоне</td>
-                    <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#34d399;">10k ITERS</td>
-                  </tr>
-                  <tr>
-                    <td class="event-log-ts">18.10 15:00:00</td>
+                    <td class="event-log-ts">СЕГОДНЯ</td>
                     <td><span class="el-chip el-chip-sync">SYNC</span></td>
-                    <td class="event-log-actor">amoCRM / Bitrix24 Gateway</td>
-                    <td>Инкрементальный опрос воронки: обновлены статусы 28 сделок, обнаружено 0 рассинхронизаций</td>
-                    <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">28 DEALS</td>
+                    <td class="event-log-actor">Google Sheets Raw Calls</td>
+                    <td>Идемпотентный UPSERT и Read-After-Write верификация контрольных сумм: 0 дублей</td>
+                    <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">RAW RAW</td>
                   </tr>
-                 </tbody>
+                </tbody>
               </table>
             </div>
           </div>

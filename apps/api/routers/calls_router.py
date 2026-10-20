@@ -212,6 +212,7 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
     if not sa_path:
         return False
     try:
+        import hashlib
         import gspread
         gc = gspread.service_account(str(sa_path))
         tenant_id = (payload.tenant_id or "TNT-001").strip().upper()
@@ -230,7 +231,7 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
             parts = payload.duration.split(":")
             try:
                 dur_sec = int(parts[0]) * 60 + int(parts[1])
-            except:
+            except Exception:
                 pass
 
         cr_list = payload.cr if payload.cr and len(payload.cr) == 13 else [1]*13
@@ -239,6 +240,11 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
         error_summary = payload.error_summary or ""
         ai_recommendation = payload.recommendation or ""
         transcript_text = payload.transcript or ""
+
+        # Compute deterministic Payload SHA-256 checksum (hash_out)
+        hash_out = hashlib.sha256(
+            f"{call_id}:{manager_id}:{total_score}:{dur_sec}:{next_step_flag}".encode("utf-8")
+        ).hexdigest()
 
         row = [
             call_id,
@@ -257,7 +263,7 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
             today_str,
             "V20.0",
             "AI Supervisor (n8n)",
-            f"hash_{call_id}_{payload.tenant_id}",
+            f"sha256_{hash_out[:12]}",
             transcript_text,
             "0",
             "Middle",
@@ -269,7 +275,40 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
             "0"
         ]
 
-        ws.append_row(row)
+        # 1. Strict Idempotency Check & UPSERT (prevents duplicates on retry/replay)
+        existing_call_ids = ws.col_values(1)
+        row_idx = None
+        if call_id in existing_call_ids:
+            row_idx = existing_call_ids.index(call_id) + 1
+            logger.info(f"Idempotency hit: call_id {call_id} found at row {row_idx}. Performing UPSERT.")
+            ws.update(f"A{row_idx}:Z{row_idx}", [row[:26]], value_input_option="USER_ENTERED")
+        else:
+            ws.append_row(row, value_input_option="USER_ENTERED")
+            row_idx = len(existing_call_ids) + 1
+
+        # 2. Read-After-Write (RAW) Cryptographic Verification
+        try:
+            read_back = ws.row_values(row_idx)
+            if read_back and len(read_back) >= 5:
+                r_call_id = read_back[0]
+                r_manager = read_back[2] if len(read_back) > 2 else ""
+                r_dur = read_back[4] if len(read_back) > 4 else ""
+                r_score = read_back[19] if len(read_back) > 19 else str(total_score)
+                r_next_step = read_back[20] if len(read_back) > 20 else str(next_step_flag)
+                hash_in = hashlib.sha256(
+                    f"{r_call_id}:{r_manager}:{r_score}:{r_dur}:{r_next_step}".encode("utf-8")
+                ).hexdigest()
+
+                if hash_out != hash_in:
+                    logger.warning(
+                        f"Read-After-Write hash mismatch for {call_id} (out={hash_out[:8]}, in={hash_in[:8]}). Rewriting in RAW mode."
+                    )
+                    ws.update(f"A{row_idx}:Z{row_idx}", [row[:26]], value_input_option="RAW")
+                else:
+                    logger.info(f"Read-After-Write verified successfully for {call_id} (checksum: {hash_out[:8]})")
+        except Exception as ex_raw:
+            logger.debug(f"Read-After-Write verification note: {ex_raw}")
+
         # Invalidate cache so fresh calls appear immediately
         _CALLS_CACHE.pop(tenant_id, None)
         _CALLS_CACHE.clear()
