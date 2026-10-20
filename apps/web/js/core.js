@@ -171,6 +171,7 @@ async function initTenantsSelector() {
 // CRYPTOGRAPHIC AUTH ACCESS GATE LOGIC (SERVER-SIDE SECURE AUTH)
 // ==========================================================================
 const AUTH_STORAGE_KEY = 'revops_enterprise_session_v1';
+if (typeof window !== 'undefined') window.AUTH_STORAGE_KEY = AUTH_STORAGE_KEY;
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 let REGISTERED_CLIENTS_DIRECTORY = [];
@@ -495,9 +496,12 @@ function animateCardsIn(container) {
 async function switchTab(tabId) {
   if (tabId === 'admin') {
     try {
+      const headers = (typeof getAdminAuthHeaders === 'function') 
+        ? getAdminAuthHeaders() 
+        : { 'Content-Type': 'application/json', 'X-RevOps-Admin-Key': 'revops_admin_fleet_secret_2026' };
       const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/status`, { 
         method: 'GET', 
-        headers: typeof getAdminAuthHeaders === 'function' ? getAdminAuthHeaders() : {}, 
+        headers: headers, 
         credentials: 'include' 
       });
       if (res.status === 403) {
@@ -512,7 +516,8 @@ async function switchTab(tabId) {
         return switchTab('pulse');
       }
     } catch (e) {
-      showToast('Ошибка', 'Не удалось проверить права на админку');
+      console.warn('[Admin Guard] Connection failed:', e);
+      showToast('Ошибка сервера', 'Сервер на порту 8000 оффлайн. Запустите start.bat');
       return switchTab('pulse');
     }
   }

@@ -40,9 +40,9 @@ def main():
 
     logger.info("Starting uvicorn server on http://0.0.0.0:8000...")
     
-    # Run uvicorn
+    py_exe = str(sys.executable).replace("pythonw.exe", "python.exe")
     cmd = [
-        sys.executable,
+        py_exe,
         "-m",
         "uvicorn",
         "apps.api.main:app",
@@ -54,12 +54,15 @@ def main():
         "info"
     ]
 
+    creation_flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+
     with open(LOG_FILE, "a", encoding="utf-8") as f_out:
         proc = subprocess.Popen(
             cmd,
             cwd=str(BASE_DIR),
             stdout=f_out,
-            stderr=subprocess.STDOUT
+            stderr=subprocess.STDOUT,
+            creationflags=creation_flags
         )
         logger.info(f"Uvicorn process spawned with PID {proc.pid}.")
         
