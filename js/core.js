@@ -365,6 +365,9 @@ function applyAuthenticatedSession(session) {
   }
 }
 
+let _lastAuthAttempt = 0;
+const AUTH_COOLDOWN_MS = 1500;
+
 async function handleAuthSubmit(e) {
   if (e) e.preventDefault();
   const loginInput = document.getElementById('authLogin');
@@ -373,6 +376,16 @@ async function handleAuthSubmit(e) {
   const errorBox = document.getElementById('authErrorBox');
   const card = document.getElementById('authCard');
   const submitBtn = document.getElementById('btnAuthSubmit');
+
+  const now = Date.now();
+  if (now - _lastAuthAttempt < AUTH_COOLDOWN_MS) {
+    if (errorBox) {
+      errorBox.textContent = 'Слишком частая попытка. Подождите 2 секунды.';
+      errorBox.style.display = 'block';
+    }
+    return false;
+  }
+  _lastAuthAttempt = now;
 
   const loginVal = (loginInput.value || '').trim().toLowerCase();
   const passVal = (passInput.value || '').trim();

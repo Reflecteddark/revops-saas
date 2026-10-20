@@ -741,6 +741,9 @@ async function loadAdminTenants() {
     if (!res.ok) throw new Error(data.detail || 'Сбой загрузки флота тенантов');
 
     currentTenantsCache = data.tenants || [];
+    try {
+      localStorage.setItem('revops_admin_tenants_cache', JSON.stringify(data.tenants || []));
+    } catch (e) {}
 
     if (activeBadge) activeBadge.textContent = `${data.total_active || 0} активен`;
     if (frozenBadge) frozenBadge.textContent = `${data.total_frozen || 0} заморожено`;
@@ -1245,6 +1248,9 @@ async function testServiceAccountLive() {
 // ==========================================================================
 
 async function runCCOAction(action, btn = null) {
+  if (action === 'workflow_audit') {
+    return runWorkflowLineageAudit(btn || document.getElementById('btnRunA3'));
+  }
   return executeAgentAction('a2', action, btn || document.getElementById('btnRunA2'));
 }
 
@@ -1945,22 +1951,22 @@ async function runWorkflowLineageAudit(btn = null) {
       }
       appendDrawerOutput('════════════════════════════════════════════════════════════════', 'header');
       appendDrawerOutput('✓ СХОДИМОСТЬ ПОЛНАЯ (100.0% CONVERGENCE): БАЛАНС ИДЕНТИЧЕН ВО ВСЕХ ТОЧКАХ', 'success');
-      appendDrawerOutput(`   • Формула:             ${data.equation}`, 'info');
-      appendDrawerOutput(`   • CRM воронка:         ${data.crm.deals_count} сделок на сумму ${data.crm.amount_str}`, 'info');
-      appendDrawerOutput(`   • Google Sheets (raw): ${data.google_sheets.deals_count} сделок на сумму ${data.google_sheets.amount_str}`, 'info');
-      appendDrawerOutput(`   • UI Пульс (ЛК):       ${data.ui_pulse.deals_count} сделок на сумму ${data.ui_pulse.amount_str}`, 'info');
-      appendDrawerOutput(`   • Schema Drift:        ${data.schema_drift} расхождений (11 raw листов синхронизированы)`, 'success');
+      appendDrawerOutput(`   • Формула:             ${data.equation || 'Σ(CRM) == Σ(Sheets) == Σ(UI)'}`, 'info');
+      appendDrawerOutput(`   • CRM воронка:         ${data.crm?.deals_count ?? 0} сделок на сумму ${data.crm?.amount_str ?? '—'}`, 'info');
+      appendDrawerOutput(`   • Google Sheets (raw): ${data.google_sheets?.deals_count ?? 0} сделок на сумму ${data.google_sheets?.amount_str ?? '—'}`, 'info');
+      appendDrawerOutput(`   • UI Пульс (ЛК):       ${data.ui_pulse?.deals_count ?? 0} сделок на сумму ${data.ui_pulse?.amount_str ?? '—'}`, 'info');
+      appendDrawerOutput(`   • Schema Drift:        ${data.schema_drift ?? 0} расхождений (11 raw листов синхронизированы)`, 'success');
       appendDrawerOutput(`   • Идемпотентность:     100% (SHA-256 Checksum Guard & Read-After-Write)`, 'success');
-      appendDrawerOutput(`   • Верификатор:         ${data.reconciled_by} @ ${data.verified_at}`, 'info');
+      appendDrawerOutput(`   • Верификатор:         ${data.reconciled_by || 'Lineage Auditor'} @ ${data.verified_at || 'сейчас'}`, 'info');
       appendDrawerOutput('════════════════════════════════════════════════════════════════', 'header');
-      showToast('Lineage Reconciler', `Баланс подтвержден: 100.0% сходимость (${data.crm.amount_str})`);
+      showToast('Lineage Reconciler', `Баланс подтвержден: 100.0% сходимость (${data.crm?.amount_str ?? '—'})`);
     } else {
       if (statusEl) {
         statusEl.className = 'badge-warn';
         statusEl.textContent = `⚠️ РАСХОЖДЕНИЕ (${elapsed}s)`;
       }
-      appendDrawerOutput(`⚠️ Обнаружено расхождение баланса данных (Сходимость: ${data.convergence_pct}%):`, 'error');
-      appendDrawerOutput(`CRM: ${data.crm.amount_str} | Sheets: ${data.google_sheets.amount_str} | UI: ${data.ui_pulse.amount_str}`, 'error');
+      appendDrawerOutput(`⚠️ Обнаружено расхождение баланса данных (Сходимость: ${data.convergence_pct ?? 0}%):`, 'error');
+      appendDrawerOutput(`CRM: ${data.crm?.amount_str ?? '—'} | Sheets: ${data.google_sheets?.amount_str ?? '—'} | UI: ${data.ui_pulse?.amount_str ?? '—'}`, 'error');
       showToast('Lineage Reconciler', 'Внимание: зафиксирован дрейф баланса!');
     }
   } catch (err) {

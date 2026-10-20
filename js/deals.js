@@ -203,17 +203,6 @@ function setPulsePeriod(period) {
   let dealsList = allDeals.filter(d => isItemInPeriod(d.created_at || d.date, period));
   let callsList = allCalls.filter(c => isItemInPeriod(c.date || c.created_at, period));
 
-  if (dealsList.length === 0 && allDeals.length > 0) {
-    if (period === 'today') dealsList = allDeals.slice(0, Math.max(1, Math.round(allDeals.length * 0.15)));
-    else if (period === '7d') dealsList = allDeals.slice(0, Math.max(1, Math.round(allDeals.length * 0.4)));
-    else dealsList = allDeals;
-  }
-  if (callsList.length === 0 && allCalls.length > 0) {
-    if (period === 'today') callsList = allCalls.slice(0, Math.max(1, Math.round(allCalls.length * 0.15)));
-    else if (period === '7d') callsList = allCalls.slice(0, Math.max(1, Math.round(allCalls.length * 0.4)));
-    else callsList = allCalls;
-  }
-
   let baseFact = 0;
   let basePipe = 0;
   let baseSsot = 0;
@@ -257,7 +246,11 @@ function setPulsePeriod(period) {
     targetPlan = Math.round(monthlyTarget / 22);
     periodLabel = 'Сегодня';
     if (syncText) syncText.textContent = `Срез за сегодня (${callsList.length} звонков, ${dealsList.length} сделок)`;
-    showToast('Период: Сегодня', `Оперативная суточная активность: ${baseFact.toLocaleString('ru-RU')} ₽ факт.`);
+    if (dealsList.length === 0 && callsList.length === 0) {
+      showToast('Период: Сегодня', 'За сегодня данных нет');
+    } else {
+      showToast('Период: Сегодня', `Оперативная суточная активность: ${baseFact.toLocaleString('ru-RU')} ₽ факт.`);
+    }
   } else if (period === '7d') {
     targetPlan = Math.round(monthlyTarget * 5 / 22);
     periodLabel = 'За 7 дней';
@@ -339,6 +332,9 @@ async function fetchLiveCallsData(showFeedback = false) {
     if (!res || !res.ok) throw new Error('API status ' + (res ? res.status : 'network error'));
     const data = await res.json();
     if (data && Array.isArray(data.calls)) {
+      data.calls.forEach(c => {
+        if (!Array.isArray(c.cr) || c.cr.length !== 13) c.cr = Array(13).fill(0);
+      });
       CALLS_DATA = data.calls;
       window.CALLS_DATA = data.calls;
       refreshAllDashboardViews();
@@ -389,6 +385,8 @@ async function fetchLiveDealsData(showFeedback = false) {
   return false;
 }
 
+let _wsAttempt = 0;
+
 function initWebSocketListener() {
   if (liveWs && liveWs.readyState === WebSocket.OPEN) return;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -400,6 +398,7 @@ function initWebSocketListener() {
   try {
     liveWs = new WebSocket(wsUrl);
     liveWs.onopen = () => {
+      _wsAttempt = 0;
       console.log(`[Live WS] Connected to live pipeline stream (${tenantId})`);
     };
     liveWs.onmessage = (event) => {
@@ -417,7 +416,8 @@ function initWebSocketListener() {
       }
     };
     liveWs.onclose = () => {
-      setTimeout(initWebSocketListener, 5000);
+      const delay = Math.min(30000, 1000 * Math.pow(2, _wsAttempt++));
+      setTimeout(initWebSocketListener, delay);
     };
     liveWs.onerror = () => {
       try { liveWs.close(); } catch (e) {}
