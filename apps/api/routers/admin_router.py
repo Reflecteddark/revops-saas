@@ -1521,7 +1521,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
     else:
         brief_lines.extend([
             "🔌 ПОДКЛЮЧЕНИЕ AMOCRM:",
-            f"• Домен: {req.amo_domain or 'revopsofficial.amocrm.ru'}",
+            f"• Домен: {req.amo_domain or 'Укажите домен amoCRM в настройках'}",
             "• Интеграция: Прямой API v4 (Polling & Events) активен",
             "• Звонки и сделки синхронизируются автоматически!",
         ])
@@ -2435,8 +2435,8 @@ def get_admin_crm_status(tenant_id: str = Query("TNT-001")):
     b24_script = _find_crm_connector_script("bitrix24")
     amo_script = _find_crm_connector_script("amocrm")
 
-    b24_webhook = config.get("b24_webhook_url") or "https://b24-8dmblj.bitrix24.ru/rest/1/azekoswdul7y2cpi/"
-    amo_domain = (config.get("amo_domain") or "https://revopsofficial.amocrm.ru").replace("https://", "").replace("/", "")
+    b24_webhook = config.get("b24_webhook_url") or config.get("crm_webhook_url") or ""
+    amo_domain = (config.get("amo_domain") or "").replace("https://", "").replace("/", "")
     amo_token = config.get("amo_token") or ""
 
     return {
@@ -2860,7 +2860,7 @@ def get_tenant_health_doctor(tenant_id: str):
     # Check 2: CRM Integration
     crm_token = cfg.get("amocrm_token") or cfg.get("bitrix24_webhook") or os.getenv("AMOCRM_ACCESS_TOKEN") or os.getenv("BITRIX24_WEBHOOK_URL")
     if crm_type == "amocrm":
-        amo_domain = cfg.get("amocrm_domain") or os.getenv("AMOCRM_SUBDOMAIN", "revopsofficial.amocrm.ru")
+        amo_domain = cfg.get("amocrm_domain") or cfg.get("amo_domain") or os.getenv("AMOCRM_SUBDOMAIN", "")
         has_token = bool(crm_token and len(str(crm_token)) > 20)
         if has_token:
             checks.append({
