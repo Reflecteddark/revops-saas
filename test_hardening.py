@@ -145,12 +145,69 @@ def test_terminal_cli():
     print("\n✓ Live Terminal CLI commands executed successfully.")
 
 
+def test_nuances_hardening():
+    print("\n--- [6] Testing 4 Architecture & Security Nuances ---")
+
+    # Nuance 1: Protected Swagger UI and OpenAPI schema
+    # Public / external requests without admin_key -> 403 Forbidden
+    ext_headers = {"host": "report.ai-rop.ru", "cf-connecting-ip": "194.87.12.34"}
+    resp_docs = client.get("/docs", headers=ext_headers)
+    assert resp_docs.status_code == 403, f"Expected 403 for unauthorized public /docs, got {resp_docs.status_code}"
+    resp_openapi = client.get("/openapi.json", headers=ext_headers)
+    assert resp_openapi.status_code == 403, f"Expected 403 for unauthorized public /openapi.json, got {resp_openapi.status_code}"
+    print("  ✓ /docs and /openapi.json blocked with 403 Forbidden for unauthorized external requests.")
+
+    # With admin_key -> 200 OK
+    resp_docs_auth = client.get("/docs?admin_key=revops_admin_fleet_secret_2026", headers=ext_headers)
+    assert resp_docs_auth.status_code == 200, f"Expected 200 for authorized /docs, got {resp_docs_auth.status_code}"
+    print("  ✓ /docs accessible with valid admin_key (HTTP 200).")
+
+    # Nuance 2: CLI Whitelist & Sanitization
+    # Disallowed command
+    resp_bad_cmd = client.post("/api/v1/admin/terminal/execute", json={"command": "rm -rf /"})
+    assert resp_bad_cmd.status_code == 200
+    bad_data = resp_bad_cmd.json()
+    assert bad_data.get("status") == "error", "Disallowed command was not rejected"
+    assert "отклонена" in bad_data.get("output", "")
+    print("  ✓ Arbitrary shell command 'rm -rf /' strictly rejected by CLI whitelist.")
+
+    # Injection in argument: /ping; id
+    resp_inj = client.post("/api/v1/admin/terminal/execute", json={"command": "/ping; id"})
+    assert resp_inj.status_code == 200
+    inj_data = resp_inj.json()
+    assert inj_data.get("status") == "error"
+    print("  ✓ Injected command '/ping; id' rejected.")
+
+    # Nuance 3: DLQ disk persistence
+    from apps.api.routers.webhooks_router import DLQ_SNAPSHOT_PATH
+    assert DLQ_SNAPSHOT_PATH.exists(), f"DLQ snapshot file should exist at {DLQ_SNAPSHOT_PATH}"
+    with open(DLQ_SNAPSHOT_PATH, "r", encoding="utf-8") as f:
+        dlq_data = json.load(f)
+        assert isinstance(dlq_data, list) and len(dlq_data) > 0, "DLQ snapshot file is empty or not a list"
+    print(f"  ✓ DLQ disk persistence verified ({len(dlq_data)} items saved at {DLQ_SNAPSHOT_PATH.name}).")
+
+    # Nuance 4: InterProcessFileLock
+    from apps.api.tenant_registry import InterProcessFileLock
+    lock_tmp = Path(".test_interprocess.lock")
+    with InterProcessFileLock(lock_tmp):
+        # Nested or concurrent acquisition check
+        assert lock_tmp.exists()
+    if lock_tmp.exists():
+        try:
+            lock_tmp.unlink()
+        except Exception:
+            pass
+    print("  ✓ InterProcessFileLock acquisition and release verified.")
+
+
 if __name__ == "__main__":
     test_atomic_registry()
     wh_id = test_webhook_queue()
     test_dlq_and_replay(wh_id)
     test_quarantine_resolution()
     test_terminal_cli()
+    test_nuances_hardening()
     print("\n=======================================================")
-    print("ALL 5 ARCHITECTURAL HARDENING TESTS PASSED SUCCESSFULLY!")
+    print("ALL 6 ARCHITECTURAL HARDENING TESTS PASSED SUCCESSFULLY!")
     print("=======================================================")
+

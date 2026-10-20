@@ -8,6 +8,7 @@ from datetime import datetime
 import json
 import logging
 import os
+from pathlib import Path
 import time
 from typing import Any, Dict, List, Optional
 
@@ -37,8 +38,50 @@ LAST_INCOMING_WEBHOOK: Dict[str, Any] = {
 }
 
 # Ring buffer of incoming webhooks (Dead Letter Queue & Inspection)
-WEBHOOKS_HISTORY: List[Dict[str, Any]] = [LAST_INCOMING_WEBHOOK]
-MAX_WEBHOOKS_HISTORY = 20
+DLQ_SNAPSHOT_PATH = Path(__file__).resolve().parents[3] / "logs" / "webhooks_dlq_snapshot.json"
+
+
+def _load_persisted_dlq() -> List[Dict[str, Any]]:
+    candidates = [
+        DLQ_SNAPSHOT_PATH,
+        Path("/opt/revops-saas/logs/webhooks_dlq_snapshot.json"),
+        Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-saas" / "logs" / "webhooks_dlq_snapshot.json"
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list) and data:
+                        logger.info(f"Loaded {len(data)} persisted DLQ webhooks from {p}")
+                        return data
+            except Exception as e:
+                logger.warning(f"Failed to load persisted DLQ from {p}: {e}")
+    return [LAST_INCOMING_WEBHOOK]
+
+
+def _save_persisted_dlq():
+    paths = [DLQ_SNAPSHOT_PATH]
+    if Path("/opt/revops-saas/logs").exists():
+        paths.append(Path("/opt/revops-saas/logs/webhooks_dlq_snapshot.json"))
+
+    for p in paths:
+        try:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            tmp = p.parent / f".tmp_dlq_{os.getpid()}_{time.time_ns()}.json"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(WEBHOOKS_HISTORY, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, p)
+        except Exception as e:
+            logger.error(f"Failed to persist DLQ snapshot to {p}: {e}")
+
+
+WEBHOOKS_HISTORY: List[Dict[str, Any]] = _load_persisted_dlq()
+if WEBHOOKS_HISTORY:
+    LAST_INCOMING_WEBHOOK = WEBHOOKS_HISTORY[0]
+MAX_WEBHOOKS_HISTORY = 30
 
 
 def record_incoming_webhook(
@@ -76,6 +119,7 @@ def record_incoming_webhook(
     WEBHOOKS_HISTORY.insert(0, record)
     if len(WEBHOOKS_HISTORY) > MAX_WEBHOOKS_HISTORY:
         WEBHOOKS_HISTORY.pop()
+    _save_persisted_dlq()
     return webhook_id
 
 
@@ -105,6 +149,8 @@ def update_webhook_status(
             LAST_INCOMING_WEBHOOK["execution_time_ms"] = execution_time_ms
         if sheets_synced is not None:
             LAST_INCOMING_WEBHOOK["sheets_synced"] = sheets_synced
+    _save_persisted_dlq()
+
 
 
 

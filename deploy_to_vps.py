@@ -276,10 +276,10 @@ def run_smoke_test(timeout_sec: int = 15) -> bool:
     else:
         log(f"Внимание: статус служб: {statuses}", symbol="[!]")
 
-    # 2. Ожидание ответа HTTP 200 от публичного API
+    # 2. Ожидание ответа HTTP 200 от публичного API (/api/v1/health)
     api_ready = False
     req = urllib.request.Request(
-        "https://report.ai-rop.ru/docs",
+        "https://report.ai-rop.ru/api/v1/health",
         headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) RevOps-Deploy/1.0"}
     )
     while time.time() - t0 < timeout_sec:
@@ -292,7 +292,7 @@ def run_smoke_test(timeout_sec: int = 15) -> bool:
             time.sleep(1.0)
             
     if api_ready:
-        log("Публичный API шлюз https://report.ai-rop.ru/docs готов (HTTP 200 OK).", symbol="[+]")
+        log("Публичный API шлюз https://report.ai-rop.ru/api/v1/health готов (HTTP 200 OK).", symbol="[+]")
     else:
         log("Предупреждение: API шлюз еще не ответил 200 OK (возможно, прогрев воркеров).", symbol="[!]")
 

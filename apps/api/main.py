@@ -43,12 +43,35 @@ async def lifespan(app: FastAPI):
     yield
 
 
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
+from .routers.admin_router import verify_admin_access
+
 app = FastAPI(
     title="RevOps Intelligence — Enterprise SaaS API",
     description="Платформа стохастического моделирования выручки, ИИ-инсайтов и ликвидации узких мест воронки.",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
+
+@app.get("/docs", include_in_schema=False)
+async def get_protected_docs(request: Request):
+    """Admin-only protected Swagger UI."""
+    verify_admin_access(request)
+    admin_key_param = f"?admin_key={request.query_params.get('admin_key', '')}" if request.query_params.get('admin_key') else ""
+    return get_swagger_ui_html(
+        openapi_url=f"/openapi.json{admin_key_param}",
+        title="RevOps Intelligence SaaS — API Documentation"
+    )
+
+@app.get("/openapi.json", include_in_schema=False)
+async def get_protected_openapi(request: Request):
+    """Admin-only protected OpenAPI schema."""
+    verify_admin_access(request)
+    return get_openapi(title=app.title, version=app.version, routes=app.routes)
 
 # Latency & Telemetry Middleware (Prometheus & Sentry Observability)
 @app.middleware("http")

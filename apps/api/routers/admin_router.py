@@ -3142,15 +3142,40 @@ async def execute_terminal_cli_command(req: TerminalExecuteRequest):
     Executes interactive administrative commands in the Live Terminal.
     Supports /help, /doctor [tenant_id], /test-call [tenant_id], /quarantine, /backup, /ping, /webhooks, /status.
     """
+    import re
+
     raw_cmd = (req.command or "").strip()
     if not raw_cmd:
         return {"output": "Пустая команда. Введите /help для справки по доступным командам.", "status": "error"}
+
+    # Strict whitelist of allowed administrative CLI commands
+    ALLOWED_CLI_COMMANDS = {
+        "/help", "help", "?",
+        "/doctor",
+        "/test-call",
+        "/quarantine",
+        "/backup",
+        "/ping",
+        "/webhooks", "/dlq",
+        "/status",
+        "/clear"
+    }
 
     parts = raw_cmd.split()
     cmd = parts[0].lower()
     arg1 = parts[1] if len(parts) > 1 else None
 
+    # Sanitize arguments against any command injection symbols
+    if arg1:
+        arg1 = re.sub(r"[^a-zA-Z0-9_\-]", "", arg1)
+
     timestamp_str = datetime.now().strftime("%H:%M:%S")
+
+    if cmd not in ALLOWED_CLI_COMMANDS:
+        return {
+            "output": f"[{timestamp_str}] ⛔ Команда '{cmd}' отклонена. Разрешены только проверенные команды из белого списка. Введите /help для справки.",
+            "status": "error"
+        }
 
     if cmd in ("/help", "help", "?"):
         help_text = (
