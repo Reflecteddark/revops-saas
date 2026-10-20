@@ -151,12 +151,28 @@ def sync_git(local_path: Path, commit_msg: str) -> str:
     commit_hash = hash_cmd.stdout.strip() or "unknown"
     return commit_hash
 
+def check_ssh_reachability(timeout_sec: int = 4) -> bool:
+    """Быстрая проверка доступности SSH на VPS перед стримингом."""
+    try:
+        res = subprocess.run(
+            ["ssh", "-n", "-o", "StrictHostKeyChecking=no", "-o", f"ConnectTimeout={timeout_sec}", f"{VPS_USER}@{VPS_HOST}", "echo ok"],
+            capture_output=True,
+            timeout=timeout_sec + 2
+        )
+        return res.returncode == 0
+    except Exception:
+        return False
+
 def stream_to_vps(local_path: Path, vps_path: str, commit_hash: str) -> bool:
     """Создает tar-архив в памяти с фильтрацией и стримит через SSH напрямую на VPS."""
     log(f"Упаковка и стриминг в VPS: {vps_path}...", symbol="[>]")
     
     file_count = 0
     total_bytes = 0
+
+    if not check_ssh_reachability(timeout_sec=4):
+        log(f"VPS {VPS_HOST} недоступен по SSH (тайм-аут соединения). Проверьте статус сервера в панели Aeza.", symbol="[-]")
+        return False
 
     def tar_filter(tarinfo):
         nonlocal file_count, total_bytes
@@ -194,7 +210,11 @@ def stream_to_vps(local_path: Path, vps_path: str, commit_hash: str) -> bool:
     try:
         with tarfile.open(fileobj=proc.stdin, mode="w:gz") as tar:
             tar.add(str(local_path), arcname=".", filter=tar_filter)
-        proc.stdin.close()
+        if proc.stdin and not proc.stdin.closed:
+            try:
+                proc.stdin.close()
+            except Exception:
+                pass
         out, err = proc.communicate(timeout=60)
         
         if proc.returncode != 0:
@@ -203,7 +223,10 @@ def stream_to_vps(local_path: Path, vps_path: str, commit_hash: str) -> bool:
             
     except Exception as e:
         log(f"Исключение при передаче на VPS: {e}", symbol="[-]")
-        proc.kill()
+        try:
+            proc.kill()
+        except Exception:
+            pass
         return False
 
     elapsed = time.time() - t0
