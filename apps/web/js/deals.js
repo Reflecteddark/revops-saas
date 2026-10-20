@@ -448,7 +448,7 @@ function handleIncomingLiveCall(newCall) {
   }
 }
 
-export function calculateFinancials(deals = null, calls = null) {
+function calculateFinancials(deals = null, calls = null) {
   const dealsList = deals !== null ? deals : ((typeof window.DEALS_DATA !== 'undefined' && Array.isArray(window.DEALS_DATA)) ? window.DEALS_DATA : []);
   const callsList = calls !== null ? calls : ((typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA)) ? CALLS_DATA : []);
 
@@ -1304,3 +1304,15 @@ window.renderPulseRecentCalls = renderPulseRecentCalls;
 window.renderPulseFunnel = renderPulseFunnel;
 window.triggerSyncSimulation = triggerSyncSimulation;
 window.calculateFinancials = calculateFinancials;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    calculateFinancials,
+    isItemInPeriod,
+    populateOnePagerModal,
+    setPulsePeriod,
+    fetchLiveCallsData,
+    fetchLiveDealsData,
+    refreshAllDashboardViews
+  };
+}
