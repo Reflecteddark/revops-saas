@@ -45,16 +45,18 @@ PROJECTS = {
         "services": ["revops-healer", "revops-tgbot"],
         "git_url": "https://github.com/Reflecteddark/my-ai-crew.git",
         "repo": "Reflecteddark/my-ai-crew",
-        "has_ci": False
+        "has_ci": False,
+        "deploy_mode": "systemd"
     },
     "saas": {
         "name": "RevOps SaaS Backend (revops-saas)",
         "local_path": HOME / ".gemini" / "antigravity" / "scratch" / "revops-saas",
         "vps_path": "/opt/revops-saas",
-        "services": ["revops-api"],
+        "services": [],
         "git_url": "https://github.com/Reflecteddark/revops-saas.git",
         "repo": "Reflecteddark/revops-saas",
-        "has_ci": True
+        "has_ci": True,
+        "deploy_mode": "docker"
     }
 }
 
@@ -342,6 +344,75 @@ def stream_to_vps(local_path: Path, vps_path: str, commit_hash: str) -> bool:
     )
     return True
 
+def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str) -> bool:
+    """
+    Копирует docker-compose.yml на VPS и запускает контейнеры через Docker Compose.
+    Создает необходимые директории (data, logs) заранее на VPS.
+    """
+    log(f"Подготовка окружения и деплой Docker на VPS: {vps_path}...", symbol="[>]")
+    
+    if not check_ssh_reachability(timeout_sec=4):
+        log(f"VPS {VPS_HOST} недоступен по SSH. Проверьте сервер в панели Aeza.", symbol="[-]")
+        return False
+
+    # 1. Заранее создаем директории data/ и logs/ на хосте, чтобы избежать создания с правами root-only
+    init_dirs_cmd = f"mkdir -p {vps_path}/data {vps_path}/logs"
+    res_init = subprocess.run(
+        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", init_dirs_cmd],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
+    )
+    if res_init.returncode != 0:
+        log(f"Ошибка подготовки директорий на VPS: {res_init.stderr.strip()}", symbol="[-]")
+        return False
+
+    # 2. Копируем docker-compose.yml через SCP
+    compose_file = local_path / "docker-compose.yml"
+    if not compose_file.exists():
+        log(f"Файл {compose_file} не найден локально!", symbol="[-]")
+        return False
+
+    log("Передача docker-compose.yml на VPS через SCP...", symbol="[>]")
+    scp_cmd = [
+        "scp", "-o", "StrictHostKeyChecking=no",
+        str(compose_file),
+        f"{VPS_USER}@{VPS_HOST}:{vps_path}/docker-compose.yml"
+    ]
+    res_scp = subprocess.run(scp_cmd, capture_output=True, text=True, encoding="utf-8", errors="ignore")
+    if res_scp.returncode != 0:
+        log(f"Ошибка передачи docker-compose.yml: {res_scp.stderr.strip()}", symbol="[-]")
+        return False
+
+    # 3. Выполняем docker compose pull && docker compose up -d
+    log("Обновление и запуск Docker-контейнеров (docker compose pull && up -d)...", symbol="[^]")
+    docker_cmd = f"cd {vps_path} && docker compose pull && docker compose up -d --remove-orphans"
+    res_docker = subprocess.run(
+        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
+    )
+    if res_docker.returncode != 0:
+        log(f"Ошибка запуска контейнеров: {res_docker.stderr.strip() or res_docker.stdout.strip()}", symbol="[-]")
+        return False
+        
+    log("Docker-контейнеры успешно обновлены и запущены!", symbol="[+]")
+
+    # 4. Запись штампа деплоя
+    deploy_stamp = datetime.now().isoformat()
+    stamp_cmd = (
+        f"echo '{{\"commit\": \"{commit_hash}\", \"deployed_at\": \"{deploy_stamp}\", \"mode\": \"docker\"}}' "
+        f"> {vps_path}/.deploy_info.json"
+    )
+    subprocess.run(
+        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", stamp_cmd],
+        capture_output=True
+    )
+    return True
+
 def restart_services(services: list) -> bool:
     """Перезапускает службы systemd на VPS."""
     if not services:
@@ -363,20 +434,25 @@ def restart_services(services: list) -> bool:
         
     return True
 
-def run_smoke_test(timeout_sec: int = 15) -> bool:
+def run_smoke_test(timeout_sec: int = 20) -> bool:
     """Ожидает полной готовности боевых служб и проверяет эндпоинты."""
     log("Ожидание готовности и запуск смоук-теста боевой среды...", symbol="[?]")
     t0 = time.time()
     
-    # 1. Ожидание активности всех systemd служб
+    # 1. Ожидание активности Docker контейнера revops-api и systemd служб
     all_active = False
     statuses = []
     while time.time() - t0 < timeout_sec:
+        check_cmd = (
+            "docker inspect -f '{{.State.Status}}' revops-api 2>/dev/null || "
+            "systemctl is-active revops-api 2>/dev/null || echo inactive; "
+            "systemctl is-active revops-healer revops-tgbot cloudflared 2>/dev/null || true"
+        )
         units_cmd = subprocess.run(
             [
                 "ssh", "-n", "-o", "StrictHostKeyChecking=no",
                 f"{VPS_USER}@{VPS_HOST}",
-                "systemctl is-active revops-api revops-healer revops-tgbot cloudflared"
+                check_cmd
             ],
             capture_output=True,
             text=True,
@@ -384,13 +460,15 @@ def run_smoke_test(timeout_sec: int = 15) -> bool:
             errors="ignore"
         )
         statuses = [s.strip() for s in units_cmd.stdout.strip().split("\n") if s.strip()]
-        if len(statuses) >= 4 and all(s == "active" for s in statuses):
+        api_active = bool(statuses and statuses[0] in ["running", "active"])
+        other_active = all(s == "active" for s in statuses[1:]) if len(statuses) > 1 else True
+        if api_active and other_active:
             all_active = True
             break
         time.sleep(1.0)
         
     if all_active:
-        log("Все 4 боевые службы VPS активны (revops-api, healer, tgbot, cloudflared).", symbol="[+]")
+        log(f"Все боевые службы VPS активны (revops-api: {statuses[0] if statuses else 'ok'}, cloudflared, healer, tgbot).", symbol="[+]")
     else:
         log(f"Внимание: статус служб: {statuses}", symbol="[!]")
 
@@ -492,17 +570,27 @@ def main():
         all_services = []
         for t in targets:
             proj = PROJECTS[t]
-            success = stream_to_vps(proj["local_path"], proj["vps_path"], hashes.get(t, "unknown"))
+            deploy_mode = proj.get("deploy_mode", "systemd")
+            commit_h = hashes.get(t, "unknown")
+            
+            if deploy_mode == "docker":
+                success = deploy_via_docker_compose(proj["local_path"], proj["vps_path"], commit_h)
+            else:
+                success = stream_to_vps(proj["local_path"], proj["vps_path"], commit_h)
+                
             if not success:
                 log(f"Деплой проекта {t} завершился с ошибкой!", symbol="[-]")
                 sys.exit(1)
-            all_services.extend(proj["services"])
+                
+            all_services.extend(proj.get("services", []))
 
-        # Шаг 4: Рестарт служб
-        restart_services(list(dict.fromkeys(all_services)))
+        # Шаг 4: Рестарт служб (только для legacy systemd сервисов)
+        systemd_services = list(dict.fromkeys([s for s in all_services if s]))
+        if systemd_services:
+            restart_services(systemd_services)
 
         # Шаг 5: Смоук-тест с ожиданием прогрева
-        run_smoke_test(timeout_sec=15)
+        run_smoke_test(timeout_sec=20)
 
     total_time = time.time() - start_time
     print("=" * 70)

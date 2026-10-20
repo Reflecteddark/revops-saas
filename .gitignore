@@ -1,6 +1,8 @@
 # Environments & Local Data
 .env
 .env.local
+data/
+logs/
 *.db
 *.sqlite3
 *.log
