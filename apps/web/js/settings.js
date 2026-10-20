@@ -9,8 +9,11 @@
 let SYSTEM_SETTINGS = null;
 
 function getMonthlyTarget() {
-  if (SYSTEM_SETTINGS && SYSTEM_SETTINGS.general && Number(SYSTEM_SETTINGS.general.monthly_target) > 0) {
-    return Number(SYSTEM_SETTINGS.general.monthly_target);
+  const currentSettings = (typeof module !== 'undefined' && module.exports && module.exports.SYSTEM_SETTINGS !== undefined)
+    ? module.exports.SYSTEM_SETTINGS
+    : ((typeof window !== 'undefined' && window.SYSTEM_SETTINGS !== undefined) ? window.SYSTEM_SETTINGS : SYSTEM_SETTINGS);
+  if (currentSettings && currentSettings.general && Number(currentSettings.general.monthly_target) > 0) {
+    return Number(currentSettings.general.monthly_target);
   }
   return 5000000;
 }
@@ -543,3 +546,7 @@ window.submitUpdateCrmSettings = submitUpdateCrmSettings;
 window.testClientCrmLive = testClientCrmLive;
 window.downloadTenantDataArchive = downloadTenantDataArchive;
 window.copyTelephonyWebhookUrl = copyTelephonyWebhookUrl;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { getMonthlyTarget, SYSTEM_SETTINGS };
+}
