@@ -250,6 +250,10 @@ def wait_for_ci(repo: str, commit_sha: str, timeout_sec: int = 300) -> bool:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
+            if e.code == 401:
+                log("[!] [CI Gate] GITHUB_TOKEN недействителен (401 Bad credentials). Переключаемся на анонимный режим...", symbol="[!]")
+                headers.pop("Authorization", None)
+                continue
             if e.code == 403:
                 log("[!] GitHub API Rate Limit exceeded. Пропускаем проверку CI (деплой продолжится)", symbol="[!]")
                 return True
