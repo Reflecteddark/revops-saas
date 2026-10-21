@@ -47,8 +47,3 @@ def test_global_exception_handler_and_telegram_alert():
         res_fail = client.get("/api/v1/diagnostics/trigger-500")
         assert res_fail.status_code == 500
         assert res_fail.json().get("status") == "error"
-
-
-def test_intentional_break_for_ci_alert():
-    """Intentional break to verify CI failure notification in Telegram."""
-    assert False, "Verification test failure for Telegram alert dispatcher"
