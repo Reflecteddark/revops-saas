@@ -12,14 +12,23 @@ import asyncio
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 import httpx
+import pytest
 
 from apps.api.main import app
+from packages.database.session import init_db
 from packages.monitoring.ai_probe import (
     generate_gemini_content_cascade,
     probe_gemini_models_sync,
 )
 
 client = TestClient(app)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def setup_database():
+    """Initializes schema for isolated test environments."""
+    init_db()
+
 
 
 def test_ai_probe_sync_healthy():
