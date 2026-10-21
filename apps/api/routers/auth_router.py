@@ -9,7 +9,7 @@ import re
 import secrets
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
@@ -214,6 +214,9 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
         )
 
     is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+    host = request.headers.get("host", "").lower()
+    cookie_domain = ".ai-rop.ru" if (is_https and ("ai-rop.ru" in host or bool(request.headers.get("cf-connecting-ip")))) else None
+    cookie_samesite: Literal["lax", "strict", "none"] = "none" if (is_https and cookie_domain) else "lax"
 
     is_admin = (
         matched_client.get("login") in ("admin", "dmitriyfedotov1908@gmail.com")
@@ -229,7 +232,8 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
             value=admin_token,
             httponly=True,
             secure=is_https,
-            samesite="lax",
+            samesite=cookie_samesite,
+            domain=cookie_domain,
             max_age=7 * 86400,
             path="/"
         )
@@ -240,7 +244,8 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
         value=session_token,
         httponly=True,
         secure=is_https,
-        samesite="lax",
+        samesite=cookie_samesite,
+        domain=cookie_domain,
         max_age=7 * 86400,
         path="/"
     )
@@ -259,22 +264,31 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
     }
 
 
-@router.post("/logout")
-def logout_alias(response: Response):
-    """Logs out user, clears session/access cookies and returns 200 OK."""
+def _clear_auth_cookies(response: Response, request: Request):
     from .admin_router import COOKIE_ADMIN_AUTH_NAME
-    response.delete_cookie(key="access_token", path="/")
-    response.delete_cookie(key="revops_client_auth", path="/")
-    response.delete_cookie(key=COOKIE_ADMIN_AUTH_NAME, path="/")
+    is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+    host = request.headers.get("host", "").lower()
+    cookie_domain = ".ai-rop.ru" if (is_https and ("ai-rop.ru" in host or bool(request.headers.get("cf-connecting-ip")))) else None
+    cookie_samesite: Literal["lax", "strict", "none"] = "none" if (is_https and cookie_domain) else "lax"
+
+    keys = ["access_token", "revops_client_auth", COOKIE_ADMIN_AUTH_NAME]
+    for key in keys:
+        if cookie_domain:
+            response.delete_cookie(key=key, path="/", domain=cookie_domain, secure=is_https, samesite=cookie_samesite)
+        response.delete_cookie(key=key, path="/")
+
+
+@router.post("/logout")
+def logout_alias(response: Response, request: Request):
+    """Logs out user, clears session/access cookies and returns 200 OK."""
+    _clear_auth_cookies(response, request)
     return {"status": "logged_out", "message": "Сессия успешно завершена"}
 
 
 @router.post("/client-logout")
-def client_logout(response: Response):
+def client_logout(response: Response, request: Request):
     """Logs out client and clears session cookies."""
-    from .admin_router import COOKIE_ADMIN_AUTH_NAME
-    response.delete_cookie(key="revops_client_auth", path="/" )
-    response.delete_cookie(key=COOKIE_ADMIN_AUTH_NAME, path="/")
+    _clear_auth_cookies(response, request)
     return {"status": "ok", "message": "Сессия успешно завершена"}
 
 

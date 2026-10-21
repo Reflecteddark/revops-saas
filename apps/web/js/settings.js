@@ -31,7 +31,7 @@ async function fetchAndPopulateSettings(forceToast = false) {
   }
   try {
     const tenantId = getActiveTenantId();
-    const res = await fetch(`${REVOPS_API_BASE}/api/v1/settings?tenant_id=${encodeURIComponent(tenantId)}`);
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/settings?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     SYSTEM_SETTINGS = data;
@@ -286,7 +286,8 @@ async function submitSystemSettingsForm() {
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/settings?tenant_id=${encodeURIComponent(activeTenantId)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      credentials: 'include'
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -360,7 +361,7 @@ function toggleAllModules(enableAll) {
 async function loadTenantAccountSettings(tId = null) {
   const tenantId = tId || getActiveTenantId();
   try {
-    const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants/${encodeURIComponent(tenantId)}/passport`);
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants/${encodeURIComponent(tenantId)}/passport`, { credentials: 'include' });
     if (!res.ok) return;
     const p = await res.json();
 
@@ -415,6 +416,7 @@ async function submitChangePassword() {
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/auth/change-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         tenant_id: tenantId,
         current_password: currPass,
@@ -446,6 +448,7 @@ async function submitUpdateProfile() {
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/auth/update-profile`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         tenant_id: tenantId,
         email: email,
@@ -471,6 +474,7 @@ async function submitUpdateCrmSettings() {
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants/${encodeURIComponent(tenantId)}/crm`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         amo_domain: amoDomain,
         amo_token: amoToken || undefined,
@@ -492,7 +496,8 @@ async function testClientCrmLive() {
   const tenantId = getActiveTenantId();
   try {
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants/${encodeURIComponent(tenantId)}/test-crm`, {
-      method: 'POST'
+      method: 'POST',
+      credentials: 'include'
     });
     const data = await res.json();
     if (pingEl) {

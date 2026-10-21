@@ -39,7 +39,10 @@ async function triggerSelfHealingAudit() {
   `);
 
   try {
-    const res = await fetch('/api/v1/diagnostics/self-healing', { method: 'POST' });
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/diagnostics/self-healing`, {
+      method: 'POST',
+      credentials: 'include'
+    });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
 

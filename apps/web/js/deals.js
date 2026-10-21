@@ -331,12 +331,12 @@ async function fetchLiveCallsData(showFeedback = false) {
     const tenantId = getActiveTenantId();
     let res;
     try {
-      res = await fetch(`${REVOPS_API_BASE}/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`);
+      res = await fetch(`${REVOPS_API_BASE}/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
       if (!res.ok && REVOPS_API_BASE) {
-        res = await fetch(`/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`);
+        res = await fetch(`/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
       }
     } catch (e) {
-      res = await fetch(`/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`);
+      res = await fetch(`/api/v1/calls/data?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
     }
     if (!res || !res.ok) throw new Error('API status ' + (res ? res.status : 'network error'));
     const data = await res.json();
@@ -366,12 +366,12 @@ async function fetchLiveDealsData(showFeedback = false) {
     const tenantId = getActiveTenantId();
     let res;
     try {
-      res = await fetch(`${REVOPS_API_BASE}/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`);
+      res = await fetch(`${REVOPS_API_BASE}/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
       if (!res.ok && REVOPS_API_BASE) {
-        res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`);
+        res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
       }
     } catch (e) {
-      res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`);
+      res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
     }
     if (!res || !res.ok) throw new Error('API status ' + (res ? res.status : 'network error'));
     const data = await res.json();

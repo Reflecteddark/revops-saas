@@ -144,7 +144,7 @@ async function initTenantsSelector() {
   if (!selector) return;
 
   try {
-    const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants`);
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/tenants`, { credentials: 'include' });
     if (res.ok) {
       const list = await res.json();
       if (Array.isArray(list) && list.length > 0) {
@@ -334,7 +334,6 @@ async function handleAuthSubmit(e) {
       role: data.user.role,
       tenant: data.user.tenant,
       is_admin: data.user.is_admin,
-      session_token: data.session_token,
       timestamp: Date.now()
     };
 

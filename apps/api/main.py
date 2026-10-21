@@ -9,6 +9,7 @@ Implements the 8-Layer Enterprise Architecture:
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -98,13 +99,17 @@ async def get_protected_docs(request: Request):
     existing_cookie = request.cookies.get(COOKIE_ADMIN_AUTH_NAME)
     if not existing_cookie or not verify_admin_cookie_token(existing_cookie):
         is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+        host = request.headers.get("host", "").lower()
+        cookie_domain = ".ai-rop.ru" if (is_https and ("ai-rop.ru" in host or bool(request.headers.get("cf-connecting-ip")))) else None
+        cookie_samesite: Literal["lax", "strict", "none"] = "none" if (is_https and cookie_domain) else "lax"
         new_token = generate_admin_cookie_token()
         response.set_cookie(
             key=COOKIE_ADMIN_AUTH_NAME,
             value=new_token,
             httponly=True,
             secure=is_https,
-            samesite="lax",
+            samesite=cookie_samesite,
+            domain=cookie_domain,
             max_age=7 * 86400,
             path="/"
         )
@@ -120,12 +125,16 @@ async def get_protected_openapi(request: Request):
     existing_cookie = request.cookies.get(COOKIE_ADMIN_AUTH_NAME)
     if not existing_cookie or not verify_admin_cookie_token(existing_cookie):
         is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+        host = request.headers.get("host", "").lower()
+        cookie_domain = ".ai-rop.ru" if (is_https and ("ai-rop.ru" in host or bool(request.headers.get("cf-connecting-ip")))) else None
+        cookie_samesite: Literal["lax", "strict", "none"] = "none" if (is_https and cookie_domain) else "lax"
         response.set_cookie(
             key=COOKIE_ADMIN_AUTH_NAME,
             value=generate_admin_cookie_token(),
             httponly=True,
             secure=is_https,
-            samesite="lax",
+            samesite=cookie_samesite,
+            domain=cookie_domain,
             max_age=7 * 86400,
             path="/"
         )
@@ -197,7 +206,13 @@ async def global_exception_handler(request: Request, exc: Exception):
 # CORS Middleware (allows Vercel, localhost, PWA, Tauri)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://ai-rop.ru",
+        "https://report.ai-rop.ru",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

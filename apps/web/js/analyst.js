@@ -31,7 +31,8 @@ async function initAnalystTab(forceRefresh = false) {
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/insights/analyst/overview`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      credentials: 'include'
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
@@ -194,7 +195,8 @@ async function sendAnalystChat(customText = null) {
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/insights/analyst/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      credentials: 'include'
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
