@@ -64,6 +64,43 @@ class Tenant(Base):
     deals = relationship("Deal", back_populates="tenant", cascade="all, delete-orphan")
     call_recordings = relationship("CallRecording", back_populates="tenant", cascade="all, delete-orphan")
 
+    @property
+    def spreadsheet_id(self) -> str:
+        if self.settings and isinstance(self.settings, dict):
+            return self.settings.get("spreadsheet_id", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk")
+        return "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk"
+
+    @property
+    def crm_type(self) -> str:
+        if self.settings and isinstance(self.settings, dict):
+            return self.settings.get("crm_type", "bitrix24")
+        return "bitrix24"
+
+    @property
+    def status_label(self) -> str:
+        if not self.is_active:
+            return "offboarded"
+        if self.settings and isinstance(self.settings, dict):
+            return self.settings.get("status", "active")
+        return "active"
+
+    def to_registry_dict(self) -> dict:
+        st = self.settings if isinstance(self.settings, dict) else {}
+        return {
+            "tenant_id": self.id,
+            "tenant_name": self.name,
+            "spreadsheet_id": st.get("spreadsheet_id", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk"),
+            "crm_type": st.get("crm_type", "bitrix24"),
+            "status": "active" if self.is_active else st.get("status", "offboarded"),
+            "niche_name": st.get("niche_name", "Универсальный B2B"),
+            "avg_deal_check": st.get("avg_deal_check", 150000),
+            "amo_domain": st.get("amo_domain"),
+            "amo_token": st.get("amo_token"),
+            "bitrix_webhook_url": st.get("bitrix_webhook_url"),
+            "custom_features": st.get("custom_features", {}),
+            "is_template": bool(st.get("is_template", False))
+        }
+
 
 class User(Base):
     """User with tenant membership and one of the 7 RevOps RBAC roles."""
