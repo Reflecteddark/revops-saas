@@ -31,9 +31,33 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
     except Exception:
         pass
 
+def load_vps_host() -> str:
+    host = os.getenv("VPS_HOST")
+    if host and host.strip():
+        return host.strip()
+    candidate_files = [
+        Path(__file__).resolve().parent / "deploy.env",
+        Path(__file__).resolve().parent / ".env",
+        Path("deploy.env"),
+        Path(".env"),
+    ]
+    for env_file in candidate_files:
+        try:
+            if env_file.exists():
+                with open(env_file, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("VPS_HOST="):
+                            val = line.split("=", 1)[1].strip().strip("'\"")
+                            if val:
+                                return val
+        except Exception:
+            pass
+    return "176.124.207.57"
+
 # Настройки VPS
-VPS_HOST = "176.124.207.57"
-VPS_USER = "root"
+VPS_HOST = load_vps_host()
+VPS_USER = os.getenv("VPS_USER", "root")
 
 # Репозитории и директории
 HOME = Path.home()

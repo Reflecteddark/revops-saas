@@ -88,7 +88,7 @@ pytest tests/ -v
 1. **GitHub Actions (`deploy.yml` / `ci-cd.yml`)**:
    - Запуск проверок линтера и тестов `pytest`.
    - Сборка multi-stage Docker-образа и публикация в GHCR.
-2. **Деплой на выделенный Linux VPS (`176.124.207.57`)**:
+2. **Деплой на выделенный Linux Cloud VPS (`<VPS_HOST_IP>` / `report.ai-rop.ru`)**:
    - Авторизация в GHCR на сервере.
    - Бесшовное обновление контейнера:
      ```bash

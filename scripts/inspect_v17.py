@@ -1,10 +1,7 @@
-import json
-import openpyxl
+from pathlib import Path
 
-wb = openpyxl.load_workbook(
-    r'C:\Users\strel\.gemini\antigravity\scratch\revops-enterprise-os\presentation\RevOps_Platform_V17.6_Clean_Client_Starter.xlsx',
-    data_only=True
-)
+target_file = Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "presentation" / "RevOps_Platform_V17.6_Clean_Client_Starter.xlsx"
+wb = openpyxl.load_workbook(str(target_file), data_only=True)
 
 tests = json.load(open('tests_v17_dump.json', encoding='utf-8'))
 with open('tests_summary.txt', 'w', encoding='utf-8') as f:

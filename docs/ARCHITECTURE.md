@@ -27,7 +27,7 @@ flowchart TD
         CF_TUNNEL["Cloudflare Tunnel (QUIC)<br/>report.ai-rop.ru"]
     end
 
-    subgraph VPS ["🖥️ Выделенный Сервер VPS (176.124.207.57)"]
+    subgraph VPS ["🖥️ Выделенный Сервер VPS (Dedicated Cloud Node)"]
         DOCKER_API["Docker Container: revops-api (:8000)<br/>• FastAPI Core (Uvicorn)<br/>• Zero-Leakage Server Auth<br/>• Dynamic CRM Switch Engine<br/>• WebSocket Event Bus"]
         DOCKER_N8N["Docker Container: n8n (:5678)<br/>• Voice AI Gatekeeper<br/>• Gemini 3.5 Flash Inline Audio"]
         HEALTH_GUARD["Systemd: revops-health-guard.timer<br/>• Watchdog (каждые 5 мин)<br/>• Авторестарт контейнеров<br/>• Telegram Alerts"]
@@ -124,5 +124,5 @@ revops-saas/
 ### 3.4. CI/CD и Продакшн-Контейнеризация
 * **GitHub Actions:** При каждом пуше в ветку `main` выполняется тестовый шлюз (CI Gate).
 * **GHCR:** Собирается образ `ghcr.io/reflecteddark/revops-saas:latest`.
-* **VPS Deploy:** На сервере `176.124.207.57` контейнер обновляется с нулевым временем простоя.
+* **VPS Deploy:** На целевом сервере VPS (`report.ai-rop.ru`) контейнер обновляется с нулевым временем простоя.
 * **Self-Healing Guard:** Служба `revops_health_guard.py` на хосте контролирует контейнеры Docker и системные сервисы, автоматически перезапуская их при сбоях.
