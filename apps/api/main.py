@@ -46,12 +46,18 @@ async def lifespan(app: FastAPI):
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from starlette.responses import HTMLResponse, JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.exception_handlers import http_exception_handler
+import logging
+from packages.monitoring.telegram_alerts import send_telegram_alert, format_error_alert
 from .routers.admin_router import (
     verify_admin_access,
     COOKIE_ADMIN_AUTH_NAME,
     generate_admin_cookie_token,
     verify_admin_cookie_token,
 )
+
+logger = logging.getLogger("revops_api")
 
 app = FastAPI(
     title="RevOps Intelligence — Enterprise SaaS API",
@@ -124,10 +130,64 @@ async def get_protected_openapi(request: Request):
 @app.middleware("http")
 async def track_latency_middleware(request: Request, call_next):
     start = time.perf_counter()
-    response = await call_next(request)
-    duration = time.perf_counter() - start
-    telemetry.record_request(duration, response.status_code)
-    return response
+    try:
+        response = await call_next(request)
+        duration = time.perf_counter() - start
+        telemetry.record_request(duration, response.status_code)
+        return response
+    except Exception as exc:
+        duration = time.perf_counter() - start
+        telemetry.record_request(duration, 500)
+        raise exc
+
+
+# Global Exception Handlers (Telegram Incident Alerts on 500)
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code >= 500:
+        client_ip = request.client.host if request.client else "unknown"
+        logger.error(f"HTTP {exc.status_code} Error on {request.method} {request.url.path}: {exc.detail}")
+        try:
+            alert_text = format_error_alert(
+                request_method=request.method,
+                request_url=str(request.url),
+                client_ip=client_ip,
+                exc=exc
+            )
+            send_telegram_alert(alert_text)
+        except Exception as e:
+            logger.error(f"Failed to dispatch Telegram alert for HTTP {exc.status_code}: {e}")
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Global 500 Exception Handler.
+    Catches all unhandled server exceptions, logs stacktrace,
+    sends instant Telegram incident notification, and returns 500 JSON response.
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    logger.error(f"Unhandled 500 Exception on {request.method} {request.url.path}: {exc}", exc_info=exc)
+    try:
+        alert_text = format_error_alert(
+            request_method=request.method,
+            request_url=str(request.url),
+            client_ip=client_ip,
+            exc=exc
+        )
+        send_telegram_alert(alert_text)
+    except Exception as e:
+        logger.error(f"Failed to dispatch Telegram error alert: {e}")
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status": "error",
+            "message": "Internal Server Error",
+            "detail": "An unexpected internal server error occurred. Incident has been dispatched to engineering via Telegram."
+        }
+    )
 
 # CORS Middleware (allows Vercel, localhost, PWA, Tauri)
 app.add_middleware(
@@ -182,6 +242,12 @@ def health_check():
             "integrations": "amoCRM, Bitrix24, Claude API"
         }
     }
+
+
+@app.get("/api/v1/diagnostics/trigger-500", include_in_schema=False)
+def trigger_intentional_500():
+    """Diagnostic route to test 500 exception handling and Telegram alert dispatching."""
+    raise RuntimeError("Intentional 500 test exception for Telegram alert verification")
 
 
 # Serve Branded SVG Favicon
