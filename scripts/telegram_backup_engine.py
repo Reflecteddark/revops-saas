@@ -37,6 +37,8 @@ from cryptography.fernet import Fernet
 
 # Base paths
 BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("telegram_backup")
@@ -356,7 +358,8 @@ def send_backup_to_telegram(
     chat_id: str,
     api_base: str = "https://api.telegram.org",
     max_part_size: int = MAX_PART_SIZE_BYTES,
-    is_encrypted: bool = False
+    is_encrypted: bool = False,
+    ai_status_text: str | None = None
 ) -> bool:
     """
     Sends backup file (or multi-part split series if >45MB) to Telegram chat via sendDocument.
@@ -374,12 +377,15 @@ def send_backup_to_telegram(
         f"<code>python scripts/telegram_backup_engine.py --decrypt {archive_path.name}</code>"
     ) if is_encrypted else "✅ <i>Резервная копия сохранена в Telegram Cloud. На сервере занято 0 байт.</i>"
 
+    ai_line = f"\n{ai_status_text}\n" if ai_status_text else "\n"
+
     if archive_path.stat().st_size <= max_part_size:
         # Standard Single Part Upload (<45 MB)
         caption = (
             f"{header_icon} <b>[{title_text}]</b>\n"
             f"📅 <i>{manifest.get('created_at_human')}</i>\n"
-            f"💾 Размер файла: <b>{total_size_mb} MB</b>\n\n"
+            f"💾 Размер файла: <b>{total_size_mb} MB</b>"
+            f"{ai_line}\n"
             f"<b>Включенные файлы:</b>\n{files_list_text}\n\n"
             f"{enc_status}"
         )
@@ -410,7 +416,8 @@ def send_backup_to_telegram(
             caption = (
                 f"{header_icon} <b>[{title_text}] Часть {idx}/{total_parts}</b>\n"
                 f"📅 <i>{manifest.get('created_at_human')}</i>\n"
-                f"💾 Размер тома: <b>{part_mb} MB</b> (Всего: <b>{total_size_mb} MB</b>)\n\n"
+                f"💾 Размер тома: <b>{part_mb} MB</b> (Всего: <b>{total_size_mb} MB</b>)"
+                f"{ai_line}\n"
                 f"<b>Включенные файлы:</b>\n{files_list_text}\n\n"
                 f"{reassemble_instructions}"
             )
@@ -436,6 +443,25 @@ def run_telegram_backup(max_part_size: int = MAX_PART_SIZE_BYTES, custom_encrypt
     if not bot_token or not chat_id:
         logger.error("Telegram bot_token or chat_id not found in configuration")
         return False
+
+    # Synthetic AI Health Probe (Daily Gemini Cascade verification)
+    ai_status_text: str | None = None
+    try:
+        from packages.monitoring.ai_probe import probe_gemini_models_sync
+        logger.info("Executing daily synthetic AI probe for Gemini cascade...")
+        probe_res = probe_gemini_models_sync(timeout=8.0)
+        if probe_res.get("healthy"):
+            ai_status_text = (
+                f"🤖 <b>ИИ-контур (CCO):</b> {probe_res['active_tier']} • "
+                f"<code>{probe_res['model']}</code> ({probe_res['latency_ms']} мс) ✓"
+            )
+            logger.info(f"AI probe succeeded: {probe_res['active_tier']} ({probe_res['latency_ms']} ms)")
+        else:
+            ai_status_text = "⚠️ <b>ИИ-контур (CCO):</b> СБОЙ МОДЕЛЕЙ (активирован Tier 4 Local SSOT)"
+            logger.warning(f"AI probe failed: {probe_res.get('error')}")
+    except Exception as e:
+        logger.warning(f"AI probe error: {e}")
+        ai_status_text = "⚠️ <b>ИИ-контур (CCO):</b> Проверка пропущена"
 
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     temp_dir = tempfile.gettempdir()
@@ -469,7 +495,8 @@ def run_telegram_backup(max_part_size: int = MAX_PART_SIZE_BYTES, custom_encrypt
             chat_id,
             api_base,
             max_part_size=max_part_size,
-            is_encrypted=is_encrypted
+            is_encrypted=is_encrypted,
+            ai_status_text=ai_status_text
         )
         return success
     finally:
@@ -485,12 +512,19 @@ def run_telegram_backup(max_part_size: int = MAX_PART_SIZE_BYTES, custom_encrypt
 def main():
     parser = argparse.ArgumentParser(description="RevOps Telegram Cloud Backup Engine")
     parser.add_argument("--backup", action="store_true", help="Execute backup cycle")
+    parser.add_argument("--probe-ai", action="store_true", help="Execute standalone synthetic AI probe")
     parser.add_argument("--decrypt", type=str, help="Path to .enc file to decrypt")
     parser.add_argument("--key", type=str, default=None, help="Decryption key/passphrase (optional, default: from config)")
     parser.add_argument("--out", type=str, default=None, help="Output path for decrypted tar.gz (optional)")
     args = parser.parse_args()
 
-    if args.decrypt:
+    if args.probe_ai:
+        from packages.monitoring.ai_probe import probe_gemini_models_sync
+        logger.info("Executing standalone synthetic AI probe for Gemini models...")
+        res = probe_gemini_models_sync(timeout=8.0)
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+        sys.exit(0 if res.get("healthy") else 1)
+    elif args.decrypt:
         enc_file = Path(args.decrypt)
         if not enc_file.exists():
             logger.error(f"File {enc_file} does not exist")

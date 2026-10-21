@@ -39,4 +39,5 @@ dist/
 # Local scratch / diagnostic scripts
 scripts/diagnose_*.py
 scripts/execute_*.py
+test_vps_gemini.py
 
