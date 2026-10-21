@@ -23,6 +23,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
+cryptography = pytest.importorskip("cryptography")
 from cryptography.fernet import Fernet
 from scripts.telegram_backup_engine import (
     create_backup_archive,
