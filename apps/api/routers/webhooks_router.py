@@ -625,30 +625,39 @@ async def _process_telephony_call(
         tenant_id=org_id
     )
 
-    if background_tasks:
-        background_tasks.add_task(_execute_telephony_background, call_payload, org_id, webhook_id, t_start)
-        response_time_ms = round((time.time() - t_start) * 1000, 2)
-        return {
-            "status": "queued",
-            "message": "Вебхук принят и поставлен в очередь асинхронной обработки (Zero-Timeout)",
-            "tenant_id": org_id,
-            "call_id": call_id,
-            "webhook_id": webhook_id,
-            "score": score,
-            "next_step": next_step,
-            "ack_latency_ms": response_time_ms
-        }
-    else:
-        # Fallback synchronous execution if background_tasks not injected
-        await _execute_telephony_background(call_payload, org_id, webhook_id, t_start)
-        return {
-            "status": "ok",
-            "tenant_id": org_id,
-            "call_id": call_id,
-            "webhook_id": webhook_id,
-            "score": score,
-            "next_step": next_step
-        }
+    call_dict = call_payload.model_dump() if hasattr(call_payload, "model_dump") else call_payload.dict()
+    task_id = None
+    queue_driver = "celery"
+
+    # 1. Attempt asynchronous dispatch to Celery broker (Redis queue)
+    try:
+        from workers.tasks import process_call_audio_task
+        task = process_call_audio_task.delay(call_dict, org_id, webhook_id, t_start)
+        task_id = task.id
+    except Exception as broker_err:
+        # 2. Antifragile fallback to in-process BackgroundTasks if Redis broker is offline
+        queue_driver = "background_tasks"
+        logger.debug(f"Celery dispatch fallback to BackgroundTasks: {broker_err}")
+        if background_tasks:
+            background_tasks.add_task(_execute_telephony_background, call_payload, org_id, webhook_id, t_start)
+            task_id = f"bg_{int(time.time()*1000)}"
+        else:
+            await _execute_telephony_background(call_payload, org_id, webhook_id, t_start)
+            task_id = f"sync_{int(time.time()*1000)}"
+
+    response_time_ms = round((time.time() - t_start) * 1000, 2)
+    return {
+        "status": "queued",
+        "message": "Вебхук принят и поставлен в очередь асинхронной обработки (Zero-Timeout)",
+        "tenant_id": org_id,
+        "call_id": call_id,
+        "webhook_id": webhook_id,
+        "task_id": task_id,
+        "queue_driver": queue_driver,
+        "score": score,
+        "next_step": next_step,
+        "ack_latency_ms": response_time_ms
+    }
 
 
 @router.post("/call")

@@ -85,6 +85,23 @@ services:
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     command: celery -A workers.celery_app worker -Q crm_sync_queue --concurrency=2 --loglevel=info
 
+  # 6. Celery Worker — Call Processing Queue (Telephony Ingestion & AI Scoring)
+  celery_call_worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    container_name: revops-celery-calls
+    restart: always
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://revops_admin:revops_secure_password@postgres:5432/revops_saas
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    command: celery -A workers.celery_app worker -Q call_processing_queue --concurrency=2 --loglevel=info
+
 volumes:
   postgres_data:
   redis_data:
