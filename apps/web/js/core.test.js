@@ -76,3 +76,48 @@ describe('getActiveTenantId', () => {
     expect(mod.getActiveTenantId()).toBe('TNT-002');
   });
 });
+
+describe('logout', () => {
+  afterEach(() => { vi.unstubAllGlobals(); vi.resetModules(); });
+
+  it('удаляет сессию из storage и сбрасывает форму', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', fetchSpy);
+    const store = {
+      'revops_auth_session': JSON.stringify({ authenticated: true, login: 'user1' }),
+      'revops_enterprise_session_v1': JSON.stringify({ authenticated: true, login: 'user1' })
+    };
+    vi.stubGlobal('localStorage', {
+      getItem: (k) => store[k] ?? null,
+      setItem: (k, v) => { store[k] = v; },
+      removeItem: (k) => { delete store[k]; }
+    });
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {}
+    });
+
+    const overlay = { classList: { remove: vi.fn(), add: vi.fn() } };
+    const passInput = { value: 'secret' };
+    vi.stubGlobal('document', {
+      getElementById: (id) => {
+        if (id === 'authOverlay') return overlay;
+        if (id === 'authPassword') return passInput;
+        return null;
+      },
+      body: { style: {} }
+    });
+
+    const mod = await import('./core.js?t=' + Date.now());
+    mod.logout();
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/auth/client-logout'),
+      expect.objectContaining({ method: 'POST', credentials: 'include' })
+    );
+    expect(store['revops_auth_session']).toBeUndefined();
+    expect(passInput.value).toBe('');
+  });
+});
+

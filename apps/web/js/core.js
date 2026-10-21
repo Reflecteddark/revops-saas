@@ -359,6 +359,16 @@ function logout() {
   } catch (e) {}
   localStorage.removeItem(AUTH_STORAGE_KEY);
   sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  localStorage.removeItem('revops_auth_session');
+  sessionStorage.removeItem('revops_auth_session');
+  const passInput = document.getElementById('authPassword');
+  if (passInput) passInput.value = '';
+  const errorBox = document.getElementById('authErrorBox');
+  if (errorBox) errorBox.classList.remove('visible');
+  const sb = document.getElementById('mpSidebar');
+  if (sb) sb.classList.remove('mobile-open');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (backdrop) backdrop.classList.remove('active');
   showToast('Сессия завершена', 'Вы успешно вышли из закрытого контура.');
   setTimeout(() => {
     showAuthGate();
@@ -1394,6 +1404,7 @@ window.handleCmdPaletteKeydown = handleCmdPaletteKeydown;
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    getActiveTenantId
+    getActiveTenantId,
+    logout
   };
 }

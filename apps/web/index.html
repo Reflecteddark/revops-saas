@@ -2786,6 +2786,41 @@
       background: rgba(0, 0, 0, 0.04);
     }
 
+    .btn-logout {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.08);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-logout:hover {
+      background: rgba(248, 113, 113, 0.18);
+      border-color: rgba(248, 113, 113, 0.45);
+      color: #ef4444;
+      transform: translateY(-1px);
+    }
+
+    html[data-theme="light"] .btn-logout {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #dc2626;
+    }
+
+    html[data-theme="light"] .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #b91c1c;
+    }
+
     .develop-user-avatar {
       width: 32px;
       height: 32px;
@@ -5676,6 +5711,10 @@
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></span>
           <span class="mp-nav-label">amoCRM API v4 &nearr;</span>
         </a>
+        <button id="sb-logout" class="mp-nav-item" onclick="logout()" data-tooltip="Выйти из аккаунта" aria-label="Выйти из учетной записи" style="color: #f87171; border-top: 1px solid rgba(248, 113, 113, 0.15); margin-top: 6px; padding-top: 10px;">
+          <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg></span>
+          <span class="mp-nav-label">12. Выйти из аккаунта</span>
+        </button>
       </div>
 
       <!-- Sidebar Footer Link & Develop Theme Switcher -->
@@ -5774,6 +5813,12 @@
             <div class="develop-user-avatar">ДФ</div>
             <span class="develop-user-name" id="loggedUserName">Дмитрий Федотов</span>
           </div>
+
+          <!-- Logout Button -->
+          <button id="btnHeaderLogout" class="btn-logout" onclick="logout()" title="Выйти из учетной записи" aria-label="Выйти из учетной записи">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Выйти</span>
+          </button>
         </div>
       </header>
 
