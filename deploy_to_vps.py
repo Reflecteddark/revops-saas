@@ -457,8 +457,8 @@ def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str)
         return False
 
     # 3. Выполняем docker compose pull && docker compose up -d
-    log("Обновление и запуск Docker-контейнеров (docker compose pull && up -d)...", symbol="[^]")
-    docker_cmd = f"cd {vps_path} && docker compose pull && docker compose up -d --remove-orphans"
+    log("Обновление и запуск Docker-контейнеров (docker compose pull && up -d --force-recreate)...", symbol="[^]")
+    docker_cmd = f"cd {vps_path} && docker compose pull && docker compose up -d --force-recreate --remove-orphans"
     res_docker = subprocess.run(
         ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
         capture_output=True,
