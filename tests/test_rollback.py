@@ -63,7 +63,7 @@ def test_update_vps_deploy_info_executes_ssh():
         args, _ = mock_run.call_args
         cmd_str = args[0]
         assert "ssh" in cmd_str[0]
-        assert "current_sha" in cmd_str[-1]
+        assert "base64" in cmd_str[-1]
 
 
 def test_rollback_docker_fails_when_no_previous_sha():

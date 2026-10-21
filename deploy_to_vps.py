@@ -10,6 +10,7 @@ import os
 import io
 import time
 import json
+import base64
 import tarfile
 import argparse
 import subprocess
@@ -472,7 +473,7 @@ def get_vps_deploy_info(vps_path: str) -> dict:
 
 
 def update_vps_deploy_info(vps_path: str, current_sha: str, previous_sha: str) -> bool:
-    """Записывает метаданные деплоя в .deploy_info.json на VPS."""
+    """Записывает метаданные деплоя в .deploy_info.json на VPS через base64."""
     deploy_stamp = datetime.now().isoformat()
     data = {
         "current_sha": current_sha,
@@ -480,11 +481,12 @@ def update_vps_deploy_info(vps_path: str, current_sha: str, previous_sha: str) -
         "deployed_at": deploy_stamp,
         "mode": "docker"
     }
-    json_str = json.dumps(data, indent=2, ensure_ascii=False)
+    raw_bytes = json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
+    b64_str = base64.b64encode(raw_bytes).decode("ascii")
     cmd = (
         f"python3 -c \""
-        f"import pathlib; "
-        f"pathlib.Path('{vps_path}/.deploy_info.json').write_text('''{json_str}''', encoding='utf-8')\""
+        f"import pathlib, base64; "
+        f"pathlib.Path('{vps_path}/.deploy_info.json').write_bytes(base64.b64decode('{b64_str}'))\""
     )
     res = subprocess.run(
         ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", cmd],
