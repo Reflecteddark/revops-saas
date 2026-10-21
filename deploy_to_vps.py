@@ -300,10 +300,18 @@ def wait_for_ci(repo: str, commit_sha: str, timeout_sec: int = 300) -> bool:
                 log(f"[CI Gate] ❌ Обнаружены упавшие проверки CI: {', '.join(failures)}", symbol="[-]")
                 return False
                 
+            # Для revops-saas сборка и пуш Docker-образа происходят на шаге docker-build,
+            # который зависит от backend и frontend тестов (needs: [...]).
+            # Поэтому ждем, пока шаг сборки Docker-образа зарегистрируется и завершится!
+            expects_docker_build = ("revops-saas" in repo.lower())
+            has_docker_job = any("docker" in cr.get("name", "").lower() for cr in check_runs)
+            
             all_completed = all(cr.get("status") == "completed" for cr in check_runs)
             all_success = all(cr.get("conclusion") in ["success", "neutral", "skipped"] for cr in check_runs)
             
-            if all_completed and all_success:
+            if expects_docker_build and not has_docker_job:
+                status_summary = "ожидание регистрации сборки Docker-образа (GHCR)"
+            elif all_completed and all_success:
                 passed_names = [cr.get("name", "Unknown") for cr in check_runs if cr.get("conclusion") == "success"]
                 log(f"[CI Gate] ✅ Все проверки CI пройдены успешно ({len(passed_names)}: {', '.join(passed_names)})", symbol="[+]")
                 return True
