@@ -351,15 +351,64 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
 @router.get("/data")
 def get_dashboard_calls_data(
     tenant_id: str = Query("TNT-001"),
-    limit: int = Query(50)
+    limit: int = Query(50),
+    db: Session = Depends(get_db)
 ):
     """
     Public dashboard endpoint: pulls real audited calls from Google Sheets (raw_calls)
-    for specified client tenant, formatted for the web dashboard.
+    or database fallback for specified client tenant, formatted for the web dashboard.
     """
-    effective_tenant = (tenant_id or "TNT-001").strip().upper()
-    calls = fetch_calls_from_sheets(tenant_id=effective_tenant, limit=limit)
+    raw_tenant = (tenant_id or "TNT-001").strip()
+    effective_tenant = raw_tenant.upper()
+    is_demo_tenant = raw_tenant.lower().startswith("demo_") or raw_tenant.lower().startswith("demo-")
+    calls = [] if is_demo_tenant else fetch_calls_from_sheets(tenant_id=effective_tenant, limit=limit)
     if not calls:
+        # Fallback to local tenant database
+        db_calls = (
+            db.query(CallRecording)
+            .filter(
+                (CallRecording.tenant_id == raw_tenant)
+                | (CallRecording.tenant_id == effective_tenant)
+                | (CallRecording.tenant_id == raw_tenant.lower())
+            )
+            .order_by(CallRecording.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        if db_calls:
+            formatted_calls = []
+            for c in db_calls:
+                sc = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
+                call_deal = c.deal
+                mgr = c.manager
+                formatted_calls.append({
+                    "id": c.id,
+                    "deal_id": c.deal_id or f"D-{c.id[-4:]}",
+                    "deal_title": call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}"),
+                    "client": call_deal.company_name if call_deal else (sc.get("client") or "Клиент"),
+                    "manager": mgr.full_name if mgr else (sc.get("manager") or "Менеджер"),
+                    "stage": call_deal.stage.value if call_deal and call_deal.stage else "Первичный контакт",
+                    "duration": f"{c.duration_seconds // 60}:{c.duration_seconds % 60:02d}",
+                    "amount": f"{int(call_deal.budget):,} ₽".replace(",", " ") if call_deal else (sc.get("amount_str") or "350 000 ₽"),
+                    "amount_num": call_deal.budget if call_deal else (sc.get("amount") or 350000.0),
+                    "score": sc.get("score", int(round((c.overall_score / 100.0) * 13))),
+                    "status": sc.get("status", "won" if c.overall_score >= 60 else "risk"),
+                    "status_label": sc.get("status_label", "ЭТАЛОН" if c.overall_score >= 60 else "СЛИВ"),
+                    "risk_amount": f"{int(call_deal.budget):,} ₽".replace(",", " ") if (call_deal and sc.get("status") == "risk") else "0 ₽",
+                    "next_step": sc.get("next_step", 1 if c.overall_score >= 60 else 0),
+                    "date": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else "",
+                    "cr": sc.get("cr", [1] * 13),
+                    "error_summary": c.ai_summary or sc.get("error_summary", "Анализ завершен ИИ"),
+                    "recommendation": c.next_action_extracted or sc.get("recommendation", "Следовать регламенту фиксации Next Step"),
+                    "transcript": c.transcript_text or "Транскрипт отсутствует"
+                })
+            return {
+                "status": "ok",
+                "tenant_id": raw_tenant,
+                "source": "database",
+                "count": len(formatted_calls),
+                "calls": formatted_calls
+            }
         return {"status": "ok", "tenant_id": effective_tenant, "source": "fallback", "count": 0, "calls": []}
     return {
         "status": "ok",

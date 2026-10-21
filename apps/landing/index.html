@@ -2653,6 +2653,11 @@
                                     </div>
 
                                     <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Рабочий Email (для доступа в личный кабинет) <span class="text-rose-500">*</span></label>
+                                        <input type="email" id="leadEmail" required placeholder="alex@company.ru" class="w-full px-4 py-3.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
+                                    </div>
+
+                                    <div>
                                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Телефон (WhatsApp или Telegram)</label>
                                         <input type="tel" id="leadPhone" required placeholder="+7 (999) 000-00-00" class="w-full px-4 py-3.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
                                     </div>
@@ -2676,17 +2681,39 @@
                                 </form>
 
                                 <!-- Submission Success Modal Alert -->
-                                <div id="formSuccessAlert" class="hidden mt-4 p-5 rounded-2xl bg-violet-50 border border-violet-200 text-violet-950 text-center space-y-3">
-                                    <div class="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center mx-auto text-lg">
+                                <div id="formSuccessAlert" class="hidden mt-4 p-6 rounded-2xl bg-gradient-to-br from-violet-50 via-white to-emerald-50/40 border border-violet-200 text-slate-900 text-center space-y-4 shadow-xl">
+                                    <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-xl shadow-sm">
                                         <i class="fas fa-check"></i>
                                     </div>
                                     <div>
-                                        <div class="font-bold text-base text-slate-900">Заявка успешно принята!</div>
-                                        <p class="text-xs text-slate-600 mt-0.5">Свяжемся с вами в течение 10 минут в рабочее время.</p>
+                                        <div class="font-extrabold text-lg text-slate-900">Демо-доступ активирован!</div>
+                                        <p class="text-xs text-slate-600 mt-1">
+                                            Мы развернули ваш демо-кабинет с 5 менеджерами, 30 сделками и 200 звонками.
+                                            Логин и пароль отправлены на вашу почту, а также доступны прямо сейчас:
+                                        </p>
                                     </div>
-                                    <div class="pt-2 border-t border-violet-200/60">
-                                        <div class="text-[11px] text-slate-500 font-mono mb-2">Хотите ускорить аудит? Пришлите файлы в мессенджер:</div>
-                                        <a href="https://t.me/RevOps_Super_Audit_Bot" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-600 text-white font-bold text-xs shadow-sm transition">
+
+                                    <!-- Credentials Card -->
+                                    <div class="bg-slate-900 text-white rounded-xl p-4 text-left font-mono text-xs space-y-2 border border-slate-800 shadow-inner">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-slate-400">Логин:</span>
+                                            <span id="successLoginDisplay" class="font-bold text-violet-300"></span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-slate-400">Пароль:</span>
+                                            <span id="successPassDisplay" class="font-bold text-emerald-400"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-2">
+                                        <a id="successCabinetBtn" href="/app/" class="block w-full py-3.5 px-6 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-violet-600/30 transition transform active:scale-95 text-center">
+                                            Войти в личный кабинет →
+                                        </a>
+                                    </div>
+
+                                    <div class="pt-3 border-t border-slate-200/80">
+                                        <div class="text-[11px] text-slate-500 mb-2">Хотите разобрать свои реальные звонки? Пришлите записи в бот:</div>
+                                        <a href="https://t.me/RevOps_Super_Audit_Bot" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-100 hover:bg-violet-200 text-violet-800 font-bold text-xs transition">
                                             <i class="fab fa-telegram"></i> Открыть Telegram-бот
                                         </a>
                                     </div>
@@ -3481,11 +3508,19 @@
             }
 
             const name = document.getElementById('leadName').value.trim();
+            const emailInput = document.getElementById('leadEmail');
+            const email = emailInput ? emailInput.value.trim() : '';
             const phone = document.getElementById('leadPhone').value.trim();
             const company = document.getElementById('leadCompany').value.trim();
             const selectedTariff = (document.getElementById('leadSelectedTariff') || {}).value || 'audit_free';
             const tariffInfo = tariffConfig[selectedTariff] || tariffConfig.audit_free;
             const submitBtn = document.getElementById('submitBtn');
+
+            if (!email || !email.includes('@') || !email.includes('.')) {
+                showFormError('Пожалуйста, укажите корректный рабочий Email для отправки доступов.');
+                if (emailInput) emailInput.focus();
+                return;
+            }
 
             const rawDigits = phone.replace(/\D/g, '');
             if (rawDigits.length < 10) {
@@ -3495,13 +3530,17 @@
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Отправка заявки...';
+            submitBtn.textContent = 'Развертывание демо-доступа...';
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
 
             try {
-                const response = await fetch('https://formsubmit.co/ajax/info@ai-rop.ru', {
+                // Determine API endpoint
+                const isLocalOrDirect = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('ai-rop.ru');
+                const apiUrl = isLocalOrDirect ? '/api/v1/public/request-demo' : 'https://report.ai-rop.ru/api/v1/public/request-demo';
+
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     signal: controller.signal,
                     headers: {
@@ -3509,43 +3548,53 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        '_subject': `${tariffInfo.subject} [ai-rop.ru]: ${name} (${phone})`,
-                        'Выбранный формат': tariffInfo.label,
-                        'Имя': name,
-                        'Телефон': phone,
-                        'Компания / Ниша': company,
-                        'Дата': new Date().toLocaleString('ru-RU'),
-                        'Источник': 'ai-rop.ru (main landing)'
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        company: company || 'B2B Компания',
+                        tariff: tariffInfo.label || selectedTariff
                     })
                 });
 
                 clearTimeout(timeoutId);
+                const data = await response.json().catch(() => ({}));
 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    if (response.status === 400) {
+                        throw new Error(data.detail || 'Вы уже зарегистрированы. Проверьте почту или перейдите к форме входа в личный кабинет.');
+                    } else if (response.status === 429) {
+                        throw new Error(data.detail || 'Превышен лимит заявок (максимум 3 в час). Пожалуйста, подождите или напишите в Telegram.');
+                    } else {
+                        throw new Error(data.detail || `Ошибка сервера (HTTP ${response.status}). Попробуйте позже.`);
+                    }
                 }
 
-                document.getElementById('formSuccessAlert').classList.remove('hidden');
-                submitBtn.textContent = 'Успешно отправлено!';
-                submitBtn.className = 'w-full py-4 rounded-xl bg-violet-600 text-white font-bold text-sm shadow-xl transition';
+                // Render Success State
+                const mainForm = document.getElementById('mainLeadForm');
+                if (mainForm) mainForm.classList.add('hidden');
 
-                // Очистка полей ввода
-                document.getElementById('leadName').value = '';
-                document.getElementById('leadPhone').value = '';
-                document.getElementById('leadCompany').value = '';
+                const alertEl = document.getElementById('formSuccessAlert');
+                if (alertEl) {
+                    const loginSpan = document.getElementById('successLoginDisplay');
+                    const passSpan = document.getElementById('successPassDisplay');
+                    const cabBtn = document.getElementById('successCabinetBtn');
+                    if (loginSpan) loginSpan.textContent = data.login || email;
+                    if (passSpan) passSpan.textContent = data.password || '••••••••';
+                    if (cabBtn && data.cabinet_url) cabBtn.href = data.cabinet_url;
+                    alertEl.classList.remove('hidden');
+                    alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
 
                 if (typeof window.reachMetrikaGoal === 'function') {
-                    window.reachMetrikaGoal('lead_submit', { name, phone, company, tariff: selectedTariff });
+                    window.reachMetrikaGoal('lead_submit', { name, email, phone, company, tariff: selectedTariff });
                 }
-
-                document.getElementById('formSuccessAlert').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             } catch (err) {
                 clearTimeout(timeoutId);
                 console.error('Lead submit error:', err);
                 submitBtn.disabled = false;
-                submitBtn.textContent = tariffInfo.btnText;
-                showFormError('Не удалось отправить заявку автоматически. Пожалуйста, напишите нам напрямую в Telegram @RevOps_Super_Audit_Bot или повторите попытку.');
+                submitBtn.textContent = tariffInfo.btnText || 'Получить разбор 50 звонков (0 ₽)';
+                showFormError(err.message || 'Не удалось отправить заявку. Попробуйте еще раз или напишите нам напрямую в Telegram @RevOps_Super_Audit_Bot.');
             }
         }
 

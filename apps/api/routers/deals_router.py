@@ -13,8 +13,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from packages.database.models import Deal
+from packages.database.session import get_db
 
 from ..tenant_registry import get_tenant_spreadsheet_id
 from ..websocket_manager import manager
@@ -210,11 +214,48 @@ def list_deals(
     stage: str | None = None,
     sla_risk_only: bool = False,
     org_id: str = "TNT-001",
-    tenant_id: str | None = None
+    tenant_id: str | None = None,
+    db: Session = Depends(get_db)
 ) -> dict[str, Any]:
-    """Returns active CRM deals directly from raw_deals Google Sheets for given tenant."""
+    """Returns active CRM deals directly from raw_deals Google Sheets or local DB for given tenant."""
     effective_tenant = tenant_id or org_id or "TNT-001"
-    all_deals = fetch_deals_from_sheets(tenant_id=effective_tenant)
+    is_demo_tenant = str(effective_tenant).lower().startswith("demo_") or str(effective_tenant).lower().startswith("demo-")
+    all_deals = [] if is_demo_tenant else fetch_deals_from_sheets(tenant_id=effective_tenant)
+    source = "google_sheets_raw_deals"
+    if not all_deals:
+        db_deals = (
+            db.query(Deal)
+            .filter(
+                (Deal.tenant_id == effective_tenant)
+                | (Deal.tenant_id == effective_tenant.lower())
+                | (Deal.tenant_id == effective_tenant.upper())
+            )
+            .all()
+        )
+        if db_deals:
+            source = "database"
+            all_deals = [
+                {
+                    "id": d.id,
+                    "deal_id": d.id,
+                    "org_id": effective_tenant,
+                    "crm_deal_id": d.external_crm_id or d.id,
+                    "crm_source": d.lead_source or "CRM",
+                    "title": d.title,
+                    "amount": float(d.budget),
+                    "amount_str": f"{int(d.budget):,} ₽".replace(",", " "),
+                    "stage_id": "1",
+                    "stage": d.stage.value if d.stage else "Первичный контакт",
+                    "status": "won" if (d.stage and "успешно" in d.stage.value.lower()) else ("lost" if (d.stage and "закрыто" in d.stage.value.lower()) else "active"),
+                    "sla_risk": d.is_at_risk,
+                    "responsible_user": d.assigned_user.full_name if d.assigned_user else "Менеджер",
+                    "segment": "General B2B",
+                    "created_at": d.created_at.isoformat() if d.created_at else "",
+                    "updated_at": d.updated_at.isoformat() if d.updated_at else "",
+                    "synced_at": datetime.now(timezone.utc).isoformat(),
+                }
+                for d in db_deals
+            ]
     results = all_deals
     if stage:
         results = [d for d in results if d["stage"] == stage]
@@ -223,7 +264,7 @@ def list_deals(
     return {
         "status": "ok",
         "tenant_id": effective_tenant,
-        "source": "google_sheets_raw_deals",
+        "source": source,
         "deals": results,
         "total": len(results),
         "sla_risk_count": sum(1 for d in results if d.get("sla_risk")),

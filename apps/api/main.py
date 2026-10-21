@@ -27,6 +27,7 @@ from .routers import (
     insights_router,
     metrics_router,
     monitoring_router,
+    public_router,
     radar_router,
     settings_router,
     simulator_router,
@@ -216,6 +217,8 @@ app.include_router(calls_router.router, prefix="/api/v1")
 app.include_router(admin_router.router, prefix="/api/v1")
 app.include_router(settings_router.router, prefix="/api/v1")
 app.include_router(tenants_router.router, prefix="/api/v1")
+app.include_router(public_router.router, prefix="/api/v1/public")
+app.include_router(public_router.router, prefix="/api/v1")
 
 
 # Real-time WebSocket Endpoint

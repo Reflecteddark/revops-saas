@@ -252,7 +252,7 @@ def seed_demo_data(tenant_id: str = "demo_test", db = None) -> dict:
                 title=d_spec["title"],
                 company_name=d_spec["company"],
                 contact_phone=generate_phone_number(),
-                budget=float(d_spec["amount"]),
+                budget=float(str(d_spec["amount"])),
                 stage=d_spec["stage"],
                 days_in_stage=random.randint(1, 14),
                 stage_sla_days=3,
@@ -267,7 +267,7 @@ def seed_demo_data(tenant_id: str = "demo_test", db = None) -> dict:
             )
             db.add(deal)
             deals.append(deal)
-            total_amount += d_spec["amount"]
+            total_amount += float(str(d_spec["amount"]))
 
         db.flush()
         logger.info(f"✅ Сгенерировано 30 сделок на общую сумму: {int(total_amount):,} ₽".replace(",", " "))
