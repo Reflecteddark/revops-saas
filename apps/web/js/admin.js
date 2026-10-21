@@ -866,12 +866,12 @@ function renderAdminTenantsTable(tenants) {
         </td>
         <td style="padding: 12px 14px; text-align: right;">
           <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
-            <button class="btn-modern-ghost" data-action="impersonate" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 8px; font-size: 0.70rem; color: #c4b5fd; border-color: rgba(167, 139, 250, 0.4);" title="👁️ Войти в ЛК как клиент (Shadow Mode / Read-Only)">👁️ Войти</button>
-            <button class="btn-modern-ghost" data-action="copy-brief" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Скопировать бриф подключения (вебхуки, доступы)">📋</button>
-            <button class="btn-modern-ghost" data-action="health" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 8px; font-size: 0.70rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="🩺 Экспресс-диагностика здоровья клиента">🩺 Доктор</button>
-            <button class="btn-modern-ghost" data-action="edit" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Редактировать параметры и пароль">⚙️</button>
-            <button class="btn-modern-ghost" data-action="freeze" data-tenant-id="${escapeHtml(t.tenant_id)}" data-status="${escapeHtml(t.effective_status || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: ${isFrozen ? '#34d399' : '#38bdf8'};" title="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'}">${isFrozen ? '☀️' : '❄️'}</button>
-            <button class="btn-modern-ghost" data-action="offboard" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: var(--accent-rose);" title="Вывести в архив (Offboard)">📦</button>
+            <button class="btn-modern-ghost" data-action="impersonate" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 8px; font-size: 0.70rem; color: #c4b5fd; border-color: rgba(167, 139, 250, 0.4);" title="👁️ Войти в ЛК как клиент (Shadow Mode / Read-Only)" aria-label="Войти в личный кабинет как клиент ${escapeHtml(t.tenant_name || t.tenant_id)}">👁️ Войти</button>
+            <button class="btn-modern-ghost" data-action="copy-brief" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Скопировать бриф подключения (вебхуки, доступы)" aria-label="Скопировать бриф подключения для клиента ${escapeHtml(t.tenant_id)}">📋</button>
+            <button class="btn-modern-ghost" data-action="health" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 8px; font-size: 0.70rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="🩺 Экспресс-диагностика здоровья клиента" aria-label="Экспресс-диагностика здоровья клиента ${escapeHtml(t.tenant_id)}">🩺 Доктор</button>
+            <button class="btn-modern-ghost" data-action="edit" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Редактировать параметры и пароль" aria-label="Редактировать параметры клиента ${escapeHtml(t.tenant_id)}">⚙️</button>
+            <button class="btn-modern-ghost" data-action="freeze" data-tenant-id="${escapeHtml(t.tenant_id)}" data-status="${escapeHtml(t.effective_status || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: ${isFrozen ? '#34d399' : '#38bdf8'};" title="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'}" aria-label="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'} клиента ${escapeHtml(t.tenant_id)}">${isFrozen ? '☀️' : '❄️'}</button>
+            <button class="btn-modern-ghost" data-action="offboard" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: var(--accent-rose);" title="Вывести в архив (Offboard)" aria-label="Вывести клиента ${escapeHtml(t.tenant_id)} в архив">📦</button>
           </div>
         </td>
       </tr>
@@ -1082,11 +1082,17 @@ function openTenantEditModal(tenantId) {
   document.getElementById('modalTenantNewPass').value = '';
 
   modal.style.display = 'flex';
+  if (typeof trapFocus === 'function') {
+    trapFocus(modal);
+  }
 }
 
 function closeTenantEditModal() {
   const modal = document.getElementById('adminTenantEditModal');
   if (modal) modal.style.display = 'none';
+  if (typeof releaseFocus === 'function') {
+    releaseFocus();
+  }
 }
 
 function generateModalPassword() {
@@ -2159,7 +2165,12 @@ async function runTenantHealthDoctor(tenantId) {
   const tsEl = document.getElementById('healthDoctorTimestamp');
   const list = document.getElementById('healthDoctorChecksList');
 
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    if (typeof trapFocus === 'function') {
+      trapFocus(modal);
+    }
+  }
   if (badge) badge.textContent = activeDoctorTenantId;
   if (title) title.textContent = `🩺 Экспресс-диагностика клиента (${activeDoctorTenantId})`;
   if (banner) {
@@ -2238,6 +2249,9 @@ function recheckTenantHealth() {
 function closeTenantHealthDoctorModal() {
   const modal = document.getElementById('tenantHealthDoctorModal');
   if (modal) modal.style.display = 'none';
+  if (typeof releaseFocus === 'function') {
+    releaseFocus();
+  }
 }
 
 
@@ -2558,8 +2572,8 @@ async function fetchWebhooksHistory() {
             <span style="color: var(--text-muted); font-size: 0.60rem;">${item.id}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-            <button onclick='inspectWebhookPayload(${JSON.stringify(item.payload || {}).replace(/'/g, "&apos;")})' class="btn-modern-ghost" style="padding: 1px 5px; font-size: 0.60rem;" title="Просмотреть payload">👁️</button>
-            <button onclick="replayWebhook('${item.id}')" class="btn-modern-ghost" style="padding: 1px 6px; font-size: 0.60rem; color: #38bdf8; border-color: rgba(56,189,248,0.3);" title="Повторить этот вебхук через очередь (Replay)">🔁 Replay</button>
+            <button onclick='inspectWebhookPayload(${JSON.stringify(item.payload || {}).replace(/'/g, "&apos;")})' class="btn-modern-ghost" style="padding: 1px 5px; font-size: 0.60rem;" title="Просмотреть payload" aria-label="Просмотреть payload вебхука ${item.id}">👁️</button>
+            <button onclick="replayWebhook('${item.id}')" class="btn-modern-ghost" style="padding: 1px 6px; font-size: 0.60rem; color: #38bdf8; border-color: rgba(56,189,248,0.3);" title="Повторить этот вебхук через очередь (Replay)" aria-label="Повторить вебхук ${item.id}">🔁 Replay</button>
           </div>
         </div>
       `;

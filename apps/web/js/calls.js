@@ -620,15 +620,28 @@ function openCallModal(callId) {
     }
   }
 
-  document.getElementById('callModal').style.display = 'flex';
+  const modalEl = document.getElementById('callModal');
+  if (modalEl) {
+    modalEl.style.display = 'flex';
+    if (typeof trapFocus === 'function') {
+      trapFocus(modalEl);
+    }
+  }
 }
 
 function closeCallModal() {
   if (isPlayingAudio) {
     togglePlaySimulation();
   }
-  document.getElementById('callModal').style.display = 'none';
+  const modalEl = document.getElementById('callModal');
+  if (modalEl) {
+    modalEl.style.display = 'none';
+  }
+  if (typeof releaseFocus === 'function') {
+    releaseFocus();
+  }
 }
+
 
 let waveformInterval = null;
 let isPlayingAudio = false;

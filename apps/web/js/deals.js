@@ -11,13 +11,22 @@ function openOnePagerModal() {
     populateOnePagerModal();
   }
   const modal = document.getElementById('onePagerModal');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    if (typeof trapFocus === 'function') {
+      trapFocus(modal);
+    }
+  }
 }
 
 function closeOnePagerModal() {
   const modal = document.getElementById('onePagerModal');
   if (modal) modal.style.display = 'none';
+  if (typeof releaseFocus === 'function') {
+    releaseFocus();
+  }
 }
+
 
 function populateOnePagerModal() {
   const calls = (typeof window.CALLS_DATA !== 'undefined' && Array.isArray(window.CALLS_DATA)) ? window.CALLS_DATA : [];

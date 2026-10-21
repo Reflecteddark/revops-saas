@@ -82,8 +82,9 @@
       /* Typography & Contrast Levels */
       --text-primary: #ffffff;
       --text-secondary: #a1a1aa;
-      --text-muted: #71717a;
-      --text-dim: #52525b;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --scrollbar-thumb: rgba(255, 255, 255, 0.16);
 
       /* Develop Bento Multiples of 4 Radius System */
       --radius-xs: 6px;
@@ -140,8 +141,9 @@
       
       --text-primary: #111827;
       --text-secondary: #4b5563;
-      --text-muted: #9ca3af;
-      --text-dim: #cbd5e1;
+      --text-muted: #64748b;
+      --text-dim: #475569;
+      --scrollbar-thumb: rgba(0, 0, 0, 0.20);
 
       --shadow-focus: 0 0 0 4px rgba(108, 93, 211, 0.15);
     }
@@ -173,7 +175,7 @@
     /* SnowUI Global Native Scrollbar Replacement */
     * {
       scrollbar-width: thin;
-      scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+      scrollbar-color: var(--scrollbar-thumb) transparent;
     }
     ::-webkit-scrollbar {
       width: 7px;
@@ -185,13 +187,14 @@
       border: 0;
     }
     ::-webkit-scrollbar-thumb {
-      background-color: rgba(255, 255, 255, 0.16);
+      background-color: var(--scrollbar-thumb);
       border-radius: 99px;
       transition: background-color 150ms ease-out;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background-color: rgba(255, 255, 255, 0.30);
+      background-color: var(--text-muted);
     }
+
 
     /* Ambient background glows (Deep Black + Violet Aura) */
     .ambient-bg {
@@ -3293,6 +3296,89 @@
       color: #18181b !important;
     }
 
+    /* Global Period Picker (Tier-1 Header Date Control) */
+    .global-period-picker {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .period-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 99px;
+      background: rgba(115, 82, 255, 0.12);
+      border: 1px solid rgba(115, 82, 255, 0.35);
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: #c4b5fd;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s ease;
+    }
+    .period-btn:hover {
+      background: rgba(115, 82, 255, 0.22);
+      border-color: rgba(115, 82, 255, 0.55);
+      color: #ffffff;
+    }
+    html[data-theme="light"] .period-btn {
+      background: #f4f5f9 !important;
+      border-color: rgba(0, 0, 0, 0.08) !important;
+      color: #4b5563 !important;
+    }
+    html[data-theme="light"] .period-btn:hover {
+      background: #ebeef5 !important;
+      color: #111827 !important;
+    }
+    .period-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 175px;
+      background: #0d1019;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 15px rgba(124, 58, 237, 0.15);
+      padding: 6px;
+      z-index: 1000;
+    }
+    html[data-theme="light"] .period-dropdown {
+      background: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.10) !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+    }
+    .period-option {
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .period-option:hover {
+      background: rgba(124, 58, 237, 0.15);
+      color: #ffffff;
+    }
+    .period-option.active {
+      background: rgba(124, 58, 237, 0.28);
+      color: #ffffff;
+      font-weight: 600;
+    }
+    html[data-theme="light"] .period-option {
+      color: #4b5563 !important;
+    }
+    html[data-theme="light"] .period-option:hover {
+      background: #f3f0ff !important;
+      color: #6c5dd3 !important;
+    }
+    html[data-theme="light"] .period-option.active {
+      background: #ede9fe !important;
+      color: #6c5dd3 !important;
+    }
+
+
     .develop-kpi-pair {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -5341,7 +5427,7 @@
           <div class="mp-brand-name">RevOps OS <span class="mp-brand-ver">V20.0</span></div>
           <div class="mp-brand-sub">Behavioral Intelligence</div>
         </div>
-        <button class="mp-sidebar-toggle" onclick="toggleSidebar()" title="Свернуть / Развернуть меню">
+        <button class="mp-sidebar-toggle" onclick="toggleSidebar()" title="Свернуть / Развернуть меню" aria-label="Свернуть или развернуть боковое меню">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
         </button>
       </div>
@@ -5367,15 +5453,15 @@
       <!-- Nav Items: 1. Оперативное управление -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Оперативное управление</div>
-        <button id="sb-pulse" class="mp-nav-item active" onclick="switchTab('pulse')" data-tooltip="Пульс выручки">
+        <button id="sb-pulse" class="mp-nav-item active" onclick="switchTab('pulse')" data-tooltip="Пульс выручки" aria-label="Перейти в раздел 1: Пульс выручки">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
           <span class="mp-nav-label">1. Пульс выручки</span>
         </button>
-        <button id="sb-express" class="mp-nav-item" onclick="switchTab('express')" data-tooltip="Экспресс 3 цифры">
+        <button id="sb-express" class="mp-nav-item" onclick="switchTab('express')" data-tooltip="Экспресс 3 цифры" aria-label="Перейти в раздел 2: Экспресс 3 цифры">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
           <span class="mp-nav-label">2. Экспресс 3 цифры</span>
         </button>
-        <button id="sb-rop" class="mp-nav-item" onclick="switchTab('rop')" data-tooltip="Пульт РОПа 15 мин">
+        <button id="sb-rop" class="mp-nav-item" onclick="switchTab('rop')" data-tooltip="Пульт РОПа 15 мин" aria-label="Перейти в раздел 3: Пульт РОПа 15 мин">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span>
           <span class="mp-nav-label">3. Пульт РОПа 15 мин</span>
         </button>
@@ -5384,15 +5470,15 @@
       <!-- Nav Items: 2. Речевой ИИ & Аудит -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Речевой ИИ & Аудит</div>
-        <button id="sb-audit" class="mp-nav-item" onclick="switchTab('audit')" data-tooltip="ИИ-Аудит звонков">
+        <button id="sb-audit" class="mp-nav-item" onclick="switchTab('audit')" data-tooltip="ИИ-Аудит звонков" aria-label="Перейти в раздел 4: ИИ-Аудит звонков">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 19v4m-4 0h8"/></svg></span>
           <span class="mp-nav-label">4. ИИ-Аудит звонков</span>
         </button>
-        <button id="sb-impact" class="mp-nav-item" onclick="switchTab('impact')" data-tooltip="AI Impact & Детектор">
+        <button id="sb-impact" class="mp-nav-item" onclick="switchTab('impact')" data-tooltip="AI Impact & Детектор" aria-label="Перейти в раздел 5: AI Impact и Детектор">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
           <span class="mp-nav-label">5. AI Impact & Детектор</span>
         </button>
-        <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')" data-tooltip="Навыки & Payroll">
+        <button id="sb-skills" class="mp-nav-item" onclick="switchTab('skills')" data-tooltip="Навыки & Payroll" aria-label="Перейти в раздел 6: Навыки и Payroll">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
           <span class="mp-nav-label">6. Навыки & Payroll</span>
         </button>
@@ -5401,15 +5487,15 @@
       <!-- Nav Items: 3. Финансы & Аналитика -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Финансы & Аналитика</div>
-        <button id="sb-analyst" class="mp-nav-item" onclick="switchTab('analyst')" data-tooltip="ИИ Аналитик (CCO)">
+        <button id="sb-analyst" class="mp-nav-item" onclick="switchTab('analyst')" data-tooltip="ИИ Аналитик (CCO)" aria-label="Перейти в раздел 7: ИИ Аналитик">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12L2.1 12a10.1 10.1 0 0 0 9.9 10z"/></svg></span>
           <span class="mp-nav-label">7. ИИ Аналитик (CCO)</span>
         </button>
-        <button id="sb-leaks" class="mp-nav-item" onclick="switchTab('leaks')" data-tooltip="Диагностика утечек">
+        <button id="sb-leaks" class="mp-nav-item" onclick="switchTab('leaks')" data-tooltip="Диагностика утечек" aria-label="Перейти в раздел 8: Диагностика утечек">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></span>
           <span class="mp-nav-label">8. Диагностика утечек</span>
         </button>
-        <button id="sb-montecarlo" class="mp-nav-item" onclick="switchTab('montecarlo')" data-tooltip="Монте-Карло 3.0">
+        <button id="sb-montecarlo" class="mp-nav-item" onclick="switchTab('montecarlo')" data-tooltip="Монте-Карло 3.0" aria-label="Перейти в раздел 9: Монте-Карло 3.0">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/></svg></span>
           <span class="mp-nav-label">9. Монте-Карло 3.0</span>
         </button>
@@ -5418,11 +5504,11 @@
       <!-- Nav Items: 4. Система & Интеграции -->
       <div class="mp-nav-group">
         <div class="mp-nav-group-title">Система & Интеграции</div>
-        <button id="sb-settings" class="mp-nav-item" onclick="switchTab('settings')" data-tooltip="Паспорт & E2E">
+        <button id="sb-settings" class="mp-nav-item" onclick="switchTab('settings')" data-tooltip="Паспорт & E2E" aria-label="Перейти в раздел 10: Паспорт и E2E">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
           <span class="mp-nav-label">10. Паспорт & E2E</span>
         </button>
-        <button id="sb-admin" class="mp-nav-item" onclick="switchTab('admin')" style="display: none;" data-tooltip="Админ-кабинет">
+        <button id="sb-admin" class="mp-nav-item" onclick="switchTab('admin')" style="display: none;" data-tooltip="Админ-кабинет" aria-label="Перейти в раздел 11: Админ-кабинет">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 10 7 12"/><line x1="12" y1="12" x2="16" y2="12"/></svg></span>
           <span class="mp-nav-label">11. Админ-кабинет</span>
         </button>
@@ -5463,7 +5549,7 @@
       <header class="develop-topbar">
         <div style="display: flex; align-items: center; gap: 14px;">
           <!-- Mobile Sidebar Toggle -->
-          <button class="btn btn-ghost" onclick="toggleSidebar()" style="display: inline-flex;" title="Меню">
+          <button class="btn btn-ghost" onclick="toggleSidebar()" style="display: inline-flex;" title="Меню" aria-label="Переключить боковое меню">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
           <h1 class="develop-greeting-title">Добрый день, Дмитрий!</h1>
@@ -5480,6 +5566,23 @@
               </select>
             </div>
           </div>
+
+          <!-- Global Reporting Period Picker -->
+          <div class="global-period-picker" id="globalPeriodPicker">
+            <button type="button" class="period-btn" id="globalPeriodBtn" data-period="month" onclick="toggleGlobalPeriodDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="Выбрать отчетный период">
+              <span>📅</span>
+              <span id="globalPeriodLabel">Октябрь 2026</span>
+              <span style="font-size: 0.65rem; opacity: 0.7;">▾</span>
+            </button>
+            <div class="period-dropdown" id="globalPeriodDropdown">
+              <div class="period-option active" onclick="setGlobalPeriod('month', 'Октябрь 2026')">Текущий месяц</div>
+              <div class="period-option" onclick="setGlobalPeriod('prev_month', 'Сентябрь 2026')">Прошлый месяц</div>
+              <div class="period-option" onclick="setGlobalPeriod('7d', 'За 7 дней')">Последние 7 дней</div>
+              <div class="period-option" onclick="setGlobalPeriod('today', 'Сегодня')">Сегодня</div>
+              <div class="period-option" onclick="setGlobalPeriod('year', '2026 год (YTD)')">Весь год</div>
+            </div>
+          </div>
+
 
           <!-- Live Status Indicator (Tier-1 SaaS) -->
           <div style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 99px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #34d399;">
@@ -5505,7 +5608,7 @@
           </div>
 
           <!-- Subtle Sync Button -->
-          <button id="btnSyncCRM" class="btn btn-ghost" onclick="triggerSyncSimulation()" title="Синхронизировать SSOT с amoCRM & Bitrix24" style="padding: 6px 12px; border-radius: 99px; font-size: 0.74rem;">
+          <button id="btnSyncCRM" class="btn btn-ghost" onclick="triggerSyncSimulation()" title="Синхронизировать SSOT с amoCRM & Bitrix24" aria-label="Синхронизировать SSOT с amoCRM и Bitrix24" style="padding: 6px 12px; border-radius: 99px; font-size: 0.74rem;">
             <svg id="syncIconSvg" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             <span id="syncBtnText" style="margin-left: 4px;">Синхронизация</span>
           </button>
@@ -6359,7 +6462,7 @@
             <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           </div>
           <span id="searchResultBadge" class="badge-info" style="font-size: 0.76rem; padding: 6px 12px;">0 из 0 звонков</span>
-          <button class="btn btn-ghost" onclick="clearSearch()" style="font-size: 0.74rem;">Сбросить</button>
+          <button class="btn btn-ghost" onclick="clearSearch()" aria-label="Сбросить поиск" style="font-size: 0.74rem;">Сбросить</button>
         </div>
 
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
@@ -6424,11 +6527,11 @@
             <span>Экспорт CSV</span>
           </button>
           <div style="display: flex; background: rgba(255,255,255,0.04); padding: 2px; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle); margin-left: 6px;">
-            <button id="btnDensityPro" class="btn btn-ghost" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill); background: rgba(115,82,255,0.3); color: #fff;" onclick="setTableDensity('excel-pro')">Excel Pro (Плотный)</button>
-            <button id="btnDensityComfort" class="btn btn-ghost" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill);" onclick="setTableDensity('comfort')">Comfort</button>
+            <button id="btnDensityPro" class="btn btn-ghost" aria-label="Плотный режим таблицы Excel Pro" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill); background: rgba(115,82,255,0.3); color: #fff;" onclick="setTableDensity('excel-pro')">Excel Pro (Плотный)</button>
+            <button id="btnDensityComfort" class="btn btn-ghost" aria-label="Комфортный режим таблицы Comfort" style="padding: 3px 9px; font-size: 0.70rem; border-radius: var(--radius-pill);" onclick="setTableDensity('comfort')">Comfort</button>
           </div>
 
-          <button class="btn btn-ghost" onclick="clearSearch()" style="font-size: 0.74rem;">
+          <button class="btn btn-ghost" onclick="clearSearch()" aria-label="Очистить фильтры поиска" style="font-size: 0.74rem;">
             <span>Сбросить</span>
           </button>
         </div>
@@ -6524,7 +6627,7 @@
                 <div style="font-size: 0.68rem; color: var(--text-muted);">Интерактивный анализ звонков, менеджеров и воронки</div>
               </div>
             </div>
-            <button class="btn btn-ghost" onclick="clearAnalystChat()" style="font-size: 0.70rem; padding: 4px 10px;" title="Очистить диалог">
+            <button class="btn btn-ghost" onclick="clearAnalystChat()" style="font-size: 0.70rem; padding: 4px 10px;" title="Очистить диалог" aria-label="Очистить диалог чата">
               Очистить
             </button>
           </div>
@@ -8589,13 +8692,13 @@
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 0.70rem; color: var(--text-muted);">Время:</span>
                 <span id="agentDrawerTimer" style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700; color: #38bdf8;">0.0s</span>
-                <button onclick="copyDrawerOutput()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem;" title="Копировать вывод">
+                <button onclick="copyDrawerOutput()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem;" title="Копировать вывод" aria-label="Копировать вывод консоли">
                   📋 Копировать
                 </button>
-                <button onclick="clearDrawerOutput()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem;" title="Очистить терминал">
+                <button onclick="clearDrawerOutput()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem;" title="Очистить терминал" aria-label="Очистить терминал консоли">
                   🧹 Очистить
                 </button>
-                <button onclick="closeDrawerConsole()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem; color: var(--text-secondary);" title="Закрыть консоль">
+                <button onclick="closeDrawerConsole()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.70rem; color: var(--text-secondary);" title="Закрыть консоль" aria-label="Закрыть панель консоли">
                   ✕ Скрыть
                 </button>
               </div>
@@ -9275,7 +9378,7 @@
               <span id="adminTenantsActiveBadge" class="badge-won" style="font-size: 0.70rem; padding: 3px 8px;">1 активен</span>
               <span id="adminTenantsFrozenBadge" class="badge-info" style="font-size: 0.70rem; padding: 3px 8px; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">0 заморожено</span>
               <span id="adminTenantsArchivedBadge" class="badge-info" style="font-size: 0.70rem; padding: 3px 8px; background: rgba(148, 163, 184, 0.15); color: #94a3b8;">0 в архиве</span>
-              <button onclick="loadAdminTenants()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.72rem;" title="Обновить список тенантов">🔄 Обновить</button>
+              <button onclick="loadAdminTenants()" class="btn-modern-ghost" style="padding: 4px 10px; font-size: 0.72rem;" title="Обновить список тенантов" aria-label="Обновить список тенантов">🔄 Обновить</button>
               <button onclick="scrollToOnboardingWizard()" class="btn-modern-primary" style="padding: 4px 12px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 6px;">
                 <span>+ Развернуть клиента</span>
               </button>
@@ -9465,7 +9568,7 @@
               <span id="modalTenantIdBadge" class="badge-won" style="font-size: 0.75rem;">TNT-001</span>
               <strong id="modalTenantTitle" style="color: #fff; font-size: 0.9rem;">Редактирование настроек клиента</strong>
             </div>
-            <button onclick="closeTenantEditModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</button>
+            <button onclick="closeTenantEditModal()" aria-label="Закрыть окно редактирования" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</button>
           </div>
 
           <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto;">
@@ -9547,7 +9650,7 @@
               <span id="healthDoctorIdBadge" class="badge-won" style="font-size: 0.75rem;">TNT-001</span>
               <strong id="healthDoctorTitle" style="color: #fff; font-size: 0.92rem;">🩺 Экспресс-диагностика клиента</strong>
             </div>
-            <button onclick="closeTenantHealthDoctorModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</button>
+            <button onclick="closeTenantHealthDoctorModal()" aria-label="Закрыть окно диагностики" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</button>
           </div>
 
           <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px; max-height: 75vh; overflow-y: auto;">
@@ -9695,8 +9798,8 @@
                   <span id="inspWebhookProvider" class="badge-info" style="font-size: 0.62rem;">system</span>
                 </div>
                 <div style="display: flex; gap: 6px;">
-                  <button onclick="fetchLastIncomingWebhook()" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.65rem;" title="Обновить JSON">🔄 Обновить</button>
-                  <button onclick="copyLastWebhookJson()" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.65rem;" title="Копировать JSON">📋 Копировать</button>
+                  <button onclick="fetchLastIncomingWebhook()" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.65rem;" title="Обновить JSON" aria-label="Обновить JSON последнего вебхука">🔄 Обновить</button>
+                  <button onclick="copyLastWebhookJson()" class="btn-modern-ghost" style="padding: 2px 7px; font-size: 0.65rem;" title="Копировать JSON" aria-label="Скопировать JSON последнего вебхука">📋 Копировать</button>
                 </div>
               </div>
 
@@ -9838,8 +9941,8 @@
               </div>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <a href="http://127.0.0.1:5678" target="_blank" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;">Веб-консоль &nearr;</a>
-                <button onclick="runFleetAction('restart_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;" title="Перезапустить n8n">🔄</button>
-                <button onclick="runFleetAction('stop_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem; color: var(--accent-rose);" title="Остановить n8n">🛑</button>
+                <button onclick="runFleetAction('restart_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem;" title="Перезапустить n8n" aria-label="Перезапустить n8n">🔄</button>
+                <button onclick="runFleetAction('stop_n8n')" class="btn-modern-ghost" style="padding: 4px 8px; font-size: 0.7rem; color: var(--accent-rose);" title="Остановить n8n" aria-label="Остановить n8n">🛑</button>
               </div>
             </div>
 
@@ -10156,7 +10259,7 @@
             <button onclick="fetchAdminLogs('console')" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem;">Консоль</button>
             <button onclick="fetchAdminLogs('daily_sync')" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem;">Лог автозадачи</button>
             <button onclick="fetchAdminLogs('healer')" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem;">Лог Healer</button>
-            <button onclick="clearAdminConsole()" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem; color: var(--text-muted);" title="Очистить консоль">🧹 Очистить</button>
+            <button onclick="clearAdminConsole()" class="btn-modern-ghost" style="padding: 3px 8px; font-size: 0.68rem; color: var(--text-muted);" title="Очистить консоль" aria-label="Очистить консоль логов">🧹 Очистить</button>
           </div>
         </div>
 
@@ -10193,14 +10296,14 @@
             Менеджер: Светлана &bull; Чек: 500 000 ₽ &bull; Длительность: 1:57
           </div>
         </div>
-        <button onclick="closeCallModal()" class="btn btn-ghost" style="padding: 6px 10px; border-radius: 50%; font-size: 1.1rem; line-height: 1;">&times;</button>
+        <button onclick="closeCallModal()" class="btn btn-ghost" aria-label="Закрыть детали звонка" style="padding: 6px 10px; border-radius: 50%; font-size: 1.1rem; line-height: 1;">&times;</button>
       </div>
 
       <!-- Linear-grade Interactive Audio Waveform Spectrograph -->
       <div class="linear-waveform-box">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <button id="btnPlayAudio" onclick="togglePlaySimulation()" class="btn btn-primary" style="padding: 8px 16px; border-radius: var(--radius-pill); box-shadow: 0 0 16px var(--accent-purple-glow);">
+            <button id="btnPlayAudio" onclick="togglePlaySimulation()" class="btn btn-primary" aria-label="Воспроизвести аудиозапись звонка" style="padding: 8px 16px; border-radius: var(--radius-pill); box-shadow: 0 0 16px var(--accent-purple-glow);">
               <span>▶ Воспроизвести</span>
             </button>
             <div>
@@ -10328,7 +10431,7 @@
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
             <span>Печать / Сохранить в PDF</span>
           </button>
-          <button onclick="closeOnePagerModal()" class="btn btn-ghost" style="padding: 8px 12px; border-radius: 50%; font-size: 1.1rem; line-height: 1;">&times;</button>
+          <button onclick="closeOnePagerModal()" class="btn btn-ghost" aria-label="Закрыть One-Pager" style="padding: 8px 12px; border-radius: 50%; font-size: 1.1rem; line-height: 1;">&times;</button>
         </div>
       </div>
 

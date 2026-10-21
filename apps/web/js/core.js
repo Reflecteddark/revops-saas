@@ -1139,12 +1139,177 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
       }
     }
   });
+}// ==========================================================================
+// GLOBAL PERIOD PICKER & SYNCHRONIZATION
+// ==========================================================================
+function setGlobalPeriod(period, label) {
+  if (typeof window !== 'undefined') window._CURRENT_GLOBAL_PERIOD = period;
+  if (typeof setPulsePeriod === 'function') {
+    setPulsePeriod(period);
+  }
+  const labelEl = document.getElementById('globalPeriodLabel');
+  if (labelEl) labelEl.textContent = label;
+
+  const dropdown = document.getElementById('globalPeriodDropdown');
+  if (dropdown) {
+    dropdown.querySelectorAll('.period-option').forEach(opt => {
+      const onclickAttr = opt.getAttribute('onclick') || '';
+      if (onclickAttr.includes(`'${period}'`) || opt.textContent.trim() === label.trim()) {
+        opt.classList.add('active');
+      } else {
+        opt.classList.remove('active');
+      }
+    });
+    dropdown.style.display = 'none';
+  }
+  const btn = document.getElementById('globalPeriodBtn');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+
+  const factSel = document.getElementById('dropdownPulsePeriodFact');
+  if (factSel) {
+    const lbl = factSel.querySelector('.dropdown-label');
+    if (lbl) lbl.textContent = label;
+  }
+  const planSel = document.getElementById('dropdownPulsePeriodPlan');
+  if (planSel) {
+    const lbl = planSel.querySelector('.dropdown-label');
+    if (lbl) lbl.textContent = label;
+  }
+}
+
+function toggleGlobalPeriodDropdown(e) {
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  const dropdown = document.getElementById('globalPeriodDropdown');
+  const btn = document.getElementById('globalPeriodBtn');
+  if (!dropdown) return;
+  const isShown = dropdown.style.display === 'block';
+  dropdown.style.display = isShown ? 'none' : 'block';
+  if (btn) btn.setAttribute('aria-expanded', !isShown ? 'true' : 'false');
+}
+
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  document.addEventListener('click', (e) => {
+    const picker = document.getElementById('globalPeriodPicker');
+    if (picker && !picker.contains(e.target)) {
+      const dropdown = document.getElementById('globalPeriodDropdown');
+      const btn = document.getElementById('globalPeriodBtn');
+      if (dropdown) dropdown.style.display = 'none';
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+// ==========================================================================
+// FOCUS TRAP FOR MODAL DIALOGS (WCAG A11Y)
+// ==========================================================================
+let _lastActiveElement = null;
+let _activeTrapHandler = null;
+
+function trapFocus(modalElement) {
+  if (!modalElement || typeof document === 'undefined') return;
+  _lastActiveElement = document.activeElement;
+
+  const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  const getFocusable = () => Array.from(modalElement.querySelectorAll(focusableSelector)).filter(
+    el => !el.hasAttribute('disabled') && el.offsetParent !== null
+  );
+
+  const focusables = getFocusable();
+  if (focusables.length > 0) {
+    focusables[0].focus();
+  }
+
+  if (_activeTrapHandler) {
+    document.removeEventListener('keydown', _activeTrapHandler);
+  }
+
+  _activeTrapHandler = function(e) {
+    if (e.key !== 'Tab') return;
+    const currentFocusables = getFocusable();
+    if (currentFocusables.length === 0) {
+      e.preventDefault();
+      return;
+    }
+    const first = currentFocusables[0];
+    const last = currentFocusables[currentFocusables.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
+
+  document.addEventListener('keydown', _activeTrapHandler);
+}
+
+function releaseFocus() {
+  if (typeof document !== 'undefined' && _activeTrapHandler) {
+    document.removeEventListener('keydown', _activeTrapHandler);
+    _activeTrapHandler = null;
+  }
+  if (_lastActiveElement && typeof _lastActiveElement.focus === 'function') {
+    _lastActiveElement.focus();
+    _lastActiveElement = null;
+  }
+}
+
+// ==========================================================================
+// GLOBAL ESCAPE KEY HANDLER FOR ACTIVE MODALS
+// ==========================================================================
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const callModal = document.getElementById('callModal');
+      if (callModal && (callModal.style.display === 'flex' || callModal.classList.contains('active'))) {
+        if (typeof closeCallModal === 'function') closeCallModal();
+        return;
+      }
+
+      const onePager = document.getElementById('onePagerModal');
+      if (onePager && (onePager.style.display === 'flex' || onePager.classList.contains('active'))) {
+        if (typeof closeOnePagerModal === 'function') closeOnePagerModal();
+        return;
+      }
+
+      const tenantEdit = document.getElementById('adminTenantEditModal');
+      if (tenantEdit && (tenantEdit.style.display === 'flex' || tenantEdit.style.display === 'block')) {
+        if (typeof closeTenantEditModal === 'function') closeTenantEditModal();
+        return;
+      }
+
+      const healthDoctor = document.getElementById('tenantHealthDoctorModal');
+      if (healthDoctor && (healthDoctor.style.display === 'flex' || healthDoctor.style.display === 'block')) {
+        if (typeof closeTenantHealthDoctorModal === 'function') closeTenantHealthDoctorModal();
+        return;
+      }
+
+      const periodDropdown = document.getElementById('globalPeriodDropdown');
+      if (periodDropdown && periodDropdown.style.display === 'block') {
+        periodDropdown.style.display = 'none';
+        const pbtn = document.getElementById('globalPeriodBtn');
+        if (pbtn) pbtn.setAttribute('aria-expanded', 'false');
+        return;
+      }
+    }
+  });
 }
 
 
 
 // Expose Core handlers on window
+window.setGlobalPeriod = setGlobalPeriod;
+window.toggleGlobalPeriodDropdown = toggleGlobalPeriodDropdown;
+window.trapFocus = trapFocus;
+window.releaseFocus = releaseFocus;
 window.REVOPS_API_BASE = REVOPS_API_BASE;
+
 window.getActiveTenantId = getActiveTenantId;
 window.onTenantSelected = onTenantSelected;
 window.initTenantsSelector = initTenantsSelector;
