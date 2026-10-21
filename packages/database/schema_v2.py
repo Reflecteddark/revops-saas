@@ -14,9 +14,10 @@ from sqlalchemy import (
     Column, String, Integer, Float, Boolean, DateTime, ForeignKey, 
     Numeric, Text, JSON, Index, func
 )
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import DeclarativeBase, relationship
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 class Organization(Base):

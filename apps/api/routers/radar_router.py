@@ -99,9 +99,9 @@ def fix_next_step(
     if not deal:
         raise HTTPException(status_code=404, detail="Сделка не найдена")
 
-    deal.has_next_step = True
-    deal.risk_reason = None
-    deal.is_at_risk = False
+    setattr(deal, "has_next_step", True)
+    setattr(deal, "risk_reason", None)
+    setattr(deal, "is_at_risk", False)
     db.commit()
 
     return {"status": "success", "message": "Следующий шаг зафиксирован, риск снят."}

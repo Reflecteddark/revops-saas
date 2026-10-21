@@ -303,9 +303,11 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
         if call_id in existing_call_ids:
             row_idx = existing_call_ids.index(call_id) + 1
             logger.info(f"Idempotency hit: call_id {call_id} found at row {row_idx}. Performing UPSERT.")
-            ws.update(f"A{row_idx}:Z{row_idx}", [row[:26]], value_input_option="USER_ENTERED")
+            # gspread Worksheet.update argument typing limitation (see issue #1141)
+            ws.update(f"A{row_idx}:Z{row_idx}", [row[:26]], value_input_option="USER_ENTERED")  # type: ignore[arg-type]
         else:
-            ws.append_row(row, value_input_option="USER_ENTERED")
+            # gspread Worksheet.append_row argument typing limitation (see issue #1141)
+            ws.append_row(row, value_input_option="USER_ENTERED")  # type: ignore[arg-type]
             row_idx = len(existing_call_ids) + 1
 
         # 2. Read-After-Write (RAW) Cryptographic Verification
@@ -325,7 +327,8 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
                     logger.warning(
                         f"Read-After-Write hash mismatch for {call_id} (out={hash_out[:8]}, in={hash_in[:8]}). Rewriting in RAW mode."
                     )
-                    ws.update(f"A{row_idx}:Z{row_idx}", [row[:26]], value_input_option="RAW")
+                    # gspread Worksheet.update argument typing limitation (see issue #1141)
+                    ws.update(f"A{row_idx}:Z{row_idx}", [row[:26]], value_input_option="RAW")  # type: ignore[arg-type]
                 else:
                     logger.info(f"Read-After-Write verified successfully for {call_id} (checksum: {hash_out[:8]})")
         except Exception as ex_raw:
@@ -483,7 +486,8 @@ def evaluate_call(
     Evaluates a sales call across the 13 criteria, calculates overall score (0-100),
     detects deal risk, and saves record to tenant database.
     """
-    eval_result = evaluate_speech_scorecard(req.scores, req.comments)
+    comments = req.comments or {}
+    eval_result = evaluate_speech_scorecard(req.scores, comments)
 
     call = CallRecording(
         tenant_id=current_user.tenant_id,
@@ -503,10 +507,10 @@ def evaluate_call(
     if req.deal_id:
         deal = db.query(Deal).filter(Deal.id == req.deal_id, Deal.tenant_id == current_user.tenant_id).first()
         if deal:
-            deal.avg_call_score = eval_result.overall_score
+            setattr(deal, "avg_call_score", eval_result.overall_score)
             if eval_result.is_deal_at_risk:
-                deal.is_at_risk = True
-                deal.risk_reason = eval_result.risk_summary
+                setattr(deal, "is_at_risk", True)
+                setattr(deal, "risk_reason", eval_result.risk_summary)
 
     db.commit()
     db.refresh(call)

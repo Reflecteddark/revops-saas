@@ -44,8 +44,9 @@ ALLOWED_ADMIN_KEYS = {
     REVOPS_ADMIN_KEY,
     "revops_admin_fleet_secret_2026",  # legacy migration fallback
 }
-if os.getenv("REVOPS_ADMIN_FALLBACK_KEY"):
-    ALLOWED_ADMIN_KEYS.add(os.getenv("REVOPS_ADMIN_FALLBACK_KEY"))
+fallback_admin_key = os.getenv("REVOPS_ADMIN_FALLBACK_KEY")
+if fallback_admin_key:
+    ALLOWED_ADMIN_KEYS.add(fallback_admin_key)
 
 
 def generate_admin_cookie_token(secret: str = REVOPS_ADMIN_KEY) -> str:
@@ -1659,6 +1660,9 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
 
         raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден в архиве")
 
+    if target_tenant is None:
+        raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден среди активных")
+
     if action == "freeze":
         target_tenant["status"] = "frozen"
         target_tenant["frozen_at"] = datetime.now().isoformat()
@@ -2878,8 +2882,8 @@ def get_tenant_health_doctor(tenant_id: str):
             })
             if overall_status == "healthy":
                 overall_status = "warning"
-    else:
-        b24_url = cfg.get("bitrix24_webhook") or os.getenv("BITRIX24_WEBHOOK_URL", "")
+        b24_raw = cfg.get("bitrix24_webhook") or os.getenv("BITRIX24_WEBHOOK_URL", "")
+        b24_url = str(b24_raw) if b24_raw else ""
         has_url = bool(b24_url and "http" in b24_url and "/rest/" in b24_url)
         if has_url:
             portal_name = b24_url.split('/rest/')[0] if '/rest/' in b24_url else 'Bitrix24'
@@ -3355,7 +3359,7 @@ class TerminalExecuteRequest(BaseModel):
 
 
 @router.post("/terminal/execute")
-async def execute_terminal_cli_command(req: TerminalExecuteRequest):
+async def execute_terminal_cli_command(req: TerminalExecuteRequest, request: Request):
     """
     Executes interactive administrative commands in the Live Terminal.
     Supports /help, /doctor [tenant_id], /test-call [tenant_id], /quarantine, /backup, /ping, /webhooks, /status.
@@ -3432,7 +3436,7 @@ async def execute_terminal_cli_command(req: TerminalExecuteRequest):
     elif cmd == "/test-call":
         tenant_id = (arg1 or "TNT-001").upper()
         from .webhooks_router import test_amocrm_call_simulation
-        res = await test_amocrm_call_simulation(tenant_id)
+        res = await test_amocrm_call_simulation(request, tenant_id)
         out = (
             f"[{timestamp_str}] 🚀 Тестовый звонок успешно отправлен!\n"
             f"  ID звонка: {res.get('call_id')}\n"

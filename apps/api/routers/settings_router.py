@@ -360,21 +360,24 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                 # row index = st.id + 11 (id 1 = row 12)
                 row_num = st.id + 11
                 if 12 <= row_num <= 18:
-                    ws_settings.update(f"C{row_num}:D{row_num}", [[str(st.sla_hours), f"{st.win_pct}%"]])
+                    # gspread Worksheet.update argument typing limitation (issue #1141)
+                    ws_settings.update(f"C{row_num}:D{row_num}", [[str(st.sla_hours), f"{st.win_pct}%"]])  # type: ignore[arg-type]
 
         # 3. Update managers capacity if present (Rows 21-24)
         if payload.managers:
             for idx, m in enumerate(payload.managers):
                 row_num = 21 + idx
                 if 21 <= row_num <= 24:
-                    ws_settings.update(f"A{row_num}:D{row_num}", [[m.id, m.name, m.role, str(m.capacity)]])
+                    # gspread Worksheet.update argument typing limitation (issue #1141)
+                    ws_settings.update(f"A{row_num}:D{row_num}", [[m.id, m.name, m.role, str(m.capacity)]])  # type: ignore[arg-type]
 
         # 4. Update loss reasons if present (Rows 26-29)
         if payload.loss_reasons:
             for idx, lr in enumerate(payload.loss_reasons):
                 row_num = 26 + idx
                 if 26 <= row_num <= 29:
-                    ws_settings.update(f"A{row_num}:C{row_num}", [[lr.code, lr.reason, f"{lr.reactivation_prob}%"]])
+                    # gspread Worksheet.update argument typing limitation (issue #1141)
+                    ws_settings.update(f"A{row_num}:C{row_num}", [[lr.code, lr.reason, f"{lr.reactivation_prob}%"]])  # type: ignore[arg-type]
 
         # 5. Update Telegram settings if present
         if payload.telegram:

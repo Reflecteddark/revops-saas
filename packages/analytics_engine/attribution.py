@@ -35,8 +35,8 @@ def calculate_w_shaped_attribution(
     """
     Applies W-shaped attribution across closed deals and ad spend per channel.
     """
-    channel_revenue = defaultdict(float)
-    channel_deals_count = defaultdict(set)
+    channel_revenue: Dict[str, float] = defaultdict(float)
+    channel_deals_count: Dict[str, set] = defaultdict(set)
 
     for deal in deals:
         budget = float(deal.get("budget", 0.0))

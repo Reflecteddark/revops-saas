@@ -55,8 +55,8 @@ def get_current_user(
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        tenant_id: str = payload.get("tenant_id")
+        user_id = str(payload.get("sub") or "")
+        tenant_id = str(payload.get("tenant_id") or "")
         if not user_id or not tenant_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный токен")
     except jwt.PyJWTError:

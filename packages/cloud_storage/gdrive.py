@@ -186,7 +186,7 @@ def list_drive_files(folder_id: str = DEFAULT_ROOT_FOLDER_ID, max_results: int =
     res = requests.get(
         "https://www.googleapis.com/drive/v3/files",
         headers=headers,
-        params={"q": q, "fields": "files(id, name, mimeType, size, createdTime, webViewLink)", "pageSize": max_results},
+        params={"q": q, "fields": "files(id, name, mimeType, size, createdTime, webViewLink)", "pageSize": str(max_results)},
         timeout=15
     )
     res.raise_for_status()

@@ -7,6 +7,8 @@ import hmac
 import re
 import secrets
 import uuid
+import logging
+from datetime import datetime
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
@@ -16,6 +18,8 @@ from packages.database.models import Tenant, User, Workspace, UserRole, Subscrip
 from packages.database.session import get_db
 from ..auth import hash_password, verify_password, create_access_token, get_current_user
 from ..schemas import TenantRegisterRequest, LoginRequest, TokenResponse, UserResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Tenants"])
 
@@ -73,10 +77,10 @@ def register_tenant(req: TenantRegisterRequest, db: Session = Depends(get_db)):
 
     return TokenResponse(
         access_token=token,
-        user_id=user.id,
-        tenant_id=tenant.id,
-        role=user.role.value,
-        full_name=user.full_name,
+        user_id=str(user.id),
+        tenant_id=str(tenant.id),
+        role=str(user.role.value),
+        full_name=str(user.full_name),
     )
 
 
@@ -84,7 +88,7 @@ def register_tenant(req: TenantRegisterRequest, db: Session = Depends(get_db)):
 def login(req: LoginRequest, db: Session = Depends(get_db)):
     """Authenticates user and returns JWT scoped to their tenant."""
     user = db.query(User).filter(User.email == req.email.lower()).first()
-    if not user or not verify_password(req.password, user.hashed_password):
+    if not user or not verify_password(req.password, str(user.hashed_password)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный email или пароль"
@@ -105,10 +109,10 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 
     return TokenResponse(
         access_token=token,
-        user_id=user.id,
-        tenant_id=user.tenant_id,
-        role=user.role.value,
-        full_name=user.full_name,
+        user_id=str(user.id),
+        tenant_id=str(user.tenant_id),
+        role=str(user.role.value),
+        full_name=str(user.full_name),
     )
 
 
@@ -116,12 +120,12 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 def get_me(current_user: User = Depends(get_current_user)):
     """Returns profile info and role of current authenticated user."""
     return UserResponse(
-        id=current_user.id,
-        email=current_user.email,
-        full_name=current_user.full_name,
-        role=current_user.role.value,
-        tenant_id=current_user.tenant_id,
-        is_active=current_user.is_active,
+        id=str(current_user.id),
+        email=str(current_user.email),
+        full_name=str(current_user.full_name),
+        role=str(current_user.role.value),
+        tenant_id=str(current_user.tenant_id),
+        is_active=bool(current_user.is_active),
     )
 
 
@@ -360,7 +364,7 @@ def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db)):
     if target_login:
         db_user = db.query(User).filter(User.email == target_login).first()
     if db_user:
-        db_user.hashed_password = hash_password(req.new_password)
+        setattr(db_user, "hashed_password", hash_password(req.new_password))
         db.commit()
 
     return {"status": "ok", "message": "Пароль успешно обновлен. Новый ключ доступа активен."}
@@ -376,6 +380,7 @@ def update_profile(req: UpdateProfileRequest):
     target_login = (req.login or "").strip().lower()
 
     # 1. Update in tenants_registry.json
+    updated_tenant: Optional[Dict[str, Any]] = None
     try:
         registry = load_tenants_registry()
         updated = False
@@ -394,6 +399,7 @@ def update_profile(req: UpdateProfileRequest):
                     t["phone"] = req.phone.strip()
                 t["updated_at"] = datetime.now().isoformat()
                 updated = True
+                updated_tenant = t
                 break
         if updated:
             save_tenants_registry(registry)
@@ -411,5 +417,5 @@ def update_profile(req: UpdateProfileRequest):
             save_registered_clients(clients)
             break
 
-    return {"status": "ok", "message": "Профиль и контактные данные успешно сохранены.", "tenant": updated_tenant}
+    return {"status": "ok", "message": "Профиль и контактные данные успешно сохранены.", "tenant": updated_tenant or {"tenant_id": target_tenant}}
 

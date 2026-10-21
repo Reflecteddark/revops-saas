@@ -4,7 +4,7 @@ RevOps Enterprise OS V18.0 — Движок Отраслевого Профил�
 от автозапчастей и B2B поставок до онлайн-школ и курсов психологии.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 NICHE_CATALOG: Dict[str, Dict[str, Any]] = {
     "auto_parts": {
@@ -386,7 +386,10 @@ NICHE_CATALOG: Dict[str, Dict[str, Any]] = {
 
 
 def create_dynamic_niche_profile(
-    custom_name: str, avg_check: int = None, target_next_step: str = None, main_objection: str = None
+    custom_name: str,
+    avg_check: Optional[int] = None,
+    target_next_step: Optional[str] = None,
+    main_objection: Optional[str] = None
 ) -> Dict[str, Any]:
     """Генерирует специализированный отраслевой профиль на лету под любую произвольную нишу"""
     c_lower = custom_name.lower()
@@ -439,13 +442,13 @@ def create_dynamic_niche_profile(
             f"5. Закрытие на целевое действие: «{eff_ns}»",
         ],
         "objection_handling": {
-            main_objection.lower(): f"Аргументация ценности и окупаемости решения в нише «{custom_name}», демонстрация кейсов и гарантий.",
+            eff_obj.lower(): f"Аргументация ценности и окупаемости решения в нише «{custom_name}», демонстрация кейсов и гарантий.",
             "дорого": "Сравнение потерь при выборе дешевых некачественных альтернатив с выгодой надежного решения.",
         },
         "critical_leaks": [
             f"Менеджер не выявил критерии выбора клиента в сегменте «{custom_name}»",
-            f"Не отработал возражение «{main_objection}» и отпустил клиента",
-            f"Завершил звонок без фиксации целевого действия «{target_next_step}»",
+            f"Не отработал возражение «{eff_obj}» и отпустил клиента",
+            f"Завершил звонок без фиксации целевого действия «{eff_ns}»",
         ],
         "demo_cases": {
             "worst": {
@@ -453,20 +456,20 @@ def create_dynamic_niche_profile(
                 "call_id": "CALL-W1024",
                 "duration": "02:15",
                 "client": f"Лид #{100 + (abs(hash(custom_name)) % 300)} ({custom_name})",
-                "deal_amount": int(avg_check * 0.9),
+                "deal_amount": int(eff_check * 0.9),
                 "score": 36,
-                "detail": f"Клиент озвучил сомнение «{main_objection}». Менеджер не привел аргументов, не назначил следующий шаг «{target_next_step}» и бросил диалог.",
-                "leak_type": f"Слив диалога без отработки «{main_objection}» и без фиксации шага",
+                "detail": f"Клиент озвучил сомнение «{eff_obj}». Менеджер не привел аргументов, не назначил следующий шаг «{eff_ns}» и бросил диалог.",
+                "leak_type": f"Слив диалога без отработки «{eff_obj}» и без фиксации шага",
             },
             "best": {
                 "manager": "Козлов Сергей",
                 "call_id": "CALL-W1142",
                 "duration": "04:45",
                 "client": f"Лид #{200 + (abs(hash(custom_name)) % 300)} ({custom_name})",
-                "deal_amount": int(avg_check * 1.3),
+                "deal_amount": int(eff_check * 1.3),
                 "score": 94,
-                "detail": f"Выявил задачу, уверенно снял возражение «{main_objection}», аргументировал экспертность компании и закрыл на «{target_next_step}».",
-                "leak_type": f"Эталонная отработка: Снятие «{main_objection}» + Фиксация Next Step",
+                "detail": f"Выявил задачу, уверенно снял возражение «{eff_obj}», аргументировал экспертность компании и закрыл на «{eff_ns}».",
+                "leak_type": f"Эталонная отработка: Снятие «{eff_obj}» + Фиксация Next Step",
             },
         },
         "system_prompt_instruction": (
@@ -478,7 +481,7 @@ def create_dynamic_niche_profile(
     }
 
 
-def get_niche_profile(niche_id: str, tenant: Dict[str, Any] = None) -> Dict[str, Any]:
+def get_niche_profile(niche_id: str, tenant: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Возвращает профиль ниши из каталога или синтезирует динамический для custom"""
     if niche_id in NICHE_CATALOG:
         return NICHE_CATALOG[niche_id]

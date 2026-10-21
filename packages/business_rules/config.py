@@ -16,7 +16,7 @@ BENCHMARKS = {
 }
 
 # 2. STAGES (7 этапов воронки: SLA нормативы в часах + Win %)
-STAGES = {
+STAGES: Dict[int, Dict[str, Any]] = {
     1: {"id": 1, "name": "1. Новый лид", "sla_hours": 24.0, "win_pct": 0.05},
     2: {"id": 2, "name": "2. Квалификация / ЛПР", "sla_hours": 48.0, "win_pct": 0.15},
     3: {"id": 3, "name": "3. Встреча / Демо", "sla_hours": 120.0, "win_pct": 0.35},

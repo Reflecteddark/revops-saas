@@ -5,7 +5,7 @@ Celery Background Tasks:
 """
 
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from .celery_app import celery_app
 from packages.analytics_engine.monte_carlo import run_monte_carlo_simulation, SimulationConfig
 
@@ -41,7 +41,7 @@ def sync_crm_task(org_id: str, crm_source: str = "amo"):
 
 
 @celery_app.task(name="workers.tasks.process_call_audio_task", bind=True, max_retries=3, default_retry_delay=5)
-def process_call_audio_task(self, call_data: Dict[str, Any], org_id: str = "TNT-001", webhook_id: str = None, t_start: float = None):
+def process_call_audio_task(self, call_data: Dict[str, Any], org_id: str = "TNT-001", webhook_id: Optional[str] = None, t_start: Optional[float] = None):
     """
     Asynchronous processing of incoming telephony call events:
     1. Audio download (if URL provided) or speech-to-text transcript processing.
@@ -66,8 +66,10 @@ def process_call_audio_task(self, call_data: Dict[str, Any], org_id: str = "TNT-
         
         # 1. Normalize call payload
         dur_sec = int(call_data.get("duration_sec", 120))
-        cr_list = call_data.get("cr") if call_data.get("cr") and len(call_data.get("cr")) == 13 else [1]*13
-        score = int(call_data.get("score")) if call_data.get("score") is not None else sum(cr_list)
+        raw_cr = call_data.get("cr")
+        cr_list: List[int] = list(raw_cr) if isinstance(raw_cr, (list, tuple)) and len(raw_cr) == 13 else [1]*13
+        raw_score = call_data.get("score")
+        score = int(raw_score) if raw_score is not None else sum(cr_list)
         next_step = int(call_data.get("next_step", 1))
 
         payload = CallIngestPayload(
@@ -107,7 +109,7 @@ def process_call_audio_task(self, call_data: Dict[str, Any], org_id: str = "TNT-
                     transcript_text=payload.transcript,
                     ai_summary=payload.error_summary,
                     next_action_extracted=payload.recommendation,
-                    overall_score=float(payload.score),
+                    overall_score=float(payload.score or 0.0),
                     scorecard_criteria={"cr": payload.cr, "score": payload.score, "next_step": payload.next_step},
                     reverse_etl_synced=payload.sync_to_sheets
                 )

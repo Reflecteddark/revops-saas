@@ -141,11 +141,11 @@ def save_tenants_registry(data: Dict[str, Any], target_path: Optional[Path] = No
                     )
                     db.add(new_tenant)
                 else:
-                    existing.name = name
-                    existing.is_active = is_active
+                    setattr(existing, "name", name)
+                    setattr(existing, "is_active", is_active)
                     merged = dict(existing.settings or {})
                     merged.update(settings)
-                    existing.settings = merged
+                    setattr(existing, "settings", merged)
             db.commit()
             logger.info("Successfully persisted tenant registry state to Database")
         finally:

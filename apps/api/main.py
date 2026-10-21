@@ -79,7 +79,7 @@ async def get_protected_docs(request: Request):
         title="RevOps Intelligence SaaS — API Documentation",
         swagger_ui_parameters={"persistAuthorization": True}
     )
-    html_content = base_response.body.decode("utf-8")
+    html_content = bytes(base_response.body).decode("utf-8")
     cleanup_script = "<script>if(window.location.search.includes('admin_key')){window.history.replaceState({},document.title,window.location.pathname);}</script></body>"
     if "</body>" in html_content:
         html_content = html_content.replace("</body>", cleanup_script)

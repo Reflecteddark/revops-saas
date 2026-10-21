@@ -14,7 +14,7 @@ try:
 except ImportError:
     HAS_CELERY = False
 
-    class Celery:
+    class Celery:  # type: ignore[no-redef]
         """Lightweight in-memory shim when celery package is not installed."""
         def __init__(self, name="revops_workers", broker=None, backend=None):
             self.name = name

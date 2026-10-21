@@ -11,9 +11,10 @@ from sqlalchemy import (
     Column, String, Integer, Float, Boolean, DateTime, ForeignKey, 
     Text, Enum, JSON, Index, func
 )
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import DeclarativeBase, relationship
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 class UserRole(str, enum.Enum):
@@ -51,7 +52,7 @@ class Tenant(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False)
     slug = Column(String(100), unique=True, nullable=False, index=True)
-    tier = Column(Enum(SubscriptionTier), default=SubscriptionTier.PRO, nullable=False)
+    tier: Column[Enum] = Column(Enum(SubscriptionTier), default=SubscriptionTier.PRO, nullable=False)
     max_seats = Column(Integer, default=10, nullable=False)
     ai_minutes_quota = Column(Integer, default=2000, nullable=False)
     ai_minutes_used = Column(Integer, default=0, nullable=False)
@@ -85,7 +86,7 @@ class Tenant(Base):
         return "active"
 
     def to_registry_dict(self) -> dict:
-        st = self.settings if isinstance(self.settings, dict) else {}
+        st: dict = self.settings if isinstance(self.settings, dict) else {}
         return {
             "tenant_id": self.id,
             "tenant_name": self.name,
@@ -111,7 +112,7 @@ class User(Base):
     email = Column(String(255), nullable=False, index=True)
     full_name = Column(String(255), nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(Enum(UserRole), default=UserRole.KAM, nullable=False)
+    role: Column[Enum] = Column(Enum(UserRole), default=UserRole.KAM, nullable=False)
     telegram_chat_id = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -126,7 +127,7 @@ class User(Base):
 
     @property
     def is_admin(self) -> bool:
-        return self.role == UserRole.ADMIN or "admin" in str(self.role.value).lower()
+        return bool(self.role == UserRole.ADMIN or "admin" in str(getattr(self.role, "value", self.role)).lower())
 
 
 
@@ -160,7 +161,7 @@ class Deal(Base):
     company_name = Column(String(255), nullable=True)
     contact_phone = Column(String(50), nullable=True)
     budget = Column(Float, default=0.0, nullable=False)
-    stage = Column(Enum(DealStage), default=DealStage.LEAD_INCOMING, nullable=False)
+    stage: Column[Enum] = Column(Enum(DealStage), default=DealStage.LEAD_INCOMING, nullable=False)
     
     # SLA & Risk Radar fields
     days_in_stage = Column(Integer, default=0, nullable=False)

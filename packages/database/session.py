@@ -83,21 +83,23 @@ def get_db_routing_info() -> dict:
 
 def get_pool_metrics() -> dict:
     """Returns connection pool metrics for both engines."""
+    p = getattr(engine, "pool", None)
     metrics = {
         "primary": {
-            "size": engine.pool.size() if hasattr(engine, 'pool') else 0,
-            "checked_in": engine.pool.checkedin() if hasattr(engine, 'pool') else 0,
-            "checked_out": engine.pool.checkedout() if hasattr(engine, 'pool') else 0,
-            "overflow": engine.pool.overflow() if hasattr(engine, 'pool') else 0,
+            "size": getattr(p, "size", lambda: 0)(),
+            "checked_in": getattr(p, "checkedin", lambda: 0)(),
+            "checked_out": getattr(p, "checkedout", lambda: 0)(),
+            "overflow": getattr(p, "overflow", lambda: 0)(),
         }
     }
     
     if DATABASE_READ_REPLICA_URL != DATABASE_URL:
+        pr = getattr(engine_read, "pool", None)
         metrics["read_replica"] = {
-            "size": engine_read.pool.size() if hasattr(engine_read, 'pool') else 0,
-            "checked_in": engine_read.pool.checkedin() if hasattr(engine_read, 'pool') else 0,
-            "checked_out": engine_read.pool.checkedout() if hasattr(engine_read, 'pool') else 0,
-            "overflow": engine_read.pool.overflow() if hasattr(engine_read, 'pool') else 0,
+            "size": getattr(pr, "size", lambda: 0)(),
+            "checked_in": getattr(pr, "checkedin", lambda: 0)(),
+            "checked_out": getattr(pr, "checkedout", lambda: 0)(),
+            "overflow": getattr(pr, "overflow", lambda: 0)(),
         }
     
     return metrics

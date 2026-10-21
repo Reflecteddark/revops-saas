@@ -13,7 +13,7 @@ from packages.business_rules.config import BENCHMARKS, STAGES, SLA_MATRIX, LOSS_
 
 SYSTEM_DATE = "2026-09-29"
 
-DEFAULT_DEALS = [
+DEFAULT_DEALS: List[Dict[str, Any]] = [
     {
         "deal_id": "D-101",
         "client_name": 'ООО "Альфа Трейд"',
@@ -181,7 +181,7 @@ DEFAULT_DEALS = [
     },
 ]
 
-DEFAULT_INVOICES = [
+DEFAULT_INVOICES: List[Dict[str, Any]] = [
     {"invoice_id": "INV-201", "deal_id": "D-101", "amount": 450000.0, "status": "paid"},
     {"invoice_id": "INV-202", "deal_id": "D-102", "amount": 1200000.0, "status": "paid"},
     {"invoice_id": "INV-203", "deal_id": "D-103", "amount": 150000.0, "status": "overdue"},
@@ -192,7 +192,7 @@ DEFAULT_INVOICES = [
     {"invoice_id": "INV-208", "deal_id": "D-099", "amount": 180000.0, "status": "overdue"},
 ]
 
-DEFAULT_PAYMENTS = [
+DEFAULT_PAYMENTS: List[Dict[str, Any]] = [
     {"payment_id": "PAY-001", "deal_id": "D-101", "invoice_id": "INV-201", "amount": 450000.0},
     {"payment_id": "PAY-002", "deal_id": "D-102", "invoice_id": "INV-202", "amount": 1200000.0},
     {"payment_id": "PAY-003", "deal_id": "D-101", "invoice_id": "INV-201", "amount": 450000.0},
@@ -201,7 +201,7 @@ DEFAULT_PAYMENTS = [
     {"payment_id": "PAY-006", "deal_id": "D-102", "invoice_id": "INV-202", "amount": 1200000.0},
 ]
 
-DEFAULT_TOUCHPOINTS = [
+DEFAULT_TOUCHPOINTS: List[Dict[str, Any]] = [
     {"touch_id": "TP-101", "deal_id": "D-101", "channel": "Органика SEO", "weight_pct": 0.3, "deal_amount": 450000, "is_won": True, "touch_date": "2026-08-25"},
     {"touch_id": "TP-102", "deal_id": "D-101", "channel": "Яндекс Директ", "weight_pct": 0.3, "deal_amount": 450000, "is_won": True, "touch_date": "2026-09-02"},
     {"touch_id": "TP-103", "deal_id": "D-101", "channel": "Партнеры", "weight_pct": 0.1, "deal_amount": 450000, "is_won": True, "touch_date": "2026-09-07"},
@@ -218,7 +218,7 @@ DEFAULT_TOUCHPOINTS = [
     {"touch_id": "TP-113", "deal_id": "D-105", "channel": "Яндекс Директ", "weight_pct": 0.5, "deal_amount": 3000000, "is_won": False, "touch_date": "2026-09-15"},
 ]
 
-DEFAULT_CALLS = [
+DEFAULT_CALLS: List[Dict[str, Any]] = [
     {"call_id": "C-501", "deal_id": "D-101", "manager_id": 102, "duration_sec": 340, "score": 12, "next_step": 1},
     {"call_id": "C-502", "deal_id": "D-104", "manager_id": 101, "duration_sec": 260, "score": 11, "next_step": 1},
     {"call_id": "C-503", "deal_id": "D-106", "manager_id": 102, "duration_sec": 190, "score": 8, "next_step": 0},
@@ -227,13 +227,13 @@ DEFAULT_CALLS = [
     {"call_id": "C-506", "deal_id": "D-111", "manager_id": 101, "duration_sec": 435, "score": 12, "next_step": 1},
 ]
 
-DEFAULT_MARKETING = [
+DEFAULT_MARKETING: List[Dict[str, Any]] = [
     {"campaign_id": "cmp_yd", "channel": "Яндекс Директ", "spend": 120000.0, "leads": 48.0},
     {"campaign_id": "cmp_kf", "channel": "Контур.Фокус", "spend": 35000.0, "leads": 24.0},
     {"campaign_id": "cmp_ga", "channel": "Google Ads", "spend": 85000.0, "leads": 31.0},
 ]
 
-DEFAULT_ALERTS = [
+DEFAULT_ALERTS: List[Dict[str, Any]] = [
     {"alert_id": "ALT-001", "priority": "CRITICAL", "trigger_name": "Брак диалога C-505", "value": 600000.0, "status": "OPEN"},
     {"alert_id": "ALT-002", "priority": "CRITICAL", "trigger_name": "Зависание сделки D-104 на КП > 48ч", "value": 850000.0, "status": "OPEN"},
     {"alert_id": "ALT-003", "priority": "HIGH", "trigger_name": "Просрочен счет INV-203", "value": 150000.0, "status": "OPEN"},
@@ -241,7 +241,7 @@ DEFAULT_ALERTS = [
     {"alert_id": "ALT-005", "priority": "MEDIUM", "trigger_name": "Срыв слота встречи C-503", "value": 280000.0, "status": "OPEN"},
 ]
 
-DEFAULT_ACTIONS = [
+DEFAULT_ACTIONS: List[Dict[str, Any]] = [
     {"action_id": "ACT-001", "deal_id": "D-104", "amount_at_risk": 850000.0, "priority": "🔴 P0", "owner": 101, "status": "OPEN", "due_days": 2},
     {"action_id": "ACT-002", "deal_id": "D-103", "amount_at_risk": 150000.0, "priority": "🔴 P0", "owner": 102, "status": "OPEN", "due_days": 2},
     {"action_id": "ACT-003", "deal_id": "D-109", "amount_at_risk": 120000.0, "priority": "🟡 P1", "owner": 103, "status": "OPEN", "due_days": 3},
@@ -255,11 +255,11 @@ class RevOpsCalcEngine:
 
     def __init__(
         self,
-        deals: Optional[List[dict]] = None,
-        invoices: Optional[List[dict]] = None,
-        touchpoints: Optional[List[dict]] = None,
-        calls: Optional[List[dict]] = None,
-        marketing: Optional[List[dict]] = None,
+        deals: Optional[List[Dict[str, Any]]] = None,
+        invoices: Optional[List[Dict[str, Any]]] = None,
+        touchpoints: Optional[List[Dict[str, Any]]] = None,
+        calls: Optional[List[Dict[str, Any]]] = None,
+        marketing: Optional[List[Dict[str, Any]]] = None,
         target_revenue: float = 5000000.0
     ):
         self.deals = deals if deals is not None else DEFAULT_DEALS

@@ -294,8 +294,9 @@ async def _process_amocrm_webhook(request: Request, tenant_param: Optional[str] 
     # Direct custom integration from n8n / amoCRM
     if not is_call_event and isinstance(body, dict) and ("call_id" in body or "transcript" in body or "manager" in body):
         is_call_event = True
-        c_text = body.get("transcript", body.get("amo_note_text", ""))
-        parsed = parse_call_from_text(c_text, body.get("manager_name", "Менеджер"))
+        c_text = str(body.get("transcript") or body.get("amo_note_text") or "")
+        manager_str = str(body.get("manager_name") or "Менеджер")
+        parsed = parse_call_from_text(c_text, manager_str)
         call_id = str(body.get("call_id", f"amo_{int(time.time())}"))
         deal_id = str(body.get("lead_id", body.get("deal_id", "amo_lead")))
         dur_sec = int(body.get("duration_sec", 135))
@@ -807,13 +808,17 @@ async def replay_webhook(
 
     call_id = replay_payload["call_id"]
     deal_id = str(replay_payload.get("deal_id") or f"D-REPLAY-{int(time.time()) % 1000}")
-    transcript = replay_payload.get("transcript") or "Повторная обработка архивного звонка"
-    parsed = parse_call_from_text(transcript, replay_payload.get("manager_name", "Менеджер"))
+    transcript = str(replay_payload.get("transcript") or "Повторная обработка архивного звонка")
+    manager_name = str(replay_payload.get("manager_name") or "Менеджер")
+    parsed = parse_call_from_text(transcript, manager_name)
 
     dur_sec = int(replay_payload.get("duration_sec", 120))
-    score = int(replay_payload.get("score")) if replay_payload.get("score") is not None else parsed["score"]
-    next_step = int(replay_payload.get("next_step")) if replay_payload.get("next_step") is not None else parsed["next_step"]
-    cr = replay_payload.get("cr") if replay_payload.get("cr") and len(replay_payload.get("cr")) == 13 else parsed["cr"]
+    raw_score = replay_payload.get("score")
+    score = int(raw_score) if raw_score is not None else int(parsed["score"])
+    raw_next_step = replay_payload.get("next_step")
+    next_step = int(raw_next_step) if raw_next_step is not None else int(parsed["next_step"])
+    raw_cr = replay_payload.get("cr")
+    cr = raw_cr if isinstance(raw_cr, list) and len(raw_cr) == 13 else parsed["cr"]
 
     call_payload = CallIngestPayload(
         id=call_id,
