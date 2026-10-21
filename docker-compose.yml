@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    image: ghcr.io/reflecteddark/revops-saas:latest
+    image: ghcr.io/reflecteddark/revops-saas:${IMAGE_TAG:-latest}
     container_name: revops-api
     restart: always
     ports:

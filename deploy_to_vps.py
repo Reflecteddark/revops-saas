@@ -18,16 +18,17 @@ import urllib.error
 import py_compile
 from pathlib import Path
 from datetime import datetime
+from typing import Optional, List, Dict, Any
 
 # Принудительная настройка кодировки консоли Windows на UTF-8 с безопасной заменой
-if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+if getattr(sys.stdout, "encoding", None) and str(sys.stdout.encoding).lower() != "utf-8":
     try:
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8", errors="replace")
     except Exception:
         pass
-if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
+if getattr(sys.stderr, "encoding", None) and str(sys.stderr.encoding).lower() != "utf-8":
     try:
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        getattr(sys.stderr, "reconfigure")(encoding="utf-8", errors="replace")
     except Exception:
         pass
 
@@ -217,8 +218,8 @@ def load_github_token() -> Optional[str]:
     candidate_files = [
         Path(__file__).resolve().parent / "deploy.env",
         Path(__file__).resolve().parent / ".env",
-        PROJECTS.get("saas", {}).get("local_path", Path(".")) / "deploy.env",
-        PROJECTS.get("saas", {}).get("local_path", Path(".")) / ".env",
+        Path(str(PROJECTS.get("saas", {}).get("local_path", "."))) / "deploy.env",
+        Path(str(PROJECTS.get("saas", {}).get("local_path", "."))) / ".env",
         Path("deploy.env"),
         Path(".env"),
     ]
@@ -415,18 +416,286 @@ def stream_to_vps(local_path: Path, vps_path: str, commit_hash: str) -> bool:
     )
     return True
 
-def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str) -> bool:
+def send_telegram_alert(text: str) -> bool:
+    """Отправляет алерт в Telegram чат администратора."""
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("ADMIN_CHAT_ID") or os.getenv("TELEGRAM_CHAT_ID")
+    api_base = os.getenv("TELEGRAM_API_BASE", "https://api.telegram.org").rstrip("/")
+
+    candidate_files = [
+        Path(__file__).resolve().parent / "telegram_credentials.json",
+        Path.home() / "my_ai_crew" / "telegram_credentials.json",
+        Path("telegram_credentials.json"),
+    ]
+    for c in candidate_files:
+        if c.exists():
+            try:
+                data = json.loads(c.read_text(encoding="utf-8"))
+                if not bot_token:
+                    bot_token = data.get("bot_token")
+                if not chat_id:
+                    chat_id = str(data.get("chat_id", ""))
+                api_base = data.get("api_base", api_base).rstrip("/")
+                if bot_token and chat_id:
+                    break
+            except Exception:
+                pass
+
+    if not bot_token or not chat_id:
+        return False
+
+    try:
+        url = f"{api_base}/bot{bot_token}/sendMessage"
+        payload = json.dumps({"chat_id": chat_id, "text": text, "parse_mode": "HTML"}).encode("utf-8")
+        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status == 200
+    except Exception as e:
+        log(f"[!] Ошибка отправки Telegram алерта: {e}", symbol="[!]")
+        return False
+
+
+def get_vps_deploy_info(vps_path: str) -> dict:
+    """Получает текущие метаданные деплоя (.deploy_info.json) с VPS."""
+    cmd = f"cat {vps_path}/.deploy_info.json 2>/dev/null || echo '{{}}'"
+    res = subprocess.run(
+        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", cmd],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
+    )
+    try:
+        return json.loads(res.stdout.strip())
+    except Exception:
+        return {}
+
+
+def update_vps_deploy_info(vps_path: str, current_sha: str, previous_sha: str) -> bool:
+    """Записывает метаданные деплоя в .deploy_info.json на VPS."""
+    deploy_stamp = datetime.now().isoformat()
+    data = {
+        "current_sha": current_sha,
+        "previous_sha": previous_sha,
+        "deployed_at": deploy_stamp,
+        "mode": "docker"
+    }
+    json_str = json.dumps(data, indent=2, ensure_ascii=False)
+    cmd = (
+        f"python3 -c \""
+        f"import pathlib; "
+        f"pathlib.Path('{vps_path}/.deploy_info.json').write_text('''{json_str}''', encoding='utf-8')\""
+    )
+    res = subprocess.run(
+        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", cmd],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
+    )
+    return res.returncode == 0
+
+
+def set_vps_image_tag(vps_path: str, tag: str) -> bool:
+    """Обновляет или добавляет IMAGE_TAG в .env на VPS."""
+    cmd = (
+        f"python3 -c \""
+        f"import pathlib; "
+        f"p = pathlib.Path('{vps_path}/.env'); "
+        f"txt = p.read_text(encoding='utf-8') if p.exists() else ''; "
+        f"lines = [l for l in txt.splitlines() if not l.startswith('IMAGE_TAG=')]; "
+        f"lines.append('IMAGE_TAG={tag}'); "
+        f"p.write_text('\\n'.join(lines) + '\\n', encoding='utf-8')\""
+    )
+    res = subprocess.run(
+        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", cmd],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
+    )
+    return res.returncode == 0
+
+
+def resolve_commit_sha(repo: str, sha_or_prefix: str, local_path: Optional[Path] = None) -> str:
+    """Разрешает короткий или символический SHA в полный 40-значный коммит SHA."""
+    if not sha_or_prefix or sha_or_prefix in ("latest", "unknown"):
+        return sha_or_prefix
+    if len(sha_or_prefix) == 40:
+        return sha_or_prefix
+
+    # Попытка локального разрешения через git rev-parse
+    if local_path and (local_path / ".git").exists():
+        try:
+            res = subprocess.run(
+                ["git", "rev-parse", sha_or_prefix],
+                cwd=str(local_path),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="ignore"
+            )
+            full_sha = res.stdout.strip()
+            if len(full_sha) == 40:
+                return full_sha
+        except Exception:
+            pass
+
+    # Удалённое разрешение через GitHub REST API
+    try:
+        url = f"https://api.github.com/repos/{repo}/commits/{sha_or_prefix}"
+        headers = {"User-Agent": "RevOps-Deploy/1.0"}
+        tok = load_github_token()
+        if tok:
+            headers["Authorization"] = f"Bearer {tok}"
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data.get("sha", sha_or_prefix)
+    except Exception:
+        pass
+    return sha_or_prefix
+
+
+def rollback_docker(vps_path: str, target_sha: Optional[str] = None) -> bool:
+    """
+    Выполняет откат Docker сервиса на указанный SHA (или previous_sha).
+    Не запускает git push и не ждёт CI (образ уже существует в GHCR).
+    """
+    repo = str(PROJECTS["saas"]["repo"])
+    local_path = Path(str(PROJECTS["saas"]["local_path"]))
+    info = get_vps_deploy_info(vps_path)
+    current_sha = info.get("current_sha") or info.get("commit") or "latest"
+    previous_sha = info.get("previous_sha")
+
+    if not target_sha:
+        target_sha = previous_sha
+
+    if not target_sha or target_sha in ("unknown", "latest", ""):
+        log("[-] Ошибка отката: предыдущая версия (previous_sha) не найдена в .deploy_info.json!", symbol="[-]")
+        log("Укажите целевой SHA вручную: python deploy_to_vps.py saas --rollback <sha>", symbol="[i]")
+        return False
+
+    target_full = resolve_commit_sha(repo, target_sha, local_path)
+    target_short = target_full[:7]
+    current_short = current_sha[:7] if current_sha != "latest" else "latest"
+
+    log(f"⏪ [Rollback] Запуск процедуры отката на версию {target_short} ({target_full})...", symbol="[^]")
+    log(f"[i] Текущая активная версия в проде: {current_short}", symbol="[i]")
+
+    # 1. Проверяем доступность SSH
+    if not check_ssh_reachability(timeout_sec=4):
+        log(f"VPS {VPS_HOST} недоступен по SSH. Откат прерван.", symbol="[-]")
+        return False
+
+    # 2. Выставляем целевой IMAGE_TAG в .env на VPS
+    set_vps_image_tag(vps_path, target_full)
+
+    # 3. Пуллим целевой образ и перезапускаем контейнер
+    log(f"Загрузка образа {target_short} и перезапуск контейнера...", symbol="[^]")
+    docker_cmd = f"cd {vps_path} && docker compose pull && docker compose up -d --force-recreate --remove-orphans"
+    res_docker = subprocess.run(
+        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
+    )
+    if res_docker.returncode != 0:
+        log(f"[-] Ошибка pull/up при откате: {res_docker.stderr.strip() or res_docker.stdout.strip()}", symbol="[-]")
+        return False
+
+    # 4. Проверяем смоук-тестом
+    log("Проверка здоровья боевого API после отката...", symbol="[?]")
+    smoke_ok = run_smoke_test(timeout_sec=20)
+
+    if smoke_ok:
+        update_vps_deploy_info(vps_path, current_sha=target_short, previous_sha=current_short)
+        log(f"✅ [Rollback] ОТКАТ УСПЕШНО ВЫПОЛНЕН! Активная версия: {target_short}", symbol="[+]")
+        return True
+    else:
+        log(f"❌ [Rollback] Смоук-тест версии {target_short} провален! Экстренное восстановление {current_short}...", symbol="[-]")
+        set_vps_image_tag(vps_path, resolve_commit_sha(repo, current_sha, local_path))
+        subprocess.run(
+            ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
+            capture_output=True
+        )
+        send_telegram_alert(
+            f"🚨 <b>[RevOps Disaster Alert]</b>\n"
+            f"Попытка отката на <code>{target_short}</code> завершилась ошибкой смоук-теста!\n"
+            f"Сервер автоматически возвращен на <code>{current_short}</code>."
+        )
+        return False
+
+
+def list_versions(repo: str, vps_path: str):
+    """Показывает список доступных версий/образов для отката."""
+    log(f"Запрос списка доступных версий из {repo}...", symbol="[?]")
+    info = get_vps_deploy_info(vps_path)
+    current_sha = info.get("current_sha", "")
+    previous_sha = info.get("previous_sha", "")
+    deployed_at = info.get("deployed_at", "неизвестно")
+
+    print("\n" + "=" * 70)
+    print("      ТЕКУЩЕЕ СОСТОЯНИЕ НА VPS")
+    print("=" * 70)
+    print(f"  • Текущая активная версия (current_sha):  {current_sha or 'latest'}")
+    print(f"  • Предыдущая версия (previous_sha):      {previous_sha or 'нет'}")
+    print(f"  • Время последнего деплоя:               {deployed_at}")
+    print("=" * 70)
+
+    url = f"https://api.github.com/repos/{repo}/commits?per_page=15"
+    headers = {"User-Agent": "RevOps-Deploy/1.0"}
+    tok = load_github_token()
+    if tok:
+        headers["Authorization"] = f"Bearer {tok}"
+
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            commits = json.loads(resp.read().decode("utf-8"))
+
+        print("\n" + "=" * 70)
+        print("      ДОСТУПНЫЕ ДЛЯ ОТКАТА ВЕРСИИ (GHCR / GitHub Commits)")
+        print("=" * 70)
+        for c in commits:
+            sha_full = c["sha"]
+            sha_short = sha_full[:7]
+            msg = c["commit"]["message"].splitlines()[0]
+            date_str = c["commit"]["committer"]["date"].replace("T", " ").replace("Z", " UTC")
+
+            badge = ""
+            if sha_short == current_sha or sha_full == current_sha:
+                badge = " 🟢 [АКТИВЕН В ПРОДЕ]"
+            elif sha_short == previous_sha or sha_full == previous_sha:
+                badge = " 🟡 [ПРЕДЫДУЩАЯ ВЕРСИЯ]"
+
+            print(f"  [{sha_short}] {date_str} - {msg[:45]}{badge}")
+        print("=" * 70)
+        print("Для отката выполните:")
+        print(f"  python deploy_to_vps.py saas --rollback <sha>")
+        print(f"  python deploy_to_vps.py saas --rollback           (на {previous_sha or 'предыдущую'})\n")
+    except Exception as e:
+        log(f"[-] Не удалось получить список коммитов: {e}", symbol="[-]")
+
+
+def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str, commit_full_hash: Optional[str] = None) -> bool:
     """
     Копирует docker-compose.yml на VPS и запускает контейнеры через Docker Compose.
     Создает необходимые директории (data, logs) заранее на VPS.
+    Записывает .deploy_info.json с current_sha и previous_sha.
     """
     log(f"Подготовка окружения и деплой Docker на VPS: {vps_path}...", symbol="[>]")
-    
+
     if not check_ssh_reachability(timeout_sec=4):
         log(f"VPS {VPS_HOST} недоступен по SSH. Проверьте сервер в панели Aeza.", symbol="[-]")
         return False
 
-    # 1. Заранее создаем директории data/ и logs/ на хосте, чтобы избежать создания с правами root-only
+    # 1. Читаем старый .deploy_info.json для фиксации previous_sha
+    old_info = get_vps_deploy_info(vps_path)
+    old_sha = old_info.get("current_sha") or old_info.get("commit") or ""
+
+    # 2. Заранее создаем директории data/ и logs/ на хосте, чтобы избежать создания с правами root-only
     init_dirs_cmd = f"mkdir -p {vps_path}/data {vps_path}/logs"
     res_init = subprocess.run(
         ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", init_dirs_cmd],
@@ -439,7 +708,7 @@ def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str)
         log(f"Ошибка подготовки директорий на VPS: {res_init.stderr.strip()}", symbol="[-]")
         return False
 
-    # 2. Копируем docker-compose.yml через SCP
+    # 3. Копируем docker-compose.yml через SCP
     compose_file = local_path / "docker-compose.yml"
     if not compose_file.exists():
         log(f"Файл {compose_file} не найден локально!", symbol="[-]")
@@ -456,8 +725,12 @@ def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str)
         log(f"Ошибка передачи docker-compose.yml: {res_scp.stderr.strip()}", symbol="[-]")
         return False
 
-    # 3. Выполняем docker compose pull && docker compose up -d
-    log("Обновление и запуск Docker-контейнеров (docker compose pull && up -d --force-recreate)...", symbol="[^]")
+    # 4. Выставляем IMAGE_TAG в .env на VPS
+    tag_to_set = commit_full_hash or commit_hash
+    set_vps_image_tag(vps_path, tag_to_set)
+
+    # 5. Выполняем docker compose pull && docker compose up -d
+    log(f"Обновление и запуск Docker-контейнеров (IMAGE_TAG={commit_hash[:7]})...", symbol="[^]")
     docker_cmd = f"cd {vps_path} && docker compose pull && docker compose up -d --force-recreate --remove-orphans"
     res_docker = subprocess.run(
         ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
@@ -469,19 +742,13 @@ def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str)
     if res_docker.returncode != 0:
         log(f"Ошибка запуска контейнеров: {res_docker.stderr.strip() or res_docker.stdout.strip()}", symbol="[-]")
         return False
-        
+
     log("Docker-контейнеры успешно обновлены и запущены!", symbol="[+]")
 
-    # 4. Запись штампа деплоя
-    deploy_stamp = datetime.now().isoformat()
-    stamp_cmd = (
-        f"echo '{{\"commit\": \"{commit_hash}\", \"deployed_at\": \"{deploy_stamp}\", \"mode\": \"docker\"}}' "
-        f"> {vps_path}/.deploy_info.json"
-    )
-    subprocess.run(
-        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", stamp_cmd],
-        capture_output=True
-    )
+    # 6. Запись метаданных деплоя
+    curr_short = commit_hash[:7] if commit_hash != "unknown" else "unknown"
+    prev_short = old_sha[:7] if old_sha else ""
+    update_vps_deploy_info(vps_path, current_sha=curr_short, previous_sha=prev_short)
     return True
 
 def restart_services(services: list) -> bool:
@@ -573,7 +840,35 @@ def main():
     parser.add_argument("--skip-git", action="store_true", help="Пропустить отправку в GitHub")
     parser.add_argument("--skip-syntax", action="store_true", help="Пропустить проверку синтаксиса")
     parser.add_argument("--skip-vps", action="store_true", help="Синхронизировать только Git без деплоя на VPS")
+    parser.add_argument("--rollback", nargs="?", const="", default=None,
+                        help="Откатить сервис saas на указанный SHA (или на previous_sha, если SHA не передан)")
+    parser.add_argument("--list-versions", action="store_true",
+                        help="Показать список доступных версий и текущее состояние VPS")
     args = parser.parse_args()
+
+    # Быстрый режим: просмотр доступных версий
+    if args.list_versions:
+        list_versions(PROJECTS["saas"]["repo"], PROJECTS["saas"]["vps_path"])
+        sys.exit(0)
+
+    # Быстрый режим: процедура отката (Rollback)
+    if args.rollback is not None:
+        target_sha = args.rollback.strip() if args.rollback else None
+        print("=" * 70)
+        print("      REVOPS ENTERPRISE OS — ROLLBACK ENGINE")
+        print(f"      Целевая версия: {target_sha or 'previous_sha'} | VPS: {VPS_HOST} (Aeza 24/7)")
+        print("=" * 70)
+        ok = rollback_docker(PROJECTS["saas"]["vps_path"], target_sha=target_sha)
+        if ok:
+            print("=" * 70)
+            log("ОТКАТ УСПЕШНО ЗАВЕРШЁН!", symbol="[+]")
+            print("=" * 70)
+            sys.exit(0)
+        else:
+            print("=" * 70)
+            log("ОТКАТ ЗАВЕРШИЛСЯ С ОШИБКОЙ!", symbol="[-]")
+            print("=" * 70)
+            sys.exit(1)
 
     commit_msg = args.message or f"chore: automated deployment at {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
@@ -645,7 +940,7 @@ def main():
             commit_h = hashes.get(t, "unknown")
             
             if deploy_mode == "docker":
-                success = deploy_via_docker_compose(proj["local_path"], proj["vps_path"], commit_h)
+                success = deploy_via_docker_compose(proj["local_path"], proj["vps_path"], commit_h, full_hashes.get(t))
             else:
                 success = stream_to_vps(proj["local_path"], proj["vps_path"], commit_h)
                 
@@ -660,8 +955,24 @@ def main():
         if systemd_services:
             restart_services(systemd_services)
 
-        # Шаг 5: Смоук-тест с ожиданием прогрева
-        run_smoke_test(timeout_sec=20)
+        # Шаг 5: Смоук-тест с ожиданием прогрева и авто-откатом при сбое
+        smoke_ok = run_smoke_test(timeout_sec=20)
+        if not smoke_ok:
+            log("[-] Смоук-тест боевой среды провален!", symbol="[-]")
+            if "saas" in targets:
+                vps_p = PROJECTS["saas"]["vps_path"]
+                info = get_vps_deploy_info(vps_p)
+                prev = info.get("previous_sha")
+                if prev:
+                    log(f"[!] Смоук-тест провален. Автоматический откат на previous_sha ({prev})...", symbol="[!]")
+                    rb_ok = rollback_docker(vps_p, target_sha=prev)
+                    status_text = "УСПЕШНО ВЫПОЛНЕН" if rb_ok else "ПРОВАЛИЛСЯ"
+                    send_telegram_alert(
+                        f"🚨 <b>[RevOps Auto-Rollback Alert]</b>\n"
+                        f"Смоук-тест нового релиза <code>{hashes.get('saas', 'unknown')}</code> провален!\n"
+                        f"Автоматический откат на <code>{prev}</code>: <b>{status_text}</b>"
+                    )
+            sys.exit(1)
 
     total_time = time.time() - start_time
     print("=" * 70)
