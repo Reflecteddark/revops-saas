@@ -449,7 +449,7 @@ def run_telegram_backup(max_part_size: int = MAX_PART_SIZE_BYTES, custom_encrypt
     try:
         from packages.monitoring.ai_probe import probe_gemini_models_sync
         logger.info("Executing daily synthetic AI probe for Gemini cascade...")
-        probe_res = probe_gemini_models_sync(timeout=8.0)
+        probe_res = probe_gemini_models_sync(timeout=12.0)
         if probe_res.get("healthy"):
             ai_status_text = (
                 f"🤖 <b>ИИ-контур (CCO):</b> {probe_res['active_tier']} • "

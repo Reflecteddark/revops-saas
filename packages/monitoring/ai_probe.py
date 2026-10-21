@@ -177,7 +177,7 @@ async def generate_gemini_content_cascade(
     }
 
 
-def probe_gemini_models_sync(timeout: float = 8.0) -> dict[str, Any]:
+def probe_gemini_models_sync(timeout: float = 12.0) -> dict[str, Any]:
     """
     Synchronous synthetic AI probe for daily backups and health monitoring.
     Probes Tier 1 and Tier 2 with a lightweight ping.
