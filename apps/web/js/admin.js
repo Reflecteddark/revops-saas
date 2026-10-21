@@ -230,7 +230,8 @@ async function loadAdminCrmStatus() {
       activeBadge.className = isB24 ? 'badge-info' : 'badge-won';
     }
     if (switchBtn) {
-      switchBtn.textContent = isB24 ? '🔄 Переключить на amoCRM' : '🔄 Переключить на Bitrix24';
+      switchBtn.innerHTML = isB24 ? '<i data-lucide="refresh-cw" style="margin-right: 4px;"></i> Переключить на amoCRM' : '<i data-lucide="refresh-cw" style="margin-right: 4px;"></i> Переключить на Bitrix24';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Dynamic CRM Card & Button Highlighting
@@ -866,17 +867,19 @@ function renderAdminTenantsTable(tenants) {
         </td>
         <td style="padding: 12px 14px; text-align: right;">
           <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
-            <button class="btn-modern-ghost" data-action="impersonate" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 8px; font-size: 0.70rem; color: #c4b5fd; border-color: rgba(167, 139, 250, 0.4);" title="👁️ Войти в ЛК как клиент (Shadow Mode / Read-Only)" aria-label="Войти в личный кабинет как клиент ${escapeHtml(t.tenant_name || t.tenant_id)}">👁️ Войти</button>
-            <button class="btn-modern-ghost" data-action="copy-brief" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Скопировать бриф подключения (вебхуки, доступы)" aria-label="Скопировать бриф подключения для клиента ${escapeHtml(t.tenant_id)}">📋</button>
-            <button class="btn-modern-ghost" data-action="health" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 8px; font-size: 0.70rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="🩺 Экспресс-диагностика здоровья клиента" aria-label="Экспресс-диагностика здоровья клиента ${escapeHtml(t.tenant_id)}">🩺 Доктор</button>
-            <button class="btn-modern-ghost" data-action="edit" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Редактировать параметры и пароль" aria-label="Редактировать параметры клиента ${escapeHtml(t.tenant_id)}">⚙️</button>
-            <button class="btn-modern-ghost" data-action="freeze" data-tenant-id="${escapeHtml(t.tenant_id)}" data-status="${escapeHtml(t.effective_status || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: ${isFrozen ? '#34d399' : '#38bdf8'};" title="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'}" aria-label="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'} клиента ${escapeHtml(t.tenant_id)}">${isFrozen ? '☀️' : '❄️'}</button>
-            <button class="btn-modern-ghost" data-action="offboard" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: var(--accent-rose);" title="Вывести в архив (Offboard)" aria-label="Вывести клиента ${escapeHtml(t.tenant_id)} в архив">📦</button>
+            <button class="btn-modern-ghost" data-action="impersonate" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 8px; font-size: 0.70rem; color: #c4b5fd; border-color: rgba(167, 139, 250, 0.4);" title="Войти в ЛК как клиент (Shadow Mode / Read-Only)" aria-label="Войти в личный кабинет как клиент ${escapeHtml(t.tenant_name || t.tenant_id)}"><i data-lucide="eye" style="margin-right: 4px;"></i> Войти</button>
+            <button class="btn-modern-ghost" data-action="copy-brief" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Скопировать бриф подключения (вебхуки, доступы)" aria-label="Скопировать бриф подключения для клиента ${escapeHtml(t.tenant_id)}"><i data-lucide="copy"></i></button>
+            <button class="btn-modern-ghost" data-action="health" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 8px; font-size: 0.70rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" title="Экспресс-диагностика здоровья клиента" aria-label="Экспресс-диагностика здоровья клиента ${escapeHtml(t.tenant_id)}"><i data-lucide="stethoscope" style="margin-right: 4px;"></i> Доктор</button>
+            <button class="btn-modern-ghost" data-action="edit" data-tenant-id="${escapeHtml(t.tenant_id)}" style="padding: 4px 6px; font-size: 0.70rem;" title="Редактировать параметры и пароль" aria-label="Редактировать параметры клиента ${escapeHtml(t.tenant_id)}"><i data-lucide="settings"></i></button>
+            <button class="btn-modern-ghost" data-action="freeze" data-tenant-id="${escapeHtml(t.tenant_id)}" data-status="${escapeHtml(t.effective_status || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: ${isFrozen ? '#34d399' : '#38bdf8'};" title="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'}" aria-label="${isFrozen ? 'Разморозить доступ' : 'Заморозить доступ'} клиента ${escapeHtml(t.tenant_id)}">${isFrozen ? '<i data-lucide="sun"></i>' : '<i data-lucide="snowflake"></i>'}</button>
+            <button class="btn-modern-ghost" data-action="offboard" data-tenant-id="${escapeHtml(t.tenant_id)}" data-tenant-name="${escapeHtml(t.tenant_name || '')}" style="padding: 4px 6px; font-size: 0.70rem; color: var(--accent-rose);" title="Вывести в архив (Offboard)" aria-label="Вывести клиента ${escapeHtml(t.tenant_id)} в архив"><i data-lucide="package"></i></button>
           </div>
         </td>
       </tr>
     `;
   }).join('');
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 
   if (tbody.dataset.bound !== '1') {
     tbody.dataset.bound = '1';
@@ -920,10 +923,11 @@ function renderAdminArchivedTenants(archived) {
         </div>
       </div>
       <button onclick="restoreArchivedTenant('${a.tenant_id}')" class="btn-modern-ghost" style="padding: 3px 9px; font-size: 0.68rem; color: #34d399;" title="Восстановить из архива">
-        ☀️ Восстановить
+        <i data-lucide="sun" style="margin-right: 4px;"></i> Восстановить
       </button>
     </div>
   `).join('');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function scrollToOnboardingWizard() {
@@ -1876,7 +1880,8 @@ async function loadAgentsTelemetry(isManual = false) {
     if (isManual) showToast('Ошибка телеметрии', err.message);
   } finally {
     if (isManual && refreshBtn) {
-      refreshBtn.innerHTML = `<span>🔄 Обновить</span>`;
+      refreshBtn.innerHTML = `<span><i data-lucide="refresh-cw" style="margin-right: 4px;"></i> Обновить</span>`;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
   }
 }
@@ -2572,12 +2577,13 @@ async function fetchWebhooksHistory() {
             <span style="color: var(--text-muted); font-size: 0.60rem;">${item.id}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-            <button onclick='inspectWebhookPayload(${JSON.stringify(item.payload || {}).replace(/'/g, "&apos;")})' class="btn-modern-ghost" style="padding: 1px 5px; font-size: 0.60rem;" title="Просмотреть payload" aria-label="Просмотреть payload вебхука ${item.id}">👁️</button>
-            <button onclick="replayWebhook('${item.id}')" class="btn-modern-ghost" style="padding: 1px 6px; font-size: 0.60rem; color: #38bdf8; border-color: rgba(56,189,248,0.3);" title="Повторить этот вебхук через очередь (Replay)" aria-label="Повторить вебхук ${item.id}">🔁 Replay</button>
+            <button onclick='inspectWebhookPayload(${JSON.stringify(item.payload || {}).replace(/'/g, "&apos;")})' class="btn-modern-ghost" style="padding: 1px 5px; font-size: 0.60rem;" title="Просмотреть payload" aria-label="Просмотреть payload вебхука ${item.id}"><i data-lucide="eye"></i></button>
+            <button onclick="replayWebhook('${item.id}')" class="btn-modern-ghost" style="padding: 1px 6px; font-size: 0.60rem; color: #38bdf8; border-color: rgba(56,189,248,0.3);" title="Повторить этот вебхук через очередь (Replay)" aria-label="Повторить вебхук ${item.id}"><i data-lucide="refresh-cw" style="margin-right: 3px;"></i> Replay</button>
           </div>
         </div>
       `;
     }).join('');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   } catch (e) {
     container.innerHTML = `<div style="color: var(--accent-rose); padding: 4px;">Ошибка очереди: ${e.message}</div>`;
   }

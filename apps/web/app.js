@@ -74,5 +74,14 @@ document.addEventListener('DOMContentLoaded', () => {
       switchTab(targetTab);
     }
   } catch (e) {}
+
+  // Render Lucide icons
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  } else {
+    window.addEventListener('load', () => {
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+  }
 });
 

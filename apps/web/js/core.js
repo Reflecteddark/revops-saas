@@ -578,6 +578,9 @@ async function switchTab(tabId) {
     if (typeof refreshAllChartZeroOverlays === 'function') {
       refreshAllChartZeroOverlays();
     }
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   };
 
   if (document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
