@@ -31,7 +31,7 @@ import argparse
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Any
 import requests
 from cryptography.fernet import Fernet
 
@@ -193,10 +193,11 @@ def load_tg_credentials() -> Tuple[Optional[str], Optional[str], str, Optional[s
 
 def create_backup_archive(output_path: Path) -> dict:
     """Creates a gzipped tar archive of critical state, databases, and registries."""
-    manifest = {
+    files_included: List[Dict[str, Any]] = []
+    manifest: Dict[str, Any] = {
         "timestamp": datetime.now().isoformat(),
         "created_at_human": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "files_included": []
+        "files_included": files_included
     }
 
     candidate_files = [
@@ -224,7 +225,13 @@ def create_backup_archive(output_path: Path) -> dict:
 
         added_names = set()
         for f in candidate_files:
-            if f.exists() and f.is_file():
+            try:
+                if not f.exists() or not f.is_file():
+                    continue
+            except (PermissionError, OSError):
+                continue
+
+            try:
                 arc_name = f.name
                 if arc_name in added_names:
                     arc_name = f"{f.parent.name}_{f.name}"
@@ -237,7 +244,7 @@ def create_backup_archive(output_path: Path) -> dict:
                         if ok and temp_snap.exists():
                             tar.add(str(temp_snap), arcname=arc_name)
                             added_names.add(arc_name)
-                            manifest["files_included"].append({
+                            files_included.append({
                                 "name": arc_name,
                                 "size_bytes": temp_snap.stat().st_size,
                                 "backup_type": "sqlite_online_backup",
@@ -255,11 +262,14 @@ def create_backup_archive(output_path: Path) -> dict:
 
                 tar.add(str(f), arcname=arc_name)
                 added_names.add(arc_name)
-                manifest["files_included"].append({
+                files_included.append({
                     "name": arc_name,
                     "size_bytes": f.stat().st_size,
                     "backup_type": "standard_file"
                 })
+            except (PermissionError, OSError) as e:
+                logger.warning(f"Skipping {f} due to OS access restrictions: {e}")
+                continue
 
         # PostgreSQL Dump check
         db_url = os.getenv("DATABASE_URL", "")
@@ -270,7 +280,7 @@ def create_backup_archive(output_path: Path) -> dict:
                 if pg_ok and temp_pg.exists():
                     arc_name = "postgres_backup.dump"
                     tar.add(str(temp_pg), arcname=arc_name)
-                    manifest["files_included"].append({
+                    files_included.append({
                         "name": arc_name,
                         "size_bytes": temp_pg.stat().st_size,
                         "backup_type": "pg_dump_custom"

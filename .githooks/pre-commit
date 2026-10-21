@@ -1,13 +1,13 @@
 #!/bin/sh
 # RevOps SaaS - Comprehensive Pre-commit Test Runner (Synchronized with CI)
 
-echo "⚡ [pre-commit] Проверка линтером (Ruff)..."
-ruff check apps/ packages/ workers/ tests/ --ignore E501 || true
+echo "⚡ [pre-commit] Проверка критического синтаксиса линтером (Ruff)..."
+ruff check apps/ packages/ workers/ scripts/telegram_backup_engine.py --select E9,F63,F7,F82 || exit 1
 
-echo "⚡ [pre-commit] Проверка Python синтаксиса и типов..."
-mypy apps/ packages/ --ignore-missing-imports --explicit-package-bases || exit 1
+echo "⚡ [pre-commit] Проверка Python синтаксиса и типов (Mypy)..."
+mypy apps/ packages/ workers/ scripts/telegram_backup_engine.py --ignore-missing-imports --explicit-package-bases || exit 1
 
-echo "⚡ [pre-commit] Запуск бэкенд-тестов..."
+echo "⚡ [pre-commit] Запуск бэкенд-тестов (Pytest)..."
 pytest tests -q || exit 1
 
 echo "⚡ [pre-commit] Запуск набора юнит-тестов Vitest (фронтенд)..."
