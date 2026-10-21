@@ -968,7 +968,7 @@ function openAiAsk(question) {
       <div style="padding: 14px 18px; font-size: 0.82rem; line-height: 1.6; color: rgba(255,255,255,0.85); background: rgba(124,58,237,0.06); border: 1px solid rgba(124,58,237,0.22); border-radius: 8px; margin: 8px 10px;">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom: 8px;">
           <span class="status-dot dot-cyan" style="width: 5px; height: 5px; margin-right: 0;"></span>
-          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: rgba(255,255,255,0.45);">Gemini 3.5 · 0.7s</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: rgba(255,255,255,0.45);">RevOps AI · 0.7s</span>
         </div>
         ${answerText}
       </div>

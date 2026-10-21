@@ -1013,5 +1013,185 @@
     "is_system": false,
     "is_active": true,
     "created_at": "2026-10-21T21:05:18.683531"
+  },
+  {
+    "login": "demo_-_4a58a8@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "ООО ПромТехнологии",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-_4a58a8 • ООО ПромТехнологии",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:06:15.507517"
+  },
+  {
+    "login": "demo_-_a611e3@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "АО Монолит",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-_a611e3 • АО Монолит",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:06:16.358920"
+  },
+  {
+    "login": "demo_-1_aee56e@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "Компания 1",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-1_aee56e • Компания 1",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:06:17.253045"
+  },
+  {
+    "login": "demo_-2_94713d@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "Компания 2",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-2_94713d • Компания 2",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:06:17.939924"
+  },
+  {
+    "login": "demo_-3_9188ab@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "Компания 3",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-3_9188ab • Компания 3",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:06:18.619018"
+  },
+  {
+    "login": "demo_-_98bf0f@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "ООО ПромТехнологии",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-_98bf0f • ООО ПромТехнологии",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:25:44.458675"
+  },
+  {
+    "login": "demo_-_a28a41@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "АО Монолит",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-_a28a41 • АО Монолит",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:25:45.229391"
+  },
+  {
+    "login": "demo_-1_f93a38@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "Компания 1",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-1_f93a38 • Компания 1",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:25:46.086788"
+  },
+  {
+    "login": "demo_-2_d5282d@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "Компания 2",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-2_d5282d • Компания 2",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:25:46.765477"
+  },
+  {
+    "login": "demo_-3_6daa1f@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "Компания 3",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-3_6daa1f • Компания 3",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:25:47.413861"
+  },
+  {
+    "login": "demo_-_5915ab@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "ООО ПромТехнологии",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-_5915ab • ООО ПромТехнологии",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:32:07.461588"
+  },
+  {
+    "login": "demo_-_7156fe@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "АО Монолит",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-_7156fe • АО Монолит",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:32:08.210198"
+  },
+  {
+    "login": "demo_-1_7350f7@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "Компания 1",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-1_7350f7 • Компания 1",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:32:08.911169"
+  },
+  {
+    "login": "demo_-2_fa8ee8@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "Компания 2",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-2_fa8ee8 • Компания 2",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:32:09.636668"
+  },
+  {
+    "login": "demo_-3_475d01@ai-rop.ru",
+    "keyHashes": [
+      "9a635303eafc8dd53b1adbfea7629ea5343f979b623aac7421c51cce3e3edc14"
+    ],
+    "name": "Компания 3",
+    "role": "РОП • Руководитель ОП",
+    "tenant": "demo_-3_475d01 • Компания 3",
+    "is_system": false,
+    "is_active": true,
+    "created_at": "2026-10-21T21:32:10.324501"
   }
 ]

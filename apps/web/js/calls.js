@@ -253,7 +253,7 @@ function toggleInlineCallDetails(callId, event) {
 
         <div>
           <div style="font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; margin-bottom: 6px;">
-            Стенограмма диалога (Gemini 3.5 Flash):
+            Стенограмма диалога (RevOps Speech AI Core):
           </div>
           <pre style="white-space: pre-wrap; font-family: 'Inter', sans-serif; font-size: 0.74rem; line-height: 1.5; color: #fff; background: rgba(0,0,0,0.5); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08); max-height: 200px; overflow-y: auto;">${call.transcript}</pre>
         </div>
@@ -518,7 +518,7 @@ function filterCallsTable() {
         <div><span>Выручка под угрозой (Сливы):</span> <strong style="color: #fb7185; font-family: 'JetBrains Mono', monospace;">${totalRisk.toLocaleString('ru-RU')} ₽</strong></div>
       </div>
       <div style="display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: rgba(255,255,255,0.45);">
-        <span>Gemini 3.5 Flash &bull; Strict JSON</span>
+        <span>RevOps Speech AI Core &bull; Strict JSON</span>
       </div>
     `;
   }

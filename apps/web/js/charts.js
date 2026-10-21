@@ -864,7 +864,7 @@ function getDynamicRepMetrics() {
       isCurrency: true
     },
     score: {
-      label: 'Средний балл речи Gemini (/13)',
+      label: 'Средний балл речи ИИ (/13)',
       data: score,
       colors: reps.map((_, i) => colorPalette[i % colorPalette.length]),
       unit: ' б.',

@@ -670,7 +670,7 @@ function refreshAllDashboardViews() {
   const specTitle = document.getElementById('qualitySpecTitle');
   const specBadge = document.getElementById('qualitySpecScoreBadge');
   if (specTitle) specTitle.textContent = `Спектр качества звонков (${totalCalls} диалогов)`;
-  if (specBadge) specBadge.textContent = `Gemini Score ${totalCalls ? avgScore.toFixed(1) : '0.0'}`;
+  if (specBadge) specBadge.textContent = `AI Score ${totalCalls ? avgScore.toFixed(1) : '0.0'}`;
   if (totalCalls === 0) {
     if (specWonBar) specWonBar.style.width = '0%';
     if (specNormBar) specNormBar.style.width = '0%';
