@@ -191,6 +191,10 @@ class Deal(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
 
+    __table_args__ = (
+        Index("idx_tenant_deal_external_crm_id", "tenant_id", "external_crm_id", unique=True),
+    )
+
     tenant = relationship("Tenant", back_populates="deals")
     workspace = relationship("Workspace", back_populates="deals")
     assigned_user = relationship("User", back_populates="deals")
@@ -226,6 +230,10 @@ class CallRecording(Base):
     scorecard_criteria = Column(JSON, default=dict)
     reverse_etl_synced = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index("idx_tenant_call_external_id", "tenant_id", "external_call_id", unique=True),
+    )
 
     tenant = relationship("Tenant", back_populates="call_recordings")
     deal = relationship("Deal", back_populates="calls")

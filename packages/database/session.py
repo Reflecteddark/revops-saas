@@ -68,8 +68,16 @@ SessionRead = sessionmaker(autocommit=False, autoflush=False, bind=engine_read)
 
 
 def init_db():
-    """Initializes all database tables safely."""
+    """Initializes all database tables safely and ensures unique indexes exist."""
     Base.metadata.create_all(bind=engine)
+    try:
+        from sqlalchemy import text
+        with engine.begin() as conn:
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_deal_external_crm_id ON deals (tenant_id, external_crm_id);"))
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_call_external_id ON call_recordings (tenant_id, external_call_id);"))
+    except Exception as e:
+        import logging
+        logging.getLogger("database").warning(f"Could not apply unique indexes in init_db: {e}")
 
 
 def get_db() -> Generator[Session, None, None]:

@@ -102,28 +102,35 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
             tenant_id=org_id
         )
 
-        # 2. Persist in Database (PostgreSQL / SQLite)
+        # 2. Persist in Database with Idempotent UPSERT (PostgreSQL / SQLite)
         try:
             db = next(get_db())
-            existing = db.query(CallRecording).filter(CallRecording.id == call_id).first()
-            if not existing:
-                rec = CallRecording(
-                    id=call_id,
-                    tenant_id=org_id,
-                    external_call_id=str(call_data.get("external_call_id") or call_id),
-                    client_phone=call_data.get("client_phone") or "+79990000000",
-                    duration_seconds=payload.duration_sec,
-                    audio_s3_url=call_data.get("audio_url") or call_data.get("record_url"),
-                    status="completed",
-                    transcript_text=payload.transcript,
-                    ai_summary=payload.error_summary,
-                    next_action_extracted=payload.recommendation,
-                    overall_score=float(payload.score or 0.0),
-                    scorecard_criteria={"cr": payload.cr, "score": payload.score, "next_step": payload.next_step},
-                    reverse_etl_synced=payload.sync_to_sheets
-                )
-                db.add(rec)
-                db.commit()
+            ext_call_id = str(call_data.get("external_call_id") or call_id)
+
+            # Resolve target primary key if this external call was already recorded for tenant
+            existing_rec = db.query(CallRecording).filter(
+                (CallRecording.id == call_id) |
+                ((CallRecording.tenant_id == org_id) & (CallRecording.external_call_id == ext_call_id))
+            ).first()
+            target_id = existing_rec.id if existing_rec else call_id
+
+            rec = CallRecording(
+                id=target_id,
+                tenant_id=org_id,
+                external_call_id=ext_call_id,
+                client_phone=call_data.get("client_phone") or "+79990000000",
+                duration_seconds=payload.duration_sec,
+                audio_s3_url=call_data.get("audio_url") or call_data.get("record_url"),
+                status="completed",
+                transcript_text=payload.transcript,
+                ai_summary=payload.error_summary,
+                next_action_extracted=payload.recommendation,
+                overall_score=float(payload.score or 0.0),
+                scorecard_criteria={"cr": payload.cr, "score": payload.score, "next_step": payload.next_step},
+                reverse_etl_synced=payload.sync_to_sheets
+            )
+            db.merge(rec)
+            db.commit()
             db.close()
         except Exception as dbe:
             logger.warning(f"DB persist warning for call {call_id}: {dbe}")
