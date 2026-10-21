@@ -593,6 +593,10 @@ function refreshAllDashboardViews() {
 
   // Update recent calls in Pulse Tab
   renderPulseRecentCalls();
+  // Update yesterday leaks in Pulse Tab
+  if (typeof renderYesterdayLeaks === 'function') {
+    renderYesterdayLeaks();
+  }
   // Update funnel in Pulse Tab
   renderPulseFunnel();
   // Update Donut, Spline, Dissection and Rings
@@ -870,6 +874,171 @@ function renderPulseRecentCalls(filterKey) {
     `;
   });
   container.innerHTML = html;
+}
+
+// ==========================================================================
+// YESTERDAY LEAKS WIDGET (TAB 1: PULSE)
+// ==========================================================================
+function getManagerInitials(name) {
+  if (!name) return 'М';
+  const parts = String(name).trim().split(/\s+/);
+  if (parts.length >= 2 && parts[0] && parts[1]) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return String(name).slice(0, 2).toUpperCase();
+}
+
+function parseYesterdayCallDate(dateVal) {
+  if (!dateVal) return null;
+  if (dateVal instanceof Date) return isNaN(dateVal.getTime()) ? null : dateVal;
+  let d = new Date(dateVal);
+  if (!isNaN(d.getTime())) return d;
+  const s = String(dateVal).trim();
+  const dotMatch = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (dotMatch) {
+    d = new Date(Number(dotMatch[3]), Number(dotMatch[2]) - 1, Number(dotMatch[1]));
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function formatLeakAmount(call) {
+  if (call.amount && typeof call.amount === 'string' && call.amount.trim()) {
+    return call.amount;
+  }
+  const amt = typeof getCallAmount === 'function' ? getCallAmount(call) : (call.amount_num || 0);
+  return `${amt.toLocaleString('ru-RU')} ₽`;
+}
+
+function renderYesterdayLeaks() {
+  const container = document.getElementById('yesterdayLeaksList');
+  const badge = document.getElementById('yesterdayLeaksBadge');
+  if (!container) return;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+
+  const allCalls = (typeof window.CALLS_DATA !== 'undefined' && Array.isArray(window.CALLS_DATA))
+    ? window.CALLS_DATA
+    : ((typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA)) ? CALLS_DATA : []);
+
+  // Filter calls: date >= startOfYesterday && date < startOfToday && status === 'risk'
+  const yesterdayLeaks = allCalls.filter(c => {
+    if (!c) return false;
+    const isRisk = c.status === 'risk' || c.next_step === 0;
+    if (!isRisk || c.status === 'won') return false;
+
+    const callDate = parseYesterdayCallDate(c.date || c.created_at || c.timestamp);
+    if (!callDate) return false;
+    return callDate >= startOfYesterday && callDate < startOfToday;
+  });
+
+  // Sort by amount descending
+  yesterdayLeaks.sort((a, b) => {
+    const amtA = typeof getCallAmount === 'function' ? getCallAmount(a) : (a.amount_num || 0);
+    const amtB = typeof getCallAmount === 'function' ? getCallAmount(b) : (b.amount_num || 0);
+    return amtB - amtA;
+  });
+
+  // Top 5
+  const topLeaks = yesterdayLeaks.slice(0, 5);
+  const totalCount = yesterdayLeaks.length;
+  const totalSum = yesterdayLeaks.reduce((sum, c) => {
+    const amt = typeof getCallAmount === 'function' ? getCallAmount(c) : (c.amount_num || 0);
+    return sum + amt;
+  }, 0);
+
+  // Update badge counter
+  if (badge) {
+    if (totalCount === 0) {
+      badge.className = 'develop-pill pill-pos';
+      badge.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 4px;">✓ 0 сливов</span>';
+    } else {
+      badge.className = 'develop-pill pill-neg';
+      let sumText = '';
+      if (totalSum >= 1000000) {
+        sumText = `${(totalSum / 1000000).toFixed(1).replace('.0', '')}M ₽`;
+      } else if (totalSum >= 1000) {
+        sumText = `${Math.round(totalSum / 1000)}K ₽`;
+      } else {
+        sumText = `${totalSum} ₽`;
+      }
+      const dealsWord = (totalCount % 10 === 1 && totalCount % 100 !== 11)
+        ? 'сделка'
+        : ([2, 3, 4].includes(totalCount % 10) && ![12, 13, 14].includes(totalCount % 100) ? 'сделки' : 'сделок');
+      badge.textContent = `${totalCount} ${dealsWord} · ${sumText}`;
+    }
+  }
+
+  // Empty state if no leaks
+  if (topLeaks.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding: 24px 16px; text-align: center; background: rgba(52, 211, 153, 0.03); border: 1px dashed rgba(52, 211, 153, 0.25); border-radius: var(--radius-md);">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(52, 211, 153, 0.12); color: #34d399; margin-bottom: 8px;">
+          <i data-lucide="check-circle" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div style="font-size: var(--fs-base); font-weight: 700; color: #34d399; margin-bottom: 2px;">
+          Вчера сливов не было. Хорошая работа!
+        </div>
+        <div style="font-size: var(--fs-xs); color: var(--text-secondary);">
+          Все звонки за вчера зафиксировали договоренность о следующем шаге (Next Step 100%)
+        </div>
+      </div>
+    `;
+    if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+      lucide.createIcons();
+    }
+    return;
+  }
+
+  // Render leak items
+  const safeEscape = (typeof escapeHtml === 'function') ? escapeHtml : (s => String(s || ''));
+  let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+  topLeaks.forEach(call => {
+    const initials = getManagerInitials(call.manager);
+    const safeManager = safeEscape(call.manager || 'Менеджер');
+    const safeClient = safeEscape(call.client || 'Клиент');
+    const safeDeal = safeEscape(call.deal_title || '');
+    const safeAmount = formatLeakAmount(call);
+    const safeReason = safeEscape(call.error_summary || 'Нет точной даты/времени следующего шага');
+    const callId = call.id || '';
+
+    html += `
+      <div class="yesterday-leak-row" onclick="openCallModal('${callId}')" role="button" tabindex="0">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+          <div class="yesterday-leak-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, rgba(244,63,94,0.25), rgba(167,139,250,0.25)); border: 1.5px solid rgba(244,63,94,0.4); display: flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 800; color: #fff; flex-shrink: 0;">
+            ${initials}
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-weight: 700; font-size: var(--fs-base); color: var(--text-primary);">${safeManager}</span>
+              <span class="badge-lost" style="font-size: var(--fs-xxs); padding: 1px 6px; border-radius: 4px; font-weight: 700;">СЛИВ (НЕТ NEXT STEP)</span>
+            </div>
+            <div style="font-size: var(--fs-xs); color: var(--text-secondary); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+              Клиент: <strong style="color: var(--text-primary);">${safeClient}</strong>${safeDeal ? ` &bull; ${safeDeal}` : ''}
+              <span style="color: var(--text-muted); margin-left: 6px;">&bull; ${safeReason}</span>
+            </div>
+          </div>
+        </div>
+        <div class="yesterday-leak-right" style="display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
+          <div style="font-size: 1.05rem; font-weight: 800; color: #fb7185; font-family: 'JetBrains Mono', monospace; text-align: right; white-space: nowrap;">
+            ${safeAmount}
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openCallModal('${callId}')" style="padding: 7px 14px; font-weight: 700; font-size: var(--fs-xs); border-color: rgba(244,63,94,0.35); color: #fca5a5; display: inline-flex; align-items: center; gap: 4px;">
+            <span>Разбор</span>
+            <span style="font-size: 0.95em;">&rarr;</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+
+  if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+    lucide.createIcons();
+  }
 }
 
 window._CURRENT_FUNNEL_PERIOD = 'month';
@@ -1310,6 +1479,7 @@ window.handleIncomingLiveCall = handleIncomingLiveCall;
 window.refreshAllDashboardViews = refreshAllDashboardViews;
 window.renderFinancialBridgeAndLeaks = renderFinancialBridgeAndLeaks;
 window.renderPulseRecentCalls = renderPulseRecentCalls;
+window.renderYesterdayLeaks = renderYesterdayLeaks;
 window.renderPulseFunnel = renderPulseFunnel;
 window.triggerSyncSimulation = triggerSyncSimulation;
 window.calculateFinancials = calculateFinancials;
@@ -1322,6 +1492,7 @@ if (typeof module !== 'undefined' && module.exports) {
     setPulsePeriod,
     fetchLiveCallsData,
     fetchLiveDealsData,
-    refreshAllDashboardViews
+    refreshAllDashboardViews,
+    renderYesterdayLeaks
   };
 }

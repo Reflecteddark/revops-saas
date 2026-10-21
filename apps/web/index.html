@@ -5452,6 +5452,50 @@
       border-bottom-color: rgba(0, 0, 0, 0.08) !important;
     }
 
+    /* Widget: Слитые сделки за вчера */
+    .yesterday-leak-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    }
+    .yesterday-leak-row:hover {
+      background: rgba(244, 63, 94, 0.05) !important;
+      border-color: rgba(244, 63, 94, 0.3) !important;
+      transform: translateY(-1px);
+    }
+    html[data-theme="light"] .yesterday-leak-row {
+      background: #ffffff;
+      border-color: rgba(0, 0, 0, 0.08);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    html[data-theme="light"] .yesterday-leak-row:hover {
+      background: #fff1f2 !important;
+      border-color: #fecdd3 !important;
+    }
+    @media (max-width: 768px) {
+      .yesterday-leak-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 12px !important;
+      }
+      .yesterday-leak-right {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding-top: 8px !important;
+        border-top: 1px solid var(--border-subtle) !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -5839,6 +5883,31 @@
           </div>
           <span id="kpiPlanPeriodLabel" style="display:none;">Таргет &bull; План месяца</span>
           <span id="metricPlanVal" style="display:none;">5 000 000 ₽</span>
+        </div>
+
+        <!-- Row 1.5: Widget «Слитые сделки за вчера» (12 cols) -->
+        <div class="develop-card bento-span-12" id="yesterdayLeaksCard" style="position: relative;">
+          <div class="develop-card-header" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="title-icon" style="color: #f43f5e; background: rgba(244, 63, 94, 0.12); padding: 7px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;">
+                <i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i>
+              </span>
+              <div>
+                <span class="develop-card-title" style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.01em;">
+                  Слитые сделки за вчера
+                </span>
+                <div style="font-size: var(--fs-xs); color: var(--text-secondary); margin-top: 1px;">
+                  Оперативный фокус РОПа: звонки с риском срыва и без договоренности о следующем шаге
+                </div>
+              </div>
+            </div>
+            <span id="yesterdayLeaksBadge" class="develop-pill pill-neg" style="font-size: var(--fs-xs); font-weight: 700; padding: 4px 10px; border-radius: 9999px;">
+              0 сделок &bull; 0 ₽
+            </span>
+          </div>
+          <div id="yesterdayLeaksList" class="yesterday-leaks-list">
+            <!-- Rendered dynamically via renderYesterdayLeaks() -->
+          </div>
         </div>
 
         <!-- Row 2: Dissection (Bar Chart, 8 cols) -->
