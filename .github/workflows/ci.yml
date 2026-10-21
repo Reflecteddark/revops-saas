@@ -33,23 +33,11 @@ jobs:
 
       - name: Type Check with Mypy
         run: |
-          mypy apps/ packages/ --ignore-missing-imports 2>&1 | tee mypy_output.txt || {
-            echo "### ❌ Mypy Type Check Errors" >> $GITHUB_STEP_SUMMARY
-            echo '```text' >> $GITHUB_STEP_SUMMARY
-            cat mypy_output.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            exit 1
-          }
+          mypy apps/ packages/ --ignore-missing-imports
 
       - name: Run Pytest Test Suite
         run: |
-          pytest tests -v --tb=short 2>&1 | tee pytest_output.txt || {
-            echo "### ❌ Pytest Errors" >> $GITHUB_STEP_SUMMARY
-            echo '```text' >> $GITHUB_STEP_SUMMARY
-            cat pytest_output.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            exit 1
-          }
+          pytest tests -v --tb=short
 
       - name: Send Telegram Alert on Failure
         if: failure() && github.ref == 'refs/heads/main'
@@ -57,6 +45,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
+          echo "TELEGRAM_BOT_TOKEN configured: $([ -n "$TELEGRAM_BOT_TOKEN" ] && echo 'YES' || echo 'NO')"
+          echo "TELEGRAM_CHAT_ID configured: $([ -n "$TELEGRAM_CHAT_ID" ] && echo 'YES' || echo 'NO')"
           if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
             MESSAGE="🚨 <b>[CI/CD Failure Alert]</b>%0A<b>Repository:</b> ${{ github.repository }}%0A<b>Branch:</b> ${{ github.ref_name }}%0A<b>Job:</b> Backend Lint, Type Check & Test%0A<b>Commit:</b> <code>${{ github.sha }}</code>%0A<b>Author:</b> ${{ github.actor }}%0A<b>Run:</b> <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Run Details</a>"
             RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -92,6 +82,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
+          echo "TELEGRAM_BOT_TOKEN configured: $([ -n "$TELEGRAM_BOT_TOKEN" ] && echo 'YES' || echo 'NO')"
+          echo "TELEGRAM_CHAT_ID configured: $([ -n "$TELEGRAM_CHAT_ID" ] && echo 'YES' || echo 'NO')"
           if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
             MESSAGE="🚨 <b>[CI/CD Failure Alert]</b>%0A<b>Repository:</b> ${{ github.repository }}%0A<b>Branch:</b> ${{ github.ref_name }}%0A<b>Job:</b> Frontend Vitest Suite%0A<b>Commit:</b> <code>${{ github.sha }}</code>%0A<b>Author:</b> ${{ github.actor }}%0A<b>Run:</b> <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Run Details</a>"
             RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -139,6 +131,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
+          echo "TELEGRAM_BOT_TOKEN configured: $([ -n "$TELEGRAM_BOT_TOKEN" ] && echo 'YES' || echo 'NO')"
+          echo "TELEGRAM_CHAT_ID configured: $([ -n "$TELEGRAM_CHAT_ID" ] && echo 'YES' || echo 'NO')"
           if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
             MESSAGE="🚨 <b>[CI/CD Failure Alert]</b>%0A<b>Repository:</b> ${{ github.repository }}%0A<b>Branch:</b> ${{ github.ref_name }}%0A<b>Job:</b> Docker Build & GHCR Publish%0A<b>Commit:</b> <code>${{ github.sha }}</code>%0A<b>Author:</b> ${{ github.actor }}%0A<b>Run:</b> <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Run Details</a>"
             RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
