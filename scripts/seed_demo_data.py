@@ -224,6 +224,24 @@ def seed_demo_data(tenant_id: str = "demo_test", db = None) -> dict:
                 db.add(user)
                 db.flush()
             managers.append(user)
+        # Ensure master tenant login user exists (e.g. demo_test@ai-rop.ru) if no owner user present
+        owner_email = f"{tenant.id.lower()}@ai-rop.ru"
+        owner_user = db.query(User).filter(
+            (User.id == f"usr_{tenant.id}_owner") | (User.email == owner_email)
+        ).first()
+        if not owner_user:
+            owner_user = User(
+                id=f"usr_{tenant.id}_owner",
+                tenant_id=tenant.id,
+                email=owner_email,
+                full_name=f"РОП • {tenant.name}",
+                hashed_password=default_pwd_hash,
+                role=UserRole.ROP,
+                is_active=True,
+            )
+            db.add(owner_user)
+            db.flush()
+
         logger.info(f"✅ Актуализировано 5 менеджеров ОП: {[m.full_name for m in managers]}")
 
         # 4. Clean prior demo deals & calls for a fresh deterministic seed
@@ -461,6 +479,7 @@ def sync_system_registry(tenant: Tenant, managers: list[User]):
 
     # Register default client login into registered_clients.json
     clients_candidates = [
+        BASE_DIR / "apps" / "api" / "data" / "registered_clients.json",
         BASE_DIR / "data" / "registered_clients.json",
         BASE_DIR / "apps" / "api" / "registered_clients.json",
         BASE_DIR / "registered_clients.json",

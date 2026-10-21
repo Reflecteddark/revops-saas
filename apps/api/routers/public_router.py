@@ -315,15 +315,17 @@ def request_demo_access(
 
         # 6. Send Telegram Notification
         tg_text = (
-            "🚀 <b>Новая заявка с лендинга (Демо-доступ активирован)!</b>\n\n"
+            "🚀 <b>Новая заявка с лендинга на аудит ОП!</b>\n\n"
             f"👤 <b>Имя:</b> {clean_name}\n"
-            f"📧 <b>Email:</b> {clean_email}\n"
             f"📱 <b>Телефон:</b> {phone}\n"
+            f"📧 <b>Email:</b> {clean_email}\n"
             f"🏢 <b>Компания:</b> {company_name}\n"
             f"💳 <b>Тариф:</b> {tariff}\n"
-            f"🔑 <b>Тенант:</b> <code>{tenant.id}</code>\n"
-            f"🔐 <b>Пароль:</b> <code>{plain_password}</code>\n"
-            f"⏰ <b>Время:</b> {datetime.now(timezone.utc).strftime('%d.%m.%Y %H:%M:%S')} UTC"
+            f"⏰ <b>Время:</b> {datetime.now(timezone.utc).strftime('%d.%m.%Y %H:%M:%S')} UTC\n\n"
+            "🔑 <b>Готовые доступы для клиента:</b>\n"
+            f"• Персональный: <code>{clean_email}</code> / <code>{plain_password}</code>\n"
+            "• Эталонный демо: <code>demo_test@ai-rop.ru</code> / <code>DemoPassword123!</code>\n"
+            "• Ссылка для входа: https://report.ai-rop.ru/app/"
         )
         try:
             send_telegram_alert(tg_text)

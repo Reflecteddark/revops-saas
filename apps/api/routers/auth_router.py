@@ -180,6 +180,27 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
                 "is_active": True
             }
 
+    # Also check database users table with bcrypt password verification
+    if not matched_client:
+        from packages.database.models import User
+        from packages.database.session import SessionLocal
+        from ..auth import verify_password
+        db_session = SessionLocal()
+        try:
+            db_user = db_session.query(User).filter(User.email == login_clean).first()
+            if db_user and db_user.hashed_password and verify_password(pass_clean, str(db_user.hashed_password)):
+                t_name = db_user.tenant.name if db_user.tenant else db_user.tenant_id
+                role_val = db_user.role.value if hasattr(db_user.role, "value") else str(db_user.role)
+                matched_client = {
+                    "login": db_user.email,
+                    "name": db_user.full_name,
+                    "role": role_val,
+                    "tenant": f"{db_user.tenant_id} • {t_name}",
+                    "is_active": db_user.is_active
+                }
+        finally:
+            db_session.close()
+
     if not matched_client:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
