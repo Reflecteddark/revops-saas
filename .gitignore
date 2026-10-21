@@ -40,4 +40,5 @@ dist/
 scripts/diagnose_*.py
 scripts/execute_*.py
 test_vps_gemini.py
+scratch_test_live.py
 
