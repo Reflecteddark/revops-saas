@@ -102,6 +102,51 @@ services:
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     command: celery -A workers.celery_app worker -Q call_processing_queue --concurrency=2 --loglevel=info
 
+  # 7. QA Healer — Fleet Health & Three-Way Reconciliation Watchdog (15-min cycles)
+  healer:
+    build:
+      context: ${CREW_PATH:-/opt/my_ai_crew}
+      dockerfile: Dockerfile.healer
+    container_name: revops-healer
+    restart: always
+    environment:
+      PYTHONUNBUFFERED: "1"
+      TELEGRAM_API_BASE: https://api.telegram.org
+    volumes:
+      - ${CREW_PATH:-/opt/my_ai_crew}/logs:/app/logs
+      - ${CREW_PATH:-/opt/my_ai_crew}/telegram_credentials.json:/app/telegram_credentials.json:ro
+      - ${ENTERPRISE_OS_PATH:-/opt/revops-enterprise-os}/service_account.json:/app/service_account.json:ro
+      - ${ENTERPRISE_OS_PATH:-/opt/revops-enterprise-os}/tenants_registry.json:/app/tenants_registry.json:ro
+
+  # 8. Telegram Co-Pilot Bot — Remote Ops & Fleet Management (@RevOps_Super_Audit_Bot)
+  tgbot:
+    build:
+      context: ${CREW_PATH:-/opt/my_ai_crew}
+      dockerfile: Dockerfile.tgbot
+    container_name: revops-tgbot
+    restart: always
+    environment:
+      PYTHONUNBUFFERED: "1"
+      TELEGRAM_API_BASE: https://api.telegram.org
+    volumes:
+      - ${CREW_PATH:-/opt/my_ai_crew}/logs:/app/logs
+      - ${CREW_PATH:-/opt/my_ai_crew}/telegram_credentials.json:/app/telegram_credentials.json:ro
+      - ${ENTERPRISE_OS_PATH:-/opt/revops-enterprise-os}/service_account.json:/app/service_account.json:ro
+      - ${ENTERPRISE_OS_PATH:-/opt/revops-enterprise-os}/tenants_registry.json:/app/tenants_registry.json:ro
+
+  # 9. Health Guard — Self-Healing Watchdog (Docker & System health check every 5 min)
+  health_guard:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.healthguard
+    container_name: revops-health-guard
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../logs:/app/logs
+      - ${CREW_PATH:-/opt/my_ai_crew}/telegram_credentials.json:/app/telegram_credentials.json:ro
+
 volumes:
   postgres_data:
   redis_data:
+

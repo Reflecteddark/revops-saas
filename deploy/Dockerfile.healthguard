@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Install docker CLI for container health inspections and curl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY scripts/revops_health_guard.py /app/revops_health_guard.py
+
+RUN mkdir -p /app/logs
+
+# Health Guard runs every 5 minutes (300 seconds) in continuous daemon mode
+CMD ["python", "revops_health_guard.py", "--interval", "300"]
