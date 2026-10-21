@@ -1,6 +1,8 @@
 """
 Unit test suite for Telegram Cloud Backup Engine:
 - Archive creation with metadata manifest.json
+- Hot consistent SQLite database snapshots via Online Backup API (sqlite3.Connection.backup)
+- PRAGMA integrity_check validation
 - Zero-Knowledge AES-256 (Fernet) encryption and decryption round-trip
 - Multi-Part splitting (threshold-based 45 MB compliance)
 - Chunk reassembly bit-for-bit integrity validation
@@ -12,8 +14,11 @@ import os
 import io
 import sys
 import json
+import time
+import sqlite3
 import tarfile
 import tempfile
+import threading
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -27,22 +32,21 @@ from scripts.telegram_backup_engine import (
     derive_fernet_key,
     encrypt_file,
     decrypt_file,
+    snapshot_sqlite_database,
+    verify_sqlite_integrity,
     MAX_PART_SIZE_BYTES
 )
 
 
 def test_derive_fernet_key():
     """Validates key derivation for passphrases and base64 Fernet keys."""
-    # From arbitrary passphrase
     key1 = derive_fernet_key("my-super-secret-passphrase-2026")
     assert isinstance(key1, bytes)
-    assert len(key1) == 44  # Valid urlsafe base64 32-byte key
+    assert len(key1) == 44
 
-    # Deterministic: same passphrase gives same key
     key2 = derive_fernet_key("my-super-secret-passphrase-2026")
     assert key1 == key2
 
-    # Direct valid Fernet key passed through
     raw_fernet = Fernet.generate_key()
     key3 = derive_fernet_key(raw_fernet.decode("utf-8"))
     assert key3 == raw_fernet
@@ -64,24 +68,119 @@ def test_encrypt_and_decrypt_file_roundtrip():
     dec_path = Path(str(orig_path) + ".dec.tar.gz")
 
     try:
-        # 1. Encrypt
         encrypt_file(orig_path, enc_path, key)
         assert enc_path.exists()
         assert enc_path.stat().st_size > 0
         enc_data = enc_path.read_bytes()
-        # Ciphertext must not match original plaintext
         assert original_data not in enc_data
 
-        # 2. Decrypt
         decrypt_file(enc_path, dec_path, key)
         assert dec_path.exists()
         dec_data = dec_path.read_bytes()
-        # Decrypted content must match bit-for-bit
         assert dec_data == original_data
     finally:
         for p in (orig_path, enc_path, dec_path):
             if p.exists():
                 p.unlink()
+
+
+def test_verify_sqlite_integrity():
+    """Verifies that PRAGMA integrity_check correctly validates healthy and rejects corrupt DBs."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp_good:
+        good_db = Path(tmp_good.name)
+
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp_corrupt:
+        corrupt_db = Path(tmp_corrupt.name)
+        tmp_corrupt.write(b"CORRUPTED_NON_SQLITE_GARBAGE_BYTES_12345")
+
+    try:
+        # Populate valid DB
+        conn = sqlite3.connect(str(good_db))
+        conn.execute("CREATE TABLE test (id INT, val TEXT);")
+        conn.execute("INSERT INTO test VALUES (1, 'ok');")
+        conn.commit()
+        conn.close()
+
+        assert verify_sqlite_integrity(good_db) is True
+        assert verify_sqlite_integrity(corrupt_db) is False
+    finally:
+        for p in (good_db, corrupt_db):
+            if p.exists():
+                p.unlink()
+
+
+def test_snapshot_sqlite_database_during_concurrent_writes():
+    """
+    Simulates high-load production scenario:
+    Active Celery workers writing to SQLite in WAL mode while hot backup is executing.
+    Verifies that snapshot is created without deadlocks, captures rows, and has 100% integrity.
+    """
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as src_tmp:
+        src_db = Path(src_tmp.name)
+
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as dst_tmp:
+        dst_db = Path(dst_tmp.name)
+
+    # Initialize source DB in WAL mode
+    init_conn = sqlite3.connect(str(src_db))
+    init_conn.execute("PRAGMA journal_mode=WAL;")
+    init_conn.execute("CREATE TABLE call_audits (id INTEGER PRIMARY KEY, deal_id TEXT, score INT);")
+    init_conn.commit()
+    init_conn.close()
+
+    stop_event = threading.Event()
+    inserted_count = [0]
+
+    def background_celery_worker():
+        worker_conn = sqlite3.connect(str(src_db), timeout=10.0)
+        idx = 0
+        while not stop_event.is_set():
+            try:
+                worker_conn.execute("INSERT INTO call_audits (deal_id, score) VALUES (?, ?);", (f"D-{idx}", idx % 10))
+                worker_conn.commit()
+                idx += 1
+                inserted_count[0] = idx
+                time.sleep(0.002)
+            except Exception:
+                pass
+        worker_conn.close()
+
+    worker_thread = threading.Thread(target=background_celery_worker)
+    worker_thread.start()
+
+    try:
+        # Give worker time to insert rows
+        time.sleep(0.05)
+
+        # Execute Hot Online Backup while worker is writing
+        success = snapshot_sqlite_database(src_db, dst_db)
+        assert success is True, "snapshot_sqlite_database failed during concurrent WAL writes"
+        assert dst_db.exists()
+
+        # Stop worker
+        stop_event.set()
+        worker_thread.join(timeout=2.0)
+
+        # Verify snapshot integrity and content
+        assert verify_sqlite_integrity(dst_db) is True
+
+        snap_conn = sqlite3.connect(str(dst_db))
+        cursor = snap_conn.cursor()
+        cursor.execute("SELECT count(*) FROM call_audits;")
+        snap_count = cursor.fetchone()[0]
+        snap_conn.close()
+
+        assert snap_count > 0, "Snapshot should contain rows written before or during backup"
+    finally:
+        stop_event.set()
+        if worker_thread.is_alive():
+            worker_thread.join(timeout=1.0)
+        for p in (src_db, dst_db, Path(str(src_db) + "-wal"), Path(str(src_db) + "-shm")):
+            if p.exists():
+                try:
+                    p.unlink()
+                except Exception:
+                    pass
 
 
 def test_create_backup_archive_contains_manifest():
@@ -176,7 +275,6 @@ def test_send_backup_multipart_when_exceeding_limit():
     """Verifies multi-part series upload when archive exceeds chunk threshold."""
     with tempfile.NamedTemporaryFile(suffix=".tar.gz.enc", delete=False) as tmp:
         archive_path = Path(tmp.name)
-        # 120 KB test file
         tmp.write(b"CHUNKED_TEST_PAYLOAD" * 6000)
 
     manifest = {"created_at_human": "2026-10-21 12:00:00", "files_included": []}
@@ -186,7 +284,6 @@ def test_send_backup_multipart_when_exceeding_limit():
         mock_resp.status_code = 200
 
         with patch("requests.post", return_value=mock_resp) as mock_post:
-            # Threshold = 30 KB -> 4 chunks
             ok = send_backup_to_telegram(
                 archive_path,
                 manifest,

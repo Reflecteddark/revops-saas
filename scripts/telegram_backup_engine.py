@@ -2,11 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 RevOps Enterprise OS — Telegram Cloud Backup Engine.
-Zero-Footprint automated backup: creates compressed snapshot, encrypts via
+Zero-Footprint automated backup: creates consistent hot database snapshots
+(via sqlite3.Connection.backup Online Backup API and pg_dump), encrypts via
 Zero-Knowledge AES-256 (Fernet), streams directly to Telegram Cloud via Bot API
 (sendDocument), and immediately deletes all local temp files.
 
 Features:
+- Hot Consistent DB Snapshots: native sqlite3.Connection.backup() with WAL flush & PRAGMA integrity_check.
+- PostgreSQL Support: pg_dump --format=custom integration when DATABASE_URL is PostgreSQL.
 - Zero-Knowledge AES-256 symmetric encryption (via cryptography.fernet / BACKUP_ENCRYPTION_KEY).
 - Multi-Part splitting (45 MB chunks) to stay safely below Telegram's 50 MB API limit.
 - Zero-Footprint disk usage (each chunk deleted immediately after upload).
@@ -17,12 +20,15 @@ import os
 import sys
 import json
 import time
+import shutil
+import sqlite3
 import base64
 import hashlib
 import tarfile
 import tempfile
 import logging
 import argparse
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import List, Tuple, Optional
@@ -70,6 +76,73 @@ def decrypt_file(input_path: Path, output_path: Path, key: bytes) -> Path:
     return output_path
 
 
+def verify_sqlite_integrity(db_path: Path) -> bool:
+    """Runs PRAGMA integrity_check on SQLite database."""
+    try:
+        uri = f"file:{db_path.resolve().as_posix()}?mode=ro"
+        conn = sqlite3.connect(uri, uri=True, timeout=10.0)
+        try:
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA integrity_check;")
+            row = cursor.fetchone()
+            return bool(row and row[0] == "ok")
+        finally:
+            conn.close()
+    except Exception:
+        return False
+
+
+def snapshot_sqlite_database(src_path: Path, dst_path: Path) -> bool:
+    """
+    Safely creates a consistent hot snapshot of a SQLite database using the native
+    SQLite Online Backup API (sqlite3.Connection.backup).
+    Works atomically even under heavy writer transactions, flushing all committed WAL pages.
+    """
+    try:
+        uri = f"file:{src_path.resolve().as_posix()}?mode=ro"
+        src_conn = sqlite3.connect(uri, uri=True, timeout=30.0)
+        try:
+            dst_conn = sqlite3.connect(str(dst_path), timeout=30.0)
+            try:
+                with dst_conn:
+                    src_conn.backup(dst_conn, pages=250)
+            finally:
+                dst_conn.close()
+        finally:
+            src_conn.close()
+
+        if not verify_sqlite_integrity(dst_path):
+            logger.error(f"❌ SQLite integrity check failed for snapshot of {src_path.name}")
+            return False
+
+        logger.info(f"✅ Hot snapshot of {src_path.name} created and verified via PRAGMA integrity_check")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Failed to create SQLite snapshot for {src_path.name}: {e}")
+        return False
+
+
+def dump_postgres_database(database_url: str, output_path: Path) -> bool:
+    """
+    Dumps PostgreSQL database in custom format (pg_dump -Fc) if pg_dump is available.
+    """
+    if not shutil.which("pg_dump"):
+        logger.warning("pg_dump utility not found on PATH; skipping PostgreSQL dump")
+        return False
+    try:
+        cmd = ["pg_dump", "--format=custom", f"--file={output_path}", database_url]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if res.returncode == 0:
+            logger.info(f"✅ PostgreSQL database dumped to {output_path.name}")
+            return True
+        else:
+            logger.error(f"❌ pg_dump failed: {res.stderr}")
+            return False
+    except Exception as e:
+        logger.error(f"❌ pg_dump error: {e}")
+        return False
+
+
 def load_tg_credentials() -> Tuple[Optional[str], Optional[str], str, Optional[str]]:
     """Finds bot_token, chat_id, api_base, and backup_encryption_key across standard configs."""
     candidates = [
@@ -104,7 +177,6 @@ def load_tg_credentials() -> Tuple[Optional[str], Optional[str], str, Optional[s
             except Exception:
                 pass
 
-    # Auto-generate encryption key if not configured anywhere and save to config
     if not encryption_key and found_config_path and found_config_path.exists():
         try:
             new_key = Fernet.generate_key().decode("utf-8")
@@ -156,9 +228,59 @@ def create_backup_archive(output_path: Path) -> dict:
                 arc_name = f.name
                 if arc_name in added_names:
                     arc_name = f"{f.parent.name}_{f.name}"
+
+                is_sqlite = f.suffix.lower() in [".db", ".sqlite"]
+                if is_sqlite:
+                    temp_snap = Path(tempfile.gettempdir()) / f"hot_snap_{int(time.time()*1000)}_{f.name}"
+                    try:
+                        ok = snapshot_sqlite_database(f, temp_snap)
+                        if ok and temp_snap.exists():
+                            tar.add(str(temp_snap), arcname=arc_name)
+                            added_names.add(arc_name)
+                            manifest["files_included"].append({
+                                "name": arc_name,
+                                "size_bytes": temp_snap.stat().st_size,
+                                "backup_type": "sqlite_online_backup",
+                                "integrity_verified": True
+                            })
+                            continue
+                        else:
+                            logger.warning(f"Fallback to direct copy for {f.name} after snapshot failure")
+                    finally:
+                        if temp_snap.exists():
+                            try:
+                                temp_snap.unlink()
+                            except Exception:
+                                pass
+
                 tar.add(str(f), arcname=arc_name)
                 added_names.add(arc_name)
-                manifest["files_included"].append({"name": arc_name, "size_bytes": f.stat().st_size})
+                manifest["files_included"].append({
+                    "name": arc_name,
+                    "size_bytes": f.stat().st_size,
+                    "backup_type": "standard_file"
+                })
+
+        # PostgreSQL Dump check
+        db_url = os.getenv("DATABASE_URL", "")
+        if db_url.startswith("postgres://") or db_url.startswith("postgresql://"):
+            temp_pg = Path(tempfile.gettempdir()) / f"postgres_backup_{int(time.time())}.dump"
+            try:
+                pg_ok = dump_postgres_database(db_url, temp_pg)
+                if pg_ok and temp_pg.exists():
+                    arc_name = "postgres_backup.dump"
+                    tar.add(str(temp_pg), arcname=arc_name)
+                    manifest["files_included"].append({
+                        "name": arc_name,
+                        "size_bytes": temp_pg.stat().st_size,
+                        "backup_type": "pg_dump_custom"
+                    })
+            finally:
+                if temp_pg.exists():
+                    try:
+                        temp_pg.unlink()
+                    except Exception:
+                        pass
 
     manifest["total_archive_size_bytes"] = output_path.stat().st_size
     return manifest
@@ -308,7 +430,6 @@ def run_telegram_backup(max_part_size: int = MAX_PART_SIZE_BYTES, custom_encrypt
             f_key = derive_fernet_key(encryption_key)
             logger.info("Encrypting archive using AES-256 (Zero-Knowledge Fernet)...")
             encrypt_file(tar_archive_path, enc_path, f_key)
-            # Delete plaintext tar immediately so only .enc exists
             try:
                 tar_archive_path.unlink()
             except Exception:
@@ -329,7 +450,6 @@ def run_telegram_backup(max_part_size: int = MAX_PART_SIZE_BYTES, custom_encrypt
         )
         return success
     finally:
-        # Zero-Footprint Guarantee: delete local base archive immediately
         for p in (tar_archive_path, final_archive_path):
             if p.exists():
                 try:
