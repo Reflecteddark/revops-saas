@@ -191,44 +191,45 @@ def load_tg_credentials() -> Tuple[Optional[str], Optional[str], str, Optional[s
     return bot_token, chat_id, api_base, encryption_key
 
 
-def create_backup_archive(output_path: Path) -> dict:
+def create_backup_archive(output_path: Path, candidate_files: Optional[List[Path]] = None) -> dict:
     """Creates a gzipped tar archive of critical state, databases, and registries."""
     files_included: List[Dict[str, Any]] = []
+    skipped_paths: List[Dict[str, Any]] = []
     manifest: Dict[str, Any] = {
         "timestamp": datetime.now().isoformat(),
         "created_at_human": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "files_included": files_included
+        "files_included": files_included,
+        "skipped_paths": skipped_paths
     }
 
-    candidate_files = [
-        BASE_DIR / "tenants_registry.json",
-        BASE_DIR.parent / "revops-enterprise-os" / "tenants_registry.json",
-        Path("/opt/revops-enterprise-os/tenants_registry.json"),
-        Path("/opt/revops-saas/tenants_registry.json"),
-        BASE_DIR / "scoring_config.json",
-        BASE_DIR.parent / "revops-enterprise-os" / "scoring_config.json",
-        Path("/opt/revops-enterprise-os/scoring_config.json"),
-        BASE_DIR / "revops_saas.db",
-        BASE_DIR / "data" / "revops_saas.db",
-        Path("/opt/revops-saas/data/revops_saas.db"),
-        Path("/opt/revops-saas/revops_saas.db"),
-        Path("/var/lib/docker/volumes/n8n_n8n_data/_data/database.sqlite"),
-    ]
+    if candidate_files is None:
+        candidate_files = [
+            BASE_DIR / "tenants_registry.json",
+            BASE_DIR.parent / "revops-enterprise-os" / "tenants_registry.json",
+            Path("/opt/revops-enterprise-os/tenants_registry.json"),
+            Path("/opt/revops-saas/tenants_registry.json"),
+            BASE_DIR / "scoring_config.json",
+            BASE_DIR.parent / "revops-enterprise-os" / "scoring_config.json",
+            Path("/opt/revops-enterprise-os/scoring_config.json"),
+            BASE_DIR / "revops_saas.db",
+            BASE_DIR / "data" / "revops_saas.db",
+            Path("/opt/revops-saas/data/revops_saas.db"),
+            Path("/opt/revops-saas/revops_saas.db"),
+            Path("/var/lib/docker/volumes/n8n_n8n_data/_data/database.sqlite"),
+        ]
 
     with tarfile.open(output_path, "w:gz") as tar:
-        manifest_bytes = json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8")
-        tarinfo = tarfile.TarInfo(name="manifest.json")
-        tarinfo.size = len(manifest_bytes)
-        tarinfo.mtime = int(time.time())
-        import io
-        tar.addfile(tarinfo, io.BytesIO(manifest_bytes))
-
         added_names = set()
         for f in candidate_files:
             try:
                 if not f.exists() or not f.is_file():
                     continue
-            except (PermissionError, OSError):
+            except (PermissionError, OSError) as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"[Backup] Пропущен путь {f}: {type(e).__name__}: {e}"
+                )
+                skipped_paths.append({"path": str(f), "reason": f"{type(e).__name__}: {e}"})
                 continue
 
             try:
@@ -268,7 +269,11 @@ def create_backup_archive(output_path: Path) -> dict:
                     "backup_type": "standard_file"
                 })
             except (PermissionError, OSError) as e:
-                logger.warning(f"Skipping {f} due to OS access restrictions: {e}")
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"[Backup] Пропущен путь {f}: {type(e).__name__}: {e}"
+                )
+                skipped_paths.append({"path": str(f), "reason": f"{type(e).__name__}: {e}"})
                 continue
 
         # PostgreSQL Dump check
@@ -291,6 +296,14 @@ def create_backup_archive(output_path: Path) -> dict:
                         temp_pg.unlink()
                     except Exception:
                         pass
+
+        # Embed complete manifest.json into the archive with files_included and skipped_paths
+        manifest_bytes = json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8")
+        tarinfo = tarfile.TarInfo(name="manifest.json")
+        tarinfo.size = len(manifest_bytes)
+        tarinfo.mtime = int(time.time())
+        import io
+        tar.addfile(tarinfo, io.BytesIO(manifest_bytes))
 
     manifest["total_archive_size_bytes"] = output_path.stat().st_size
     return manifest

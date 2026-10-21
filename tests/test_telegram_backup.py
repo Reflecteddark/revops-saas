@@ -195,14 +195,53 @@ def test_create_backup_archive_contains_manifest():
         assert archive_path.stat().st_size > 0
         assert "timestamp" in manifest
         assert "files_included" in manifest
+        assert "skipped_paths" in manifest
 
         # Inspect archive content
         with tarfile.open(archive_path, "r:gz") as tar:
             names = tar.getnames()
             assert "manifest.json" in names
             f = tar.extractfile("manifest.json")
+            assert f is not None
             data = json.load(f)
             assert data["timestamp"] == manifest["timestamp"]
+            assert "skipped_paths" in data
+            assert isinstance(data["skipped_paths"], list)
+    finally:
+        if archive_path.exists():
+            archive_path.unlink()
+
+
+def test_create_backup_archive_logs_and_records_skipped_paths(caplog):
+    """
+    Verifies that when a candidate file encounters PermissionError or OSError,
+    it is logged with warning and safely recorded in skipped_paths in the manifest.
+    """
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
+        archive_path = Path(tmp.name)
+
+    mock_unreadable = MagicMock()
+    mock_unreadable.name = "database.sqlite"
+    mock_unreadable.exists.side_effect = PermissionError("[Errno 13] Permission denied: '/var/lib/docker/volumes'")
+    mock_unreadable.__str__.return_value = "/var/lib/docker/volumes/n8n_n8n_data/_data/database.sqlite"
+
+    try:
+        import logging
+        with caplog.at_level(logging.WARNING):
+            manifest = create_backup_archive(archive_path, candidate_files=[mock_unreadable])
+
+        assert "skipped_paths" in manifest
+        skipped = [s for s in manifest["skipped_paths"] if "n8n_n8n_data" in s["path"]]
+        assert len(skipped) == 1
+        assert "PermissionError" in skipped[0]["reason"]
+        assert any("[Backup] Пропущен путь" in r.message for r in caplog.records)
+
+        # Inspect archive manifest.json content
+        with tarfile.open(archive_path, "r:gz") as tar:
+            f = tar.extractfile("manifest.json")
+            assert f is not None
+            data = json.load(f)
+            assert any("n8n_n8n_data" in s["path"] for s in data.get("skipped_paths", []))
     finally:
         if archive_path.exists():
             archive_path.unlink()
