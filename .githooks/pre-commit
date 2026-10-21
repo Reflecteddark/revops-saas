@@ -1,5 +1,8 @@
 #!/bin/sh
-# RevOps SaaS - Comprehensive Pre-commit Test Runner (Full Stack Guard)
+# RevOps SaaS - Comprehensive Pre-commit Test Runner (Synchronized with CI)
+
+echo "⚡ [pre-commit] Проверка линтером (Ruff)..."
+ruff check apps/ packages/ workers/ tests/ --ignore E501 || true
 
 echo "⚡ [pre-commit] Проверка Python синтаксиса и типов..."
 mypy apps/ packages/ --ignore-missing-imports --explicit-package-bases || exit 1
