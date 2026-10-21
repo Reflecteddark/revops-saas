@@ -147,6 +147,8 @@ function appendAnalystUserMessage(text) {
   container.scrollTop = container.scrollHeight;
 }
 
+let ANALYST_CHAT_HISTORY = [];
+
 function appendAnalystAiMessage(markdownText) {
   const container = document.getElementById('analystChatMessages');
   if (!container) return;
@@ -179,9 +181,14 @@ async function sendAnalystChat(customText = null) {
   const nextSteps = liveCalls.filter(c => c.next_step === 1 || c.status === 'won').length;
   const pct = Math.round((nextSteps / Math.max(1, liveCalls.length)) * 100);
 
+  const prevHistory = ANALYST_CHAT_HISTORY.slice(-6);
+  ANALYST_CHAT_HISTORY.push({ role: 'user', text });
+  if (ANALYST_CHAT_HISTORY.length > 10) ANALYST_CHAT_HISTORY = ANALYST_CHAT_HISTORY.slice(-10);
+
   const payload = {
     message: text,
     tenant_id: (typeof getActiveTenantId === 'function') ? getActiveTenantId() : 'TNT-001',
+    history: prevHistory,
     context: {
       total_calls: liveCalls.length || 12,
       avg_score: 9.5,
@@ -202,16 +209,18 @@ async function sendAnalystChat(customText = null) {
     const data = await res.json();
     if (typingEl && typingEl.parentNode) typingEl.remove();
     appendAnalystAiMessage(data.reply);
+    ANALYST_CHAT_HISTORY.push({ role: 'assistant', text: data.reply });
   } catch (err) {
     console.warn('[AI Analyst Chat] Offline fallback response:', err);
     if (typingEl && typingEl.parentNode) typingEl.remove();
-    appendAnalystAiMessage(
+    const fallbackText = 
       '### Оперативный ответ Коммерческого Директора (Локальный контур)\n\n' +
       'По запросу: *«' + text + '»*\n\n' +
       'Анализ живых данных ЛК показывает, что ключевая проблема — разрыв между проведённым звонком и конверсией в оплату. ' +
       'В ' + (100 - pct) + '% звонков клиенты уходят «подумать». ' +
-      '**Директива CCO**: внедрить обязательный слот Zoom-встречи до окончания звонка и передать зависших клиентов РОПу на дожим.'
-    );
+      '**Директива CCO**: внедрить обязательный слот Zoom-встречи до окончания звонка и передать зависших клиентов РОПу на дожим.';
+    appendAnalystAiMessage(fallbackText);
+    ANALYST_CHAT_HISTORY.push({ role: 'assistant', text: fallbackText });
   }
 }
 
@@ -227,6 +236,7 @@ function clearAnalystChat() {
       '**Диалог очищен.** Задайте любой новый вопрос по звонкам, менеджерам или стратегии воронки.'
     );
   }
+  ANALYST_CHAT_HISTORY = [];
 }
 
 function formatAnalystMarkdown(text) {
