@@ -881,6 +881,7 @@ def execute_task_action(req: TaskActionRequest):
         else:
             return {"success": False, "message": "Скрипт автосинхронизации не найден!"}
 
+        msg = ""
         res = subprocess.run(
             ["schtasks.exe", "/Create", "/TN", task_name, "/TR", run_cmd, "/SC", "DAILY", "/ST", time_str, "/F"],
             capture_output=True,

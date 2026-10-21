@@ -64,7 +64,8 @@ async def get_ai_insights_summary(
                 max_tokens=600,
                 messages=[{"role": "user", "content": prompt}]
             )
-            ai_text = msg.content[0].text
+            first_block = msg.content[0]
+            ai_text = getattr(first_block, "text", str(first_block))
             return {
                 "engine": "Claude 3.5 Sonnet",
                 "summary": ai_text,
