@@ -33,9 +33,9 @@ def register_tenant(req: TenantRegisterRequest, db: Session = Depends(get_db)):
     if not slug:
         slug = f"tenant-{uuid.uuid4().hex[:8]}"
 
-    existing_tenant = db.query(Tenant).filter(Tenant.slug == slug).first()
-    if existing_tenant:
-        slug = f"{slug}-{uuid.uuid4().hex[:4]}"
+    base_slug = slug
+    while db.query(Tenant).filter(Tenant.slug == slug).first():
+        slug = f"{base_slug}-{uuid.uuid4().hex[:8]}"
 
     # 1. Create Tenant
     tenant = Tenant(
