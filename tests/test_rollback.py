@@ -31,9 +31,21 @@ def test_resolve_commit_sha_handles_latest_and_full_sha():
 
 def test_resolve_commit_sha_resolves_local_prefix():
     local_path = Path(__file__).resolve().parent.parent
-    full = resolve_commit_sha("Reflecteddark/revops-saas", "4b1ff5f", local_path=local_path)
+    import subprocess
+    head_full = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(local_path), text=True).strip()
+    prefix = head_full[:7]
+    full = resolve_commit_sha("Reflecteddark/revops-saas", prefix, local_path=local_path)
     assert len(full) == 40
-    assert full.startswith("4b1ff5f")
+    assert full == head_full
+
+
+def test_resolve_commit_sha_mocked():
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0, stdout="4b1ff5f7668fbf4d09042b717ef75afc1b1994b5\n")
+        local_path = Path(__file__).resolve().parent.parent
+        full = resolve_commit_sha("Reflecteddark/revops-saas", "4b1ff5f", local_path=local_path)
+        assert full == "4b1ff5f7668fbf4d09042b717ef75afc1b1994b5"
+
 
 
 def test_get_vps_deploy_info_parses_json():
