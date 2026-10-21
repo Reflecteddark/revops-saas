@@ -1,16 +1,14 @@
 #!/bin/sh
-# RevOps SaaS - Pre-commit test runner
-echo "⚡ [pre-commit] Запуск набора юнит-тестов Vitest..."
-npm test
-STATUS=$?
+# RevOps SaaS - Comprehensive Pre-commit Test Runner (Full Stack Guard)
 
-if [ $STATUS -ne 0 ]; then
-  echo ""
-  echo "❌ [pre-commit] Тесты провалены! Коммит отменен."
-  echo "   Запустите 'npm test' локально, чтобы увидеть подробности."
-  echo ""
-  exit 1
-fi
+echo "⚡ [pre-commit] Проверка Python синтаксиса и типов..."
+mypy apps/ packages/ --ignore-missing-imports --explicit-package-bases || exit 1
 
-echo "✅ [pre-commit] Все тесты пройдены успешно."
+echo "⚡ [pre-commit] Запуск бэкенд-тестов..."
+pytest tests -q || exit 1
+
+echo "⚡ [pre-commit] Запуск набора юнит-тестов Vitest (фронтенд)..."
+npm test || exit 1
+
+echo "✅ [pre-commit] Все проверки синтаксиса, типов и тестов (бэкенд + фронтенд) пройдены успешно."
 exit 0

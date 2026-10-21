@@ -82,8 +82,46 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> Lis
 
     sa_path = get_service_account_path()
     if not sa_path:
-        logger.warning(f"service_account.json not found for deals fetch (tenant: {clean_tenant})")
-        return cached.get("deals", []) if cached else []
+        if cached and cached.get("deals"):
+            return cached.get("deals", [])
+        logger.warning(f"service_account.json not found for deals fetch (tenant: {clean_tenant}), using golden master seed deals")
+        from packages.analytics_engine.calc_engine import DEFAULT_DEALS
+        fallback_deals: List[Dict[str, Any]] = []
+        lookup: Dict[str, Dict[str, Any]] = {}
+        for d in DEFAULT_DEALS:
+            deal_id = str(d.get("deal_id", "D-101"))
+            st_id = int(d.get("stage_id", 1))
+            is_seed_won = (st_id == 6)
+            stage_name = str(d.get("stage_name", "Первичный контакт"))
+            amt_num = float(d.get("amount", 300000.0))
+            sla_risk = (not is_seed_won) and (st_id in (1, 2, 4) or "Первичный" in stage_name or "КП" in stage_name or "Новый" in stage_name)
+            deal_obj = {
+                "id": deal_id,
+                "deal_id": deal_id,
+                "org_id": clean_tenant,
+                "crm_deal_id": deal_id,
+                "crm_source": str(d.get("lead_source", "CRM")),
+                "title": str(d.get("client_name", f"Сделка {deal_id}")),
+                "amount": amt_num,
+                "amount_str": f"{int(amt_num):,} ₽".replace(",", " "),
+                "stage_id": str(st_id),
+                "stage": stage_name,
+                "status": "won" if is_seed_won else "active",
+                "sla_risk": sla_risk,
+                "responsible_user": f"Менеджер {d.get('manager_id', 101)}",
+                "segment": str(d.get("segment_code", "SEG1")),
+                "created_at": str(d.get("created_date", "")),
+                "updated_at": str(d.get("stage_changed_date", "")),
+                "synced_at": datetime.now(timezone.utc).isoformat(),
+            }
+            fallback_deals.append(deal_obj)
+            lookup[deal_id.upper().strip()] = deal_obj
+        _DEALS_CACHE[clean_tenant] = {
+            "timestamp": now,
+            "deals": fallback_deals,
+            "lookup": lookup
+        }
+        return fallback_deals
 
     try:
         import gspread
