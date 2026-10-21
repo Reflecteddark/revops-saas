@@ -38,6 +38,10 @@ def get_telegram_creds() -> tuple[str | None, str | None, str]:
 
 def send_telegram_alert(text: str) -> bool:
     """Send HTML-formatted alert to Telegram."""
+    if "PYTEST_CURRENT_TEST" in os.environ or os.getenv("TESTING") == "true" or os.getenv("DISABLE_TELEGRAM_ALERTS") == "true":
+        logger.info("Telegram alert skipped: test / CI environment active")
+        return True
+
     bot_token, chat_id, api_base = get_telegram_creds()
     if not bot_token or not chat_id:
         logger.warning("Telegram alert skipped: bot_token or chat_id not configured")

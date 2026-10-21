@@ -25,6 +25,13 @@ def clean_rate_limits():
     reset_rate_limits()
 
 
+@pytest.fixture(autouse=True)
+def mock_notifications(monkeypatch):
+    """Ensure tests never call live Telegram API or SMTP."""
+    monkeypatch.setattr("apps.api.routers.public_router.send_telegram_alert", lambda *args, **kwargs: True)
+    monkeypatch.setattr("apps.api.routers.public_router.send_client_demo_email", lambda *args, **kwargs: True)
+
+
 @pytest.fixture
 def client():
     return TestClient(app)

@@ -327,19 +327,29 @@ def request_demo_access(
             "• Эталонный демо: <code>demo_test@ai-rop.ru</code> / <code>DemoPassword123!</code>\n"
             "• Ссылка для входа: https://report.ai-rop.ru/app/"
         )
-        try:
-            send_telegram_alert(tg_text)
-        except Exception as e:
-            logger.warning(f"Could not dispatch Telegram lead alert: {e}")
-
-        # 7. Send Client Email
-        send_client_demo_email(
-            to_email=clean_email,
-            name=clean_name,
-            login=clean_email,
-            password=plain_password,
-            cabinet_url=cabinet_url
+        # 6. Send Telegram Notification (skip for synthetic test leads or active test environments)
+        is_test_lead = (
+            "PYTEST_CURRENT_TEST" in os.environ
+            or os.getenv("TESTING") == "true"
+            or clean_email.endswith((".test", "@revops-test.ru", "@example.com", "@test.com"))
         )
+
+        if not is_test_lead:
+            try:
+                send_telegram_alert(tg_text)
+            except Exception as e:
+                logger.warning(f"Could not dispatch Telegram lead alert: {e}")
+
+            # 7. Send Client Email
+            send_client_demo_email(
+                to_email=clean_email,
+                name=clean_name,
+                login=clean_email,
+                password=plain_password,
+                cabinet_url=cabinet_url
+            )
+        else:
+            logger.info(f"🧪 Тестовая заявка ({clean_email}) обработана без отправки уведомлений в Telegram/SMTP.")
 
         return {
             "success": True,
