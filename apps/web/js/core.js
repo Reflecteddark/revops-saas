@@ -560,7 +560,17 @@ async function switchTab(tabId) {
       speechRadarChartInstance.resize();
     }
     if (tabId === 'admin') {
-      loadAdminStatus();
+      if (typeof window !== 'undefined' && !window.adminScriptLoaded && typeof document !== 'undefined' && typeof document.createElement === 'function') {
+        const script = document.createElement('script');
+        script.src = 'js/admin.js?v=20.16-sparklines-sync';
+        script.onload = () => {
+          window.adminScriptLoaded = true;
+          if (typeof loadAdminStatus === 'function') loadAdminStatus();
+        };
+        document.body.appendChild(script);
+      } else {
+        if (typeof loadAdminStatus === 'function') loadAdminStatus();
+      }
     }
     if (tabId === 'analyst') {
       initAnalystTab();
@@ -1257,6 +1267,38 @@ function releaseFocus() {
   if (_lastActiveElement && typeof _lastActiveElement.focus === 'function') {
     _lastActiveElement.focus();
     _lastActiveElement = null;
+  }
+}
+
+// ==========================================================================
+// DYNAMIC LAZY LOADER FOR ADMIN MODULE
+// ==========================================================================
+function loadAdminScript(callback) {
+  if (typeof window !== 'undefined' && window.adminScriptLoaded) {
+    if (typeof callback === 'function') callback();
+    return;
+  }
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
+  const script = document.createElement('script');
+  script.src = 'js/admin.js?v=20.16-sparklines-sync';
+  script.onload = () => {
+    if (typeof window !== 'undefined') window.adminScriptLoaded = true;
+    if (typeof callback === 'function') callback();
+  };
+  document.body.appendChild(script);
+}
+
+if (typeof window !== 'undefined') {
+  window.loadAdminScript = loadAdminScript;
+  if (!window.triggerSelfHealingAudit) {
+    window.triggerSelfHealingAudit = function() {
+      loadAdminScript(() => {
+        if (typeof window.triggerSelfHealingAudit === 'function' && !window.triggerSelfHealingAudit._isProxy) {
+          window.triggerSelfHealingAudit();
+        }
+      });
+    };
+    window.triggerSelfHealingAudit._isProxy = true;
   }
 }
 

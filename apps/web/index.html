@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Chart.js 4.4.2 via CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" integrity="sha384-e6cc9LaIG7xZ3XD5B+jtr1NhTWPQGQdRCh6xiZ+ZFUtWCpg4ycv3Sh+SkZoopvUY" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- Chart.js 4.4.2 via CDN (deferred for non-blocking FCP) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" integrity="sha384-e6cc9LaIG7xZ3XD5B+jtr1NhTWPQGQdRCh6xiZ+ZFUtWCpg4ycv3Sh+SkZoopvUY" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 
   <!-- Instant FOUC Theme Guard (Deep Black & Violet Theme) -->
   <script>
@@ -3155,7 +3155,7 @@
         grid-template-columns: 36px 1fr auto auto;
         gap: 12px;
       }
-      .call-heat, .call-action {
+      .call-heat {
         display: none;
       }
     }
@@ -5338,6 +5338,77 @@
       gap: 8px; color: rgba(255, 255, 255, 0.4);
       font-size: 0.75rem; text-align: center;
       max-width: 200px; line-height: 1.4;
+    }
+
+    /* ======================================================== */
+    /* ITERATION 2: MOBILE UX, TOUCH TARGETS & ACCESSIBILITY    */
+    /* ======================================================== */
+
+    /* 1. Touch Targets (Min 44x44px for Ergonomic Mobile UX) */
+    @media (max-width: 900px) {
+      .btn, .tab-btn, .pill-btn, .mp-nav-item, .call-row, .dropdown-item, .period-option, button {
+        min-height: 44px;
+        min-width: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    /* 2. Prefers-Reduced-Motion (Vestibular & Accessibility Guard) */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* 3. Calls Table -> Cards Transformation (Mobile Screen Adaptation) */
+    @media (max-width: 768px) {
+      .calls-list .call-row {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px;
+      }
+      .calls-list .call-row > * {
+        width: 100%;
+        text-align: left;
+      }
+      .calls-list .call-row .call-action {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: flex-start;
+        color: #c4b5fd !important;
+        font-weight: 700;
+        margin-top: 4px;
+      }
+    }
+
+    /* 4. Call Details Modal: iPhone SE (375px) Adaptive & Sticky Header */
+    @media (max-width: 600px) {
+      #modalStepTimeline {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      .modal-box {
+        padding: 16px !important;
+      }
+    }
+
+    .modal-box > div:first-child {
+      position: sticky;
+      top: -16px;
+      background: inherit;
+      z-index: 10;
+      padding-top: 8px;
+      margin-top: -8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    html[data-theme="light"] .modal-box > div:first-child {
+      border-bottom-color: rgba(0, 0, 0, 0.08) !important;
     }
 
   </style>
@@ -10533,15 +10604,14 @@
     </div>
   </div>
 
-  <!-- Javascript Modules (v20.6 Tier-1 UI Redesign Architecture) -->
-  <script src="js/core.js?v=20.16-sparklines-sync"></script>
-  <script src="js/calls.js?v=20.16-sparklines-sync"></script>
-  <script src="js/charts.js?v=20.16-sparklines-sync"></script>
-  <script src="js/deals.js?v=20.16-sparklines-sync"></script>
-  <script src="js/admin.js?v=20.16-sparklines-sync"></script>
-  <script src="js/settings.js?v=20.16-sparklines-sync"></script>
-  <script src="js/analyst.js?v=20.16-sparklines-sync"></script>
-  <script src="app.js?v=20.16-sparklines-sync"></script>
+  <!-- Javascript Modules (v20.6 Tier-1 UI Redesign Architecture, admin.js lazy-loaded) -->
+  <script src="js/core.js?v=20.16-sparklines-sync" defer></script>
+  <script src="js/calls.js?v=20.16-sparklines-sync" defer></script>
+  <script src="js/charts.js?v=20.16-sparklines-sync" defer></script>
+  <script src="js/deals.js?v=20.16-sparklines-sync" defer></script>
+  <script src="js/settings.js?v=20.16-sparklines-sync" defer></script>
+  <script src="js/analyst.js?v=20.16-sparklines-sync" defer></script>
+  <script src="app.js?v=20.16-sparklines-sync" defer></script>
 
 
   <!-- Global Command Palette Modal (Ctrl+K / Cmd+K) -->
