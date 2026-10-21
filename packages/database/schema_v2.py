@@ -10,11 +10,19 @@ SQLAlchemy models matching the RevOps Intelligence Enterprise SaaS Schema:
 
 import uuid
 from datetime import datetime, timezone
+
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, DateTime, ForeignKey, 
-    Numeric, Text, JSON, Index, func
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
+
 
 class Base(DeclarativeBase):
     pass

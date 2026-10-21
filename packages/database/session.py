@@ -1,9 +1,10 @@
 import os
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import QueuePool
+
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import Session, sessionmaker
+
 from .models import Base
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -41,6 +42,25 @@ engine_read = create_engine(
     echo=False,
     **pool_config
 )
+
+if "sqlite" in DATABASE_URL:
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
+
+if "sqlite" in DATABASE_READ_REPLICA_URL and engine_read != engine:
+    @event.listens_for(engine_read, "connect")
+    def set_sqlite_read_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
+
 
 # Session factories
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

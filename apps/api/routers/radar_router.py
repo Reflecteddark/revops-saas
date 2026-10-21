@@ -3,14 +3,13 @@ Radar Router: Пульт РОПа «15 минут в день» и операт�
 Displays pipeline health, SLA breaches, and allows intercepting stalled deals.
 """
 
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
-from packages.database.models import Deal, User, UserRole, DealStage
+from packages.database.models import Deal, DealStage, User, UserRole
 from packages.database.session import get_db
-from ..auth import get_current_user, require_roles
+
+from ..auth import get_current_user
 
 router = APIRouter(prefix="/radar", tags=["Operational Risk Radar & Cockpit РОПа"])
 
@@ -19,7 +18,7 @@ router = APIRouter(prefix="/radar", tags=["Operational Risk Radar & Cockpit РО
 def get_rop_cockpit(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    workspace_id: Optional[str] = None
+    workspace_id: str | None = None
 ):
     """
     Returns 15-minute daily control metrics:
@@ -103,5 +102,6 @@ def fix_next_step(
     setattr(deal, "risk_reason", None)
     setattr(deal, "is_at_risk", False)
     db.commit()
+
 
     return {"status": "success", "message": "Следующий шаг зафиксирован, риск снят."}

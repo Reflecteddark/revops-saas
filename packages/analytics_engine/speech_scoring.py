@@ -4,7 +4,7 @@ Transfers the Whisper + LLM prompt-auditing logic into structured SaaS microserv
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 CRITERIA_WEIGHTS = {
     "greeting_and_intro": 5,          # 1. Приветствие и регламент
@@ -46,11 +46,11 @@ class ScorecardResult:
     failed_criteria_count: int
     is_deal_at_risk: bool
     risk_summary: str
-    detailed_scores: Dict[str, Dict[str, Any]]
+    detailed_scores: dict[str, dict[str, Any]]
     crm_note_text: str
 
 
-def evaluate_speech_scorecard(scores: Dict[str, float], comments: Optional[Dict[str, str]] = None) -> ScorecardResult:
+def evaluate_speech_scorecard(scores: dict[str, float], comments: dict[str, str] | None = None) -> ScorecardResult:
     """
     Computes weighted score across 13 criteria (each input score is 0.0 to 10.0 or 0 to 100).
     """

@@ -3,13 +3,13 @@ WebSocket Connection Manager for Real-Time Client Updates.
 Supports organization-level broadcasting (deal updates, simulation completion, radar alerts).
 """
 
-from typing import Dict, List
+
 from fastapi import WebSocket
 
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[str, List[WebSocket]] = {}
+        self.active_connections: dict[str, list[WebSocket]] = {}
 
     async def connect(self, org_id: str, websocket: WebSocket):
         await websocket.accept()

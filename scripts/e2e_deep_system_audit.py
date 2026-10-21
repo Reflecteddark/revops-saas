@@ -19,15 +19,13 @@ Executes non-fictitious end-to-end testing across all 8 architectural layers:
 16. Production Edge CDN (https://ai-rop.ru/app/)
 """
 
-import sys
-import os
-import time
-import json
 import asyncio
-import urllib.request
+import json
+import sys
+import time
 import urllib.error
-from pathlib import Path
-from typing import Dict, Any, List
+import urllib.request
+from typing import Any
 
 # Ensure UTF-8 output on Windows
 sys.stdout.reconfigure(encoding='utf-8')
@@ -35,7 +33,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 BASE_URL = "http://127.0.0.1:8000"
 PROD_URL = "https://ai-rop.ru/app/"
 
-audit_records: List[Dict[str, Any]] = []
+audit_records: list[dict[str, Any]] = []
 
 def record(step: str, status: str, duration_ms: float, details: str, preview: str = ""):
     audit_records.append({
@@ -48,7 +46,7 @@ def record(step: str, status: str, duration_ms: float, details: str, preview: st
     badge = "PASS" if status == "OK" else ("WARN" if status == "WARN" else "FAIL")
     print(f"[{badge}] {step} ({round(duration_ms, 1)}ms) -> {details}")
 
-def http_req(path: str, method: str = "GET", body: Dict = None, headers: Dict = None) -> tuple[int, Dict, float]:
+def http_req(path: str, method: str = "GET", body: dict = None, headers: dict = None) -> tuple[int, dict, float]:
     url = f"{BASE_URL}{path}"
     req_headers = {"User-Agent": "RevOps-E2E-Auditor/1.0", "Content-Type": "application/json"}
     if headers:

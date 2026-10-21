@@ -2,9 +2,7 @@
 Pydantic schemas for the RevOps SaaS API.
 """
 
-from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, EmailStr, Field
-from packages.database.models import UserRole, SubscriptionTier, DealStage
 
 
 # Auth Schemas
@@ -61,27 +59,27 @@ class ExpressCalcRequest(BaseModel):
 
 # Simulator Schemas
 class MonteCarloRequest(BaseModel):
-    leads_mean: Optional[float] = None
-    leads: Optional[float] = None
+    leads_mean: float | None = None
+    leads: float | None = None
     leads_std: float = Field(default=35.0, ge=0.0)
-    conv_qual_pct: Optional[float] = None
-    qual_rate: Optional[float] = None
+    conv_qual_pct: float | None = None
+    qual_rate: float | None = None
     conv_meeting_pct: float = Field(default=62.0, ge=1.0, le=100.0)
-    conv_close_pct: Optional[float] = None
-    close_rate: Optional[float] = None
-    avg_ticket_rub: Optional[float] = None
-    avg_ticket: Optional[float] = None
+    conv_close_pct: float | None = None
+    close_rate: float | None = None
+    avg_ticket_rub: float | None = None
+    avg_ticket: float | None = None
     ticket_std_rub: float = Field(default=25000.0, ge=0.0)
     target_revenue_rub: float = Field(default=4500000.0, ge=1000.0)
     iterations: int = Field(default=10000, ge=100, le=50000)
-    org_id: Optional[str] = "org_default"
+    org_id: str | None = "org_default"
 
 
 # Speech AI Schemas
 class SpeechEvaluationRequest(BaseModel):
-    deal_id: Optional[str] = None
+    deal_id: str | None = None
     client_phone: str = Field(default="+7 (999) 000-00-00")
     duration_seconds: int = Field(default=340)
     manager_name: str = Field(default="Иван Петров")
-    scores: Dict[str, float] = Field(..., description="Scores for 13 criteria (0-10 or 0-100)")
-    comments: Optional[Dict[str, str]] = None
+    scores: dict[str, float] = Field(..., description="Scores for 13 criteria (0-10 or 0-100)")
+    comments: dict[str, str] | None = None

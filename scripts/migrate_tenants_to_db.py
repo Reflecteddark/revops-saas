@@ -3,7 +3,6 @@ Migration Script: Syncs Tenant Registry from tenants_registry.json to Database (
 Safe, idempotent, and non-destructive.
 """
 
-import json
 import logging
 import sys
 from pathlib import Path
@@ -12,9 +11,9 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-from packages.database.session import init_db, SessionLocal
-from packages.database.models import Tenant, SubscriptionTier
-from apps.api.tenant_registry import get_tenants_registry_path, load_tenants_registry
+from apps.api.tenant_registry import load_tenants_registry
+from packages.database.models import SubscriptionTier, Tenant
+from packages.database.session import SessionLocal, init_db
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("tenant_migration")

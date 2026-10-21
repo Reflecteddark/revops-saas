@@ -10,29 +10,31 @@ Provides:
 """
 
 import csv
-from datetime import datetime
+import hmac
 import io
 import json
 import logging
 import os
-from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional
 import urllib.request
 import zipfile
-import hmac
+from datetime import datetime
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from packages.analytics_engine.niche_engine import NICHE_CATALOG, create_dynamic_niche_profile
-from packages.database.session import get_db
+from packages.analytics_engine.niche_engine import (
+    NICHE_CATALOG,
+    create_dynamic_niche_profile,
+)
 from packages.database.models import User, UserRole
+from packages.database.session import get_db
+
 from ..auth import get_current_user, security
-from .admin_router import ALLOWED_ADMIN_KEYS, COOKIE_ADMIN_AUTH_NAME, verify_admin_cookie_token
 from ..tenant_registry import (
     get_all_tenants_summary,
     get_tenant_config,
@@ -40,7 +42,11 @@ from ..tenant_registry import (
     get_tenants_registry_path,
     load_tenants_registry,
     save_tenants_registry,
-    _REGISTRY_CACHE,
+)
+from .admin_router import (
+    ALLOWED_ADMIN_KEYS,
+    COOKIE_ADMIN_AUTH_NAME,
+    verify_admin_cookie_token,
 )
 
 logger = logging.getLogger("tenants_router")
@@ -50,7 +56,7 @@ router = APIRouter(prefix="/tenants", tags=["Client Lifecycle & Fleet"])
 
 def get_current_tenant_user_or_admin(
     request: Request,
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db)
 ) -> Any:
     """
@@ -121,16 +127,16 @@ class RegisterTenantRequest(BaseModel):
     tenant_id: str = Field(..., description="Unique Tenant Code, e.g. TNT-002")
     tenant_name: str = Field(..., description="Client Company Name")
     spreadsheet_id: str = Field(..., description="Google Spreadsheet ID copied from Clean Template")
-    crm_type: Optional[str] = Field("bitrix24", description="CRM Type: bitrix24 or amocrm")
-    crm_webhook_url: Optional[str] = None
-    amo_domain: Optional[str] = None
-    amo_token: Optional[str] = None
-    tg_chat_id: Optional[str] = None
-    niche_id: Optional[str] = "general_b2b"
-    niche_name: Optional[str] = "Универсальный B2B"
-    avg_deal_check: Optional[float] = 150000.0
-    client_email: Optional[str] = None
-    contact_name: Optional[str] = None
+    crm_type: str | None = Field("bitrix24", description="CRM Type: bitrix24 or amocrm")
+    crm_webhook_url: str | None = None
+    amo_domain: str | None = None
+    amo_token: str | None = None
+    tg_chat_id: str | None = None
+    niche_id: str | None = "general_b2b"
+    niche_name: str | None = "Универсальный B2B"
+    avg_deal_check: float | None = 150000.0
+    client_email: str | None = None
+    contact_name: str | None = None
 
 
 class DynamicNicheRequest(BaseModel):
@@ -138,17 +144,17 @@ class DynamicNicheRequest(BaseModel):
 
 
 class UpdateTenantCrmRequest(BaseModel):
-    crm_type: Optional[str] = Field(None, description="Active CRM: amocrm, bitrix24, or hybrid")
-    amo_domain: Optional[str] = None
-    amo_token: Optional[str] = None
-    b24_webhook_url: Optional[str] = None
+    crm_type: str | None = Field(None, description="Active CRM: amocrm, bitrix24, or hybrid")
+    amo_domain: str | None = None
+    amo_token: str | None = None
+    b24_webhook_url: str | None = None
 
 
 # ============================================================================
 # 1. FLEET & NICHE CATALOG ENDPOINTS
 # ============================================================================
 
-@router.get("", response_model=List[Dict[str, Any]])
+@router.get("", response_model=list[dict[str, Any]])
 def list_tenants():
     """List all available client tenants and templates for dynamic switcher."""
     return get_all_tenants_summary()

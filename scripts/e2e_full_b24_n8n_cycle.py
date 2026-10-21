@@ -3,11 +3,11 @@ RevOps Enterprise OS - End-to-End Bitrix24 -> n8n (Gemini Audio) -> Google Sheet
 Executes full clean pipeline for 10 deals with real audio files.
 """
 
+import base64
+import json
 import os
 import sys
-import json
 import time
-import base64
 import urllib.request
 from pathlib import Path
 

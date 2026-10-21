@@ -6,9 +6,9 @@ Verifies:
 - Telemetry properly reflects read replica configuration
 """
 
-import os
-from packages.database.session import get_db, get_read_db, get_db_routing_info, engine, engine_read
 from sqlalchemy.orm import Session
+
+from packages.database.session import get_db, get_db_routing_info, get_read_db
 
 
 def test_db_routing_telemetry():
@@ -41,6 +41,7 @@ def test_get_db_and_get_read_db_sessions():
 
 def test_monitoring_endpoint_exposes_database_telemetry():
     from fastapi.testclient import TestClient
+
     from apps.api.main import app
 
     client = TestClient(app)

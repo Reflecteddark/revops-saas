@@ -1,6 +1,6 @@
 import json
-import subprocess
 import re
+import subprocess
 
 res = subprocess.run(['docker', 'exec', 'n8n', 'n8n', 'export:workflow', '--all', '--stdout'], capture_output=True, text=True)
 workflows = json.loads(res.stdout)
@@ -10,9 +10,9 @@ for wf in workflows:
     wfid = wf.get('id')
     if wfid not in target_ids:
         continue
-    print(f"\n==========================================")
+    print("\n==========================================")
     print(f"Workflow: {wf.get('name')} ({wfid})")
-    print(f"==========================================")
+    print("==========================================")
     findings = []
     for n in wf.get('nodes', []):
         nname = n.get('name', '')

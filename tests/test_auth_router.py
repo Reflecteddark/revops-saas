@@ -10,10 +10,11 @@ Security and validation test suite for Auth Router:
 
 import pytest
 from fastapi.testclient import TestClient
-from apps.api.main import app
+
 from apps.api.auth import hash_password
+from apps.api.main import app
+from packages.database.models import SubscriptionTier, Tenant, User, UserRole
 from packages.database.session import get_db, init_db
-from packages.database.models import Tenant, User, UserRole, SubscriptionTier
 
 
 @pytest.fixture(scope="module", autouse=True)

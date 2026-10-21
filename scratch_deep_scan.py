@@ -1,5 +1,5 @@
-import re
 import json
+import re
 from pathlib import Path
 
 js_files = ["core.js", "deals.js", "calls.js", "charts.js", "analyst.js", "settings.js", "admin.js"]

@@ -6,12 +6,22 @@ Implements Multi-Tenant data isolation, RBAC (7 roles), Pipeline, Deals, Speech 
 import enum
 import uuid
 from datetime import datetime, timezone
-from typing import Optional, List
+
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, DateTime, ForeignKey, 
-    Text, Enum, JSON, Index, func
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
+
 
 class Base(DeclarativeBase):
     pass

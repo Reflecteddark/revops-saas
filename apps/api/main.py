@@ -6,33 +6,34 @@ Implements the 8-Layer Enterprise Architecture:
 - Multi-tenant data layer & OpenAPI 3.1
 """
 
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from packages.database.session import init_db
-from .websocket_manager import manager
-import time
-from fastapi import Request
 from packages.monitoring.metrics import telemetry
+
 from .routers import (
-    auth_router, 
-    diagnostics_router, 
-    radar_router, 
-    simulator_router, 
+    admin_router,
+    auth_router,
     calls_router,
     deals_router,
-    metrics_router,
+    diagnostics_router,
     insights_router,
-    webhooks_router,
+    metrics_router,
     monitoring_router,
-    admin_router,
+    radar_router,
     settings_router,
-    tenants_router
+    simulator_router,
+    tenants_router,
+    webhooks_router,
 )
+from .websocket_manager import manager
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -43,17 +44,20 @@ async def lifespan(app: FastAPI):
     yield
 
 
+import logging
+
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
-from starlette.responses import HTMLResponse, JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi.exception_handlers import http_exception_handler
-import logging
-from packages.monitoring.telegram_alerts import send_telegram_alert, format_error_alert
+from starlette.responses import HTMLResponse, JSONResponse
+
+from packages.monitoring.telegram_alerts import format_error_alert, send_telegram_alert
+
 from .routers.admin_router import (
-    verify_admin_access,
     COOKIE_ADMIN_AUTH_NAME,
     generate_admin_cookie_token,
+    verify_admin_access,
     verify_admin_cookie_token,
 )
 

@@ -7,9 +7,10 @@ Validates:
 - Exception handler is resilient to notification delivery failures.
 """
 
-from unittest.mock import patch, MagicMock
-import pytest
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
+
 from apps.api.main import app
 
 

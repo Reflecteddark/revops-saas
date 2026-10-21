@@ -6,4 +6,4 @@ workflows = json.loads(res.stdout)
 
 print(f"Total workflows: {len(workflows)}")
 for wf in workflows:
-    print(f"- ID: {wf.get('id'):<20} Active: {str(wf.get('active')):<6} Name: {wf.get('name')}")
+    print(f"- ID: {wf.get('id'):<20} Active: {wf.get('active')!s:<6} Name: {wf.get('name')}")

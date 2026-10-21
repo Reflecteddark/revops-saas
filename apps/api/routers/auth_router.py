@@ -4,20 +4,22 @@ Auth Router: Tenant Onboarding, Login, and Profile.
 
 import hashlib
 import hmac
+import logging
 import re
 import secrets
 import uuid
-import logging
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from packages.database.models import Tenant, User, Workspace, UserRole, SubscriptionTier
+from packages.database.models import SubscriptionTier, Tenant, User, UserRole, Workspace
 from packages.database.session import get_db
-from ..auth import hash_password, verify_password, create_access_token, get_current_user
-from ..schemas import TenantRegisterRequest, LoginRequest, TokenResponse, UserResponse
+
+from ..auth import create_access_token, get_current_user, hash_password, verify_password
+from ..schemas import LoginRequest, TenantRegisterRequest, TokenResponse, UserResponse
 
 logger = logging.getLogger(__name__)
 
@@ -142,10 +144,10 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
     Sets signed HttpOnly session cookie and returns user profile.
     """
     from .admin_router import (
-        load_registered_clients,
-        generate_admin_cookie_token,
+        ALLOWED_ADMIN_KEYS,
         COOKIE_ADMIN_AUTH_NAME,
-        ALLOWED_ADMIN_KEYS
+        generate_admin_cookie_token,
+        load_registered_clients,
     )
 
     login_clean = (req.login or "").strip().lower()
@@ -275,19 +277,19 @@ def get_registered_clients_public():
 
 
 class ChangePasswordRequest(BaseModel):
-    login: Optional[str] = None
-    tenant_id: Optional[str] = None
+    login: str | None = None
+    tenant_id: str | None = None
     current_password: str = Field(..., description="Current password")
     new_password: str = Field(..., description="New password")
 
 
 class UpdateProfileRequest(BaseModel):
-    tenant_id: Optional[str] = None
-    login: Optional[str] = None
-    email: Optional[str] = None
-    full_name: Optional[str] = None
-    tg_contact: Optional[str] = None
-    phone: Optional[str] = None
+    tenant_id: str | None = None
+    login: str | None = None
+    email: str | None = None
+    full_name: str | None = None
+    tg_contact: str | None = None
+    phone: str | None = None
 
 
 @router.post("/change-password")
@@ -298,8 +300,12 @@ def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db)):
     tenants_registry.json, and the database.
     """
     import hashlib
+
+    from ..tenant_registry import (
+        load_tenants_registry,
+        save_tenants_registry,
+    )
     from .admin_router import load_registered_clients, save_registered_clients
-    from ..tenant_registry import get_tenants_registry_path, load_tenants_registry, save_tenants_registry
 
     target_login = (req.login or "").strip().lower()
     target_tenant = (req.tenant_id or "TNT-001").strip().upper()
@@ -367,20 +373,24 @@ def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db)):
         setattr(db_user, "hashed_password", hash_password(req.new_password))
         db.commit()
 
+
     return {"status": "ok", "message": "Пароль успешно обновлен. Новый ключ доступа активен."}
 
 
 @router.post("/update-profile")
 def update_profile(req: UpdateProfileRequest):
     """Updates client contact info (Email, Full Name, Telegram) in registry and auth config."""
+    from ..tenant_registry import (
+        load_tenants_registry,
+        save_tenants_registry,
+    )
     from .admin_router import load_registered_clients, save_registered_clients
-    from ..tenant_registry import get_tenants_registry_path, load_tenants_registry, save_tenants_registry
 
     target_tenant = (req.tenant_id or "TNT-001").strip().upper()
     target_login = (req.login or "").strip().lower()
 
     # 1. Update in tenants_registry.json
-    updated_tenant: Optional[Dict[str, Any]] = None
+    updated_tenant: dict[str, Any] | None = None
     try:
         registry = load_tenants_registry()
         updated = False

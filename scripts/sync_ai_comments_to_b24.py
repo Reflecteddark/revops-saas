@@ -2,9 +2,9 @@
 Sync AI Audit Comments from Google Sheets raw_calls directly into Bitrix24 deal timelines.
 """
 
+import json
 import os
 import sys
-import json
 import urllib.request
 
 sys.stdout.reconfigure(encoding='utf-8')

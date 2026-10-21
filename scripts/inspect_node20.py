@@ -11,15 +11,7 @@ for n in wf.get('nodes', []):
     if name.startswith('20.'):
         print(f"=== Node: {name} ===")
         print(n.get('parameters', {}).get('jsCode'))
-    elif name.startswith('30.'):
-        print(f"=== Node: {name} ===")
-        print("URL:", n.get('parameters', {}).get('url'))
-        print("jsonBody:", n.get('parameters', {}).get('jsonBody'))
-    elif name.startswith('31.'):
-        print(f"=== Node: {name} ===")
-        print("URL:", n.get('parameters', {}).get('url'))
-        print("jsonBody:", n.get('parameters', {}).get('jsonBody'))
-    elif name.startswith('33.'):
+    elif name.startswith('30.') or name.startswith('31.') or name.startswith('33.'):
         print(f"=== Node: {name} ===")
         print("URL:", n.get('parameters', {}).get('url'))
         print("jsonBody:", n.get('parameters', {}).get('jsonBody'))

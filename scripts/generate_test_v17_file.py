@@ -1,8 +1,6 @@
 """
 Builds tests/test_v17_invariants.py with all 118 exact QA test cases.
 """
-import os
-import json
 
 code = '''"""
 RevOps Platform V17.6 — Acceptance Invariants Test Suite (118 Tests).

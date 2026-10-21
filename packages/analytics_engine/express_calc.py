@@ -4,7 +4,7 @@ Fast audit taking 3 inputs: monthly leads, average ticket, current close rate.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any
 
 
 @dataclass
@@ -23,7 +23,7 @@ def calculate_express_diagnostic(
     avg_ticket_rub: float,
     current_close_rate_pct: float,
     expected_conversion_uplift_pct: float = 30.0,  # +30% относительный рост конверсии при устранении узких мест
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Computes current revenue and the financial upside from plugging funnel leaks.
     """

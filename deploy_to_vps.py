@@ -1,35 +1,32 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 RevOps Enterprise OS — Unified Deployment Engine (Windows -> GitHub & Aeza VPS)
 Сквозной деплой: валидация синтаксиса -> коммит и пуш в GitHub -> стриминг на VPS -> рестарт служб -> смоук-тест.
 """
 
-import sys
-import os
-import io
-import time
-import json
-import base64
-import tarfile
 import argparse
-import subprocess
-import urllib.request
-import urllib.error
+import base64
+import json
+import os
 import py_compile
-from pathlib import Path
+import subprocess
+import sys
+import tarfile
+import time
+import urllib.error
+import urllib.request
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from pathlib import Path
 
 # Принудительная настройка кодировки консоли Windows на UTF-8 с безопасной заменой
 if getattr(sys.stdout, "encoding", None) and str(sys.stdout.encoding).lower() != "utf-8":
     try:
-        getattr(sys.stdout, "reconfigure")(encoding="utf-8", errors="replace")
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
 if getattr(sys.stderr, "encoding", None) and str(sys.stderr.encoding).lower() != "utf-8":
     try:
-        getattr(sys.stderr, "reconfigure")(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
 
@@ -189,9 +186,9 @@ def sync_git(local_path: Path, commit_msg: str) -> str:
             log("Деплой ОТМЕНЁН. Прод не тронут (код не отправлен в GitHub).", symbol="[-]")
             sys.exit(1)
         else:
-            log(f"GitHub обновлен успешно!", symbol="[+]")
+            log("GitHub обновлен успешно!", symbol="[+]")
     else:
-        log(f"Все коммиты уже на GitHub.", symbol="[+]")
+        log("Все коммиты уже на GitHub.", symbol="[+]")
 
     hash_cmd = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"],
@@ -204,7 +201,7 @@ def sync_git(local_path: Path, commit_msg: str) -> str:
     commit_hash = hash_cmd.stdout.strip() or "unknown"
     return commit_hash
 
-def load_github_token() -> Optional[str]:
+def load_github_token() -> str | None:
     """
     Загружает GitHub Personal Access Token для авторизации в GitHub REST API.
     Приоритет:
@@ -519,7 +516,64 @@ def set_vps_image_tag(vps_path: str, tag: str) -> bool:
     return res.returncode == 0
 
 
-def resolve_commit_sha(repo: str, sha_or_prefix: str, local_path: Optional[Path] = None) -> str:
+BACKUP_SERVICE_UNIT = """[Unit]
+Description=RevOps Hot Backup Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory={vps_path}
+ExecStart=/usr/bin/docker exec revops-api python scripts/telegram_backup_engine.py
+StandardOutput=journal
+StandardError=journal
+"""
+
+BACKUP_TIMER_UNIT = """[Unit]
+Description=Run RevOps Hot Backup every 6 hours
+After=revops-api.service
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+"""
+
+
+def setup_vps_backup_timer(vps_path: str = "/opt/revops-saas") -> bool:
+    """Устанавливает и активирует revops-backup.service и revops-backup.timer на VPS."""
+    log("Настройка автоматического таймера бэкапов (systemd: revops-backup.timer)...", symbol="[>]")
+    service_content = BACKUP_SERVICE_UNIT.format(vps_path=vps_path)
+    timer_content = BACKUP_TIMER_UNIT
+
+    b64_svc = base64.b64encode(service_content.encode("utf-8")).decode("ascii")
+    b64_timer = base64.b64encode(timer_content.encode("utf-8")).decode("ascii")
+
+    cmd = (
+        f"echo '{b64_svc}' | base64 -d > /etc/systemd/system/revops-backup.service && "
+        f"echo '{b64_timer}' | base64 -d > /etc/systemd/system/revops-backup.timer && "
+        f"systemctl daemon-reload && "
+        f"systemctl enable --now revops-backup.timer"
+    )
+    res = subprocess.run(
+        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", cmd],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
+    )
+    if res.returncode != 0:
+        log(f"[-] Ошибка установки systemd таймера бэкапа: {res.stderr.strip()}", symbol="[-]")
+        return False
+
+    log("✅ revops-backup.timer успешно установлен и активирован (каждые 6 часов)", symbol="[+]")
+    return True
+
+
+
+def resolve_commit_sha(repo: str, sha_or_prefix: str, local_path: Path | None = None) -> str:
     """Разрешает короткий или символический SHA в полный 40-значный коммит SHA."""
     if not sha_or_prefix or sha_or_prefix in ("latest", "unknown"):
         return sha_or_prefix
@@ -559,7 +613,7 @@ def resolve_commit_sha(repo: str, sha_or_prefix: str, local_path: Optional[Path]
     return sha_or_prefix
 
 
-def rollback_docker(vps_path: str, target_sha: Optional[str] = None) -> bool:
+def rollback_docker(vps_path: str, target_sha: str | None = None) -> bool:
     """
     Выполняет откат Docker сервиса на указанный SHA (или previous_sha).
     Не запускает git push и не ждёт CI (образ уже существует в GHCR).
@@ -675,13 +729,13 @@ def list_versions(repo: str, vps_path: str):
             print(f"  [{sha_short}] {date_str} - {msg[:45]}{badge}")
         print("=" * 70)
         print("Для отката выполните:")
-        print(f"  python deploy_to_vps.py saas --rollback <sha>")
+        print("  python deploy_to_vps.py saas --rollback <sha>")
         print(f"  python deploy_to_vps.py saas --rollback           (на {previous_sha or 'предыдущую'})\n")
     except Exception as e:
         log(f"[-] Не удалось получить список коммитов: {e}", symbol="[-]")
 
 
-def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str, commit_full_hash: Optional[str] = None) -> bool:
+def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str, commit_full_hash: str | None = None) -> bool:
     """
     Копирует docker-compose.yml на VPS и запускает контейнеры через Docker Compose.
     Создает необходимые директории (data, logs) заранее на VPS.
@@ -751,6 +805,9 @@ def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str,
     curr_short = commit_hash[:7] if commit_hash != "unknown" else "unknown"
     prev_short = old_sha[:7] if old_sha else ""
     update_vps_deploy_info(vps_path, current_sha=curr_short, previous_sha=prev_short)
+
+    # 7. Настройка и запуск таймера резервного копирования
+    setup_vps_backup_timer(vps_path)
     return True
 
 def restart_services(services: list) -> bool:
@@ -846,11 +903,18 @@ def main():
                         help="Откатить сервис saas на указанный SHA (или на previous_sha, если SHA не передан)")
     parser.add_argument("--list-versions", action="store_true",
                         help="Показать список доступных версий и текущее состояние VPS")
+    parser.add_argument("--setup-backup", action="store_true",
+                        help="Установить и активировать revops-backup.timer на VPS")
     args = parser.parse_args()
 
     # Быстрый режим: просмотр доступных версий
     if args.list_versions:
         list_versions(PROJECTS["saas"]["repo"], PROJECTS["saas"]["vps_path"])
+        sys.exit(0)
+
+    # Быстрый режим: настройка таймера бэкапов
+    if args.setup_backup:
+        setup_vps_backup_timer(PROJECTS["saas"]["vps_path"])
         sys.exit(0)
 
     # Быстрый режим: процедура отката (Rollback)

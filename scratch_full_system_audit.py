@@ -1,5 +1,5 @@
-import re
 import json
+import re
 from pathlib import Path
 
 index_html = Path("apps/web/index.html").read_text(encoding="utf-8")

@@ -3,13 +3,17 @@ Unit tests for RevOps SaaS Analytical Engine.
 Verifies: 7 Sins, Express Calc, Monte Carlo 95%, W-Attribution, and 13 Criteria Speech Scoring.
 """
 
-import pytest
-import numpy as np
-from packages.analytics_engine.seven_sins import calculate_seven_sins
-from packages.analytics_engine.express_calc import calculate_express_diagnostic
-from packages.analytics_engine.monte_carlo import run_monte_carlo_simulation, SimulationConfig
 from packages.analytics_engine.attribution import calculate_w_shaped_attribution
-from packages.analytics_engine.speech_scoring import evaluate_speech_scorecard, CRITERIA_WEIGHTS
+from packages.analytics_engine.express_calc import calculate_express_diagnostic
+from packages.analytics_engine.monte_carlo import (
+    SimulationConfig,
+    run_monte_carlo_simulation,
+)
+from packages.analytics_engine.seven_sins import calculate_seven_sins
+from packages.analytics_engine.speech_scoring import (
+    CRITERIA_WEIGHTS,
+    evaluate_speech_scorecard,
+)
 
 
 def test_seven_sins_calculation():

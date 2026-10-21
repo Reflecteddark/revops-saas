@@ -4,7 +4,8 @@ Runs 10,000 stochastic iterations over lead generation, stage conversions, and t
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any, List
+from typing import Any
+
 import numpy as np
 
 
@@ -30,11 +31,11 @@ class SimulationResult:
     p90_optimistic_revenue: float
     prob_target_achieved_pct: float
     std_dev_revenue: float
-    histogram_bins: List[float]
-    histogram_counts: List[int]
+    histogram_bins: list[float]
+    histogram_counts: list[int]
 
 
-def run_monte_carlo_simulation(config: SimulationConfig) -> Dict[str, Any]:
+def run_monte_carlo_simulation(config: SimulationConfig) -> dict[str, Any]:
     """
     Executes vectorized stochastic Monte Carlo simulation using NumPy.
     """

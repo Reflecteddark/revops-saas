@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 VPS Disk Doctor & Health Inspector.
 Diagnostic utility to monitor and optimize NVMe disk usage on production Aeza VPS.
 """
 
-import sys
 import argparse
 import subprocess
+import sys
 from pathlib import Path
 
 # Add project root to path

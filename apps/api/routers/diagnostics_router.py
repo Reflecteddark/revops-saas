@@ -3,21 +3,20 @@ Diagnostics Router: 7 Deadly Sins of Sales, 3-Number Express Calculator,
 and Autonomous AI Self-Healing Crew (Agent 1 DevOps Healer + Agent 2 CCO Repairman).
 """
 
-from datetime import datetime
-import json
 import logging
 import os
-from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional
+from datetime import datetime
 
 from fastapi import APIRouter, Depends
-from packages.analytics_engine.seven_sins import calculate_seven_sins
+
 from packages.analytics_engine.express_calc import calculate_express_diagnostic
+from packages.analytics_engine.seven_sins import calculate_seven_sins
 from packages.database.models import User, UserRole
 from packages.monitoring.metrics import telemetry
+
 from ..auth import get_current_user, require_roles
-from ..schemas import SevenSinsRequest, ExpressCalcRequest
+from ..schemas import ExpressCalcRequest, SevenSinsRequest
 from .calls_router import fetch_calls_from_sheets, get_service_account_path
 
 logger = logging.getLogger("diagnostics_router")

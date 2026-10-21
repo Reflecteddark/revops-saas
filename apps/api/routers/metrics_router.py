@@ -4,7 +4,8 @@ Compatible with TimescaleDB hypertable schema.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Any
+from typing import Any
+
 from fastapi import APIRouter, Query
 
 router = APIRouter(prefix="/metrics", tags=["Metrics & Revenue History"])
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/metrics", tags=["Metrics & Revenue History"])
 def get_revenue_history(
     org_id: str = "org_default",
     months: int = Query(default=6, ge=1, le=24)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Returns time-series of historical and forecasted revenue across P10, P50, and P90 corridors.
     """

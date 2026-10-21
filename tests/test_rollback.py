@@ -9,14 +9,14 @@ Tests:
 
 import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import pytest
+from unittest.mock import MagicMock, patch
 
 from deploy_to_vps import (
-    resolve_commit_sha,
     get_vps_deploy_info,
-    update_vps_deploy_info,
+    resolve_commit_sha,
     rollback_docker,
+    setup_vps_backup_timer,
+    update_vps_deploy_info,
 )
 
 
@@ -89,3 +89,16 @@ def test_rollback_docker_success_flow():
             current_sha="4b1ff5f",
             previous_sha="9f9ec4b"
         )
+
+
+def test_setup_vps_backup_timer():
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0)
+        ok = setup_vps_backup_timer("/opt/revops-saas")
+        assert ok is True
+        args, _ = mock_run.call_args
+        cmd_str = args[0]
+        assert "revops-backup.service" in cmd_str[-1]
+        assert "revops-backup.timer" in cmd_str[-1]
+        assert "systemctl enable --now revops-backup.timer" in cmd_str[-1]
+

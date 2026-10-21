@@ -4,7 +4,7 @@ Calculates lost revenue in rubles (₽) across the 7 critical funnel bottlenecks
 """
 
 from dataclasses import dataclass
-from typing import List, Dict, Any
+from typing import Any
 
 
 @dataclass
@@ -31,7 +31,7 @@ def calculate_seven_sins(
     objection_drop_pct: float = 52.0,
     script_breach_pct: float = 34.0,
     rep_load_variance_pct: float = 45.0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Evaluates pipeline health against 7 production bottlenecks from V17.6:
     1. Скорость первого контакта (SLA response time)

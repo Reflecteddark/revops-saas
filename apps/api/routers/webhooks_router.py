@@ -4,26 +4,30 @@ Processes deal status updates, SLA breaches, call events, writes to tenant Googl
 and triggers real-time WebSocket broadcasts to client dashboards.
 """
 
-from datetime import datetime
 import json
 import logging
 import os
-from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
+from pydantic import BaseModel
 
 from ..websocket_manager import manager
-from .calls_router import CallIngestPayload, append_call_to_sheets, verify_internal_or_admin
+from .calls_router import (
+    CallIngestPayload,
+    append_call_to_sheets,
+    verify_internal_or_admin,
+)
 
 logger = logging.getLogger("webhooks_router")
 
 router = APIRouter(prefix="/webhooks", tags=["CRM & Telephony Webhook Receivers"])
 
 # Global tracker for the last incoming webhook (inspected in Admin UI)
-LAST_INCOMING_WEBHOOK: Dict[str, Any] = {
+LAST_INCOMING_WEBHOOK: dict[str, Any] = {
     "id": "wh_init",
     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     "provider": "system",
@@ -41,7 +45,7 @@ LAST_INCOMING_WEBHOOK: Dict[str, Any] = {
 DLQ_SNAPSHOT_PATH = Path(__file__).resolve().parents[3] / "logs" / "webhooks_dlq_snapshot.json"
 
 
-def _load_persisted_dlq() -> List[Dict[str, Any]]:
+def _load_persisted_dlq() -> list[dict[str, Any]]:
     candidates = [
         DLQ_SNAPSHOT_PATH,
         Path("/opt/revops-saas/logs/webhooks_dlq_snapshot.json"),
@@ -78,7 +82,7 @@ def _save_persisted_dlq():
             logger.error(f"Failed to persist DLQ snapshot to {p}: {e}")
 
 
-WEBHOOKS_HISTORY: List[Dict[str, Any]] = _load_persisted_dlq()
+WEBHOOKS_HISTORY: list[dict[str, Any]] = _load_persisted_dlq()
 if WEBHOOKS_HISTORY:
     LAST_INCOMING_WEBHOOK = WEBHOOKS_HISTORY[0]
 MAX_WEBHOOKS_HISTORY = 30
@@ -88,7 +92,7 @@ def record_incoming_webhook(
     provider: str,
     tenant_id: str,
     payload: Any,
-    headers: Optional[Dict[str, str]] = None,
+    headers: dict[str, str] | None = None,
     event: str = "call_received",
     status: str = "queued"
 ) -> str:
@@ -126,9 +130,9 @@ def record_incoming_webhook(
 def update_webhook_status(
     webhook_id: str,
     status: str,
-    error_msg: Optional[str] = None,
-    execution_time_ms: Optional[float] = None,
-    sheets_synced: Optional[bool] = None
+    error_msg: str | None = None,
+    execution_time_ms: float | None = None,
+    sheets_synced: bool | None = None
 ):
     global WEBHOOKS_HISTORY, LAST_INCOMING_WEBHOOK
     for wh in WEBHOOKS_HISTORY:
@@ -157,8 +161,8 @@ def update_webhook_status(
 
 def resolve_webhook_tenant(
     request: Request,
-    tenant_param: Optional[str] = None,
-    body: Optional[Dict[str, Any]] = None
+    tenant_param: str | None = None,
+    body: dict[str, Any] | None = None
 ) -> str:
     """Resolves target tenant_id from Path, Query param, Header, or Body."""
     # 1. From path parameter
@@ -206,7 +210,7 @@ def verify_tenant_active(tenant_id: str):
             )
 
 
-def parse_call_from_text(text: str, default_manager: str = "Менеджер", default_client: str = "Клиент") -> Dict[str, Any]:
+def parse_call_from_text(text: str, default_manager: str = "Менеджер", default_client: str = "Клиент") -> dict[str, Any]:
     """Helper to detect score and criteria from CRM note / transcription text."""
     score = 10
     cr = [1] * 13
@@ -237,7 +241,7 @@ def parse_call_from_text(text: str, default_manager: str = "Менеджер", d
 # 1. amoCRM INBOUND WEBHOOK RECEIVER
 # ==========================================================================
 
-async def _process_amocrm_webhook(request: Request, tenant_param: Optional[str] = None):
+async def _process_amocrm_webhook(request: Request, tenant_param: str | None = None):
     body = {}
     content_type = request.headers.get("content-type", "")
     try:
@@ -388,7 +392,7 @@ async def _process_amocrm_webhook(request: Request, tenant_param: Optional[str] 
 @router.post("/amo-crm")
 async def receive_amocrm_webhook(
     request: Request,
-    signature: Optional[str] = Header(None, alias="X-Amo-Signature")
+    signature: str | None = Header(None, alias="X-Amo-Signature")
 ):
     """Receives incoming webhook notifications from amoCRM (Legacy URL)."""
     return await _process_amocrm_webhook(request, None)
@@ -398,7 +402,7 @@ async def receive_amocrm_webhook(
 async def receive_amocrm_webhook_tenant(
     tenant_id: str,
     request: Request,
-    signature: Optional[str] = Header(None, alias="X-Amo-Signature")
+    signature: str | None = Header(None, alias="X-Amo-Signature")
 ):
     """Receives incoming webhook notifications scoped to specific tenant ID."""
     return await _process_amocrm_webhook(request, tenant_id)
@@ -408,7 +412,7 @@ async def receive_amocrm_webhook_tenant(
 # 2. Bitrix24 INBOUND WEBHOOK RECEIVER
 # ==========================================================================
 
-async def _process_bitrix24_webhook(request: Request, tenant_param: Optional[str] = None):
+async def _process_bitrix24_webhook(request: Request, tenant_param: str | None = None):
     body = {}
     content_type = request.headers.get("content-type", "")
     try:
@@ -516,7 +520,7 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: Optional[str
 @router.post("/bitrix24")
 async def receive_bitrix24_webhook(
     request: Request,
-    token: Optional[str] = Header(None, alias="X-Bitrix-Token")
+    token: str | None = Header(None, alias="X-Bitrix-Token")
 ):
     """Receives incoming webhook notifications from Bitrix24 (Legacy URL)."""
     return await _process_bitrix24_webhook(request, None)
@@ -526,7 +530,7 @@ async def receive_bitrix24_webhook(
 async def receive_bitrix24_webhook_tenant(
     tenant_id: str,
     request: Request,
-    token: Optional[str] = Header(None, alias="X-Bitrix-Token")
+    token: str | None = Header(None, alias="X-Bitrix-Token")
 ):
     """Receives incoming webhook notifications from Bitrix24 scoped to tenant."""
     return await _process_bitrix24_webhook(request, tenant_id)
@@ -537,20 +541,20 @@ async def receive_bitrix24_webhook_tenant(
 # ==========================================================================
 
 class UniversalCallPayload(BaseModel):
-    call_id: Optional[str] = None
-    deal_id: Optional[str] = None
-    deal_title: Optional[str] = None
-    client_name: Optional[str] = None
-    manager_name: Optional[str] = None
-    duration_sec: Optional[int] = 120
-    amount: Optional[str] = "300 000 ₽"
-    score: Optional[int] = None
-    next_step: Optional[int] = None
-    cr: Optional[List[int]] = None
-    error_summary: Optional[str] = None
-    recommendation: Optional[str] = None
-    transcript: Optional[str] = None
-    tenant_id: Optional[str] = None
+    call_id: str | None = None
+    deal_id: str | None = None
+    deal_title: str | None = None
+    client_name: str | None = None
+    manager_name: str | None = None
+    duration_sec: int | None = 120
+    amount: str | None = "300 000 ₽"
+    score: int | None = None
+    next_step: int | None = None
+    cr: list[int] | None = None
+    error_summary: str | None = None
+    recommendation: str | None = None
+    transcript: str | None = None
+    tenant_id: str | None = None
 
 
 async def _execute_telephony_background(
@@ -575,8 +579,8 @@ async def _execute_telephony_background(
 
 async def _process_telephony_call(
     request: Request,
-    tenant_param: Optional[str] = None,
-    background_tasks: Optional[BackgroundTasks] = None
+    tenant_param: str | None = None,
+    background_tasks: BackgroundTasks | None = None
 ):
     """
     Universal gateway for Mango Office, Zadarma, Sipuni, Asterisk, and n8n.
@@ -680,7 +684,7 @@ async def receive_telephony_call_scoped(tenant_id: str, request: Request, backgr
 
 @router.post("/test-amo")
 @router.post("/{tenant_id}/test-amo")
-async def test_amocrm_call_simulation(request: Request, tenant_id: Optional[str] = "TNT-001"):
+async def test_amocrm_call_simulation(request: Request, tenant_id: str | None = "TNT-001"):
     """Simulates a live incoming call audit from amoCRM for any tenant."""
     verify_internal_or_admin(request)
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
@@ -716,7 +720,7 @@ async def test_amocrm_call_simulation(request: Request, tenant_id: Optional[str]
 
 @router.post("/test-b24")
 @router.post("/{tenant_id}/test-b24")
-async def test_bitrix24_call_simulation(request: Request, tenant_id: Optional[str] = "TNT-001"):
+async def test_bitrix24_call_simulation(request: Request, tenant_id: str | None = "TNT-001"):
     """Simulates a live incoming call audit from Bitrix24 for any tenant."""
     verify_internal_or_admin(request)
     clean_tenant = (tenant_id or "TNT-001").strip().upper()

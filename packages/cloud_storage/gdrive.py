@@ -10,7 +10,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import requests
 from google.auth.transport.requests import Request
@@ -24,13 +24,13 @@ DRIVE_SCOPES = [
     "https://www.googleapis.com/auth/drive.file"
 ]
 
-_TOKEN_CACHE: Dict[str, Any] = {
+_TOKEN_CACHE: dict[str, Any] = {
     "token": None,
     "expiry": 0
 }
 
 
-def find_service_account_path() -> Optional[Path]:
+def find_service_account_path() -> Path | None:
     """Finds service_account.json across standard project and VPS paths."""
     env_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or os.getenv("SERVICE_ACCOUNT_PATH")
     if env_path and Path(env_path).exists():
@@ -51,7 +51,7 @@ def find_service_account_path() -> Optional[Path]:
     return None
 
 
-def get_drive_auth_headers() -> Dict[str, str]:
+def get_drive_auth_headers() -> dict[str, str]:
     """Acquires OAuth2 Bearer token from Service Account credentials."""
     now = time.time()
     if _TOKEN_CACHE["token"] and (now < _TOKEN_CACHE["expiry"] - 60):
@@ -109,11 +109,11 @@ def ensure_subfolder(folder_name: str, parent_id: str = DEFAULT_ROOT_FOLDER_ID) 
 
 
 def upload_file_to_drive(
-    content: Union[str, Path, bytes, io.BytesIO],
+    content: str | Path | bytes | io.BytesIO,
     filename: str,
     folder_id: str = DEFAULT_ROOT_FOLDER_ID,
     mime_type: str = "application/octet-stream"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Uploads a file to Google Drive using standard multipart upload.
     Returns file metadata including web_view_link.
@@ -138,17 +138,17 @@ def upload_file_to_drive(
 
     # Multipart boundary upload
     boundary = f"===============revops_upload_{int(time.time()*1000)}=="
-    delimiter = f"--{boundary}\r\n".encode("utf-8")
-    close_delimiter = f"\r\n--{boundary}--\r\n".encode("utf-8")
+    delimiter = f"--{boundary}\r\n".encode()
+    close_delimiter = f"\r\n--{boundary}--\r\n".encode()
 
     meta_part = (
         f"Content-Type: application/json; charset=UTF-8\r\n\r\n"
         f"{json.dumps(metadata)}\r\n"
-    ).encode("utf-8")
+    ).encode()
 
     data_header = (
         f"Content-Type: {mime_type}\r\n\r\n"
-    ).encode("utf-8")
+    ).encode()
 
     body = delimiter + meta_part + delimiter + data_header + file_bytes + close_delimiter
 
@@ -179,7 +179,7 @@ def upload_file_to_drive(
     }
 
 
-def list_drive_files(folder_id: str = DEFAULT_ROOT_FOLDER_ID, max_results: int = 50) -> List[Dict[str, Any]]:
+def list_drive_files(folder_id: str = DEFAULT_ROOT_FOLDER_ID, max_results: int = 50) -> list[dict[str, Any]]:
     """Lists non-trashed files in folder."""
     headers = get_drive_auth_headers()
     q = f"'{folder_id}' in parents and trashed = false"

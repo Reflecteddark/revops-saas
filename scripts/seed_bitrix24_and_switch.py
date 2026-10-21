@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
 """
 RevOps Enterprise OS - Populate Bitrix24 with 10 Real Deals & Calls, Sync Google Sheets & ЛК
 """
 
-import sys
 import json
+import sys
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
+
 import gspread
 
 # UTF-8 stdout
@@ -434,8 +434,8 @@ def main():
     print("  [+] ОПЕРАЦИЯ УСПЕШНО ЗАВЕРШЕНА!")
     print(f"  • Сделок в Битрикс24: {len(created_b24_deals)} шт.")
     print(f"  • Звонков с ИИ-аудитом: {len(call_rows_to_insert)} шт.")
-    print(f"  • Google Таблица (raw_deals & raw_calls) синхронизирована на 100%.")
-    print(f"  • Активная CRM в реестре переключена на BITRIX24.")
+    print("  • Google Таблица (raw_deals & raw_calls) синхронизирована на 100%.")
+    print("  • Активная CRM в реестре переключена на BITRIX24.")
     print("=" * 70)
 
 

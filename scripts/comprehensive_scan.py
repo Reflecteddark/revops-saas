@@ -1,6 +1,6 @@
 import json
-import subprocess
 import re
+import subprocess
 
 res = subprocess.run(['docker', 'exec', 'n8n', 'n8n', 'export:workflow', '--id=Sh4JkQtMKVdeRJn5', '--stdout'], capture_output=True, text=True)
 wf = json.loads(res.stdout)

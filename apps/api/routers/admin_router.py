@@ -8,21 +8,21 @@ Replaces all desktop batch files (.bat) with a unified, secure REST & Web GUI co
 - Live Execution Console & Log Stream
 """
 
-from datetime import datetime, timezone
 import hashlib
 import hmac
 import json
 import logging
 import os
-from pathlib import Path
-import socket
 import shutil
+import socket
 import subprocess
 import sys
-from threading import Lock
 import time
-from typing import Any, Dict, List, Optional
 import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+from threading import Lock
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
@@ -55,7 +55,7 @@ def generate_admin_cookie_token(secret: str = REVOPS_ADMIN_KEY) -> str:
     import hashlib
     import hmac
     ts = str(int(time.time()))
-    sig = hmac.new(secret.encode("utf-8"), f"revops_admin_auth:{ts}".encode("utf-8"), hashlib.sha256).hexdigest()
+    sig = hmac.new(secret.encode("utf-8"), f"revops_admin_auth:{ts}".encode(), hashlib.sha256).hexdigest()
     return f"{ts}.{sig}"
 
 
@@ -72,7 +72,7 @@ def verify_admin_cookie_token(token: str, max_age_sec: int = 7 * 86400) -> bool:
         if (now - ts) > max_age_sec or ts > (now + 300):
             return False
         for cand in ALLOWED_ADMIN_KEYS:
-            expected = hmac.new(cand.encode("utf-8"), f"revops_admin_auth:{ts_str}".encode("utf-8"), hashlib.sha256).hexdigest()
+            expected = hmac.new(cand.encode("utf-8"), f"revops_admin_auth:{ts_str}".encode(), hashlib.sha256).hexdigest()
             if hmac.compare_digest(expected, signature):
                 return True
         return False
@@ -213,7 +213,7 @@ else:
 FEATURES_CONFIG_FILE = ENTERPRISE_OS_DIR / "features_config.json"
 
 # Global buffer for live admin console output
-_CONSOLE_LOG_BUFFER: List[Dict[str, Any]] = []
+_CONSOLE_LOG_BUFFER: list[dict[str, Any]] = []
 _MAX_CONSOLE_BUFFER = 200
 
 
@@ -245,7 +245,7 @@ def is_port_listening(port: int, host: str = "127.0.0.1") -> bool:
 _CLIENTS_LOCK = Lock()
 _ARCHIVE_LOCK = Lock()
 
-_status_cache: Dict[str, tuple[float, Dict[str, Any]]] = {}
+_status_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 _STATUS_TTL = 15.0
 
 
@@ -259,7 +259,7 @@ def _cached_status(key: str, fn):
     return val
 
 
-def get_n8n_status() -> Dict[str, Any]:
+def get_n8n_status() -> dict[str, Any]:
     def _compute():
         port = 5678
         listening = is_port_listening(port)
@@ -281,7 +281,7 @@ def get_n8n_status() -> Dict[str, Any]:
     return _cached_status("n8n_status", _compute)
 
 
-def get_tunnel_status() -> Dict[str, Any]:
+def get_tunnel_status() -> dict[str, Any]:
     def _compute():
         url = "https://webhook.ai-rop.ru"
         is_running = False
@@ -331,7 +331,7 @@ def get_tunnel_status() -> Dict[str, Any]:
     return _cached_status("tunnel_status", _compute)
 
 
-def get_task_scheduler_status(task_name: str) -> Dict[str, Any]:
+def get_task_scheduler_status(task_name: str) -> dict[str, Any]:
     def _compute():
         try:
             if sys.platform.startswith("linux"):
@@ -401,7 +401,7 @@ def get_task_scheduler_status(task_name: str) -> Dict[str, Any]:
             }
     return _cached_status(f"task_{task_name}", _compute)
 
-def get_sheets_service_account_status() -> Dict[str, Any]:
+def get_sheets_service_account_status() -> dict[str, Any]:
     candidates = [
         ENTERPRISE_OS_DIR / "service_account.json",
         Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "service_account.json",
@@ -434,7 +434,7 @@ def get_sheets_service_account_status() -> Dict[str, Any]:
     }
 
 
-def find_python_script(script_filename: str) -> Optional[Path]:
+def find_python_script(script_filename: str) -> Path | None:
     search_dirs = [
         ENTERPRISE_OS_DIR / "scripts",
         ENTERPRISE_OS_DIR,
@@ -458,19 +458,19 @@ class FleetActionRequest(BaseModel):
 
 class SheetsActionRequest(BaseModel):
     action: str = Field(..., description="Action: sync_all, scan, starter_only, target")
-    spreadsheet_id: Optional[str] = Field(None, description="Target spreadsheet ID when action is target")
+    spreadsheet_id: str | None = Field(None, description="Target spreadsheet ID when action is target")
 
 
 class TaskActionRequest(BaseModel):
     action: str = Field(..., description="Action: run_daily_now, install_daily, uninstall_daily, run_healer_now")
-    time_str: Optional[str] = Field("04:00", description="Time for daily task, e.g. 04:00, 08:00")
+    time_str: str | None = Field("04:00", description="Time for daily task, e.g. 04:00, 08:00")
 
 
 class CRMActionRequest(BaseModel):
     action: str = Field(..., description="Action: show_stages, dry_run, sync_deals, switch_crm")
-    tenant_id: Optional[str] = Field("TNT-001", description="Tenant ID")
-    crm_type: Optional[str] = Field(None, description="Target CRM type: bitrix24 or amocrm")
-    days: Optional[int] = Field(30, description="Lookback window in days")
+    tenant_id: str | None = Field("TNT-001", description="Tenant ID")
+    crm_type: str | None = Field(None, description="Target CRM type: bitrix24 or amocrm")
+    days: int | None = Field(30, description="Lookback window in days")
 
 
 # ============================================================================
@@ -1143,7 +1143,7 @@ DEFAULT_SYSTEM_CLIENTS = [
 ]
 
 
-def load_registered_clients() -> List[Dict[str, Any]]:
+def load_registered_clients() -> list[dict[str, Any]]:
     if CLIENTS_FILE.exists():
         try:
             with open(CLIENTS_FILE, "r", encoding="utf-8") as f:
@@ -1153,7 +1153,7 @@ def load_registered_clients() -> List[Dict[str, Any]]:
     return list(DEFAULT_SYSTEM_CLIENTS)
 
 
-def save_registered_clients(clients: List[Dict[str, Any]]):
+def save_registered_clients(clients: list[dict[str, Any]]):
     try:
         CLIENTS_FILE.parent.mkdir(parents=True, exist_ok=True)
         tmp = CLIENTS_FILE.parent / f".tmp_clients_{os.getpid()}_{time.time_ns()}.json"
@@ -1251,7 +1251,7 @@ def delete_client(login: str):
 # MULTI-TENANT LIFECYCLE MANAGEMENT (CLIENT FLEET CENTER)
 # ============================================================================
 
-def get_all_tenants_registry_paths() -> List[Path]:
+def get_all_tenants_registry_paths() -> list[Path]:
     paths = [
         ENTERPRISE_OS_DIR / "tenants_registry.json",
         ENTERPRISE_OS_DIR / "multitenant_revops" / "tenants_registry.json",
@@ -1269,7 +1269,7 @@ def get_all_tenants_registry_paths() -> List[Path]:
     return existing
 
 
-def get_all_tenants_archive_paths() -> List[Path]:
+def get_all_tenants_archive_paths() -> list[Path]:
     return [
         DATA_DIR / "tenants_archive.json",
         ENTERPRISE_OS_DIR / "tenants_archive.json",
@@ -1277,7 +1277,7 @@ def get_all_tenants_archive_paths() -> List[Path]:
     ]
 
 
-def load_archived_tenants() -> List[Dict[str, Any]]:
+def load_archived_tenants() -> list[dict[str, Any]]:
     for p in get_all_tenants_archive_paths():
         if p.exists():
             try:
@@ -1288,7 +1288,7 @@ def load_archived_tenants() -> List[Dict[str, Any]]:
     return []
 
 
-def save_archived_tenants(archives: List[Dict[str, Any]]):
+def save_archived_tenants(archives: list[dict[str, Any]]):
     for p in get_all_tenants_archive_paths():
         try:
             p.parent.mkdir(parents=True, exist_ok=True)
@@ -1302,47 +1302,47 @@ def save_archived_tenants(archives: List[Dict[str, Any]]):
             logger.warning(f"Failed to write archive to {p}: {e}")
 
 
-def sync_save_registry(registry_data: Dict[str, Any]):
+def sync_save_registry(registry_data: dict[str, Any]):
     from ..tenant_registry import save_tenants_registry
     return save_tenants_registry(registry_data, sync_mirrors=True)
 
 
 class TenantProvisionRequest(BaseModel):
     name: str = Field(..., description="Название компании клиента")
-    email: Optional[str] = Field(None, description="Email клиента для Google Sheets и ЛК")
-    password: Optional[str] = Field(None, description="Пароль для ЛК")
-    role: Optional[str] = Field("РОП • Руководитель ОП", description="Роль в системе")
+    email: str | None = Field(None, description="Email клиента для Google Sheets и ЛК")
+    password: str | None = Field(None, description="Пароль для ЛК")
+    role: str | None = Field("РОП • Руководитель ОП", description="Роль в системе")
     crm_type: str = Field("amocrm", description="Тип CRM: 'amocrm' или 'bitrix24'")
-    amo_domain: Optional[str] = Field(None, description="Домен amoCRM")
-    amo_token: Optional[str] = Field(None, description="Долгоживущий токен API v4")
-    crm_webhook: Optional[str] = Field(None, description="Входящий вебхук REST API Bitrix24")
-    niche_name: Optional[str] = Field("Универсальный B2B", description="Ниша / индустрия")
-    avg_deal_check: Optional[int] = Field(150000, description="Средний чек сделки")
-    target_next_step: Optional[str] = Field("Фиксация следующего контакта с датой и временем", description="Целевой Next Step")
-    sheet_id: Optional[str] = Field(None, description="Существующий ID таблицы Google (иначе авто-клон Clean Starter)")
+    amo_domain: str | None = Field(None, description="Домен amoCRM")
+    amo_token: str | None = Field(None, description="Долгоживущий токен API v4")
+    crm_webhook: str | None = Field(None, description="Входящий вебхук REST API Bitrix24")
+    niche_name: str | None = Field("Универсальный B2B", description="Ниша / индустрия")
+    avg_deal_check: int | None = Field(150000, description="Средний чек сделки")
+    target_next_step: str | None = Field("Фиксация следующего контакта с датой и временем", description="Целевой Next Step")
+    sheet_id: str | None = Field(None, description="Существующий ID таблицы Google (иначе авто-клон Clean Starter)")
 
 
 class TenantUpdateRequest(BaseModel):
-    tenant_name: Optional[str] = None
-    client_email: Optional[str] = None
-    crm_type: Optional[str] = None
-    amo_domain: Optional[str] = None
-    amo_token: Optional[str] = None
-    crm_webhook_url: Optional[str] = None
-    niche_name: Optional[str] = None
-    avg_deal_check: Optional[int] = None
-    target_next_step: Optional[str] = None
-    new_password: Optional[str] = None
+    tenant_name: str | None = None
+    client_email: str | None = None
+    crm_type: str | None = None
+    amo_domain: str | None = None
+    amo_token: str | None = None
+    crm_webhook_url: str | None = None
+    niche_name: str | None = None
+    avg_deal_check: int | None = None
+    target_next_step: str | None = None
+    new_password: str | None = None
 
 
 class TenantStatusRequest(BaseModel):
     action: str = Field(..., description="'freeze', 'unfreeze', 'offboard'")
-    reason: Optional[str] = Field(None, description="Причина смены статуса")
+    reason: str | None = Field(None, description="Причина смены статуса")
 
 
 class ScoringCalibrateRequest(BaseModel):
     z_score_threshold: float = Field(2.5, description="Новый порог сигма Z-Score")
-    tenant_id: Optional[str] = Field(None, description="Tenant ID (или глобально)")
+    tenant_id: str | None = Field(None, description="Tenant ID (или глобально)")
 
 
 @router.get("/tenants")
@@ -1427,7 +1427,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         sys.path.insert(0, str(prov_dir))
 
     try:
-        from tenant_provisioner import provision_tenant, load_registry
+        from tenant_provisioner import load_registry, provision_tenant
         
         tenant_record = provision_tenant(
             company_name=company_name,
@@ -1444,7 +1444,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
     except Exception as e:
         logger.error(f"Tenant provisioning error: {e}", exc_info=True)
         append_console_log(f"[-] Сбой развертывания тенанта: {e}", "error")
-        raise HTTPException(status_code=500, detail=f"Ошибка развертывания тенанта: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка развертывания тенанта: {e!s}")
 
     if not tenant_record:
         err_msg = (
@@ -1504,7 +1504,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         "Добро пожаловать в RevOps Enterprise OS — интеллектуальную систему речевого аудита и RevOps-аналитики.",
         "",
         "🔑 ВАШИ ДОСТУПЫ В ЛИЧНЫЙ КАБИНЕТ:",
-        f"• Портал:    https://report.ai-rop.ru (или локально)",
+        "• Портал:    https://report.ai-rop.ru (или локально)",
         f"• Логин:     {login}",
         f"• Пароль:    {plain_password}",
         f"• Роль:      {req.role or 'РОП • Руководитель ОП'}",
@@ -1820,7 +1820,7 @@ def calibrate_scoring_threshold(req: ScoringCalibrateRequest):
 
 class CCOActionRequest(BaseModel):
     action: str = Field(..., description="Action: summary, pipeline, forecast, team, stalled, send_telegram, workflow_audit")
-    tenant: Optional[str] = Field("TNT-001", description="Tenant ID")
+    tenant: str | None = Field("TNT-001", description="Tenant ID")
 
 
 @router.post("/cco/action")
@@ -1999,8 +1999,8 @@ def execute_healer_action(req: HealerActionRequest):
 
 class AgentActionRequest(BaseModel):
     agent: str = Field(..., description="Target: a1, a2, a3, a4, a5, a6, or drill")
-    action: Optional[str] = Field("run", description="Action to perform")
-    tenant: Optional[str] = Field("TNT-001", description="Tenant ID")
+    action: str | None = Field("run", description="Action to perform")
+    tenant: str | None = Field("TNT-001", description="Tenant ID")
 
 
 @router.get("/agents/telemetry")
@@ -2445,7 +2445,7 @@ def archive_desktop_launchers():
 # CRM CONNECTOR & PIPELINE INTEGRATION
 # ============================================================================
 
-def _find_crm_connector_script(crm_type: str) -> Optional[Path]:
+def _find_crm_connector_script(crm_type: str) -> Path | None:
     filename = "bitrix24_connector.py" if (crm_type or "").lower() == "bitrix24" else "amocrm_connector.py"
     candidates = [
         ENTERPRISE_OS_DIR / filename,
@@ -2600,6 +2600,7 @@ def execute_crm_action(req: CRMActionRequest):
         # Broadcast real-time WebSocket event to active dashboard instances
         try:
             import asyncio
+
             from ..websocket_manager import manager
             asyncio.create_task(manager.broadcast(tenant_id, {
                 "type": "crm_switched",
@@ -2738,10 +2739,10 @@ def restore_desktop_launchers():
 class SimulateCallPayload(BaseModel):
     tenant_id: str = Field(default="TNT-001", description="Target tenant ID")
     provider: str = Field(default="mango", description="Provider: mango, zadarma, sipuni, bitrix24, amocrm")
-    manager_name: Optional[str] = "Менеджер"
-    client_phone: Optional[str] = "+7 (999) 123-45-67"
-    duration_sec: Optional[int] = 145
-    simulate_leak: Optional[bool] = False
+    manager_name: str | None = "Менеджер"
+    client_phone: str | None = "+7 (999) 123-45-67"
+    duration_sec: int | None = 145
+    simulate_leak: bool | None = False
 
 
 @router.get("/webhooks/last-incoming")
@@ -2757,9 +2758,9 @@ async def simulate_telephony_call(payload: SimulateCallPayload):
     Simulates a live incoming call audit from telephony or CRM for testing on-the-fly.
     Genuinely appends to tenant Google Sheet and broadcasts to WebSocket!
     """
-    from .webhooks_router import record_incoming_webhook
-    from .calls_router import CallIngestPayload, append_call_to_sheets
     from ..websocket_manager import manager
+    from .calls_router import CallIngestPayload, append_call_to_sheets
+    from .webhooks_router import record_incoming_webhook
 
     clean_tenant = (payload.tenant_id or "TNT-001").strip().upper()
     call_id = f"sim_{payload.provider}_{int(time.time())}"
@@ -2944,7 +2945,7 @@ def get_tenant_health_doctor(tenant_id: str):
             "status": "ok" if total_calls > 0 else "warn",
             "detail": f"Загружено звонков: {total_calls} • Последний: {last_date}"
         })
-    except Exception as e:
+    except Exception:
         checks.append({
             "key": "calls",
             "title": "Речевой поток звонков",
@@ -3058,6 +3059,7 @@ def create_system_backup():
     Saves to backups/ directory and returns metadata.
     """
     import zipfile
+
     from ..tenant_registry import get_tenants_registry_path, load_tenants_registry
 
     ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -3221,7 +3223,7 @@ def reconcile_data_lineage(tenant_id: str = "TNT-001"):
 QUARANTINE_FILE = BASE_DIR / "logs" / "quarantine_registry.json"
 
 
-def _get_initial_quarantine_data() -> List[Dict[str, Any]]:
+def _get_initial_quarantine_data() -> list[dict[str, Any]]:
     return [
         {
             "id": "quar_call_101",
@@ -3266,7 +3268,7 @@ def _get_initial_quarantine_data() -> List[Dict[str, Any]]:
     ]
 
 
-def load_quarantine_items() -> List[Dict[str, Any]]:
+def load_quarantine_items() -> list[dict[str, Any]]:
     if QUARANTINE_FILE.exists():
         try:
             with open(QUARANTINE_FILE, "r", encoding="utf-8") as f:
@@ -3280,7 +3282,7 @@ def load_quarantine_items() -> List[Dict[str, Any]]:
     return initial
 
 
-def save_quarantine_items(items: List[Dict[str, Any]]):
+def save_quarantine_items(items: list[dict[str, Any]]):
     try:
         QUARANTINE_FILE.parent.mkdir(parents=True, exist_ok=True)
         tmp = QUARANTINE_FILE.parent / f".tmp_quar_{os.getpid()}_{time.time_ns()}.json"
@@ -3296,7 +3298,7 @@ def save_quarantine_items(items: List[Dict[str, Any]]):
 class QuarantineResolveRequest(BaseModel):
     call_id: str = Field(..., description="ID звонка в карантине")
     action: str = Field(..., description="'approve' (вернуть в зачёт) или 'dismiss' (оставить в карантине)")
-    note: Optional[str] = Field(None, description="Примечание модератора")
+    note: str | None = Field(None, description="Примечание модератора")
 
 
 @router.get("/quarantine/calls")
@@ -3336,8 +3338,8 @@ async def resolve_quarantined_call(req: QuarantineResolveRequest):
     if action == "approve":
         target["status"] = "approved"
         # Append to tenant's Google Sheets
-        from .calls_router import CallIngestPayload, append_call_to_sheets
         from ..websocket_manager import manager
+        from .calls_router import CallIngestPayload, append_call_to_sheets
 
         call_payload = CallIngestPayload(
             id=target.get("id"),

@@ -3,12 +3,10 @@ AI Insights Router: Generates automated strategic revenue recommendations.
 Integrates Claude / Gemini API or local deterministic CCO intelligence engine.
 """
 
-from datetime import datetime, timezone
-import json
 import logging
 import os
-import re
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from fastapi import APIRouter, Body, Query
 from pydantic import BaseModel
 
@@ -19,15 +17,15 @@ router = APIRouter(prefix="/insights", tags=["AI Insights & Recommendations"])
 
 class AnalystOverviewRequest(BaseModel):
     tenant_id: str = "TNT-001"
-    calls: Optional[List[Dict[str, Any]]] = None
-    deals: Optional[List[Dict[str, Any]]] = None
-    metrics: Optional[Dict[str, Any]] = None
+    calls: list[dict[str, Any]] | None = None
+    deals: list[dict[str, Any]] | None = None
+    metrics: dict[str, Any] | None = None
 
 
 class AnalystChatRequest(BaseModel):
     message: str
     tenant_id: str = "TNT-001"
-    context: Optional[Dict[str, Any]] = None
+    context: dict[str, Any] | None = None
 
 
 # ==========================================================================
@@ -40,7 +38,7 @@ async def get_ai_insights_summary(
     p10: float = Query(default=11500000.0),
     p50: float = Query(default=15800000.0),
     p90: float = Query(default=19200000.0)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Synthesizes AI insights analyzing Monte Carlo corridors and at-risk deals.
     Provides 3 prioritized action items to achieve target P50.
@@ -65,7 +63,7 @@ async def get_ai_insights_summary(
                 messages=[{"role": "user", "content": prompt}]
             )
             ai_text = next(
-                (getattr(b, "text") for b in msg.content if hasattr(b, "text")),
+                (b.text for b in msg.content if hasattr(b, "text")),
                 str(msg.content[0]) if msg.content else "",
             )
             return {
@@ -119,7 +117,7 @@ async def get_ai_insights_summary(
 # ==========================================================================
 
 @router.post("/analyst/overview")
-async def get_analyst_overview(payload: AnalystOverviewRequest = Body(...)) -> Dict[str, Any]:
+async def get_analyst_overview(payload: AnalystOverviewRequest = Body(...)) -> dict[str, Any]:
     """
     Returns high-level CCO Intelligence Overview:
     Executive Summary, 4 Core KPI Cards, Top Anomalies, and Suggested Prompts.
@@ -277,7 +275,7 @@ async def get_analyst_overview(payload: AnalystOverviewRequest = Body(...)) -> D
 # ==========================================================================
 
 @router.post("/analyst/chat")
-async def chat_with_analyst(payload: AnalystChatRequest = Body(...)) -> Dict[str, Any]:
+async def chat_with_analyst(payload: AnalystChatRequest = Body(...)) -> dict[str, Any]:
     """
     Direct Interactive Dialogue with Chief Commercial Officer (CCO / Agent 2).
     Generates strategic answers analyzing live calls, deals, and leakage points.
@@ -335,18 +333,18 @@ async def chat_with_analyst(payload: AnalystChatRequest = Body(...)) -> Dict[str
         )
     elif "менеджер" in msg or "слаб" in msg or "сотрудник" in msg:
         reply = (
-            f"### Разбор компетенций и слабых мест менеджеров\n\n"
-            f"По результатам аудита речевых треков (13 критериев B2B-аудита):\n\n"
-            f"1. **Заряна (Senior B2B Specialist)**:\n"
-            f"   - **Сильные стороны**: Высокий балл квалификации (cr1–cr3 = 100%), уверенная аргументация ценности.\n"
-            f"   - **Зона роста**: В 15% звонков отпускает инициативу в конце разговора (критерий cr13: Next Step). "
-            f"Рекомендация: дожимать до конкретного времени в календаре.\n\n"
-            f"2. **Алексей Смирнов (Middle Account Executive)**:\n"
-            f"   - **Сильные стороны**: Отличное установление контакта, высокий темп речи.\n"
-            f"   - **Зона роста**: Спешит презентовать продукт до выявления болей клиента (просадка cr4/cr5 = 60%). "
-            f"Клиент ещё не осознал проблему, а менеджер уже называет стоимость.\n\n"
-            f"#### Решение CCO:\n"
-            f"Провести 20-минутный ролевой разбор (тренинг) по блоку «Выявление скрытых возражений» до 15:00."
+            "### Разбор компетенций и слабых мест менеджеров\n\n"
+            "По результатам аудита речевых треков (13 критериев B2B-аудита):\n\n"
+            "1. **Заряна (Senior B2B Specialist)**:\n"
+            "   - **Сильные стороны**: Высокий балл квалификации (cr1–cr3 = 100%), уверенная аргументация ценности.\n"
+            "   - **Зона роста**: В 15% звонков отпускает инициативу в конце разговора (критерий cr13: Next Step). "
+            "Рекомендация: дожимать до конкретного времени в календаре.\n\n"
+            "2. **Алексей Смирнов (Middle Account Executive)**:\n"
+            "   - **Сильные стороны**: Отличное установление контакта, высокий темп речи.\n"
+            "   - **Зона роста**: Спешит презентовать продукт до выявления болей клиента (просадка cr4/cr5 = 60%). "
+            "Клиент ещё не осознал проблему, а менеджер уже называет стоимость.\n\n"
+            "#### Решение CCO:\n"
+            "Провести 20-минутный ролевой разбор (тренинг) по блоку «Выявление скрытых возражений» до 15:00."
         )
     elif "дожим" in msg or "сделк" in msg or "завис" in msg:
         reply = (
@@ -364,25 +362,25 @@ async def chat_with_analyst(payload: AnalystChatRequest = Body(...)) -> Dict[str
         )
     elif "прогноз" in msg or "план" in msg or "монте" in msg or "месяц" in msg:
         reply = (
-            f"### Прогноз выполнения плана (Монте-Карло P50)\n\n"
-            f"- **Оптимистичный сценарий (P90)**: **19 200 000 ₽** (вероятность 18%)\n"
-            f"- **Медианный целевой план (P50)**: **15 800 000 ₽** (вероятность 84%)\n"
-            f"- **Пессимистичный порог (P10)**: **11 500 000 ₽** (вероятность 98%)\n\n"
-            f"#### Что отделяет компанию от выполнения P50:\n"
-            f"Текущая скорость движения по воронке достаточна для закрытия 13.5 млн ₽. "
-            f"Чтобы закрыть оставшиеся **2.3 млн ₽** до P50, необходимо:\n"
-            f"1. Дожать 3 зависшие сделки на этапе КП.\n"
-            f"2. Поднять средний чек на этапе презентации за счёт пакетного предложения."
+            "### Прогноз выполнения плана (Монте-Карло P50)\n\n"
+            "- **Оптимистичный сценарий (P90)**: **19 200 000 ₽** (вероятность 18%)\n"
+            "- **Медианный целевой план (P50)**: **15 800 000 ₽** (вероятность 84%)\n"
+            "- **Пессимистичный порог (P10)**: **11 500 000 ₽** (вероятность 98%)\n\n"
+            "#### Что отделяет компанию от выполнения P50:\n"
+            "Текущая скорость движения по воронке достаточна для закрытия 13.5 млн ₽. "
+            "Чтобы закрыть оставшиеся **2.3 млн ₽** до P50, необходимо:\n"
+            "1. Дожать 3 зависшие сделки на этапе КП.\n"
+            "2. Поднять средний чек на этапе презентации за счёт пакетного предложения."
         )
     elif "отказ" in msg or "клиент" in msg or "почему" in msg:
         reply = (
-            f"### Анализ причин отказов и потерь клиентов\n\n"
-            f"Главные причины отказов в текущей выборке звонков:\n\n"
-            f"1. **«Дорого» (48% отказов)** — возникает, когда цена названа до фиксации ROI и ценности внедрения.\n"
-            f"2. **«Нет времени / подумаем» (36% отказов)** — вежливый уход от решения из-за отсутствия срочности (FOMO).\n"
-            f"3. **«Не с кем согласовать» (16% отказов)** — общение велось не с ЛПР.\n\n"
-            f"#### Корректирующий скрипт:\n"
-            f"> *«Понимаю, вопрос бюджета ключевой. Но если мы сможем окупить внедрение уже в первые 45 дней за счёт сокращения сливов — имеет смысл взглянуть на цифры детально?»*"
+            "### Анализ причин отказов и потерь клиентов\n\n"
+            "Главные причины отказов в текущей выборке звонков:\n\n"
+            "1. **«Дорого» (48% отказов)** — возникает, когда цена названа до фиксации ROI и ценности внедрения.\n"
+            "2. **«Нет времени / подумаем» (36% отказов)** — вежливый уход от решения из-за отсутствия срочности (FOMO).\n"
+            "3. **«Не с кем согласовать» (16% отказов)** — общение велось не с ЛПР.\n\n"
+            "#### Корректирующий скрипт:\n"
+            "> *«Понимаю, вопрос бюджета ключевой. Но если мы сможем окупить внедрение уже в первые 45 дней за счёт сокращения сливов — имеет смысл взглянуть на цифры детально?»*"
         )
     else:
         reply = (

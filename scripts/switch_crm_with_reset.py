@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 RevOps Enterprise OS - Automated CRM Switch with Google Sheets & ЛК State Reset
 Enforces:
@@ -12,16 +11,17 @@ Enforces:
 """
 
 import sys
+
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 import argparse
 import json
-import os
 import re
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
+
 import gspread
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -211,11 +211,11 @@ def fetch_amocrm_calls(tenant_cfg: dict, real_leads: list) -> list:
         score_int = int(score_m.group(1)) if score_m else 8
         next_step = 1 if "След. шаг: ✅" in text else 0
 
-        err_m = re.search(r"⚠️ Замечания:\s*(.*?)(?=\n\s*Совет менеджеру:|\Z)", text, re.S)
+        err_m = re.search(r"⚠️ Замечания:\s*(.*?)(?=\n\s*Совет менеджеру:|\Z)", text, re.DOTALL)
         err_text = err_m.group(1).strip() if err_m else "Не зафиксирован жесткий Next Step с конкретной датой и временем."
-        rec_m = re.search(r"Совет менеджеру:\s*(.*?)(?=\n\s*──────────|\Z)", text, re.S)
+        rec_m = re.search(r"Совет менеджеру:\s*(.*?)(?=\n\s*──────────|\Z)", text, re.DOTALL)
         rec_text = rec_m.group(1).strip() if rec_m else "Предложить бесплатный экспресс-аудит 5 звонков и согласовать Zoom."
-        sut_m = re.search(r"Суть:\s*(.*?)(?=\n\s*След\. шаг:|\Z)", text, re.S)
+        sut_m = re.search(r"Суть:\s*(.*?)(?=\n\s*След\. шаг:|\Z)", text, re.DOTALL)
         sut_text = sut_m.group(1).strip() if sut_m else text[:200]
 
         # Criteria allocation: cr1 is next_step; distribute remaining points across cr2..cr13
@@ -473,7 +473,7 @@ def execute_crm_switch_and_reset(tenant_id: str = "TNT-001", target_crm: str = "
     avg_score = sum(float(r[19]) for r in new_call_rows) / max(1, len(new_call_rows))
     next_step_count = sum(1 for r in new_call_rows if r[20] == "1")
 
-    print(f"\n[6/6] Результат сброса и синхронизации:")
+    print("\n[6/6] Результат сброса и синхронизации:")
     print(f"  • Активная CRM: {target_crm.upper()}")
     print(f"  • Активных сделок в воронке: {active_count} шт. ({pipe_sum:,.0f} ₽)")
     print(f"  • Закрытых выигранных сделок: {won_count} шт. ({won_sum:,.0f} ₽)")

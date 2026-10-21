@@ -2,14 +2,13 @@
 Telegram Alert Dispatcher for RevOps Intelligence SaaS.
 Dispatches critical 500 errors and service incident alerts to Telegram.
 """
-import os
 import json
 import logging
-import urllib.request
+import os
 import traceback
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Tuple
 
 logger = logging.getLogger("revops_alerts")
 
@@ -17,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CREDS_FILE = BASE_DIR / "telegram_credentials.json"
 
 
-def get_telegram_creds() -> Tuple[Optional[str], Optional[str], str]:
+def get_telegram_creds() -> tuple[str | None, str | None, str]:
     """Retrieve Telegram credentials from environment variables or credentials file."""
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID") or os.getenv("ADMIN_CHAT_ID")

@@ -5,13 +5,18 @@ Celery Background Tasks:
 """
 
 import time
-from typing import Dict, Any, Optional, List
+from typing import Any
+
+from packages.analytics_engine.monte_carlo import (
+    SimulationConfig,
+    run_monte_carlo_simulation,
+)
+
 from .celery_app import celery_app
-from packages.analytics_engine.monte_carlo import run_monte_carlo_simulation, SimulationConfig
 
 
 @celery_app.task(name="workers.tasks.run_simulation_task", bind=True)
-def run_simulation_task(self, config_dict: Dict[str, Any]):
+def run_simulation_task(self, config_dict: dict[str, Any]):
     """Background task executing Monte-Carlo simulations."""
     config = SimulationConfig(
         leads_mean=config_dict.get("leads_mean", 300.0),
@@ -41,7 +46,7 @@ def sync_crm_task(org_id: str, crm_source: str = "amo"):
 
 
 @celery_app.task(name="workers.tasks.process_call_audio_task", bind=True, max_retries=3, default_retry_delay=5)
-def process_call_audio_task(self, call_data: Dict[str, Any], org_id: str = "TNT-001", webhook_id: Optional[str] = None, t_start: Optional[float] = None):
+def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-001", webhook_id: str | None = None, t_start: float | None = None):
     """
     Asynchronous processing of incoming telephony call events:
     1. Audio download (if URL provided) or speech-to-text transcript processing.
@@ -53,21 +58,25 @@ def process_call_audio_task(self, call_data: Dict[str, Any], org_id: str = "TNT-
     """
     import asyncio
     import logging
-    from packages.database.session import get_db
+
     from packages.database.models import CallRecording
+    from packages.database.session import get_db
     
     logger = logging.getLogger("celery.tasks.call_audio")
     call_id = call_data.get("id") or call_data.get("call_id") or f"call_{int(time.time())}"
     
     try:
-        from apps.api.routers.calls_router import CallIngestPayload, append_call_to_sheets
+        from apps.api.routers.calls_router import (
+            CallIngestPayload,
+            append_call_to_sheets,
+        )
         from apps.api.routers.webhooks_router import update_webhook_status
         from apps.api.websocket_manager import manager
         
         # 1. Normalize call payload
         dur_sec = int(call_data.get("duration_sec", 120))
         raw_cr = call_data.get("cr")
-        cr_list: List[int] = list(raw_cr) if isinstance(raw_cr, (list, tuple)) and len(raw_cr) == 13 else [1]*13
+        cr_list: list[int] = list(raw_cr) if isinstance(raw_cr, (list, tuple)) and len(raw_cr) == 13 else [1]*13
         raw_score = call_data.get("score")
         score = int(raw_score) if raw_score is not None else sum(cr_list)
         next_step = int(call_data.get("next_step", 1))

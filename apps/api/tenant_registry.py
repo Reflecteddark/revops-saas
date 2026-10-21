@@ -4,14 +4,13 @@ Resolves tenant configurations, spreadsheet IDs, and CRM credentials from tenant
 Provides in-memory caching and fallback mechanisms.
 """
 
-from datetime import datetime
 import json
 import logging
 import os
-from pathlib import Path
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger("tenant_registry")
 
@@ -19,7 +18,7 @@ DEFAULT_SPREADSHEET_ID = os.getenv("REVOPS_SPREADSHEET_ID", "1KoKhFJR_-ZYvRgeyFZ
 
 _REGISTRY_LOCK = threading.Lock()
 
-_REGISTRY_CACHE: Dict[str, Any] = {
+_REGISTRY_CACHE: dict[str, Any] = {
     "timestamp": 0,
     "data": None
 }
@@ -73,7 +72,7 @@ class InterProcessFileLock:
                 pass
 
 
-def get_all_candidate_registry_paths() -> List[Path]:
+def get_all_candidate_registry_paths() -> list[Path]:
     candidates = [
         Path("/opt/revops-enterprise-os/tenants_registry.json"),
         Path("/opt/revops-saas/tenants_registry.json"),
@@ -89,7 +88,7 @@ def get_all_candidate_registry_paths() -> List[Path]:
     return candidates
 
 
-def save_tenants_registry(data: Dict[str, Any], target_path: Optional[Path] = None, sync_mirrors: bool = True) -> bool:
+def save_tenants_registry(data: dict[str, Any], target_path: Path | None = None, sync_mirrors: bool = True) -> bool:
     """
     Thread-safe & inter-process safe persistence for tenants registry:
     1. Synchronizes and upserts records to the Database (PostgreSQL / SQLite).
@@ -97,8 +96,8 @@ def save_tenants_registry(data: Dict[str, Any], target_path: Optional[Path] = No
     """
     # 1. Operational Core: Upsert into Database
     try:
+        from packages.database.models import SubscriptionTier, Tenant
         from packages.database.session import SessionLocal, init_db
-        from packages.database.models import Tenant, SubscriptionTier
         init_db()
         db = SessionLocal()
         try:
@@ -146,6 +145,7 @@ def save_tenants_registry(data: Dict[str, Any], target_path: Optional[Path] = No
                     merged = dict(existing.settings or {})
                     merged.update(settings)
                     setattr(existing, "settings", merged)
+
             db.commit()
             logger.info("Successfully persisted tenant registry state to Database")
         finally:
@@ -198,7 +198,7 @@ def save_tenants_registry(data: Dict[str, Any], target_path: Optional[Path] = No
 
 
 
-def get_tenants_registry_path() -> Optional[Path]:
+def get_tenants_registry_path() -> Path | None:
     env_path = os.getenv("TENANTS_REGISTRY_PATH")
     if env_path and Path(env_path).exists():
         return Path(env_path)
@@ -216,15 +216,15 @@ def get_tenants_registry_path() -> Optional[Path]:
     return None
 
 
-def load_tenants_registry() -> Dict[str, Any]:
+def load_tenants_registry() -> dict[str, Any]:
     now = time.time()
     if _REGISTRY_CACHE["data"] and (now - _REGISTRY_CACHE["timestamp"] < 10):
         return _REGISTRY_CACHE["data"]
 
     # 1. Operational Source of Truth: Database (PostgreSQL / SQLite)
     try:
-        from packages.database.session import SessionLocal
         from packages.database.models import Tenant
+        from packages.database.session import SessionLocal
         db = SessionLocal()
         try:
             db_tenants = db.query(Tenant).all()
@@ -295,7 +295,7 @@ def load_tenants_registry() -> Dict[str, Any]:
         return _REGISTRY_CACHE["data"] or {"tenants": []}
 
 
-def get_tenant_config(tenant_id: str) -> Optional[Dict[str, Any]]:
+def get_tenant_config(tenant_id: str) -> dict[str, Any] | None:
     clean_id = (tenant_id or "").strip().upper()
     registry = load_tenants_registry()
 
@@ -316,8 +316,8 @@ def get_tenant_config(tenant_id: str) -> Optional[Dict[str, Any]]:
 
     # Direct DB fallback if cache missed
     try:
-        from packages.database.session import SessionLocal
         from packages.database.models import Tenant
+        from packages.database.session import SessionLocal
         db = SessionLocal()
         try:
             db_t = db.query(Tenant).filter((Tenant.id == clean_id) | (Tenant.id == tenant_id)).first()
@@ -339,7 +339,7 @@ def get_tenant_spreadsheet_id(tenant_id: str = "TNT-001") -> str:
     return DEFAULT_SPREADSHEET_ID
 
 
-def get_all_tenants_summary() -> List[Dict[str, Any]]:
+def get_all_tenants_summary() -> list[dict[str, Any]]:
     registry = load_tenants_registry()
     summaries = []
     

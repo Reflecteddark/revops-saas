@@ -1,5 +1,5 @@
-import urllib.request
 import hashlib
+import urllib.request
 
 files = [
     'core.js',

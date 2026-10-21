@@ -2,26 +2,26 @@
 Calls Router: Speech AI Auditing, 13 Evaluation Criteria, Google Sheets Sync, and Live Ingestion.
 """
 
-from datetime import datetime
-import json
 import logging
 import os
-from pathlib import Path
 import re
 import time
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from packages.analytics_engine.speech_scoring import evaluate_speech_scorecard
 from packages.database.models import CallRecording, Deal, User
 from packages.database.session import get_db
+
 from ..auth import get_current_user
 from ..schemas import SpeechEvaluationRequest
-from ..websocket_manager import manager
 from ..tenant_registry import get_tenant_spreadsheet_id
+from ..websocket_manager import manager
 from .deals_router import get_deals_lookup
 
 logger = logging.getLogger("calls_router")
@@ -30,24 +30,24 @@ router = APIRouter(prefix="/calls", tags=["Speech AI & 13 Criteria Scorecard"])
 
 
 class CallIngestPayload(BaseModel):
-    id: Optional[str] = None
-    deal_id: Optional[str] = None
-    deal_title: Optional[str] = None
-    client: Optional[str] = None
-    manager: Optional[str] = None
-    stage: Optional[str] = "Первичный контакт"
-    duration_sec: Optional[int] = None
-    duration: Optional[str] = None
-    amount: Optional[str] = "500 000 ₽"
-    score: Optional[int] = None
-    status: Optional[str] = None
-    status_label: Optional[str] = None
-    risk_amount: Optional[str] = None
-    next_step: Optional[int] = 1
-    cr: Optional[List[int]] = None
-    error_summary: Optional[str] = None
-    recommendation: Optional[str] = None
-    transcript: Optional[str] = None
+    id: str | None = None
+    deal_id: str | None = None
+    deal_title: str | None = None
+    client: str | None = None
+    manager: str | None = None
+    stage: str | None = "Первичный контакт"
+    duration_sec: int | None = None
+    duration: str | None = None
+    amount: str | None = "500 000 ₽"
+    score: int | None = None
+    status: str | None = None
+    status_label: str | None = None
+    risk_amount: str | None = None
+    next_step: int | None = 1
+    cr: list[int] | None = None
+    error_summary: str | None = None
+    recommendation: str | None = None
+    transcript: str | None = None
     sync_to_sheets: bool = True
     tenant_id: str = "TNT-001"
 
@@ -75,10 +75,10 @@ def verify_internal_or_admin(request: Request):
 
 
 # In-memory cache for live calls from Google Sheets keyed by tenant_id (TTL: 15s)
-_CALLS_CACHE: Dict[str, Dict[str, Any]] = {}
+_CALLS_CACHE: dict[str, dict[str, Any]] = {}
 
 
-def get_service_account_path() -> Optional[Path]:
+def get_service_account_path() -> Path | None:
     env_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_PATH")
     if env_path and Path(env_path).exists():
         return Path(env_path)
@@ -94,7 +94,7 @@ def get_service_account_path() -> Optional[Path]:
     return None
 
 
-def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> List[Dict[str, Any]]:
+def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list[dict[str, Any]]:
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
     cached = _CALLS_CACHE.get(clean_tenant)
@@ -114,7 +114,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> List
         ws = ss.worksheet("raw_calls")
         rows = ws.get_all_values()
         if len(rows) < 2:
-            empty_calls: List[Dict[str, Any]] = []
+            empty_calls: list[dict[str, Any]] = []
             _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": empty_calls}
             return empty_calls
 
@@ -235,6 +235,7 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
         return False
     try:
         import hashlib
+
         import gspread
         gc = gspread.service_account(str(sa_path))
         tenant_id = (payload.tenant_id or "TNT-001").strip().upper()
@@ -265,7 +266,7 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
 
         # Compute deterministic Payload SHA-256 checksum (hash_out)
         hash_out = hashlib.sha256(
-            f"{call_id}:{manager_id}:{total_score}:{dur_sec}:{next_step_flag}".encode("utf-8")
+            f"{call_id}:{manager_id}:{total_score}:{dur_sec}:{next_step_flag}".encode()
         ).hexdigest()
 
         row = [
@@ -320,7 +321,7 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
                 r_score = read_back[19] if len(read_back) > 19 else str(total_score)
                 r_next_step = read_back[20] if len(read_back) > 20 else str(next_step_flag)
                 hash_in = hashlib.sha256(
-                    f"{r_call_id}:{r_manager}:{r_score}:{r_dur}:{r_next_step}".encode("utf-8")
+                    f"{r_call_id}:{r_manager}:{r_score}:{r_dur}:{r_next_step}".encode()
                 ).hexdigest()
 
                 if hash_out != hash_in:
@@ -511,6 +512,7 @@ def evaluate_call(
             if eval_result.is_deal_at_risk:
                 setattr(deal, "is_at_risk", True)
                 setattr(deal, "risk_reason", eval_result.risk_summary)
+
 
     db.commit()
     db.refresh(call)

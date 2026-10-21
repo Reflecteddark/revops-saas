@@ -3,7 +3,7 @@ Business Rules & Constants for RevOps Platform V17.6 (Excel Golden Master Port).
 Source of Truth: RevOps Platform V17.6 (Clean Client Starter)
 """
 
-from typing import Dict, Any, List
+from typing import Any
 
 # 1. BENCHMARKS (6 бенчмарков потерь из ⚙️ Настройки, строки 43-48)
 BENCHMARKS = {
@@ -16,7 +16,7 @@ BENCHMARKS = {
 }
 
 # 2. STAGES (7 этапов воронки: SLA нормативы в часах + Win %)
-STAGES: Dict[int, Dict[str, Any]] = {
+STAGES: dict[int, dict[str, Any]] = {
     1: {"id": 1, "name": "1. Новый лид", "sla_hours": 24.0, "win_pct": 0.05},
     2: {"id": 2, "name": "2. Квалификация / ЛПР", "sla_hours": 48.0, "win_pct": 0.15},
     3: {"id": 3, "name": "3. Встреча / Демо", "sla_hours": 120.0, "win_pct": 0.35},
@@ -288,7 +288,7 @@ PRICING_MODULES = [
 
 # 8. RBAC_MATRIX (45 листов × 7 ролей: 👁 / ✏️ / ⛔)
 # Загружается из оригинального листа 🔐 RBAC_Matrix
-RBAC_MATRIX: Dict[str, Dict[str, Any]] = {
+RBAC_MATRIX: dict[str, dict[str, Any]] = {
     "⚙️ Настройки": {"category": "Системные", "always_visible": True, "permissions": {"👑 CEO": "👁", "📋 РОП": "👁", "💼 KAM": "👁", "📞 SDR": "👁", "🌐 CMO": "👁", "💳 CFO": "👁", "🔧 Admin": "✏️"}},
     "📄 Executive_OnePager": {"category": "Витрины", "always_visible": False, "permissions": {"👑 CEO": "👁", "📋 РОП": "👁", "💼 KAM": "⛔", "📞 SDR": "⛔", "🌐 CMO": "⛔", "💳 CFO": "👁", "🔧 Admin": "👁"}},
     "⚡ Пульс_Компании": {"category": "Витрины", "always_visible": False, "permissions": {"👑 CEO": "👁", "📋 РОП": "👁", "💼 KAM": "👁", "📞 SDR": "👁", "🌐 CMO": "👁", "💳 CFO": "👁", "🔧 Admin": "👁"}},

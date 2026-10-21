@@ -5,7 +5,6 @@ Runs automatically or on-demand to ensure:
 1. Root /app/ directory in revops-saas mirrors apps/web/
 2. The Vercel-connected landing repo (ai-rop-landing) stays 100% in sync
 """
-import os
 import shutil
 import subprocess
 import sys

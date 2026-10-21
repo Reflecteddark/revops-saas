@@ -6,9 +6,9 @@ Distributes deal value across touchpoints:
 - 40% Opportunity Close (Дожим / оплата)
 """
 
-from dataclasses import dataclass
-from typing import List, Dict, Any
 from collections import defaultdict
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -29,14 +29,14 @@ class ChannelAttribution:
 
 
 def calculate_w_shaped_attribution(
-    deals: List[Dict[str, Any]],
-    channel_ad_spend: Dict[str, float],
-) -> Dict[str, Any]:
+    deals: list[dict[str, Any]],
+    channel_ad_spend: dict[str, float],
+) -> dict[str, Any]:
     """
     Applies W-shaped attribution across closed deals and ad spend per channel.
     """
-    channel_revenue: Dict[str, float] = defaultdict(float)
-    channel_deals_count: Dict[str, set] = defaultdict(set)
+    channel_revenue: dict[str, float] = defaultdict(float)
+    channel_deals_count: dict[str, set] = defaultdict(set)
 
     for deal in deals:
         budget = float(deal.get("budget", 0.0))
@@ -55,7 +55,7 @@ def calculate_w_shaped_attribution(
         channel_deals_count[close_ch].add(deal_id)
 
     all_channels = set(list(channel_revenue.keys()) + list(channel_ad_spend.keys()))
-    results: List[ChannelAttribution] = []
+    results: list[ChannelAttribution] = []
 
     total_attributed_rev = sum(channel_revenue.values())
     total_spend = sum(channel_ad_spend.values())

@@ -3,8 +3,10 @@ Monitoring & Observability Router:
 Provides endpoints for Grafana/Prometheus scrapers, Sentry error telemetry status, and system health alerts.
 """
 
-from typing import Dict, Any
+from typing import Any
+
 from fastapi import APIRouter, Response
+
 from packages.monitoring.metrics import telemetry
 
 router = APIRouter(tags=["Monitoring & Observability"])
@@ -33,7 +35,7 @@ def prometheus_metrics():
 
 @router.get("/health")
 @router.get("/monitoring/health")
-async def health_check() -> Dict[str, Any]:
+async def health_check() -> dict[str, Any]:
     """Basic health check endpoint with database routing info."""
     from packages.database.session import get_db_routing_info
     
@@ -49,7 +51,7 @@ async def health_check() -> Dict[str, Any]:
 
 
 @router.get("/api/v1/monitoring/health")
-def monitoring_dashboard_stats() -> Dict[str, Any]:
+def monitoring_dashboard_stats() -> dict[str, Any]:
     """Returns JSON payload for SaaS Admin & Grafana dashboards."""
     from packages.database.session import get_db_routing_info
     

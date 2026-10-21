@@ -16,4 +16,6 @@ services:
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
+      - ./telegram_credentials.json:/app/telegram_credentials.json:ro
       - /opt/revops-enterprise-os/tenants_registry.json:/opt/revops-enterprise-os/tenants_registry.json:ro
+

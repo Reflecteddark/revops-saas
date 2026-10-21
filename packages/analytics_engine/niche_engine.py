@@ -4,9 +4,9 @@ RevOps Enterprise OS V18.0 — Движок Отраслевого Профил�
 от автозапчастей и B2B поставок до онлайн-школ и курсов психологии.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-NICHE_CATALOG: Dict[str, Dict[str, Any]] = {
+NICHE_CATALOG: dict[str, dict[str, Any]] = {
     "auto_parts": {
         "niche_id": "auto_parts",
         "niche_name": "Автозапчасти, автосервис и автотовары",
@@ -387,10 +387,10 @@ NICHE_CATALOG: Dict[str, Dict[str, Any]] = {
 
 def create_dynamic_niche_profile(
     custom_name: str,
-    avg_check: Optional[int] = None,
-    target_next_step: Optional[str] = None,
-    main_objection: Optional[str] = None
-) -> Dict[str, Any]:
+    avg_check: int | None = None,
+    target_next_step: str | None = None,
+    main_objection: str | None = None
+) -> dict[str, Any]:
     """Генерирует специализированный отраслевой профиль на лету под любую произвольную нишу"""
     c_lower = custom_name.lower()
 
@@ -481,7 +481,7 @@ def create_dynamic_niche_profile(
     }
 
 
-def get_niche_profile(niche_id: str, tenant: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def get_niche_profile(niche_id: str, tenant: dict[str, Any] | None = None) -> dict[str, Any]:
     """Возвращает профиль ниши из каталога или синтезирует динамический для custom"""
     if niche_id in NICHE_CATALOG:
         return NICHE_CATALOG[niche_id]
@@ -496,6 +496,6 @@ def get_niche_profile(niche_id: str, tenant: Optional[Dict[str, Any]] = None) ->
     return NICHE_CATALOG["general_b2b"]
 
 
-def list_niches() -> List[Dict[str, Any]]:
+def list_niches() -> list[dict[str, Any]]:
     """Возвращает упорядоченный список всех поддерживаемых отраслей"""
     return list(NICHE_CATALOG.values())

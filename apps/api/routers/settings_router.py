@@ -4,28 +4,27 @@ Loss Reasons, Telegram Integration, and 19 CRM Feature Flags.
 Synchronizes with Google Sheets (⚙️ Настройки, 📋 Паспорт_Клиента, ⚙️ Модули_Интеграции).
 """
 
-import json
 import logging
 import os
-from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Request
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Query
+from pydantic import BaseModel
 
-from ..websocket_manager import manager
 from ..tenant_registry import get_tenant_spreadsheet_id
+from ..websocket_manager import manager
 
 logger = logging.getLogger("settings_router")
 
 router = APIRouter(prefix="/settings", tags=["Settings & Business Parameters"])
 
 # In-memory settings cache keyed by tenant_id (TTL: 15s)
-_SETTINGS_CACHE: Dict[str, Dict[str, Any]] = {}
+_SETTINGS_CACHE: dict[str, dict[str, Any]] = {}
 
 
-def get_service_account_path() -> Optional[Path]:
+def get_service_account_path() -> Path | None:
     env_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_PATH")
     if env_path and Path(env_path).exists():
         return Path(env_path)
@@ -42,12 +41,12 @@ def get_service_account_path() -> Optional[Path]:
 
 
 class GeneralSettings(BaseModel):
-    company_name: Optional[str] = "Самозанятый"
-    currency: Optional[str] = "RUB (₽)"
-    period_start: Optional[str] = "2026-10-01"
-    period_end: Optional[str] = "2026-10-31"
-    monthly_target: Optional[float] = 5000000.0
-    project_start_date: Optional[str] = "2026-10-03"
+    company_name: str | None = "Самозанятый"
+    currency: str | None = "RUB (₽)"
+    period_start: str | None = "2026-10-01"
+    period_end: str | None = "2026-10-31"
+    monthly_target: float | None = 5000000.0
+    project_start_date: str | None = "2026-10-03"
 
 
 class StageSLA(BaseModel):
@@ -71,33 +70,33 @@ class LossReason(BaseModel):
 
 
 class TelegramSettings(BaseModel):
-    bot_token: Optional[str] = "Script Properties"
-    rop_chat_id: Optional[str] = "-1001234567890"
-    ceo_chat_id: Optional[str] = "-1009876543210"
-    team_chat_id: Optional[str] = "-1005554443332"
-    dispatcher_schedule: Optional[str] = "Каждый час (L1/L2/L3) + 09:15"
-    dispatcher_status: Optional[bool] = True
+    bot_token: str | None = "Script Properties"
+    rop_chat_id: str | None = "-1001234567890"
+    ceo_chat_id: str | None = "-1009876543210"
+    team_chat_id: str | None = "-1005554443332"
+    dispatcher_schedule: str | None = "Каждый час (L1/L2/L3) + 09:15"
+    dispatcher_status: bool | None = True
 
 
 class ModuleToggle(BaseModel):
     code: str
     name: str
-    category: Optional[str] = "CRM"
+    category: str | None = "CRM"
     status: bool = True
-    description: Optional[str] = ""
+    description: str | None = ""
 
 
 class SettingsPayload(BaseModel):
     tenant_id: str = "TNT-001"
-    general: Optional[GeneralSettings] = None
-    stages: Optional[List[StageSLA]] = None
-    managers: Optional[List[ManagerCapacity]] = None
-    loss_reasons: Optional[List[LossReason]] = None
-    telegram: Optional[TelegramSettings] = None
-    modules: Optional[List[ModuleToggle]] = None
+    general: GeneralSettings | None = None
+    stages: list[StageSLA] | None = None
+    managers: list[ManagerCapacity] | None = None
+    loss_reasons: list[LossReason] | None = None
+    telegram: TelegramSettings | None = None
+    modules: list[ModuleToggle] | None = None
 
 
-def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> Dict[str, Any]:
+def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> dict[str, Any]:
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
     cached = _SETTINGS_CACHE.get(clean_tenant)
@@ -259,7 +258,7 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> Dict[str, Any]:
         return get_fallback_settings()
 
 
-def get_fallback_settings() -> Dict[str, Any]:
+def get_fallback_settings() -> dict[str, Any]:
     return {
         "status": "ok",
         "source": "fallback",

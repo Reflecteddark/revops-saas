@@ -8,8 +8,9 @@ Unit test suite for Telephony Webhook Queue & Celery Ingestion:
 """
 
 import time
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 
 from apps.api.main import app

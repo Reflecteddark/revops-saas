@@ -6,15 +6,21 @@ Endpoints:
 """
 
 import uuid
-from typing import Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException
-from packages.analytics_engine.monte_carlo import run_monte_carlo_simulation, SimulationConfig
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+
+from packages.analytics_engine.monte_carlo import (
+    SimulationConfig,
+    run_monte_carlo_simulation,
+)
+
 from ..schemas import MonteCarloRequest
 
 router = APIRouter(prefix="/simulator", tags=["Revenue Simulator & Monte Carlo 95%"])
 
 # In-memory LRU simulation result store for fast retrieval / Redis fallback
-SIMULATION_CACHE: Dict[str, Dict[str, Any]] = {}
+SIMULATION_CACHE: dict[str, dict[str, Any]] = {}
 
 
 @router.post("/run-monte-carlo")

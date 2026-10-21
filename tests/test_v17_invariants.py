@@ -5,32 +5,26 @@ Source of truth: '🧪 QA_Suite' and 'calc_engine' in RevOps Platform V17.6 Clea
 
 import json
 from pathlib import Path
+
 import pytest
 
-from packages.business_rules.config import (
-    BENCHMARKS,
-    STAGES,
-    CALL_CRITERIA,
-    SLA_MATRIX,
-    LOSS_CODES,
-    CAPACITY_LIMITS,
-    PRICING_MODULES,
-    RBAC_MATRIX,
-    ROLE_LANDING_MAP,
-    USERS_ROLES_MAP,
-)
 from packages.analytics_engine.calc_engine import (
-    RevOpsCalcEngine,
-    engine_v17,
+    DEFAULT_ALERTS,
+    DEFAULT_CALLS,
     DEFAULT_DEALS,
     DEFAULT_INVOICES,
     DEFAULT_PAYMENTS,
     DEFAULT_TOUCHPOINTS,
-    DEFAULT_CALLS,
-    DEFAULT_MARKETING,
-    DEFAULT_ALERTS,
-    DEFAULT_ACTIONS,
     SYSTEM_DATE,
+    engine_v17,
+)
+from packages.business_rules.config import (
+    CAPACITY_LIMITS,
+    RBAC_MATRIX,
+    ROLE_LANDING_MAP,
+    SLA_MATRIX,
+    STAGES,
+    USERS_ROLES_MAP,
 )
 
 # Load full seed dataset from golden_master_seed.json

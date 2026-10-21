@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """RevOps Enterprise OS - Autonomous Health Guard & Self-Healing Watchdog
 
 Continuous health monitoring, auto-recovery of failed services, disk protection,
@@ -11,7 +10,6 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import time
 import urllib.request
 from pathlib import Path

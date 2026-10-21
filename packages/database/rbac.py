@@ -5,7 +5,7 @@ Implements the 7 production-hardened roles from V17.6:
 """
 
 import enum
-from typing import Set, Dict, List
+
 from .models import UserRole
 
 
@@ -41,7 +41,7 @@ class Permission(str, enum.Enum):
 
 
 # Precise mapping of 7 roles to permissions (tested against V17.6 QA Suite)
-ROLE_PERMISSIONS: Dict[UserRole, Set[Permission]] = {
+ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
     UserRole.CEO: {
         Permission.VIEW_EXECUTIVE_SUMMARY,
         Permission.VIEW_COMPANY_PULSE,

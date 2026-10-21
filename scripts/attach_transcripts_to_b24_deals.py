@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 """
 RevOps Enterprise OS - Attach Rich Dialogue Transcripts & AI Audits to Bitrix24 Deals
 Posts to both Timeline Comments (Лента истории справа) and Deal Field Comments (Карточка слева).
 """
 
-import sys
 import json
+import sys
 import time
 import urllib.request
 

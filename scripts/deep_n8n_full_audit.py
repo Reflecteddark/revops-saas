@@ -1,6 +1,6 @@
-import subprocess
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime
 
@@ -34,7 +34,7 @@ for wf in workflows:
     active = wf.get('active', False)
     nodes_count = len(wf.get('nodes', []))
     triggers = wf.get('triggerCount', 0)
-    print(f"  • [{wfid}] Active: {str(active):<5} | Nodes: {nodes_count:<2} | Triggers: {triggers} | '{wfname}'")
+    print(f"  • [{wfid}] Active: {active!s:<5} | Nodes: {nodes_count:<2} | Triggers: {triggers} | '{wfname}'")
 print()
 
 # 3. Deep static analysis of all workflows

@@ -1,0 +1,17 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [
+    ".git",
+    "venv",
+    ".venv",
+    "node_modules",
+    "dist",
+    "build",
+    "scripts/inspect_*.py",
+    "scripts/inspect_v17.py",
+]
+
+[tool.ruff.lint]
+# Включены только реально важные правила: синтаксические и фатальные ошибки
+select = ["E9", "F63", "F7", "F82"]

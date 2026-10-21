@@ -4,12 +4,12 @@ RevOps Enterprise OS - FastAPI Service Runner
 Runs uvicorn in the background with rotating log file and health-check guard.
 """
 import logging
-from logging.handlers import RotatingFileHandler
 import os
 import subprocess
 import sys
 import time
 import urllib.request
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent

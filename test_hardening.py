@@ -9,11 +9,12 @@ Tests:
 6. Live Terminal CLI interpreter commands.
 """
 
-import sys
-import os
-import time
 import json
+import os
+import sys
+import time
 from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 if sys.platform == "win32":
@@ -24,7 +25,10 @@ if sys.platform == "win32":
 sys.path.insert(0, os.path.abspath("."))
 
 from apps.api.main import app
-from apps.api.tenant_registry import load_tenants_registry, save_tenants_registry, get_tenants_registry_path
+from apps.api.tenant_registry import (
+    load_tenants_registry,
+    save_tenants_registry,
+)
 
 client = TestClient(app)
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Verification suite for Admin Cabinet:
 Checks all HTML onclick handlers, JS functions on window, and live API endpoints.
@@ -7,10 +6,8 @@ Checks all HTML onclick handlers, JS functions on window, and live API endpoints
 import hashlib
 import json
 import re
-import sys
-import time
-import urllib.request
 import urllib.error
+import urllib.request
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent

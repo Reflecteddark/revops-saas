@@ -1,6 +1,5 @@
 import difflib
 import urllib.request
-import sys
 
 with open('apps/web/index.html', 'r', encoding='utf-8') as f:
     local_lines = f.readlines()

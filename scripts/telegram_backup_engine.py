@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 RevOps Enterprise OS — Telegram Cloud Backup Engine.
 Zero-Footprint automated backup: creates consistent hot database snapshots
@@ -16,22 +15,23 @@ Features:
 - Complete metadata manifest and recovery CLI (--decrypt).
 """
 
-import os
-import sys
-import json
-import time
-import shutil
-import sqlite3
+import argparse
 import base64
 import hashlib
+import json
+import logging
+import os
+import shutil
+import sqlite3
+import subprocess
+import sys
 import tarfile
 import tempfile
-import logging
-import argparse
-import subprocess
-from pathlib import Path
+import time
 from datetime import datetime
-from typing import List, Tuple, Optional, Dict, Any
+from pathlib import Path
+from typing import Any
+
 import requests
 from cryptography.fernet import Fernet
 
@@ -143,7 +143,7 @@ def dump_postgres_database(database_url: str, output_path: Path) -> bool:
         return False
 
 
-def load_tg_credentials() -> Tuple[Optional[str], Optional[str], str, Optional[str]]:
+def load_tg_credentials() -> tuple[str | None, str | None, str, str | None]:
     """Finds bot_token, chat_id, api_base, and backup_encryption_key across standard configs."""
     candidates = [
         BASE_DIR / "telegram_credentials.json",
@@ -191,11 +191,11 @@ def load_tg_credentials() -> Tuple[Optional[str], Optional[str], str, Optional[s
     return bot_token, chat_id, api_base, encryption_key
 
 
-def create_backup_archive(output_path: Path, candidate_files: Optional[List[Path]] = None) -> dict:
+def create_backup_archive(output_path: Path, candidate_files: list[Path] | None = None) -> dict:
     """Creates a gzipped tar archive of critical state, databases, and registries."""
-    files_included: List[Dict[str, Any]] = []
-    skipped_paths: List[Dict[str, Any]] = []
-    manifest: Dict[str, Any] = {
+    files_included: list[dict[str, Any]] = []
+    skipped_paths: list[dict[str, Any]] = []
+    manifest: dict[str, Any] = {
         "timestamp": datetime.now().isoformat(),
         "created_at_human": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "files_included": files_included,
@@ -309,7 +309,7 @@ def create_backup_archive(output_path: Path, candidate_files: Optional[List[Path
     return manifest
 
 
-def split_file_into_parts(file_path: Path, max_bytes: int = MAX_PART_SIZE_BYTES) -> List[Path]:
+def split_file_into_parts(file_path: Path, max_bytes: int = MAX_PART_SIZE_BYTES) -> list[Path]:
     """Splits a file into multiple chunks if it exceeds max_bytes."""
     parts = []
     file_size = file_path.stat().st_size
@@ -427,7 +427,7 @@ def send_backup_to_telegram(
         return success
 
 
-def run_telegram_backup(max_part_size: int = MAX_PART_SIZE_BYTES, custom_encryption_key: Optional[str] = None) -> bool:
+def run_telegram_backup(max_part_size: int = MAX_PART_SIZE_BYTES, custom_encryption_key: str | None = None) -> bool:
     """Complete backup cycle: creates temp archive, encrypts with AES-256, streams to Telegram, removes local archive."""
     bot_token, chat_id, api_base, encryption_key = load_tg_credentials()
     if custom_encryption_key:

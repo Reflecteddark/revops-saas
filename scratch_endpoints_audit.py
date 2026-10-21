@@ -1,5 +1,5 @@
-import re
 import json
+import re
 from pathlib import Path
 
 js_dir = Path("apps/web/js")

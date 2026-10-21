@@ -10,33 +10,30 @@ Unit test suite for Telegram Cloud Backup Engine:
 - CLI decryption workflow (--decrypt)
 """
 
-import os
-import io
-import sys
 import json
-import time
 import sqlite3
 import tarfile
 import tempfile
 import threading
+import time
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
+
 cryptography = pytest.importorskip("cryptography")
 requests = pytest.importorskip("requests")
 from cryptography.fernet import Fernet
+
 from scripts.telegram_backup_engine import (
     create_backup_archive,
-    split_file_into_parts,
-    send_backup_to_telegram,
-    run_telegram_backup,
+    decrypt_file,
     derive_fernet_key,
     encrypt_file,
-    decrypt_file,
+    send_backup_to_telegram,
     snapshot_sqlite_database,
+    split_file_into_parts,
     verify_sqlite_integrity,
-    MAX_PART_SIZE_BYTES
 )
 
 

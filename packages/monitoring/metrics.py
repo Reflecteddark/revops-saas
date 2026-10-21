@@ -8,9 +8,9 @@ Tracks:
 - Sentry and PostHog telemetry hooks
 """
 
-import time
-from typing import Dict, Any
 from collections import deque
+from typing import Any
+
 
 class TelemetryCollector:
     def __init__(self):
@@ -32,7 +32,7 @@ class TelemetryCollector:
     def record_crm_failure(self):
         self.crm_sync_failures += 1
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         lats = sorted(self.request_latencies) if self.request_latencies else [0.0]
         p95_idx = int(len(lats) * 0.95)
         p95 = lats[p95_idx] if lats else 0.0

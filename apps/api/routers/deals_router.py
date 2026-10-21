@@ -5,19 +5,19 @@ Endpoints:
 - POST /api/v1/deals/{id}/fix-next-step: Fix next contact step and resolve risk
 """
 
-from datetime import datetime, timedelta, timezone
 import logging
 import os
-from pathlib import Path
 import re
 import time
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-from ..websocket_manager import manager
 from ..tenant_registry import get_tenant_spreadsheet_id
+from ..websocket_manager import manager
 
 logger = logging.getLogger("deals_router")
 
@@ -25,14 +25,14 @@ router = APIRouter(prefix="/deals", tags=["Deals Management"])
 
 
 class FixNextStepPayload(BaseModel):
-    next_step_date: Optional[str] = None
+    next_step_date: str | None = None
 
 
 # In-memory cache for live deals from Google Sheets keyed by tenant_id (TTL: 15s)
-_DEALS_CACHE: Dict[str, Dict[str, Any]] = {}
+_DEALS_CACHE: dict[str, dict[str, Any]] = {}
 
 
-def get_service_account_path() -> Optional[Path]:
+def get_service_account_path() -> Path | None:
     env_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_PATH")
     if env_path and Path(env_path).exists():
         return Path(env_path)
@@ -73,7 +73,7 @@ def parse_amount(val: Any) -> float:
         return 300000.0
 
 
-def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> List[Dict[str, Any]]:
+def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> list[dict[str, Any]]:
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
     cached = _DEALS_CACHE.get(clean_tenant)
@@ -86,8 +86,8 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> Lis
             return cached.get("deals", [])
         logger.warning(f"service_account.json not found for deals fetch (tenant: {clean_tenant}), using golden master seed deals")
         from packages.analytics_engine.calc_engine import DEFAULT_DEALS
-        fallback_deals: List[Dict[str, Any]] = []
-        lookup: Dict[str, Dict[str, Any]] = {}
+        fallback_deals: list[dict[str, Any]] = []
+        lookup: dict[str, dict[str, Any]] = {}
         for d in DEFAULT_DEALS:
             deal_id = str(d.get("deal_id", "D-101"))
             st_id = int(d.get("stage_id", 1))
@@ -131,7 +131,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> Lis
         ws = ss.worksheet("raw_deals")
         rows = ws.get_all_values()
         if len(rows) < 2:
-            empty_res: List[Dict[str, Any]] = []
+            empty_res: list[dict[str, Any]] = []
             _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
             return empty_res
 
@@ -198,7 +198,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> Lis
         return _DEALS_CACHE.get(clean_tenant, {}).get("deals", [])
 
 
-def get_deals_lookup(tenant_id: str = "TNT-001") -> Dict[str, Dict[str, Any]]:
+def get_deals_lookup(tenant_id: str = "TNT-001") -> dict[str, dict[str, Any]]:
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     fetch_deals_from_sheets(tenant_id=clean_tenant)
     return _DEALS_CACHE.get(clean_tenant, {}).get("lookup", {})
@@ -207,11 +207,11 @@ def get_deals_lookup(tenant_id: str = "TNT-001") -> Dict[str, Dict[str, Any]]:
 @router.get("")
 @router.get("/")
 def list_deals(
-    stage: Optional[str] = None,
+    stage: str | None = None,
     sla_risk_only: bool = False,
     org_id: str = "TNT-001",
-    tenant_id: Optional[str] = None
-) -> Dict[str, Any]:
+    tenant_id: str | None = None
+) -> dict[str, Any]:
     """Returns active CRM deals directly from raw_deals Google Sheets for given tenant."""
     effective_tenant = tenant_id or org_id or "TNT-001"
     all_deals = fetch_deals_from_sheets(tenant_id=effective_tenant)
@@ -234,8 +234,8 @@ def list_deals(
 @router.post("/{deal_id}/fix-next-step")
 async def fix_next_step(
     deal_id: str,
-    payload: Optional[FixNextStepPayload] = None,
-    next_step_date_iso: Optional[str] = Query(None),
+    payload: FixNextStepPayload | None = None,
+    next_step_date_iso: str | None = Query(None),
     org_id: str = "TNT-001"
 ):
     """Fixes the next step date, clears the SLA risk, and broadcasts real-time WebSocket update."""
