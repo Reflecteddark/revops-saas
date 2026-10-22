@@ -1,0 +1,64 @@
+{
+  "name": "RevOps - Sub Write Deal (Sheets & Broadcast)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-sub-write-deal",
+      "name": "When Called by Normalizer",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.spreadsheet_id || '1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk' }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "raw_deals",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "deal_id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "sheets-upsert-raw-deals",
+      "name": "Upsert to raw_deals",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [460, 300],
+      "credentials": {
+        "googleApi": {
+          "id": "lbGgYppJZkZJI2Uo",
+          "name": "Google Service Account account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Called by Normalizer": {
+      "main": [
+        [
+          {
+            "node": "Upsert to raw_deals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

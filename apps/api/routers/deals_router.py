@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from packages.database.models import Deal
 from packages.database.session import get_db
 
-from ..tenant_registry import get_tenant_spreadsheet_id
+from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
 
 logger = logging.getLogger("deals_router")
@@ -53,28 +53,11 @@ def get_service_account_path() -> Path | None:
 
 
 def parse_amount(val: Any) -> float:
-    if not val:
-        return 300000.0
-    clean = re.sub(r"[^\d.,]", "", str(val))
-    if not clean:
-        return 300000.0
-    if "," in clean and "." in clean:
-        if clean.rfind(",") > clean.rfind("."):
-            clean = clean.replace(".", "").replace(",", ".")
-        else:
-            clean = clean.replace(",", "")
-    elif "," in clean:
-        if re.search(r",\d{3}$", clean) or clean.count(",") > 1:
-            clean = clean.replace(",", "")
-        else:
-            clean = clean.replace(",", ".")
-    elif "." in clean:
-        if re.search(r"\.\d{3}$", clean) or clean.count(".") > 1:
-            clean = clean.replace(".", "")
-    try:
-        return float(clean)
-    except Exception:
-        return 300000.0
+    if val is None or val == "":
+        return 0.0
+    from ..services.crm_deal_normalizer import parse_numeric_price
+    price, _ = parse_numeric_price(val)
+    return price
 
 
 def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> list[dict[str, Any]]:
@@ -84,42 +67,60 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
     if cached and (now - cached.get("timestamp", 0) < 15):
         return cached.get("deals", [])
 
+    cfg = get_tenant_config(clean_tenant) or {}
+    tenant_crm = str(cfg.get("crm_type") or "bitrix24").strip().lower()
+
     sa_path = get_service_account_path()
     if not sa_path:
         if cached and cached.get("deals"):
             return cached.get("deals", [])
-        logger.warning(f"service_account.json not found for deals fetch (tenant: {clean_tenant}), using golden master seed deals")
+        logger.warning(f"service_account.json not found for deals fetch (tenant: {clean_tenant}, crm: {tenant_crm}), using golden master seed deals")
         from packages.analytics_engine.calc_engine import DEFAULT_DEALS
         fallback_deals: list[dict[str, Any]] = []
         lookup: dict[str, dict[str, Any]] = {}
-        for d in DEFAULT_DEALS:
-            deal_id = str(d.get("deal_id", "D-101"))
-            st_id = int(d.get("stage_id", 1))
-            is_seed_won = (st_id == 6)
-            stage_name = str(d.get("stage_name", "Первичный контакт"))
-            amt_num = float(d.get("amount", 300000.0))
-            sla_risk = (not is_seed_won) and (st_id in (1, 2, 4) or "Первичный" in stage_name or "КП" in stage_name or "Новый" in stage_name)
-            deal_obj = {
-                "id": deal_id,
-                "deal_id": deal_id,
-                "org_id": clean_tenant,
-                "crm_deal_id": deal_id,
-                "crm_source": str(d.get("lead_source", "CRM")),
-                "title": str(d.get("client_name", f"Сделка {deal_id}")),
-                "amount": amt_num,
-                "amount_str": f"{int(amt_num):,} ₽".replace(",", " "),
-                "stage_id": str(st_id),
-                "stage": stage_name,
-                "status": "won" if is_seed_won else "active",
-                "sla_risk": sla_risk,
-                "responsible_user": f"Менеджер {d.get('manager_id', 101)}",
-                "segment": str(d.get("segment_code", "SEG1")),
-                "created_at": str(d.get("created_date", "")),
-                "updated_at": str(d.get("stage_changed_date", "")),
-                "synced_at": datetime.now(timezone.utc).isoformat(),
-            }
-            fallback_deals.append(deal_obj)
-            lookup[deal_id.upper().strip()] = deal_obj
+
+        # If hybrid/both: generate two sets; if amo: AMO prefix; if b24: B24 prefix
+        crms_to_gen = ["bitrix24", "amocrm"] if tenant_crm in ("both", "hybrid", "all") else [tenant_crm]
+
+        for crm_src in crms_to_gen:
+            pfx = "AMO-" if crm_src == "amocrm" else "B24-"
+            src_label = "amoCRM" if crm_src == "amocrm" else "Bitrix24"
+            for d in DEFAULT_DEALS:
+                raw_seed_id = str(d.get("deal_id", "101")).replace("D-", "")
+                deal_id = f"{pfx}{raw_seed_id}"
+                st_id = int(d.get("stage_id", 1))
+                is_seed_won = (st_id == 6)
+                is_seed_lost = (st_id == 7)
+                stage_name = str(d.get("stage_name", "Первичный контакт"))
+                amt_num = float(d.get("amount", 0.0))
+                sla_risk = (not is_seed_won and not is_seed_lost) and (st_id in (1, 2, 4) or "Первичный" in stage_name or "КП" in stage_name or "Новый" in stage_name)
+                deal_obj = {
+                    "id": deal_id,
+                    "deal_id": deal_id,
+                    "org_id": clean_tenant,
+                    "crm_deal_id": deal_id,
+                    "crm_source": src_label,
+                    "title": str(d.get("client_name", f"Сделка {deal_id}")),
+                    "amount": amt_num,
+                    "amount_str": f"{int(amt_num):,} ₽".replace(",", " "),
+                    "stage_id": str(st_id),
+                    "stage": stage_name,
+                    "status": "won" if is_seed_won else ("lost" if is_seed_lost else "active"),
+                    "sla_risk": sla_risk,
+                    "responsible_user": f"Менеджер {d.get('manager_id', 101)}",
+                    "segment": str(d.get("segment_code", "SEG1")),
+                    "created_at": str(d.get("created_date", "")),
+                    "updated_at": str(d.get("stage_changed_date", "")),
+                    "synced_at": datetime.now(timezone.utc).isoformat(),
+                }
+                fallback_deals.append(deal_obj)
+                lookup[deal_id.upper().strip()] = deal_obj
+                num_only = re.sub(r"\D", "", deal_id)
+                if num_only:
+                    lookup[num_only] = deal_obj
+                    lookup[f"B24-{num_only}"] = deal_obj
+                    lookup[f"AMO-{num_only}"] = deal_obj
+
         _DEALS_CACHE[clean_tenant] = {
             "timestamp": now,
             "deals": fallback_deals,
@@ -147,7 +148,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
                 continue
             deal_id = str(r[0]).strip()
             title = r[1] if len(r) > 1 and r[1] else f"Сделка {deal_id}"
-            raw_amt = r[2] if len(r) > 2 and r[2] else "300,000 ₽"
+            raw_amt = r[2] if len(r) > 2 and r[2] else "0 ₽"
             amt_num = parse_amount(raw_amt)
             stage_id = r[3] if len(r) > 3 and r[3] else "1"
             stage_name = r[4] if len(r) > 4 and r[4] else "Первичный контакт"
@@ -156,9 +157,36 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
             responsible = r[7] if len(r) > 7 and r[7] else "Менеджер"
             segment = r[8] if len(r) > 8 and r[8] else "General B2B"
             source = r[9] if len(r) > 9 and r[9] else "CRM"
-            is_won = str(r[14]).strip() if len(r) > 14 else "0"
 
-            sla_risk = (is_won != "1") and ("Первичный" in stage_name or "КП" in stage_name)
+            # Multi-source filtering based on tenant_crm config
+            source_lower = source.lower()
+            is_b24_deal = deal_id.upper().startswith("B24-") or deal_id.upper().startswith("BX_") or "bitrix" in source_lower or "b24" in source_lower
+            is_amo_deal = deal_id.upper().startswith("AMO-") or "amo" in source_lower
+
+            if tenant_crm == "bitrix24" and is_amo_deal and not is_b24_deal:
+                continue
+            if tenant_crm == "amocrm" and is_b24_deal and not is_amo_deal:
+                continue
+            # When tenant_crm in ("both", "hybrid", "all"), both pass through
+
+            # Soft-delete & Won/Lost status detection
+            is_won = str(r[14]).strip() if len(r) > 14 else "0"
+            is_lost = str(r[15]).strip() if len(r) > 15 else "0"
+            status_col = str(r[12]).strip().upper() if len(r) > 12 else ""
+            is_deleted = "DELETED" in status_col or "удален" in stage_name.lower() or (len(r) > 36 and "DELETED" in str(r[36]).upper())
+
+            if is_deleted:
+                status = "deleted"
+                sla_risk = False
+            elif is_won == "1":
+                status = "won"
+                sla_risk = False
+            elif is_lost == "1":
+                status = "lost"
+                sla_risk = False
+            else:
+                status = "active"
+                sla_risk = ("Первичный" in stage_name or "КП" in stage_name or "Новый" in stage_name or stage_id in ("1", "2"))
 
             deal_obj = {
                 "id": deal_id,
@@ -171,7 +199,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
                 "amount_str": f"{int(amt_num):,} ₽".replace(",", " "),
                 "stage_id": stage_id,
                 "stage": stage_name,
-                "status": "won" if is_won == "1" else "active",
+                "status": status,
                 "sla_risk": sla_risk,
                 "responsible_user": responsible,
                 "segment": segment,
@@ -189,7 +217,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
                 lookup[num_only] = deal_obj
                 lookup[f"B24-{num_only}"] = deal_obj
                 lookup[f"BX_{num_only}"] = deal_obj
-                lookup[f"AMO_{num_only}"] = deal_obj
+                lookup[f"AMO-{num_only}"] = deal_obj
 
         _DEALS_CACHE[clean_tenant] = {
             "timestamp": now,
@@ -299,8 +327,8 @@ async def fix_next_step(
             "deal_id": deal_id,
             "org_id": org_id,
             "title": f"Сделка {deal_id}",
-            "amount": 300000.0,
-            "amount_str": "300 000 ₽",
+            "amount": 0.0,
+            "amount_str": "0 ₽",
             "stage": "Первичный контакт",
             "status": "active",
             "sla_risk": False,

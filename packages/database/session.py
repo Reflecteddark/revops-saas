@@ -68,16 +68,31 @@ SessionRead = sessionmaker(autocommit=False, autoflush=False, bind=engine_read)
 
 
 def init_db():
-    """Initializes all database tables safely and ensures unique indexes exist."""
+    """Initializes all database tables safely and ensures schema columns and unique indexes exist."""
     Base.metadata.create_all(bind=engine)
     try:
-        from sqlalchemy import text
+        from sqlalchemy import inspect, text
+        inspector = inspect(engine)
+        deal_cols = [c["name"] for c in inspector.get_columns("deals")]
         with engine.begin() as conn:
+            if "custom_payload" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN custom_payload JSON;"))
+            if "deleted_at" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN deleted_at TIMESTAMP;"))
+            if "is_deleted" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN is_deleted BOOLEAN DEFAULT 0;"))
+            if "crm_source" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN crm_source VARCHAR(50) DEFAULT 'bitrix24';"))
+            if "status" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN status VARCHAR(50) DEFAULT 'ACTIVE';"))
+            if "weighted_amount" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN weighted_amount FLOAT;"))
+
             conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_deal_external_crm_id ON deals (tenant_id, external_crm_id);"))
             conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_call_external_id ON call_recordings (tenant_id, external_call_id);"))
     except Exception as e:
         import logging
-        logging.getLogger("database").warning(f"Could not apply unique indexes in init_db: {e}")
+        logging.getLogger("database").warning(f"Could not apply schema migration or indexes in init_db: {e}")
 
 
 def get_db() -> Generator[Session, None, None]:

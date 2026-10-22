@@ -1,0 +1,105 @@
+{
+  "name": "RevOps - Sub B24 Fetch Deals",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-sub-b24-fetch",
+      "name": "When Called by Dispatcher",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.b24_webhook_url ? ($json.b24_webhook_url.replace(/\\/?$/, '/') + 'crm.deal.list.json') : 'https://b24.revops.local/rest/crm.deal.list.json' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "order[DATE_MODIFY]",
+              "value": "DESC"
+            },
+            {
+              "name": "select[0]",
+              "value": "ID"
+            },
+            {
+              "name": "select[1]",
+              "value": "TITLE"
+            },
+            {
+              "name": "select[2]",
+              "value": "STAGE_ID"
+            },
+            {
+              "name": "select[3]",
+              "value": "OPPORTUNITY"
+            },
+            {
+              "name": "select[4]",
+              "value": "ASSIGNED_BY_ID"
+            },
+            {
+              "name": "select[5]",
+              "value": "DATE_CREATE"
+            },
+            {
+              "name": "select[6]",
+              "value": "DATE_MODIFY"
+            },
+            {
+              "name": "select[7]",
+              "value": "UF_CRM_*"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "http-b24-fetch",
+      "name": "Fetch Bitrix24 Deals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\nconst deals = inputData.result || inputData.deals || [];\nconst tenantId = $('When Called by Dispatcher').first().json.tenant_id || 'TNT-001';\nconst spreadsheetId = $('When Called by Dispatcher').first().json.spreadsheet_id || '';\n\nreturn deals.map(d => ({\n  json: {\n    ...d,\n    source: 'bitrix24',\n    tenant_id: tenantId,\n    spreadsheet_id: spreadsheetId\n  }\n}));"
+      },
+      "id": "prepare-b24-items",
+      "name": "Prepare B24 Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    }
+  ],
+  "connections": {
+    "When Called by Dispatcher": {
+      "main": [
+        [
+          {
+            "node": "Fetch Bitrix24 Deals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Bitrix24 Deals": {
+      "main": [
+        [
+          {
+            "node": "Prepare B24 Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -8,13 +8,17 @@ import json
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 from pydantic import BaseModel
 
+from ..services.crm_deal_normalizer import (
+    normalize_amocrm_deal,
+    normalize_bitrix24_deal,
+)
 from ..websocket_manager import manager
 from .calls_router import (
     CallIngestPayload,
@@ -358,38 +362,71 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
             "sheets_synced": sheets_ok
         }
 
-    # Otherwise treat as standard deal stage update
+    # Otherwise treat as standard deal stage update or delete event
     leads_raw = body.get("leads") if isinstance(body, dict) else None
-    deal_id = "amo_unknown"
-    deal_data = {}
+    processed_deals = []
+
     if isinstance(leads_raw, dict):
-        updates = leads_raw.get("update") or leads_raw.get("status") or [{}]
-        if isinstance(updates, list) and updates:
-            deal_data = updates[0]
-            deal_id = str(deal_data.get("id", deal_id))
+        # 1. Handle delete events: leads[delete]
+        deleted_leads = leads_raw.get("delete") or []
+        for d in deleted_leads:
+            raw_id = str(d.get("id") or "").strip()
+            if not raw_id:
+                continue
+            deal_id = raw_id if raw_id.startswith("AMO-") else f"AMO-{raw_id}"
+            now_iso = datetime.now(timezone.utc).isoformat()
+            await manager.broadcast(org_id, {
+                "type": "deal_deleted",
+                "tenant_id": org_id,
+                "source": "amocrm",
+                "crm_deal_id": deal_id,
+                "deleted_at": now_iso
+            })
+            processed_deals.append({"deal_id": deal_id, "status": "DELETED"})
+
+        # 2. Handle add, update, status events
+        for evt in ("add", "update", "status"):
+            evt_leads = leads_raw.get(evt) or []
+            for d in evt_leads:
+                try:
+                    norm = normalize_amocrm_deal(d, org_id)
+                    await manager.broadcast(org_id, {
+                        "type": "deal_updated",
+                        "tenant_id": org_id,
+                        "source": "amocrm",
+                        "crm_deal_id": norm["deal_id"],
+                        "deal": norm
+                    })
+                    processed_deals.append(norm)
+                except Exception as ex:
+                    logger.warning(f"Failed to normalize amoCRM lead webhook: {ex}")
     elif isinstance(body, dict) and "id" in body:
-        deal_id = str(body["id"])
-        deal_data = body
+        norm = normalize_amocrm_deal(body, org_id)
+        await manager.broadcast(org_id, {
+            "type": "deal_updated",
+            "tenant_id": org_id,
+            "source": "amocrm",
+            "crm_deal_id": norm["deal_id"],
+            "deal": norm
+        })
+        processed_deals.append(norm)
 
-    await manager.broadcast(org_id, {
-        "type": "deal_updated",
-        "tenant_id": org_id,
-        "source": "amo_crm",
-        "crm_deal_id": deal_id,
-        "raw_event": deal_data
-    })
-
+    primary_id = processed_deals[0].get("deal_id") if processed_deals else "amo_unknown"
     return {
         "status": "ok",
         "crm": "amoCRM",
         "source": "amoCRM",
         "tenant_id": org_id,
-        "event": "deal_updated",
-        "processed_deal": deal_id
+        "event": "deals_processed",
+        "processed_count": len(processed_deals),
+        "processed_deal": primary_id,
+        "deals": processed_deals
     }
 
 
+
 @router.post("/amo-crm")
+@router.post("/amocrm")
 async def receive_amocrm_webhook(
     request: Request,
     signature: str | None = Header(None, alias="X-Amo-Signature")
@@ -399,6 +436,7 @@ async def receive_amocrm_webhook(
 
 
 @router.post("/{tenant_id}/amo-crm")
+@router.post("/{tenant_id}/amocrm")
 async def receive_amocrm_webhook_tenant(
     tenant_id: str,
     request: Request,
@@ -497,24 +535,69 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
             "sheets_synced": sheets_ok
         }
 
-    # Standard deal update in Bitrix24
-    deal_id = str(data_fields.get("ID", body.get("id", "bx_unknown")))
-    await manager.broadcast(org_id, {
-        "type": "deal_updated",
-        "tenant_id": org_id,
-        "source": "bitrix24",
-        "crm_deal_id": deal_id,
-        "raw_event": body
-    })
+    # Standard deal update or delete in Bitrix24
+    fields = data_fields or body.get("FIELDS") or (body if "ID" in body else {})
+    event_upper = str(event_name or body.get("event") or "").upper()
 
-    return {
-        "status": "ok",
-        "crm": "Bitrix24",
-        "source": "Bitrix24",
-        "tenant_id": org_id,
-        "event": "deal_updated",
-        "processed_deal": deal_id
-    }
+    # 1. Soft-delete on ONCRMDEALDELETE
+    if "DEALDELETE" in event_upper or "DELETE" in event_upper:
+        raw_id = str(fields.get("ID") or body.get("id") or "bx_unknown")
+        deal_id = raw_id if raw_id.startswith("B24-") else f"B24-{raw_id}"
+        now_iso = datetime.now(timezone.utc).isoformat()
+        await manager.broadcast(org_id, {
+            "type": "deal_deleted",
+            "tenant_id": org_id,
+            "source": "bitrix24",
+            "crm_deal_id": deal_id,
+            "deleted_at": now_iso
+        })
+        return {
+            "status": "ok",
+            "crm": "Bitrix24",
+            "source": "Bitrix24",
+            "tenant_id": org_id,
+            "event": "deal_deleted",
+            "processed_deal": deal_id
+        }
+
+    # 2. Add / Update: normalize and broadcast
+    try:
+        norm_deal = normalize_bitrix24_deal(fields, org_id)
+        await manager.broadcast(org_id, {
+            "type": "deal_updated",
+            "tenant_id": org_id,
+            "source": "bitrix24",
+            "crm_deal_id": norm_deal["deal_id"],
+            "deal": norm_deal,
+            "raw_event": body
+        })
+        return {
+            "status": "ok",
+            "crm": "Bitrix24",
+            "source": "Bitrix24",
+            "tenant_id": org_id,
+            "event": "deal_updated",
+            "processed_deal": norm_deal["deal_id"],
+            "amount": norm_deal["amount"],
+            "stage": norm_deal["stage_name"]
+        }
+    except Exception as ex:
+        deal_id = str(fields.get("ID", body.get("id", "bx_unknown")))
+        await manager.broadcast(org_id, {
+            "type": "deal_updated",
+            "tenant_id": org_id,
+            "source": "bitrix24",
+            "crm_deal_id": deal_id,
+            "raw_event": body
+        })
+        return {
+            "status": "ok",
+            "crm": "Bitrix24",
+            "source": "Bitrix24",
+            "tenant_id": org_id,
+            "event": "deal_updated",
+            "processed_deal": deal_id
+        }
 
 
 @router.post("/bitrix24")

@@ -53,6 +53,7 @@ class DealStage(str, enum.Enum):
     CONTRACT_PAYMENT = "Договор / Счёт"
     WON = "Успешно реализовано"
     LOST = "Закрыто и не реализовано"
+    UNKNOWN = "Неизвестный этап"
 
 
 class Tenant(Base):
@@ -188,6 +189,14 @@ class Deal(Base):
     # AI Quality Score
     avg_call_score = Column(Float, default=0.0)
     
+    # Custom fields payload & Soft Delete
+    custom_payload = Column(JSON, default=dict, nullable=True)
+    deleted_at = Column(DateTime, nullable=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    crm_source = Column(String(50), default="bitrix24", nullable=False)
+    status = Column(String(50), default="ACTIVE", nullable=False)
+    weighted_amount = Column(Float, nullable=True)
+
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
 

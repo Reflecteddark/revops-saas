@@ -1,0 +1,90 @@
+{
+  "name": "RevOps - Sub amoCRM Fetch Deals",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-sub-amo-fetch",
+      "name": "When Called by Dispatcher",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $json.amo_domain ? $json.amo_domain.replace(/https?:\\/\\//, '').replace(/\\/?$/, '') : 'company.amocrm.ru' }}/api/v4/leads",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "250"
+            },
+            {
+              "name": "with",
+              "value": "contacts"
+            },
+            {
+              "name": "order[updated_at]",
+              "value": "desc"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.amo_token || '' }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "http-amo-fetch",
+      "name": "Fetch amoCRM Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\nconst leads = (inputData._embedded && inputData._embedded.leads) || inputData.leads || [];\nconst tenantId = $('When Called by Dispatcher').first().json.tenant_id || 'TNT-001';\nconst spreadsheetId = $('When Called by Dispatcher').first().json.spreadsheet_id || '';\n\nreturn leads.map(l => ({\n  json: {\n    ...l,\n    source: 'amocrm',\n    tenant_id: tenantId,\n    spreadsheet_id: spreadsheetId\n  }\n}));"
+      },
+      "id": "prepare-amo-items",
+      "name": "Prepare amoCRM Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    }
+  ],
+  "connections": {
+    "When Called by Dispatcher": {
+      "main": [
+        [
+          {
+            "node": "Fetch amoCRM Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch amoCRM Leads": {
+      "main": [
+        [
+          {
+            "node": "Prepare amoCRM Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

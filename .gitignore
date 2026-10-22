@@ -5,6 +5,8 @@ deploy.env
 data/
 logs/
 *.db
+*.db-shm
+*.db-wal
 *.sqlite3
 *.log
 -w

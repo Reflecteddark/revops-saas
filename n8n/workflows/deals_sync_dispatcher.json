@@ -1,0 +1,73 @@
+{
+  "name": "RevOps - Deals Sync Dispatcher",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-dispatcher-trigger",
+      "name": "Every 1 Minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8000/api/v1/tenants/summary",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-get-active-tenants",
+      "name": "Get Tenants Registry",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst tenants = response.tenants || response || [];\nconst active = Array.isArray(tenants) ? tenants.filter(t => t.status === 'active' || t.status === 'active_production') : [];\n\nconst dispatchList = [];\nfor (const t of active) {\n  const crm = String(t.crm_type || 'bitrix24').toLowerCase();\n  if (crm === 'both' || crm === 'hybrid' || crm === 'all') {\n    dispatchList.push({ json: { ...t, target_crm: 'bitrix24' } });\n    dispatchList.push({ json: { ...t, target_crm: 'amocrm' } });\n  } else {\n    dispatchList.push({ json: { ...t, target_crm: crm } });\n  }\n}\n\nreturn dispatchList;"
+      },
+      "id": "filter-and-dispatch-tenants",
+      "name": "Route by CRM Type (b24, amo, both)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    }
+  ],
+  "connections": {
+    "Every 1 Minute": {
+      "main": [
+        [
+          {
+            "node": "Get Tenants Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tenants Registry": {
+      "main": [
+        [
+          {
+            "node": "Route by CRM Type (b24, amo, both)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
