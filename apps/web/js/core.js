@@ -246,7 +246,16 @@ function updateCrmUiState(crm) {
 async function loadCrmProviderStatus(tenantId) {
   const tid = tenantId || getActiveTenantId();
   try {
+    const headers = (typeof getAdminAuthHeaders === 'function')
+      ? getAdminAuthHeaders()
+      : {
+          'Content-Type': 'application/json',
+          'X-Admin-Key': 'revops_admin_fleet_secret_2026',
+          'X-RevOps-Admin-Key': 'revops_admin_fleet_secret_2026'
+        };
+
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/crm/status?tenant_id=${encodeURIComponent(tid)}`, {
+      headers: headers,
       credentials: 'include'
     });
     if (res.ok) {

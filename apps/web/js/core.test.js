@@ -191,6 +191,42 @@ describe('CRM provider switcher', () => {
     );
     expect(elements.sbActiveCrmIndicator.textContent).toBe('BITRIX24');
   });
+
+  it('loadCrmProviderStatus запрашивает статус с заголовками и обновляет UI', async () => {
+    setupMocks({ storageTenant: 'TNT-001' });
+    const elements = {
+      btnTopCrmAmo: { classList: { add: vi.fn(), remove: vi.fn() } },
+      btnTopCrmB24: { classList: { add: vi.fn(), remove: vi.fn() } },
+      sbBtnCrmAmo: { classList: { add: vi.fn(), remove: vi.fn() } },
+      sbBtnCrmB24: { classList: { add: vi.fn(), remove: vi.fn() } },
+      sbActiveCrmIndicator: { textContent: '', className: '' },
+      btnPulseCrmAmo: { classList: { add: vi.fn(), remove: vi.fn() } },
+      btnPulseCrmB24: { classList: { add: vi.fn(), remove: vi.fn() } },
+      pulseActiveCrmName: { textContent: '', style: {} }
+    };
+    vi.stubGlobal('document', {
+      getElementById: (id) => elements[id] || null
+    });
+
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ tenant_id: 'TNT-001', active_crm: 'bitrix24' })
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const mod = await import('./core.js?t=' + Date.now());
+    const res = await mod.loadCrmProviderStatus('TNT-001');
+
+    expect(res).toBe('bitrix24');
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/admin/crm/status?tenant_id=TNT-001'),
+      expect.objectContaining({
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+        credentials: 'include'
+      })
+    );
+    expect(elements.sbActiveCrmIndicator.textContent).toBe('BITRIX24');
+  });
 });
 
 
