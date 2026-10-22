@@ -108,21 +108,22 @@ def map_stage_bitrix24(
     # 1. Custom client mapping config overrides
     if stage_mapping_config and clean_stage in stage_mapping_config:
         cfg = stage_mapping_config[clean_stage]
-        st_num = int(cfg.get("stage_id", 1))
-        weight = float(cfg.get("weight", DEFAULT_STAGE_WEIGHTS.get(st_num, 0.1)))
-        is_won = bool(st_num == 6 or cfg.get("is_won"))
-        is_lost = bool(st_num == 7 or cfg.get("is_lost"))
-        is_active = bool(1 <= st_num <= 5)
-        status = "WON" if is_won else ("LOST" if is_lost else "ACTIVE")
-        return {
-            "stage_num": st_num,
-            "stage_name": cfg.get("stage_name", DEFAULT_STAGE_NAMES.get(st_num, clean_stage)),
-            "weight": weight,
-            "is_won": is_won,
-            "is_lost": is_lost,
-            "is_active": is_active,
-            "status": status
-        }
+        if isinstance(cfg, dict):
+            st_num = int(cfg.get("stage_id", 1))
+            weight = float(cfg.get("weight", DEFAULT_STAGE_WEIGHTS.get(st_num, 0.1)))
+            is_won = bool(st_num == 6 or cfg.get("is_won"))
+            is_lost = bool(st_num == 7 or cfg.get("is_lost"))
+            is_active = bool(1 <= st_num <= 5)
+            status = "WON" if is_won else ("LOST" if is_lost else "ACTIVE")
+            return {
+                "stage_num": st_num,
+                "stage_name": cfg.get("stage_name", DEFAULT_STAGE_NAMES.get(st_num, clean_stage)),
+                "weight": weight,
+                "is_won": is_won,
+                "is_lost": is_lost,
+                "is_active": is_active,
+                "status": status
+            }
 
     # 2. Semantic ID priority from Bitrix24
     if semantic == "S" or "WON" in clean_stage or "УСПЕШНО" in clean_stage:
@@ -189,21 +190,22 @@ def map_stage_amocrm(
     # 1. Custom client mapping config overrides
     if stage_mapping_config and (key in stage_mapping_config or status_str in stage_mapping_config):
         cfg = stage_mapping_config.get(key) or stage_mapping_config.get(status_str)
-        st_num = int(cfg.get("stage_id", 1))
-        weight = float(cfg.get("weight", DEFAULT_STAGE_WEIGHTS.get(st_num, 0.1)))
-        is_won = bool(st_num == 6 or cfg.get("is_won"))
-        is_lost = bool(st_num == 7 or cfg.get("is_lost"))
-        is_active = bool(1 <= st_num <= 5)
-        status = "WON" if is_won else ("LOST" if is_lost else "ACTIVE")
-        return {
-            "stage_num": st_num,
-            "stage_name": cfg.get("stage_name", DEFAULT_STAGE_NAMES.get(st_num, f"amoCRM Status {status_str}")),
-            "weight": weight,
-            "is_won": is_won,
-            "is_lost": is_lost,
-            "is_active": is_active,
-            "status": status
-        }
+        if isinstance(cfg, dict):
+            st_num = int(cfg.get("stage_id", 1))
+            weight = float(cfg.get("weight", DEFAULT_STAGE_WEIGHTS.get(st_num, 0.1)))
+            is_won = bool(st_num == 6 or cfg.get("is_won"))
+            is_lost = bool(st_num == 7 or cfg.get("is_lost"))
+            is_active = bool(1 <= st_num <= 5)
+            status = "WON" if is_won else ("LOST" if is_lost else "ACTIVE")
+            return {
+                "stage_num": st_num,
+                "stage_name": cfg.get("stage_name", DEFAULT_STAGE_NAMES.get(st_num, f"amoCRM Status {status_str}")),
+                "weight": weight,
+                "is_won": is_won,
+                "is_lost": is_lost,
+                "is_active": is_active,
+                "status": status
+            }
 
     # 2. Dynamic stages catalog from amoCRM API (/api/v4/leads/pipelines)
     if stages_catalog:
