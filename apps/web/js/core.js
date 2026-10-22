@@ -100,6 +100,9 @@ async function onTenantSelected(tenantId) {
   if (typeof fetchAndPopulateSettings === 'function') {
     await fetchAndPopulateSettings(false);
   }
+  if (typeof loadCrmProviderStatus === 'function') {
+    await loadCrmProviderStatus(cleanId);
+  }
 }
 
 function updateSidebarTenantChip(tenantId) {
@@ -165,6 +168,196 @@ async function initTenantsSelector() {
 
   selector.value = currentId;
 }
+
+// ==========================================================================
+// CRM PROVIDER CONTROLS & SWITCHER (AMOCRM <-> BITRIX24)
+// ==========================================================================
+let CURRENT_ACTIVE_CRM = 'amocrm';
+
+function updateCrmUiState(crm) {
+  const cleanCrm = (crm || 'amocrm').toLowerCase();
+  CURRENT_ACTIVE_CRM = cleanCrm;
+  const isAmo = cleanCrm === 'amocrm';
+
+  // 1. Topbar Pill Switcher
+  const btnTopAmo = document.getElementById('btnTopCrmAmo');
+  const btnTopB24 = document.getElementById('btnTopCrmB24');
+  if (btnTopAmo && btnTopB24) {
+    if (isAmo) {
+      btnTopAmo.classList.add('active');
+      btnTopB24.classList.remove('active');
+    } else {
+      btnTopB24.classList.add('active');
+      btnTopAmo.classList.remove('active');
+    }
+  }
+
+  // 2. Sidebar CRM Switcher & Indicator
+  const sbBtnAmo = document.getElementById('sbBtnCrmAmo');
+  const sbBtnB24 = document.getElementById('sbBtnCrmB24');
+  const sbIndicator = document.getElementById('sbActiveCrmIndicator');
+  if (sbBtnAmo && sbBtnB24) {
+    if (isAmo) {
+      sbBtnAmo.classList.add('active');
+      sbBtnB24.classList.remove('active');
+    } else {
+      sbBtnB24.classList.add('active');
+      sbBtnAmo.classList.remove('active');
+    }
+  }
+  if (sbIndicator) {
+    sbIndicator.textContent = isAmo ? 'AMOCRM' : 'BITRIX24';
+    sbIndicator.className = isAmo ? 'badge-won' : 'badge-info';
+  }
+
+  // 3. Tab 1 Pulse Card Switcher & Indicator
+  const pulseBtnAmo = document.getElementById('btnPulseCrmAmo');
+  const pulseBtnB24 = document.getElementById('btnPulseCrmB24');
+  const pulseName = document.getElementById('pulseActiveCrmName');
+  if (pulseBtnAmo && pulseBtnB24) {
+    if (isAmo) {
+      pulseBtnAmo.classList.add('active');
+      pulseBtnB24.classList.remove('active');
+    } else {
+      pulseBtnB24.classList.add('active');
+      pulseBtnAmo.classList.remove('active');
+    }
+  }
+  if (pulseName) {
+    pulseName.textContent = isAmo ? 'amoCRM' : 'Битрикс24';
+    pulseName.style.color = isAmo ? '#34d399' : '#38bdf8';
+  }
+
+  // 4. Tab 11 Admin Badges/Buttons (if present)
+  const activeBadge = document.getElementById('adminActiveCrmBadge');
+  const switchBtn = document.getElementById('btnSwitchCrm');
+  if (activeBadge) {
+    activeBadge.textContent = isAmo ? '🟢 AMOCRM V4' : '🟢 BITRIX24 REST';
+    activeBadge.className = isAmo ? 'badge-won' : 'badge-info';
+  }
+  if (switchBtn) {
+    switchBtn.innerHTML = isAmo 
+      ? '<i data-lucide="refresh-cw" style="margin-right: 4px;"></i> Переключить на Bitrix24'
+      : '<i data-lucide="refresh-cw" style="margin-right: 4px;"></i> Переключить на amoCRM';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+}
+
+async function loadCrmProviderStatus(tenantId) {
+  const tid = tenantId || getActiveTenantId();
+  try {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/crm/status?tenant_id=${encodeURIComponent(tid)}`, {
+      credentials: 'include'
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.active_crm) {
+        updateCrmUiState(data.active_crm);
+        return data.active_crm;
+      }
+    }
+  } catch (e) {
+    console.warn('[CRM] loadCrmProviderStatus failed:', e);
+  }
+  return CURRENT_ACTIVE_CRM;
+}
+
+let isCrmSwitching = false;
+async function switchActiveCrm(targetCrm) {
+  if (isCrmSwitching) {
+    if (typeof showToast === 'function') {
+      showToast('Очередь', 'Операция переключения CRM уже выполняется...');
+    }
+    return;
+  }
+
+  const tenantId = getActiveTenantId();
+  const desiredCrm = targetCrm ? targetCrm.toLowerCase() : (CURRENT_ACTIVE_CRM === 'amocrm' ? 'bitrix24' : 'amocrm');
+
+  if (desiredCrm === CURRENT_ACTIVE_CRM && targetCrm) {
+    if (typeof showToast === 'function') {
+      const label = desiredCrm === 'amocrm' ? 'amoCRM API v4' : 'Битрикс24 REST';
+      showToast('CRM-Интеграция', `${label} уже является активным источником для ${tenantId}`);
+    }
+    return;
+  }
+
+  isCrmSwitching = true;
+  const label = desiredCrm === 'amocrm' ? 'amoCRM API v4' : 'Битрикс24 REST';
+  if (typeof showToast === 'function') {
+    showToast('CRM-Интеграция', `Переключение на ${label} для ${tenantId}...`);
+  }
+
+  const buttons = [
+    document.getElementById('btnTopCrmAmo'),
+    document.getElementById('btnTopCrmB24'),
+    document.getElementById('sbBtnCrmAmo'),
+    document.getElementById('sbBtnCrmB24'),
+    document.getElementById('btnPulseCrmAmo'),
+    document.getElementById('btnPulseCrmB24')
+  ];
+  buttons.forEach(btn => {
+    if (btn) btn.disabled = true;
+  });
+
+  try {
+    const headers = (typeof getAdminAuthHeaders === 'function')
+      ? getAdminAuthHeaders()
+      : {
+          'Content-Type': 'application/json',
+          'X-Admin-Key': 'revops_admin_fleet_secret_2026',
+          'X-RevOps-Admin-Key': 'revops_admin_fleet_secret_2026'
+        };
+
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/crm/action`, {
+      method: 'POST',
+      headers: headers,
+      credentials: 'include',
+      body: JSON.stringify({
+        action: 'switch_crm',
+        tenant_id: tenantId,
+        crm_type: desiredCrm
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || data.detail || 'Не удалось переключить CRM');
+    }
+
+    const newActiveCrm = (data.active_crm || desiredCrm).toLowerCase();
+    updateCrmUiState(newActiveCrm);
+
+    if (typeof showToast === 'function') {
+      showToast('Успешно', `Активная CRM переключена: ${newActiveCrm === 'amocrm' ? 'amoCRM' : 'Битрикс24'}`);
+    }
+
+    if (typeof loadAdminCrmStatus === 'function') {
+      try { await loadAdminCrmStatus(); } catch (e) {}
+    }
+
+    if (typeof fetchLiveCallsData === 'function') {
+      await fetchLiveCallsData(true);
+    }
+    if (typeof fetchLiveDealsData === 'function') {
+      await fetchLiveDealsData(false);
+    }
+    if (typeof refreshAllDashboardViews === 'function') {
+      refreshAllDashboardViews();
+    }
+  } catch (err) {
+    console.error('[CRM Switch] Error:', err);
+    if (typeof showToast === 'function') {
+      showToast('Ошибка', `Сбой переключения CRM: ${err.message}`);
+    }
+  } finally {
+    isCrmSwitching = false;
+    buttons.forEach(btn => {
+      if (btn) btn.disabled = false;
+    });
+  }
+}
+
 
 
 // ==========================================================================
@@ -1401,10 +1594,16 @@ window.handleCmdPaletteSearch = handleCmdPaletteSearch;
 window.renderCmdPaletteResults = renderCmdPaletteResults;
 window.executeCmdPaletteAction = executeCmdPaletteAction;
 window.handleCmdPaletteKeydown = handleCmdPaletteKeydown;
+window.updateCrmUiState = updateCrmUiState;
+window.loadCrmProviderStatus = loadCrmProviderStatus;
+window.switchActiveCrm = switchActiveCrm;
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     getActiveTenantId,
-    logout
+    logout,
+    updateCrmUiState,
+    loadCrmProviderStatus,
+    switchActiveCrm
   };
 }

@@ -2852,6 +2852,110 @@
       z-index: 10;
     }
 
+    /* CRM Provider Switcher (Pill Toggle in Topbar) */
+    .crm-pill-switcher {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 99px;
+      padding: 2px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    html[data-theme="light"] .crm-pill-switcher {
+      background: rgba(0, 0, 0, 0.04);
+      border-color: rgba(0, 0, 0, 0.10);
+    }
+
+    .crm-pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .crm-pill-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    html[data-theme="light"] .crm-pill-btn:hover {
+      color: #0f172a;
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .crm-pill-btn.active.crm-amo {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 1px 6px rgba(16, 185, 129, 0.35);
+    }
+
+    .crm-pill-btn.active.crm-b24 {
+      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(56, 189, 248, 0.4);
+      box-shadow: 0 1px 6px rgba(56, 189, 248, 0.35);
+    }
+
+    .crm-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      display: inline-block;
+    }
+
+    .crm-pill-btn.active .crm-dot {
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    /* Sidebar CRM Switch */
+    .sb-crm-btn {
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 0.70rem;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+      width: 100%;
+    }
+
+    .sb-crm-btn:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .sb-crm-btn.active.crm-amo {
+      background: rgba(16, 185, 129, 0.16) !important;
+      border-color: rgba(16, 185, 129, 0.5) !important;
+      color: #34d399 !important;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+    }
+
+    .sb-crm-btn.active.crm-b24 {
+      background: rgba(56, 189, 248, 0.16) !important;
+      border-color: rgba(56, 189, 248, 0.5) !important;
+      color: #38bdf8 !important;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+    }
+
     .develop-user-avatar {
       width: 32px;
       height: 32px;
@@ -5743,6 +5847,19 @@
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 10 7 12"/><line x1="12" y1="12" x2="16" y2="12"/></svg></span>
           <span class="mp-nav-label">11. Админ-кабинет</span>
         </button>
+
+        <!-- Interactive CRM Source Switcher -->
+        <div class="sidebar-crm-switch-box" style="margin: 8px 12px; padding: 8px 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+          <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span>CRM-источник</span>
+            <span id="sbActiveCrmIndicator" class="badge-won" style="font-size: 0.60rem; padding: 1px 6px;">AMOCRM</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+            <button type="button" id="sbBtnCrmAmo" onclick="switchActiveCrm('amocrm')" class="sb-crm-btn crm-amo active" title="Переключить на amoCRM API v4">amoCRM</button>
+            <button type="button" id="sbBtnCrmB24" onclick="switchActiveCrm('bitrix24')" class="sb-crm-btn crm-b24" title="Переключить на Битрикс24 REST">Битрикс24</button>
+          </div>
+        </div>
+
         <a href="https://b24-8dmblj.bitrix24.ru" target="_blank" rel="noopener noreferrer" class="mp-nav-item" data-tooltip="Битрикс24 REST">
           <span class="mp-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
           <span class="mp-nav-label">Битрикс24 REST &nearr;</span>
@@ -5806,6 +5923,16 @@
                 <option value="TNT-CLEAN-001" style="background: #0f172a; color: #34d399;">TNT-CLEAN-001 • Чистый шаблон</option>
               </select>
             </div>
+          </div>
+
+          <!-- CRM Provider Switcher (amoCRM <-> Bitrix24) -->
+          <div id="topbarCrmSwitcher" class="crm-pill-switcher" title="Переключение активной CRM системы (amoCRM API v4 / Битрикс24 REST)">
+            <button type="button" id="btnTopCrmAmo" onclick="switchActiveCrm('amocrm')" class="crm-pill-btn crm-amo active" aria-label="Выбрать amoCRM">
+              <span class="crm-dot"></span> amoCRM
+            </button>
+            <button type="button" id="btnTopCrmB24" onclick="switchActiveCrm('bitrix24')" class="crm-pill-btn crm-b24" aria-label="Выбрать Битрикс24">
+              <span class="crm-dot"></span> Битрикс24
+            </button>
           </div>
 
           <!-- Global Reporting Period Picker -->
@@ -6142,6 +6269,16 @@
                 amoCRM API v4 &bull; Bitrix24 Webhook
               </span>
               <span style="font-size: 0.70rem; color: #a78bfa; font-weight: 600;">200 OK</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(124, 58, 237, 0.25);">
+              <span style="font-size: 0.68rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
+                <span>Источник:</span>
+                <strong id="pulseActiveCrmName" style="color: #34d399;">amoCRM</strong>
+              </span>
+              <div style="display: inline-flex; gap: 4px;">
+                <button type="button" id="btnPulseCrmAmo" onclick="switchActiveCrm('amocrm')" class="sb-crm-btn crm-amo active" style="padding: 3px 8px; font-size: 0.65rem; border-radius: 4px; width: auto;" title="Переключить на amoCRM">amoCRM</button>
+                <button type="button" id="btnPulseCrmB24" onclick="switchActiveCrm('bitrix24')" class="sb-crm-btn crm-b24" style="padding: 3px 8px; font-size: 0.65rem; border-radius: 4px; width: auto;" title="Переключить на Битрикс24">Битрикс24</button>
+              </div>
             </div>
           </div>
         </div>

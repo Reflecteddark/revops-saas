@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // initCustomCursor();
   initTenantsSelector();
   initWebSocketListener();
+  if (typeof loadCrmProviderStatus === 'function') {
+    loadCrmProviderStatus();
+  }
   fetchLiveCallsData(false);
   if (typeof fetchLiveDealsData === 'function') {
     fetchLiveDealsData(false);

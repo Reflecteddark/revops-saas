@@ -121,3 +121,76 @@ describe('logout', () => {
   });
 });
 
+describe('CRM provider switcher', () => {
+  afterEach(() => { vi.unstubAllGlobals(); vi.resetModules(); });
+
+  it('updateCrmUiState корректно переключает классы active и индикаторы', async () => {
+    setupMocks();
+    const elements = {
+      btnTopCrmAmo: { classList: { add: vi.fn(), remove: vi.fn() } },
+      btnTopCrmB24: { classList: { add: vi.fn(), remove: vi.fn() } },
+      sbBtnCrmAmo: { classList: { add: vi.fn(), remove: vi.fn() } },
+      sbBtnCrmB24: { classList: { add: vi.fn(), remove: vi.fn() } },
+      sbActiveCrmIndicator: { textContent: '', className: '' },
+      btnPulseCrmAmo: { classList: { add: vi.fn(), remove: vi.fn() } },
+      btnPulseCrmB24: { classList: { add: vi.fn(), remove: vi.fn() } },
+      pulseActiveCrmName: { textContent: '', style: {} },
+      adminActiveCrmBadge: { textContent: '', className: '' },
+      btnSwitchCrm: { innerHTML: '' }
+    };
+    vi.stubGlobal('document', {
+      getElementById: (id) => elements[id] || null
+    });
+
+    const mod = await import('./core.js?t=' + Date.now());
+    mod.updateCrmUiState('bitrix24');
+
+    expect(elements.btnTopCrmB24.classList.add).toHaveBeenCalledWith('active');
+    expect(elements.btnTopCrmAmo.classList.remove).toHaveBeenCalledWith('active');
+    expect(elements.sbActiveCrmIndicator.textContent).toBe('BITRIX24');
+    expect(elements.pulseActiveCrmName.textContent).toBe('Битрикс24');
+
+    mod.updateCrmUiState('amocrm');
+    expect(elements.btnTopCrmAmo.classList.add).toHaveBeenCalledWith('active');
+    expect(elements.btnTopCrmB24.classList.remove).toHaveBeenCalledWith('active');
+    expect(elements.sbActiveCrmIndicator.textContent).toBe('AMOCRM');
+    expect(elements.pulseActiveCrmName.textContent).toBe('amoCRM');
+  });
+
+  it('switchActiveCrm отправляет POST /api/v1/admin/crm/action и обновляет состояние', async () => {
+    setupMocks({ storageTenant: 'TNT-001' });
+    const elements = {
+      btnTopCrmAmo: { classList: { add: vi.fn(), remove: vi.fn() }, disabled: false },
+      btnTopCrmB24: { classList: { add: vi.fn(), remove: vi.fn() }, disabled: false },
+      sbBtnCrmAmo: { classList: { add: vi.fn(), remove: vi.fn() }, disabled: false },
+      sbBtnCrmB24: { classList: { add: vi.fn(), remove: vi.fn() }, disabled: false },
+      sbActiveCrmIndicator: { textContent: '', className: '' },
+      btnPulseCrmAmo: { classList: { add: vi.fn(), remove: vi.fn() }, disabled: false },
+      btnPulseCrmB24: { classList: { add: vi.fn(), remove: vi.fn() }, disabled: false },
+      pulseActiveCrmName: { textContent: '', style: {} }
+    };
+    vi.stubGlobal('document', {
+      getElementById: (id) => elements[id] || null
+    });
+
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, active_crm: 'bitrix24', message: 'CRM переключена' })
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const mod = await import('./core.js?t=' + Date.now());
+    await mod.switchActiveCrm('bitrix24');
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/admin/crm/action'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ action: 'switch_crm', tenant_id: 'TNT-001', crm_type: 'bitrix24' })
+      })
+    );
+    expect(elements.sbActiveCrmIndicator.textContent).toBe('BITRIX24');
+  });
+});
+
+

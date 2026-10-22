@@ -419,6 +419,12 @@ function initWebSocketListener() {
         } else if (msg.type === 'deal_updated' || msg.type === 'new_deal') {
           fetchLiveDealsData(false);
           fetchLiveCallsData(false);
+        } else if (msg.type === 'crm_switched') {
+          if (typeof updateCrmUiState === 'function') {
+            updateCrmUiState(msg.active_crm);
+          }
+          fetchLiveDealsData(false);
+          fetchLiveCallsData(false);
         }
       } catch (e) {
         console.error('[Live WS] Message parse error:', e);
