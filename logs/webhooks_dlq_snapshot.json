@@ -1,5 +1,491 @@
 [
   {
+    "id": "wh_1792651409_138915",
+    "timestamp": "2026-10-22 09:43:29",
+    "provider": "bitrix24",
+    "tenant_id": "TNT-001",
+    "event": "bitrix24_webhook",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "57",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "event": "ONCRMDEALUPDATE",
+      "data": {
+        "FIELDS": {
+          "ID": 9876
+        }
+      }
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792651409_19b9fb",
+    "timestamp": "2026-10-22 09:43:29",
+    "provider": "amocrm",
+    "tenant_id": "TNT-001",
+    "event": "amocrm_webhook",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "63",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "event": "status_update",
+      "leads": [
+        {
+          "id": 12345,
+          "price": 500000
+        }
+      ]
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792651403_12f42d",
+    "timestamp": "2026-10-22 09:43:23",
+    "provider": "telephony",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "253",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "call_id": "test_scoped_1792651403124",
+      "client_name": "ИП Смирнов",
+      "manager_name": "Иван Менеджер",
+      "duration_sec": 95,
+      "score": 12,
+      "next_step": 1,
+      "transcript": "Короткий рабочий разговор с фиксацией КП."
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792651403_6dd7b6",
+    "timestamp": "2026-10-22 09:43:23",
+    "provider": "telephony",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "248",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "call_id": "test_fallback_1792651403116",
+      "deal_id": "D-9989",
+      "client_name": "ИП Семенов",
+      "manager_name": "Иван Менеджер",
+      "duration_sec": 120,
+      "score": 10,
+      "next_step": 1,
+      "transcript": "Короткий рабочий разговор."
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792651403_69c1fe",
+    "timestamp": "2026-10-22 09:43:23",
+    "provider": "telephony",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "477",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "call_id": "test_celery_1792651403097",
+      "deal_id": "D-9988",
+      "deal_title": "Тестовая сделка по телефонии",
+      "client_name": "ООО Вектор (Алексей)",
+      "manager_name": "Дмитрий Федотов",
+      "duration_sec": 140,
+      "score": 11,
+      "next_step": 1,
+      "cr": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      "transcript": "Менеджер: Добрый день! Согласуем следующий шаг? Клиент: Да, давайте в понедельник в 12:00."
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792651281_6f9173",
+    "timestamp": "2026-10-22 09:41:21",
+    "provider": "bitrix24",
+    "tenant_id": "TNT-001",
+    "event": "bitrix24_webhook",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "57",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "event": "ONCRMDEALUPDATE",
+      "data": {
+        "FIELDS": {
+          "ID": 9876
+        }
+      }
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792651281_fb8b1c",
+    "timestamp": "2026-10-22 09:41:21",
+    "provider": "amocrm",
+    "tenant_id": "TNT-001",
+    "event": "amocrm_webhook",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "63",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "event": "status_update",
+      "leads": [
+        {
+          "id": 12345,
+          "price": 500000
+        }
+      ]
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792651272_66fea4",
+    "timestamp": "2026-10-22 09:41:12",
+    "provider": "telephony",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "253",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "call_id": "test_scoped_1792651272243",
+      "client_name": "ИП Смирнов",
+      "manager_name": "Иван Менеджер",
+      "duration_sec": 95,
+      "score": 12,
+      "next_step": 1,
+      "transcript": "Короткий рабочий разговор с фиксацией КП."
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792651272_1707fc",
+    "timestamp": "2026-10-22 09:41:12",
+    "provider": "telephony",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "248",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "call_id": "test_fallback_1792651272229",
+      "deal_id": "D-9989",
+      "client_name": "ИП Семенов",
+      "manager_name": "Иван Менеджер",
+      "duration_sec": 120,
+      "score": 10,
+      "next_step": 1,
+      "transcript": "Короткий рабочий разговор."
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792651272_a7f932",
+    "timestamp": "2026-10-22 09:41:12",
+    "provider": "telephony",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "477",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "call_id": "test_celery_1792651272202",
+      "deal_id": "D-9988",
+      "deal_title": "Тестовая сделка по телефонии",
+      "client_name": "ООО Вектор (Алексей)",
+      "manager_name": "Дмитрий Федотов",
+      "duration_sec": 140,
+      "score": 11,
+      "next_step": 1,
+      "cr": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      "transcript": "Менеджер: Добрый день! Согласуем следующий шаг? Клиент: Да, давайте в понедельник в 12:00."
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792609541_392d30",
+    "timestamp": "2026-10-21 22:05:41",
+    "provider": "bitrix24",
+    "tenant_id": "TNT-001",
+    "event": "bitrix24_webhook",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "57",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "event": "ONCRMDEALUPDATE",
+      "data": {
+        "FIELDS": {
+          "ID": 9876
+        }
+      }
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792609541_746fa6",
+    "timestamp": "2026-10-21 22:05:41",
+    "provider": "amocrm",
+    "tenant_id": "TNT-001",
+    "event": "amocrm_webhook",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "63",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "event": "status_update",
+      "leads": [
+        {
+          "id": 12345,
+          "price": 500000
+        }
+      ]
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792609535_a8a97e",
+    "timestamp": "2026-10-21 22:05:35",
+    "provider": "telephony",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "253",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "call_id": "test_scoped_1792609535105",
+      "client_name": "ИП Смирнов",
+      "manager_name": "Иван Менеджер",
+      "duration_sec": 95,
+      "score": 12,
+      "next_step": 1,
+      "transcript": "Короткий рабочий разговор с фиксацией КП."
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792609535_ec2520",
+    "timestamp": "2026-10-21 22:05:35",
+    "provider": "telephony",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "248",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "call_id": "test_fallback_1792609535099",
+      "deal_id": "D-9989",
+      "client_name": "ИП Семенов",
+      "manager_name": "Иван Менеджер",
+      "duration_sec": 120,
+      "score": 10,
+      "next_step": 1,
+      "transcript": "Короткий рабочий разговор."
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
+    "id": "wh_1792609535_2b624a",
+    "timestamp": "2026-10-21 22:05:35",
+    "provider": "telephony",
+    "tenant_id": "TNT-001",
+    "event": "telephony_call",
+    "status": "queued",
+    "headers": {
+      "host": "testserver",
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate, zstd",
+      "connection": "keep-alive",
+      "user-agent": "testclient",
+      "content-length": "477",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "call_id": "test_celery_1792609535082",
+      "deal_id": "D-9988",
+      "deal_title": "Тестовая сделка по телефонии",
+      "client_name": "ООО Вектор (Алексей)",
+      "manager_name": "Дмитрий Федотов",
+      "duration_sec": 140,
+      "score": 11,
+      "next_step": 1,
+      "cr": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      "transcript": "Менеджер: Добрый день! Согласуем следующий шаг? Клиент: Да, давайте в понедельник в 12:00."
+    },
+    "error_msg": null,
+    "execution_time_ms": null,
+    "sheets_synced": false
+  },
+  {
     "id": "wh_1792609478_d0da8d",
     "timestamp": "2026-10-21 22:04:38",
     "provider": "bitrix24",
@@ -457,492 +943,6 @@
     },
     "payload": {
       "call_id": "test_celery_1792607526881",
-      "deal_id": "D-9988",
-      "deal_title": "Тестовая сделка по телефонии",
-      "client_name": "ООО Вектор (Алексей)",
-      "manager_name": "Дмитрий Федотов",
-      "duration_sec": 140,
-      "score": 11,
-      "next_step": 1,
-      "cr": [
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        0,
-        1
-      ],
-      "transcript": "Менеджер: Добрый день! Согласуем следующий шаг? Клиент: Да, давайте в понедельник в 12:00."
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792607151_063737",
-    "timestamp": "2026-10-21 21:25:51",
-    "provider": "bitrix24",
-    "tenant_id": "TNT-001",
-    "event": "bitrix24_webhook",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "57",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "event": "ONCRMDEALUPDATE",
-      "data": {
-        "FIELDS": {
-          "ID": 9876
-        }
-      }
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792607151_62b4d9",
-    "timestamp": "2026-10-21 21:25:51",
-    "provider": "amocrm",
-    "tenant_id": "TNT-001",
-    "event": "amocrm_webhook",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "63",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "event": "status_update",
-      "leads": [
-        {
-          "id": 12345,
-          "price": 500000
-        }
-      ]
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792607143_ad3520",
-    "timestamp": "2026-10-21 21:25:43",
-    "provider": "telephony",
-    "tenant_id": "TNT-001",
-    "event": "telephony_call",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "253",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "call_id": "test_scoped_1792607143939",
-      "client_name": "ИП Смирнов",
-      "manager_name": "Иван Менеджер",
-      "duration_sec": 95,
-      "score": 12,
-      "next_step": 1,
-      "transcript": "Короткий рабочий разговор с фиксацией КП."
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792607143_0aa655",
-    "timestamp": "2026-10-21 21:25:43",
-    "provider": "telephony",
-    "tenant_id": "TNT-001",
-    "event": "telephony_call",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "248",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "call_id": "test_fallback_1792607143932",
-      "deal_id": "D-9989",
-      "client_name": "ИП Семенов",
-      "manager_name": "Иван Менеджер",
-      "duration_sec": 120,
-      "score": 10,
-      "next_step": 1,
-      "transcript": "Короткий рабочий разговор."
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792607143_aaaad4",
-    "timestamp": "2026-10-21 21:25:43",
-    "provider": "telephony",
-    "tenant_id": "TNT-001",
-    "event": "telephony_call",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "477",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "call_id": "test_celery_1792607143910",
-      "deal_id": "D-9988",
-      "deal_title": "Тестовая сделка по телефонии",
-      "client_name": "ООО Вектор (Алексей)",
-      "manager_name": "Дмитрий Федотов",
-      "duration_sec": 140,
-      "score": 11,
-      "next_step": 1,
-      "cr": [
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        0,
-        1
-      ],
-      "transcript": "Менеджер: Добрый день! Согласуем следующий шаг? Клиент: Да, давайте в понедельник в 12:00."
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605982_33b52c",
-    "timestamp": "2026-10-21 21:06:22",
-    "provider": "bitrix24",
-    "tenant_id": "TNT-001",
-    "event": "bitrix24_webhook",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "57",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "event": "ONCRMDEALUPDATE",
-      "data": {
-        "FIELDS": {
-          "ID": 9876
-        }
-      }
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605982_b56220",
-    "timestamp": "2026-10-21 21:06:22",
-    "provider": "amocrm",
-    "tenant_id": "TNT-001",
-    "event": "amocrm_webhook",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "63",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "event": "status_update",
-      "leads": [
-        {
-          "id": 12345,
-          "price": 500000
-        }
-      ]
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605975_c45e19",
-    "timestamp": "2026-10-21 21:06:15",
-    "provider": "telephony",
-    "tenant_id": "TNT-001",
-    "event": "telephony_call",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "253",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "call_id": "test_scoped_1792605975000",
-      "client_name": "ИП Смирнов",
-      "manager_name": "Иван Менеджер",
-      "duration_sec": 95,
-      "score": 12,
-      "next_step": 1,
-      "transcript": "Короткий рабочий разговор с фиксацией КП."
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605974_bf2eb0",
-    "timestamp": "2026-10-21 21:06:14",
-    "provider": "telephony",
-    "tenant_id": "TNT-001",
-    "event": "telephony_call",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "248",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "call_id": "test_fallback_1792605974992",
-      "deal_id": "D-9989",
-      "client_name": "ИП Семенов",
-      "manager_name": "Иван Менеджер",
-      "duration_sec": 120,
-      "score": 10,
-      "next_step": 1,
-      "transcript": "Короткий рабочий разговор."
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605974_eb8dd4",
-    "timestamp": "2026-10-21 21:06:14",
-    "provider": "telephony",
-    "tenant_id": "TNT-001",
-    "event": "telephony_call",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "477",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "call_id": "test_celery_1792605974975",
-      "deal_id": "D-9988",
-      "deal_title": "Тестовая сделка по телефонии",
-      "client_name": "ООО Вектор (Алексей)",
-      "manager_name": "Дмитрий Федотов",
-      "duration_sec": 140,
-      "score": 11,
-      "next_step": 1,
-      "cr": [
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        0,
-        1
-      ],
-      "transcript": "Менеджер: Добрый день! Согласуем следующий шаг? Клиент: Да, давайте в понедельник в 12:00."
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605922_4dcc5c",
-    "timestamp": "2026-10-21 21:05:22",
-    "provider": "bitrix24",
-    "tenant_id": "TNT-001",
-    "event": "bitrix24_webhook",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "57",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "event": "ONCRMDEALUPDATE",
-      "data": {
-        "FIELDS": {
-          "ID": 9876
-        }
-      }
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605922_5975b7",
-    "timestamp": "2026-10-21 21:05:22",
-    "provider": "amocrm",
-    "tenant_id": "TNT-001",
-    "event": "amocrm_webhook",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "63",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "event": "status_update",
-      "leads": [
-        {
-          "id": 12345,
-          "price": 500000
-        }
-      ]
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605915_a17218",
-    "timestamp": "2026-10-21 21:05:15",
-    "provider": "telephony",
-    "tenant_id": "TNT-001",
-    "event": "telephony_call",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "253",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "call_id": "test_scoped_1792605915367",
-      "client_name": "ИП Смирнов",
-      "manager_name": "Иван Менеджер",
-      "duration_sec": 95,
-      "score": 12,
-      "next_step": 1,
-      "transcript": "Короткий рабочий разговор с фиксацией КП."
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605915_90c28a",
-    "timestamp": "2026-10-21 21:05:15",
-    "provider": "telephony",
-    "tenant_id": "TNT-001",
-    "event": "telephony_call",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "248",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "call_id": "test_fallback_1792605915359",
-      "deal_id": "D-9989",
-      "client_name": "ИП Семенов",
-      "manager_name": "Иван Менеджер",
-      "duration_sec": 120,
-      "score": 10,
-      "next_step": 1,
-      "transcript": "Короткий рабочий разговор."
-    },
-    "error_msg": null,
-    "execution_time_ms": null,
-    "sheets_synced": false
-  },
-  {
-    "id": "wh_1792605915_5508fb",
-    "timestamp": "2026-10-21 21:05:15",
-    "provider": "telephony",
-    "tenant_id": "TNT-001",
-    "event": "telephony_call",
-    "status": "queued",
-    "headers": {
-      "host": "testserver",
-      "accept": "*/*",
-      "accept-encoding": "gzip, deflate, zstd",
-      "connection": "keep-alive",
-      "user-agent": "testclient",
-      "content-length": "477",
-      "content-type": "application/json"
-    },
-    "payload": {
-      "call_id": "test_celery_1792605915339",
       "deal_id": "D-9988",
       "deal_title": "Тестовая сделка по телефонии",
       "client_name": "ООО Вектор (Алексей)",
