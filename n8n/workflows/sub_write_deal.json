@@ -15,7 +15,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "={{ $json.spreadsheet_id || '1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk' }}",
+          "value": "={{ $json.spreadsheet_id }}",
           "mode": "id"
         },
         "sheetName": {
@@ -39,8 +39,8 @@
       "position": [460, 300],
       "credentials": {
         "googleApi": {
-          "id": "lbGgYppJZkZJI2Uo",
-          "name": "Google Service Account account"
+          "id": "REPLACE_WITH_GSHEETS_CREDENTIAL_ID",
+          "name": "Google Service Account - RevOps"
         }
       }
     }

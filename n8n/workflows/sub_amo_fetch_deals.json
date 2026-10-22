@@ -11,7 +11,7 @@
     },
     {
       "parameters": {
-        "url": "=https://{{ $json.amo_domain ? $json.amo_domain.replace(/https?:\\/\\//, '').replace(/\\/?$/, '') : 'company.amocrm.ru' }}/api/v4/leads",
+        "url": "={{ 'https://' + ($json.amo_domain || 'company.amocrm.ru').replace(/https?:\\/\\//, '').replace(/\\/?$/, '') + '/api/v4/leads' }}",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -29,15 +29,8 @@
             }
           ]
         },
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $json.amo_token || '' }}"
-            }
-          ]
-        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "options": {
           "timeout": 15000
         }
@@ -47,7 +40,13 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [440, 300],
-      "continueOnFail": true
+      "continueOnFail": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_AMO_CREDENTIAL_ID",
+          "name": "amoCRM Bearer Token"
+        }
+      }
     },
     {
       "parameters": {
