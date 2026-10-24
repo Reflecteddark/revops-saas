@@ -168,7 +168,8 @@ def test_leak_rub_uses_tenant_avg_check():
         for i in range(2)
     ]
 
-    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=(calls, deals)):
+    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=(calls, deals)), \
+         patch("apps.api.routers.insights_router.get_tenant_config", return_value={"avg_deal_check": 150000.0, "tenant_name": "Test Tenant"}):
         resp = client.post(
             "/api/v1/insights/analyst/chat",
             json={

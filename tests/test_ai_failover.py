@@ -28,6 +28,23 @@ client = TestClient(app)
 def setup_database():
     """Initializes schema for isolated test environments."""
     init_db()
+    from packages.database.session import SessionLocal
+    from packages.database.models import User, UserRole
+    db = SessionLocal()
+    u = db.query(User).filter(User.id == "usr-tnt-001").first()
+    if not u:
+        u = User(
+            id="usr-tnt-001",
+            email="usr-tnt-001@example.com",
+            full_name="User TNT 001",
+            hashed_password="mock_password",
+            tenant_id="TNT-001",
+            role=UserRole.ADMIN,
+            is_active=True,
+        )
+        db.add(u)
+        db.commit()
+    db.close()
 
 
 
