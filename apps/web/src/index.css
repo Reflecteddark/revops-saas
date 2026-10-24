@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3%;       /* #08080c */
+    --surface: 240 8% 6%;           /* #0d0d14 */
+    --surface-hover: 240 8% 8%;     /* #13131c */
+    --border: 240 5% 15%;           /* rgba(255,255,255,0.08) */
+    --foreground: 0 0% 100%;
+    --muted: 240 5% 65%;            /* #a1a1aa */
+    --primary: 262 83% 58%;         /* #7c3aed */
+    --primary-hover: 262 83% 50%;   /* #6d28d9 */
+    --success: 160 84% 52%;         /* #34d399 */
+    --warning: 38 92% 50%;          /* #fbbf24 */
+    --danger: 350 89% 60%;          /* #fb7185 */
+  }
+
+  [data-theme="light"] {
+    --background: 0 0% 98%;
+    --surface: 0 0% 100%;
+    --surface-hover: 240 5% 96%;
+    --border: 240 6% 90%;
+    --foreground: 240 10% 4%;
+    --muted: 240 4% 46%;
+    --primary: 262 83% 58%;
+    --primary-hover: 262 83% 50%;
+    --success: 160 84% 39%;
+    --warning: 38 92% 50%;
+    --danger: 350 89% 60%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-variant-numeric: tabular-nums;
+    scrollbar-width: thin;
+    transition: background-color 150ms ease-out, color 150ms ease-out;
+  }
+}
