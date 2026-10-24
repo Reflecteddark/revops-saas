@@ -39,7 +39,7 @@ def setup_database():
             full_name="User TNT 001",
             hashed_password="mock_password",
             tenant_id="TNT-001",
-            role=UserRole.ADMIN,
+            role=UserRole.CEO,
             is_active=True,
         )
         db.add(u)
