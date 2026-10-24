@@ -623,11 +623,10 @@ def test_calls_cache_persistence_on_sync_sheets():
         assert data["status"] == "ok"
         assert data["count"] == 1
 
-        # Verify _CALLS_CACHE contains "calls" key and "TNT-001" key
-        assert "calls" in _CALLS_CACHE, "_CALLS_CACHE['calls'] must be populated"
-        assert _CALLS_CACHE["calls"] == mock_calls
+        # Verify _CALLS_CACHE contains "TNT-001" key and does not leak global "calls"
         assert "TNT-001" in _CALLS_CACHE, "_CALLS_CACHE['TNT-001'] must be populated"
         assert _CALLS_CACHE["TNT-001"]["calls"] == mock_calls
+        assert "calls" not in _CALLS_CACHE, "Global _CALLS_CACHE['calls'] must not exist"
 
         # Verify CCO Analyst Overview picks up the cached calls without synthetic fallback
         res_overview = client.post("/api/v1/insights/analyst/overview", json={"tenant_id": "TNT-001"})

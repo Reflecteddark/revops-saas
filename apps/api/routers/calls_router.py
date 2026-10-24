@@ -116,7 +116,6 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
     cached_redis = get_cached_json_sync(cache_key)
     if cached_redis is not None and isinstance(cached_redis, list) and len(cached_redis) > 0:
         _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": cached_redis}
-        _CALLS_CACHE["calls"] = cached_redis
         return cached_redis[:limit]
 
     cached = _CALLS_CACHE.get(clean_tenant)
@@ -138,7 +137,6 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
         if len(rows) < 2:
             empty_calls: list[dict[str, Any]] = []
             _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": empty_calls}
-            _CALLS_CACHE["calls"] = empty_calls
             set_cached_json_sync(cache_key, empty_calls, ex=60)
             return empty_calls
 
@@ -247,7 +245,6 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                 break
 
         _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": calls}
-        _CALLS_CACHE["calls"] = calls
         set_cached_json_sync(cache_key, calls, ex=60)
         return calls
     except Exception as e:
@@ -362,9 +359,10 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
             logger.debug(f"Read-After-Write verification note: {ex_raw}")
 
         # Invalidate cache so fresh calls appear immediately
-        delete_cached_json_sync(f"calls:{tenant_id}")
-        _CALLS_CACHE.pop(tenant_id, None)
-        _CALLS_CACHE.clear()
+        clean_tid = (tenant_id or "TNT-001").strip().upper()
+        delete_cached_json_sync(f"calls:{clean_tid}")
+        _CALLS_CACHE.pop(clean_tid, None)
+        _CALLS_CACHE.pop(f"calls:{clean_tid}", None)
         return True
     except Exception as e:
         logger.error(f"Error appending call to Google Sheets: {e}")
@@ -515,16 +513,13 @@ async def ingest_call_from_n8n(
         sheets_synced = append_call_to_sheets(payload)
 
     # Broadcast to open web dashboard tabs via WebSocket
-    await manager.broadcast(payload.tenant_id, {
-        "type": "new_call",
-        "call": formatted_call
-    })
-    await manager.broadcast("org_default", {
+    target_tenant = (payload.tenant_id or "TNT-001").strip().upper()
+    await manager.broadcast(target_tenant, {
         "type": "new_call",
         "call": formatted_call
     })
 
-    delete_cached_json_sync(f"calls:{(payload.tenant_id or 'TNT-001').strip().upper()}")
+    delete_cached_json_sync(f"calls:{target_tenant}")
 
     return {
         "status": "ok",
@@ -544,8 +539,8 @@ def force_sync_from_sheets(request: Request, tenant_id: str = Query("TNT-001")):
     if clean_tenant in _CALLS_CACHE and isinstance(_CALLS_CACHE[clean_tenant], dict):
         _CALLS_CACHE[clean_tenant]["timestamp"] = 0
     calls = fetch_calls_from_sheets(tenant_id=clean_tenant, limit=100)
-    _CALLS_CACHE["calls"] = calls
     _CALLS_CACHE[clean_tenant] = {"timestamp": time.time(), "calls": calls}
+    set_cached_json_sync(f"calls:{clean_tenant}", calls, ex=300)
     return {
         "status": "ok",
         "tenant_id": clean_tenant,

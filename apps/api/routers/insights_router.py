@@ -6,6 +6,7 @@ Multi-tenant aware (Bitrix24, amoCRM) with strict honest reporting and no hardco
 
 import logging
 import os
+import time
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, Query
@@ -63,7 +64,7 @@ def load_tenant_dataset(
     if payload_deals and isinstance(payload_deals, list) and len(payload_deals) > 0:
         deals_list = payload_deals
     else:
-        # Check Postgres first
+        # 1.1 Check Postgres first
         db_deals = db.query(Deal).filter(
             Deal.tenant_id == clean_tenant,
             Deal.is_deleted == False
@@ -87,8 +88,38 @@ def load_tenant_dataset(
                     "crm_source": str(d.crm_source or ""),
                     "manager_name": mgr or ""
                 })
-        elif has_sheet:
-            # Fallback to Google Sheets / Redis cache only if tenant has a configured spreadsheet
+
+        # 1.2 Check Redis cache next (strictly scoped to deals:{clean_tenant})
+        if not deals_list:
+            try:
+                from ..cache_client import get_cached_json_sync
+                redis_deals = get_cached_json_sync(f"deals:{clean_tenant}")
+                if redis_deals and isinstance(redis_deals, list) and len(redis_deals) > 0:
+                    for rd in redis_deals:
+                        tid = str(rd.get("tenant_id") or rd.get("org_id") or clean_tenant).strip().upper()
+                        if tid and tid != clean_tenant:
+                            continue
+                        raw_budget = rd.get("amount") if rd.get("amount") is not None else rd.get("amount_num", 0.0)
+                        try:
+                            budget_val = float(raw_budget or 0.0)
+                        except (ValueError, TypeError):
+                            budget_val = 0.0
+                        deals_list.append({
+                            "id": str(rd.get("id") or rd.get("deal_id") or ""),
+                            "title": str(rd.get("title") or rd.get("company_name") or f"Сделка {rd.get('id')}"),
+                            "budget": budget_val,
+                            "stage": str(rd.get("stage") or rd.get("stage_name") or ""),
+                            "status": str(rd.get("status") or "ACTIVE").upper(),
+                            "is_at_risk": bool(rd.get("sla_risk") or rd.get("is_risk") or (rd.get("days_in_stage", 0) or 0) > 3),
+                            "days_in_stage": int(rd.get("days_in_stage") or rd.get("days_in_current_stage") or 0),
+                            "crm_source": str(rd.get("crm_source") or rd.get("source") or ""),
+                            "manager_name": str(rd.get("manager_name") or rd.get("manager") or "")
+                        })
+            except Exception as e_rd:
+                logger.debug(f"Redis deals lookup for {clean_tenant}: {e_rd}")
+
+        # 1.3 Fallback to Google Sheets (if tenant has a configured spreadsheet)
+        if not deals_list and has_sheet:
             try:
                 from .deals_router import fetch_deals_from_sheets
                 sheet_deals = fetch_deals_from_sheets(clean_tenant)
@@ -121,19 +152,51 @@ def load_tenant_dataset(
     if payload_calls and isinstance(payload_calls, list) and len(payload_calls) > 0:
         calls_list = payload_calls
     else:
-        # Check in-memory sync cache first (e.g. from /sync_sheets)
+        # 2.1 Check in-memory sync cache (strictly scoped to clean_tenant)
         try:
             from .calls_router import _CALLS_CACHE
             cached_entry = _CALLS_CACHE.get(clean_tenant)
             if isinstance(cached_entry, dict) and cached_entry.get("calls"):
                 calls_list = cached_entry["calls"]
-            elif _CALLS_CACHE.get("calls") and clean_tenant == "TNT-001":
-                calls_list = _CALLS_CACHE["calls"]
+            elif _CALLS_CACHE.get(f"calls:{clean_tenant}") and isinstance(_CALLS_CACHE[f"calls:{clean_tenant}"], dict):
+                calls_list = _CALLS_CACHE[f"calls:{clean_tenant}"].get("calls", [])
         except Exception:
             pass
 
+        # 2.2 Check Redis cache (strictly scoped to calls:{clean_tenant})
         if not calls_list:
-            # Check Postgres first
+            try:
+                from ..cache_client import get_cached_json_sync
+                redis_calls = get_cached_json_sync(f"calls:{clean_tenant}")
+                if redis_calls and isinstance(redis_calls, list) and len(redis_calls) > 0:
+                    for rc in redis_calls:
+                        tid = str(rc.get("tenant_id") or clean_tenant).strip().upper()
+                        if tid and tid != clean_tenant:
+                            continue
+                        raw_sc = rc.get("score")
+                        score_val = int(raw_sc) if raw_sc is not None else 0
+                        raw_ns = rc.get("next_step")
+                        ns_val = int(raw_ns) if raw_ns is not None else 0
+                        calls_list.append({
+                            "id": str(rc.get("id") or ""),
+                            "score": score_val,
+                            "next_step": ns_val,
+                            "status": str(rc.get("status") or "risk").lower(),
+                            "manager": str(rc.get("manager") or ""),
+                            "cr": rc.get("cr") if isinstance(rc.get("cr"), list) else None,
+                            "transcript": str(rc.get("transcript") or "")
+                        })
+                    if calls_list:
+                        try:
+                            from .calls_router import _CALLS_CACHE
+                            _CALLS_CACHE[clean_tenant] = {"timestamp": time.time(), "calls": calls_list}
+                        except Exception:
+                            pass
+            except Exception as e_rc:
+                logger.debug(f"Redis calls lookup for {clean_tenant}: {e_rc}")
+
+        # 2.3 Check Postgres call_recordings
+        if not calls_list:
             db_calls = db.query(CallRecording).filter(
                 CallRecording.tenant_id == clean_tenant
             ).order_by(CallRecording.created_at.desc()).limit(50).all()
@@ -154,27 +217,32 @@ def load_tenant_dataset(
                         "cr": sc.get("cr") if isinstance(sc.get("cr"), list) else None,
                         "transcript": c.transcript_text or ""
                     })
-            elif has_sheet:
-                # Fallback to Google Sheets / Redis cache only if tenant has a configured spreadsheet
-                try:
-                    from .calls_router import fetch_calls_from_sheets
-                    sheet_calls = fetch_calls_from_sheets(clean_tenant)
-                    if sheet_calls:
-                        for sc in sheet_calls:
-                            tid = str(sc.get("tenant_id") or clean_tenant).strip().upper()
-                            if tid and tid != clean_tenant:
-                                continue
-                            calls_list.append({
-                                "id": str(sc.get("id") or ""),
-                                "score": int(sc.get("score") if sc.get("score") is not None else 0),
-                                "next_step": int(sc.get("next_step") if sc.get("next_step") is not None else 0),
-                                "status": str(sc.get("status") or "risk").lower(),
-                                "manager": str(sc.get("manager") or ""),
-                                "cr": sc.get("cr") if isinstance(sc.get("cr"), list) else None,
-                                "transcript": str(sc.get("transcript") or "")
-                            })
-                except Exception as e_c:
-                    logger.debug(f"Note reading calls for {clean_tenant}: {e_c}")
+
+        # 2.4 Fallback to Google Sheets (if tenant has a configured spreadsheet)
+        if not calls_list and has_sheet:
+            try:
+                from .calls_router import fetch_calls_from_sheets
+                sheet_calls = fetch_calls_from_sheets(clean_tenant)
+                if sheet_calls:
+                    for sc in sheet_calls:
+                        tid = str(sc.get("tenant_id") or clean_tenant).strip().upper()
+                        if tid and tid != clean_tenant:
+                            continue
+                        raw_sc = sc.get("score")
+                        score_val = int(raw_sc) if raw_sc is not None else 0
+                        raw_ns = sc.get("next_step")
+                        ns_val = int(raw_ns) if raw_ns is not None else 0
+                        calls_list.append({
+                            "id": str(sc.get("id") or ""),
+                            "score": score_val,
+                            "next_step": ns_val,
+                            "status": str(sc.get("status") or "risk").lower(),
+                            "manager": str(sc.get("manager") or ""),
+                            "cr": sc.get("cr") if isinstance(sc.get("cr"), list) else None,
+                            "transcript": str(sc.get("transcript") or "")
+                        })
+            except Exception as e_c:
+                logger.debug(f"Note reading calls for {clean_tenant}: {e_c}")
 
     return calls_list, deals_list
 
