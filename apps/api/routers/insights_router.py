@@ -136,7 +136,11 @@ async def get_analyst_overview(payload: AnalystOverviewRequest = Body(...)) -> d
     if not calls:
         try:
             from .calls_router import _CALLS_CACHE
-            cached_calls: Any = _CALLS_CACHE.get("calls", [])
+            cached_calls: Any = _CALLS_CACHE.get("calls")
+            if not cached_calls and payload.tenant_id in _CALLS_CACHE:
+                cached_entry = _CALLS_CACHE.get(payload.tenant_id)
+                if isinstance(cached_entry, dict):
+                    cached_calls = cached_entry.get("calls")
             calls = cached_calls if isinstance(cached_calls, list) else []
         except Exception:
             calls = []

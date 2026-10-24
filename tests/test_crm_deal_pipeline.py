@@ -440,11 +440,15 @@ def test_ingest_deal_auto_provisions_tenant_and_workspace():
         "status": "ACTIVE"
     }
 
+    from unittest.mock import MagicMock
+    mock_req = MagicMock()
+    mock_req.client.host = "127.0.0.1"
+    mock_req.headers = {}
+
     # Calling ingest_deal when tenant doesn't exist in DB must NOT raise ForeignKeyViolation
-    res = asyncio.run(ingest_deal(payload=payload, db=db, _=None))
+    res = asyncio.run(ingest_deal(request=mock_req, payload=payload, db=db))
     assert res["status"] == "ok"
     assert res["deal_id"] == test_deal_id
-
 
     # Verify Tenant was auto-created
     t = db.query(Tenant).filter(Tenant.id == test_tenant_id).first()
@@ -469,4 +473,163 @@ def test_ingest_deal_auto_provisions_tenant_and_workspace():
     db.query(Workspace).filter(Workspace.tenant_id == test_tenant_id).delete()
     db.query(Tenant).filter(Tenant.id == test_tenant_id).delete()
     db.commit()
+
+
+# ==============================================================================
+# 5. Task 1: Deals Endpoint Security Tests (verify_admin_access)
+# ==============================================================================
+
+def test_deals_endpoint_security_blocked_external():
+    """GET /api/v1/deals without admin credentials from external proxy must return 403 Forbidden."""
+    res = client.get(
+        "/api/v1/deals?tenant_id=TNT-001",
+        headers={"cf-connecting-ip": "1.2.3.4"}
+    )
+    assert res.status_code == 403, f"Expected 403 Forbidden, got {res.status_code}"
+
+
+def test_deals_endpoint_security_allowed_with_admin_key():
+    """GET /api/v1/deals with valid X-Admin-Key must return 200 OK."""
+    from apps.api.routers.admin_router import ALLOWED_ADMIN_KEYS
+    key = next(iter(ALLOWED_ADMIN_KEYS))
+    res = client.get(
+        "/api/v1/deals?tenant_id=TNT-001",
+        headers={
+            "cf-connecting-ip": "1.2.3.4",
+            "X-Admin-Key": key
+        }
+    )
+    assert res.status_code == 200, f"Expected 200 OK, got {res.status_code}"
+    data = res.json()
+    assert data["status"] == "ok"
+    assert "deals" in data
+
+
+# ==============================================================================
+# 6. Task 2: Postgres DealStage Enum Mapping Tests
+# ==============================================================================
+
+def test_stage_enum_mapping_rules():
+    """Validates required mapping rules for raw CRM strings to DealStage enum."""
+    from apps.api.routers.deals_router import map_deal_stage
+    from packages.database.models import DealStage
+
+    # Explicit requirements
+    assert map_deal_stage("NEW") == DealStage.LEAD_INCOMING
+    assert map_deal_stage("WON") == DealStage.WON
+    assert map_deal_stage("LOSE") == DealStage.LOST
+    assert map_deal_stage("LOST") == DealStage.LOST
+    assert map_deal_stage("1") == DealStage.LEAD_INCOMING
+    assert map_deal_stage("6") == DealStage.WON
+    assert map_deal_stage("7") == DealStage.LOST
+
+    # Custom stages heuristic: КП -> COMMERCIAL_PROPOSAL, other custom -> LEAD_INCOMING
+    assert map_deal_stage("КП_индивидуальное") == DealStage.COMMERCIAL_PROPOSAL
+    assert map_deal_stage("НЕИЗВЕСТНЫЙ_ЭТАП_X") == DealStage.LEAD_INCOMING
+
+
+def test_ingest_deal_writes_proper_dealstage_enum():
+    """Validates that POST /ingest writes strict DealStage enum to Postgres/SQLite."""
+    import asyncio
+    from apps.api.routers.deals_router import ingest_deal
+    from packages.database.models import Deal, DealStage, Tenant, Workspace
+    from packages.database.session import get_db
+
+    db = next(get_db())
+    tenant_id = "TNT-ENUM-TEST"
+
+    # Test cases: raw string -> expected DealStage enum
+    cases = [
+        ("D-ENUM-NEW", "NEW", DealStage.LEAD_INCOMING),
+        ("D-ENUM-WON", "WON", DealStage.WON),
+        ("D-ENUM-LOSE", "LOSE", DealStage.LOST),
+        ("D-ENUM-KP", "КП_отправлено_клиенту", DealStage.COMMERCIAL_PROPOSAL),
+    ]
+
+    from unittest.mock import MagicMock
+    mock_req = MagicMock()
+    mock_req.client.host = "127.0.0.1"
+    mock_req.headers = {}
+
+    for deal_id, raw_stage, expected_enum in cases:
+        payload = {
+            "deal_id": deal_id,
+            "tenant_id": tenant_id,
+            "company_name": f"Deal {deal_id}",
+            "amount": 100000.0,
+            "stage": raw_stage,
+            "workspace_id": None  # Must resolve or create default workspace ws_{tenant_id}
+        }
+        res = asyncio.run(ingest_deal(request=mock_req, payload=payload, db=db))
+        assert res["status"] == "ok"
+        assert res["stage"] == expected_enum.name
+
+        saved_deal = db.query(Deal).filter(Deal.id == deal_id).first()
+        assert saved_deal is not None
+        assert saved_deal.stage == expected_enum
+        assert saved_deal.workspace_id == f"ws_{tenant_id}"
+
+    # Cleanup
+    for deal_id, _, _ in cases:
+        db.query(Deal).filter(Deal.id == deal_id).delete()
+    db.query(Workspace).filter(Workspace.tenant_id == tenant_id).delete()
+    db.query(Tenant).filter(Tenant.id == tenant_id).delete()
+    db.commit()
+
+
+# ==============================================================================
+# 7. Task 3: Calls Cache Persistence Tests
+# ==============================================================================
+
+def test_calls_cache_persistence_on_sync_sheets():
+    """Validates that POST /sync_sheets saves fetched calls into _CALLS_CACHE['calls'] and _CALLS_CACHE[tenant_id]."""
+    from apps.api.routers.admin_router import ALLOWED_ADMIN_KEYS
+    from apps.api.routers.calls_router import _CALLS_CACHE
+
+    key = next(iter(ALLOWED_ADMIN_KEYS))
+
+    mock_calls = [
+        {
+            "id": "call_test_101",
+            "deal_id": "D-101",
+            "deal_title": "Сделка 101",
+            "client": "ООО Клиент 1",
+            "manager": "Менеджер Тест",
+            "stage": "Первичный контакт",
+            "score": 85,
+            "status": "won",
+            "next_step": 1,
+            "amount": "300 000 ₽",
+            "amount_num": 300000.0,
+            "risk_amount": "0 ₽",
+            "cr": [1] * 13,
+            "error_summary": "Ошибок нет",
+            "recommendation": "Двигаться по регламенту",
+            "transcript": "Тестовый транскрипт"
+        }
+    ]
+
+    with patch("apps.api.routers.calls_router.fetch_calls_from_sheets", return_value=mock_calls):
+        res = client.post(
+            "/api/v1/calls/sync_sheets?tenant_id=TNT-001",
+            headers={"X-Admin-Key": key}
+        )
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        data = res.json()
+        assert data["status"] == "ok"
+        assert data["count"] == 1
+
+        # Verify _CALLS_CACHE contains "calls" key and "TNT-001" key
+        assert "calls" in _CALLS_CACHE, "_CALLS_CACHE['calls'] must be populated"
+        assert _CALLS_CACHE["calls"] == mock_calls
+        assert "TNT-001" in _CALLS_CACHE, "_CALLS_CACHE['TNT-001'] must be populated"
+        assert _CALLS_CACHE["TNT-001"]["calls"] == mock_calls
+
+        # Verify CCO Analyst Overview picks up the cached calls without synthetic fallback
+        res_overview = client.post("/api/v1/insights/analyst/overview", json={"tenant_id": "TNT-001"})
+        assert res_overview.status_code == 200
+        overview = res_overview.json()
+        assert overview["metrics_summary"]["total_calls"] == 1
+        assert overview["metrics_summary"]["avg_score"] == 85.0
+
 

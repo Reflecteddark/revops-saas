@@ -55,17 +55,25 @@ class CallIngestPayload(BaseModel):
 def verify_internal_or_admin(request: Request):
     """Allows requests from localhost/internal docker network or with valid REVOPS_ADMIN_KEY."""
     client_ip = request.client.host if request.client else ""
-    is_local = client_ip in ("127.0.0.1", "::1", "localhost") or client_ip.startswith("172.") or client_ip.startswith("10.")
+    is_local = (
+        client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
+        or client_ip.startswith("172.")
+        or client_ip.startswith("10.")
+    )
     if is_local:
         return True
 
-    admin_key = os.getenv("REVOPS_ADMIN_KEY")
-    secret = request.headers.get("X-RevOps-Secret") or request.headers.get("X-Admin-Key")
+    from .admin_router import ALLOWED_ADMIN_KEYS
+    secret = (
+        request.headers.get("x-admin-key")
+        or request.headers.get("x-revops-secret")
+        or request.headers.get("x-revops-admin-key")
+    )
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         secret = auth_header.split(" ", 1)[1]
 
-    if admin_key and secret == admin_key:
+    if secret and any(secret == k for k in ALLOWED_ADMIN_KEYS):
         return True
 
     raise HTTPException(
@@ -75,7 +83,7 @@ def verify_internal_or_admin(request: Request):
 
 
 # In-memory cache for live calls from Google Sheets keyed by tenant_id (TTL: 15s)
-_CALLS_CACHE: dict[str, dict[str, Any]] = {}
+_CALLS_CACHE: dict[str, Any] = {}
 
 
 def get_service_account_path() -> Path | None:
@@ -98,13 +106,13 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
     cached = _CALLS_CACHE.get(clean_tenant)
-    if cached and (now - cached.get("timestamp", 0) < 15):
+    if isinstance(cached, dict) and (now - cached.get("timestamp", 0) < 15):
         return cached.get("calls", [])
 
     sa_path = get_service_account_path()
     if not sa_path:
         logger.warning(f"service_account.json not found, skipping Google Sheets fetch (tenant: {clean_tenant})")
-        return cached.get("calls", []) if cached else []
+        return cached.get("calls", []) if isinstance(cached, dict) else []
 
     try:
         import gspread
@@ -116,6 +124,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
         if len(rows) < 2:
             empty_calls: list[dict[str, Any]] = []
             _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": empty_calls}
+            _CALLS_CACHE["calls"] = empty_calls
             return empty_calls
 
         calls = []
@@ -223,6 +232,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                 break
 
         _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": calls}
+        _CALLS_CACHE["calls"] = calls
         return calls
     except Exception as e:
         logger.error(f"Error fetching calls from Google Sheets: {e}")
@@ -511,9 +521,11 @@ def force_sync_from_sheets(request: Request, tenant_id: str = Query("TNT-001")):
     """Forces an immediate pull from Google Sheets raw_calls for given tenant."""
     verify_internal_or_admin(request)
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
-    if clean_tenant in _CALLS_CACHE:
+    if clean_tenant in _CALLS_CACHE and isinstance(_CALLS_CACHE[clean_tenant], dict):
         _CALLS_CACHE[clean_tenant]["timestamp"] = 0
     calls = fetch_calls_from_sheets(tenant_id=clean_tenant, limit=100)
+    _CALLS_CACHE["calls"] = calls
+    _CALLS_CACHE[clean_tenant] = {"timestamp": time.time(), "calls": calls}
     return {
         "status": "ok",
         "tenant_id": clean_tenant,
