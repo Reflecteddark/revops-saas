@@ -2448,7 +2448,7 @@ def get_admin_crm_status(tenant_id: str = Query("TNT-001")):
 
 
 @router.post("/crm/action")
-def execute_crm_action(req: CRMActionRequest):
+async def execute_crm_action(req: CRMActionRequest):
     """
     Executes CRM connector operations (replaces Интеграция_Bitrix24.bat and Интеграция_AmoCRM.bat):
     - show_stages: python {connector}.py --show-stages
@@ -2553,17 +2553,15 @@ def execute_crm_action(req: CRMActionRequest):
 
         # Broadcast real-time WebSocket event to active dashboard instances
         try:
-            import asyncio
-
             from ..websocket_manager import manager
-            asyncio.create_task(manager.broadcast(tenant_id, {
+            await manager.broadcast(tenant_id, {
                 "type": "crm_switched",
                 "action": "switch_crm",
                 "active_crm": new_crm,
                 "timestamp": datetime.now(timezone.utc).isoformat()
-            }))
-        except Exception:
-            pass
+            })
+        except Exception as e:
+            logger.debug(f"Failed to broadcast crm_switched: {e}")
 
         msg = f"Активная CRM для {tenant_id} успешно переключена на {new_crm.upper()}!{reset_details}"
         append_console_log(f"🔄 {msg}", "success")
