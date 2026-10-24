@@ -2584,16 +2584,22 @@ def execute_crm_action(req: CRMActionRequest):
         except Exception as e:
             logger.error(f"Failed to auto-reset sheet on CRM switch: {e}")
 
-        # Evict in-memory deals & calls cache so ЛК immediately displays fresh data
+        # Evict in-memory deals & calls cache scoped to tenant so ЛК immediately displays fresh data
+        clean_tid = tenant_id.strip().upper()
         try:
             from .deals_router import _DEALS_CACHE
-            _DEALS_CACHE.clear()
+            from ..cache_client import delete_cached_json_sync
+            _DEALS_CACHE.pop(clean_tid, None)
+            delete_cached_json_sync(f"deals:{clean_tid}")
         except Exception:
             pass
 
         try:
             from .calls_router import _CALLS_CACHE
-            _CALLS_CACHE.clear()
+            from ..cache_client import delete_cached_json_sync
+            _CALLS_CACHE.pop(clean_tid, None)
+            _CALLS_CACHE.pop(f"calls:{clean_tid}", None)
+            delete_cached_json_sync(f"calls:{clean_tid}")
         except Exception:
             pass
 
