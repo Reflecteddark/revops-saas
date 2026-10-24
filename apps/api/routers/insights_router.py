@@ -175,16 +175,20 @@ def load_tenant_dataset(
                         if tid and tid != clean_tenant:
                             continue
                         raw_sc = rc.get("score")
-                        score_val = int(raw_sc) if raw_sc is not None else 0
+                        score_val = int(raw_sc) if raw_sc is not None else None
                         raw_ns = rc.get("next_step")
-                        ns_val = int(raw_ns) if raw_ns is not None else 0
+                        ns_val = int(raw_ns) if raw_ns is not None else None
+                        raw_st = rc.get("status")
+                        status_val = str(raw_st).lower() if raw_st else ("unknown" if score_val is None else ("won" if score_val >= 8 else "risk"))
+                        raw_cr = rc.get("cr")
+                        cr_val = raw_cr if (isinstance(raw_cr, list) and len(raw_cr) == 13) else [None] * 13
                         calls_list.append({
                             "id": str(rc.get("id") or ""),
                             "score": score_val,
                             "next_step": ns_val,
-                            "status": str(rc.get("status") or "risk").lower(),
+                            "status": status_val,
                             "manager": str(rc.get("manager") or ""),
-                            "cr": rc.get("cr") if isinstance(rc.get("cr"), list) else None,
+                            "cr": cr_val,
                             "transcript": str(rc.get("transcript") or "")
                         })
                     if calls_list:
@@ -204,18 +208,42 @@ def load_tenant_dataset(
             if db_calls:
                 for c in db_calls:
                     sc = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
-                    score = sc.get("score") if sc.get("score") is not None else (
-                        int(round((c.overall_score / 100.0) * 13)) if c.overall_score > 13 else int(round(c.overall_score))
-                    )
-                    next_step = 1 if (c.next_action_extracted or (isinstance(c.scorecard_criteria, dict) and c.scorecard_criteria.get("next_step") == 1)) else 0
+                    raw_sc = sc.get("score")
+                    if raw_sc is not None:
+                        score = int(raw_sc)
+                    elif c.overall_score is not None:
+                        score = int(round((c.overall_score / 100.0) * 13)) if c.overall_score > 13 else int(round(c.overall_score))
+                    else:
+                        score = None
+
+                    raw_ns = sc.get("next_step") if isinstance(sc, dict) else None
+                    if raw_ns is not None:
+                        next_step = int(raw_ns)
+                    elif c.next_action_extracted:
+                        next_step = 1
+                    elif score is not None:
+                        next_step = 1 if score >= 8 else 0
+                    else:
+                        next_step = None
+
                     mgr = c.manager.full_name if c.manager else (sc.get("manager") or "")
+                    call_status = sc.get("status")
+                    if not call_status:
+                        if score is not None:
+                            call_status = "won" if score >= 8 else "risk"
+                        else:
+                            call_status = "unknown"
+
+                    raw_cr = sc.get("cr")
+                    cr_val = raw_cr if (isinstance(raw_cr, list) and len(raw_cr) == 13) else [None] * 13
+
                     calls_list.append({
                         "id": str(c.id),
                         "score": score,
                         "next_step": next_step,
-                        "status": sc.get("status") or ("won" if score >= 8 else "risk"),
+                        "status": call_status,
                         "manager": mgr or "",
-                        "cr": sc.get("cr") if isinstance(sc.get("cr"), list) else None,
+                        "cr": cr_val,
                         "transcript": c.transcript_text or ""
                     })
 
@@ -230,16 +258,20 @@ def load_tenant_dataset(
                         if tid and tid != clean_tenant:
                             continue
                         raw_sc = sc.get("score")
-                        score_val = int(raw_sc) if raw_sc is not None else 0
+                        score_val = int(raw_sc) if raw_sc is not None else None
                         raw_ns = sc.get("next_step")
-                        ns_val = int(raw_ns) if raw_ns is not None else 0
+                        ns_val = int(raw_ns) if raw_ns is not None else None
+                        raw_st = sc.get("status")
+                        status_val = str(raw_st).lower() if raw_st else ("unknown" if score_val is None else ("won" if score_val >= 8 else "risk"))
+                        raw_cr = sc.get("cr")
+                        cr_val = raw_cr if (isinstance(raw_cr, list) and len(raw_cr) == 13) else [None] * 13
                         calls_list.append({
                             "id": str(sc.get("id") or ""),
                             "score": score_val,
                             "next_step": ns_val,
-                            "status": str(sc.get("status") or "risk").lower(),
+                            "status": status_val,
                             "manager": str(sc.get("manager") or ""),
-                            "cr": sc.get("cr") if isinstance(sc.get("cr"), list) else None,
+                            "cr": cr_val,
                             "transcript": str(sc.get("transcript") or "")
                         })
             except Exception as e_c:

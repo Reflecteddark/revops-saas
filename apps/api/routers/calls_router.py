@@ -305,9 +305,16 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
             except Exception:
                 pass
 
-        cr_list = payload.cr if payload.cr and len(payload.cr) == 13 else [1]*13
-        total_score = payload.score if payload.score is not None else sum(cr_list)
-        next_step_flag = payload.next_step if payload.next_step is not None else 1
+        has_cr = bool(payload.cr and len(payload.cr) == 13)
+        if has_cr:
+            cr_list: list[Any] = list(payload.cr)  # type: ignore[arg-type]
+            total_score = payload.score if payload.score is not None else sum(int(c) for c in cr_list if c is not None)
+            next_step_flag = payload.next_step if payload.next_step is not None else 1
+        else:
+            cr_list = [None] * 13
+            total_score = None
+            next_step_flag = None
+
         error_summary = payload.error_summary or ""
         ai_recommendation = payload.recommendation or ""
         transcript_text = payload.transcript or ""
@@ -324,9 +331,9 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
             today_str,
             str(dur_sec),
             "presentation",
-            *[str(c) for c in cr_list],
-            str(total_score),
-            str(next_step_flag),
+            *[str(c) if c is not None else "" for c in cr_list],
+            str(total_score) if total_score is not None else "",
+            str(next_step_flag) if next_step_flag is not None else "",
             error_summary,
             ai_recommendation,
             synced_at,
@@ -352,10 +359,10 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
         if call_id in existing_call_ids:
             row_idx = existing_call_ids.index(call_id) + 1
             logger.info(f"Idempotency hit: call_id {call_id} found at row {row_idx}. Performing UPSERT.")
-            # gspread Worksheet.update argument typing limitation (see issue #1141)
-            ws.update(f"A{row_idx}:Z{row_idx}", [row[:26]], value_input_option="USER_ENTERED")  # type: ignore[arg-type]
+            # Update all 38 columns (A..AL)
+            ws.update(f"A{row_idx}:AL{row_idx}", [row], value_input_option="USER_ENTERED")  # type: ignore[arg-type]
         else:
-            # gspread Worksheet.append_row argument typing limitation (see issue #1141)
+            # Append full 38-column row
             ws.append_row(row, value_input_option="USER_ENTERED")  # type: ignore[arg-type]
             row_idx = len(existing_call_ids) + 1
 
@@ -366,18 +373,23 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
                 r_call_id = read_back[0]
                 r_manager = read_back[2] if len(read_back) > 2 else ""
                 r_dur = read_back[4] if len(read_back) > 4 else ""
-                r_score = read_back[19] if len(read_back) > 19 else str(total_score)
-                r_next_step = read_back[20] if len(read_back) > 20 else str(next_step_flag)
+                r_score = read_back[19] if len(read_back) > 19 else (str(total_score) if total_score is not None else "")
+                r_next_step = read_back[20] if len(read_back) > 20 else (str(next_step_flag) if next_step_flag is not None else "")
+                r_transcript = read_back[29] if len(read_back) > 29 else ""
+                r_tenant = read_back[35] if len(read_back) > 35 else ""
+
                 hash_in = hashlib.sha256(
                     f"{r_call_id}:{r_manager}:{r_score}:{r_dur}:{r_next_step}".encode()
                 ).hexdigest()
 
-                if hash_out != hash_in:
+                tenant_match = (r_tenant == str(payload.tenant_id or "")) or (not payload.tenant_id and not r_tenant)
+                transcript_match = (r_transcript == transcript_text)
+
+                if hash_out != hash_in or not tenant_match or not transcript_match:
                     logger.warning(
-                        f"Read-After-Write hash mismatch for {call_id} (out={hash_out[:8]}, in={hash_in[:8]}). Rewriting in RAW mode."
+                        f"Read-After-Write mismatch for {call_id} (hash_match={hash_out == hash_in}, tenant_match={tenant_match}, transcript_match={transcript_match}). Rewriting in RAW mode."
                     )
-                    # gspread Worksheet.update argument typing limitation (see issue #1141)
-                    ws.update(f"A{row_idx}:Z{row_idx}", [row[:26]], value_input_option="RAW")  # type: ignore[arg-type]
+                    ws.update(f"A{row_idx}:AL{row_idx}", [row], value_input_option="RAW")  # type: ignore[arg-type]
                 else:
                     logger.info(f"Read-After-Write verified successfully for {call_id} (checksum: {hash_out[:8]})")
         except Exception as ex_raw:
@@ -445,6 +457,46 @@ def get_dashboard_calls_data(
                 sc = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
                 call_deal = c.deal
                 mgr = c.manager
+                deal_budget = float(call_deal.budget or 0.0) if (call_deal and call_deal.budget is not None) else None
+                dur_secs = int(c.duration_seconds or 0)
+                dur_str = f"{dur_secs // 60}:{dur_secs % 60:02d}"
+
+                if sc.get("cr") and isinstance(sc.get("cr"), list) and len(sc.get("cr", [])) == 13:
+                    cr_val = sc.get("cr")
+                else:
+                    cr_val = [None] * 13
+
+                if sc.get("score") is not None:
+                    call_score = sc.get("score")
+                elif c.overall_score is not None:
+                    call_score = int(round((c.overall_score / 100.0) * 13)) if c.overall_score > 13 else int(round(c.overall_score))
+                else:
+                    call_score = None
+
+                call_next_step = sc.get("next_step")
+                if call_next_step is None and c.overall_score is not None:
+                    call_next_step = 1 if c.overall_score >= 60 else 0
+
+                call_status = sc.get("status")
+                if not call_status:
+                    if call_score is not None:
+                        call_status = "won" if call_score >= 10 else "risk"
+                    else:
+                        call_status = "unknown"
+
+                call_status_label = sc.get("status_label")
+                if not call_status_label:
+                    if call_status == "won":
+                        call_status_label = "ЭТАЛОН"
+                    elif call_status == "risk":
+                        call_status_label = "СЛИВ"
+                    else:
+                        call_status_label = "НЕТ ДАННЫХ"
+
+                amount_str = f"{int(deal_budget):,} ₽".replace(",", " ") if deal_budget is not None else (sc.get("amount_str") or "350 000 ₽")
+                amount_num = deal_budget if deal_budget is not None else (sc.get("amount") or 350000.0)
+                risk_amt_str = f"{int(deal_budget):,} ₽".replace(",", " ") if (deal_budget is not None and call_status == "risk") else "0 ₽"
+
                 formatted_calls.append({
                     "id": c.id,
                     "deal_id": c.deal_id or f"D-{c.id[-4:]}",
@@ -452,16 +504,16 @@ def get_dashboard_calls_data(
                     "client": call_deal.company_name if call_deal else (sc.get("client") or "Клиент"),
                     "manager": mgr.full_name if mgr else (sc.get("manager") or "Менеджер"),
                     "stage": call_deal.stage.value if call_deal and call_deal.stage else "Первичный контакт",
-                    "duration": f"{c.duration_seconds // 60}:{c.duration_seconds % 60:02d}",
-                    "amount": f"{int(call_deal.budget):,} ₽".replace(",", " ") if call_deal else (sc.get("amount_str") or "350 000 ₽"),
-                    "amount_num": call_deal.budget if call_deal else (sc.get("amount") or 350000.0),
-                    "score": sc.get("score", int(round((c.overall_score / 100.0) * 13))),
-                    "status": sc.get("status", "won" if c.overall_score >= 60 else "risk"),
-                    "status_label": sc.get("status_label", "ЭТАЛОН" if c.overall_score >= 60 else "СЛИВ"),
-                    "risk_amount": f"{int(call_deal.budget):,} ₽".replace(",", " ") if (call_deal and sc.get("status") == "risk") else "0 ₽",
-                    "next_step": sc.get("next_step", 1 if c.overall_score >= 60 else 0),
+                    "duration": dur_str,
+                    "amount": amount_str,
+                    "amount_num": amount_num,
+                    "score": call_score,
+                    "status": call_status,
+                    "status_label": call_status_label,
+                    "risk_amount": risk_amt_str,
+                    "next_step": call_next_step,
                     "date": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else "",
-                    "cr": sc.get("cr", [1] * 13),
+                    "cr": cr_val,
                     "error_summary": c.ai_summary or sc.get("error_summary", "Анализ завершен ИИ"),
                     "recommendation": c.next_action_extracted or sc.get("recommendation", "Следовать регламенту фиксации Next Step"),
                     "transcript": c.transcript_text or "Транскрипт отсутствует"
@@ -505,27 +557,36 @@ async def ingest_call_from_n8n(
             pass
     dur_str = payload.duration or f"{dur_sec // 60}:{dur_sec % 60:02d}"
 
-    cr_list = payload.cr if payload.cr and len(payload.cr) == 13 else [1]*13
-    score = payload.score if payload.score is not None else sum(cr_list)
-    next_step = payload.next_step if payload.next_step is not None else 1
+    has_cr = bool(payload.cr and len(payload.cr) == 13)
+    if has_cr:
+        cr_list: list[int | None] = [int(x) if x is not None else None for x in payload.cr]  # type: ignore[union-attr]
+        score = payload.score if payload.score is not None else sum(c for c in cr_list if c is not None)
+        next_step = payload.next_step if payload.next_step is not None else 1
 
-    if payload.status:
-        status = payload.status
-        status_label = payload.status_label or ("ЭТАЛОН" if status == "won" else "СЛИВ")
-        risk_amt = payload.risk_amount or ("0 ₽" if status == "won" else "500 000 ₽")
-    else:
-        if score >= 10 and next_step == 1:
-            status = "won"
-            status_label = "ЭТАЛОН"
-            risk_amt = "0 ₽"
-        elif next_step == 0:
-            status = "risk"
-            status_label = "СЛИВ (НЕТ NEXT STEP)"
-            risk_amt = "500 000 ₽"
+        if payload.status:
+            status = payload.status
+            status_label = payload.status_label or ("ЭТАЛОН" if status == "won" else "СЛИВ")
+            risk_amt = payload.risk_amount or ("0 ₽" if status == "won" else "500 000 ₽")
         else:
-            status = "risk" if score < 8 else "won"
-            status_label = "СЛИВ" if score < 8 else "ЭТАЛОН"
-            risk_amt = "500 000 ₽" if score < 8 else "0 ₽"
+            if score is not None and score >= 10 and next_step == 1:
+                status = "won"
+                status_label = "ЭТАЛОН"
+                risk_amt = "0 ₽"
+            elif next_step == 0:
+                status = "risk"
+                status_label = "СЛИВ (НЕТ NEXT STEP)"
+                risk_amt = "500 000 ₽"
+            else:
+                status = "risk" if (score is not None and score < 8) else "won"
+                status_label = "СЛИВ" if (score is not None and score < 8) else "ЭТАЛОН"
+                risk_amt = "500 000 ₽" if (score is not None and score < 8) else "0 ₽"
+    else:
+        cr_list = [None] * 13
+        score = None
+        next_step = None
+        status = "unknown"
+        status_label = "НЕТ ДАННЫХ"
+        risk_amt = "0 ₽"
 
     formatted_call = {
         "id": call_id,
