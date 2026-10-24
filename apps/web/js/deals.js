@@ -490,6 +490,7 @@ function calculateFinancials(deals = null, calls = null) {
   let activeDealsCount = 0;
 
   if (dealsList.length > 0) {
+    window._DEALS_DATA_UNAVAILABLE = false;
     dealsList.forEach(d => {
       const amt = typeof d.amount === 'number' ? d.amount : (parseFloat(String(d.amount).replace(/[^\d.]/g, '')) || 0);
       const stId = parseInt(String(d.stage_id || '0'), 10);
@@ -511,14 +512,12 @@ function calculateFinancials(deals = null, calls = null) {
       }
     });
   } else {
-    const wonCalls = callsList.filter(c => c.status === 'won');
-    totalFact = wonCalls.reduce((acc, c) => acc + (typeof getCallAmount === 'function' ? getCallAmount(c) : 150000), 0);
-    computedPipeline = callsList.length * 500000;
-    computedSsot = callsList.reduce((acc, c) => {
-      const amt = typeof getCallAmount === 'function' ? getCallAmount(c) : 150000;
-      const weight = (c.score >= 10 && c.next_step === 1) ? 0.85 : (c.next_step === 1 ? 0.50 : 0.15);
-      return acc + Math.round(amt * weight);
-    }, 0);
+    // Honest zero-state: API deals не ответил — показываем 0, НЕ выдумываем.
+    // Звонки (calls) ≠ сделки (deals). Из звонков нельзя корректно вычислить пайплайн.
+    totalFact = 0;
+    computedPipeline = 0;
+    computedSsot = 0;
+    window._DEALS_DATA_UNAVAILABLE = true;
   }
 
   return {
@@ -554,6 +553,17 @@ function refreshAllDashboardViews() {
 
   const metricPipeVal = document.getElementById('metricPipeVal');
   if (metricPipeVal && metricPipeVal !== heroPipeline) animateCounter(metricPipeVal, computedPipeline, 900);
+
+  // Honest zero-state banner
+  if (window._DEALS_DATA_UNAVAILABLE) {
+    if (typeof showDataUnavailableBanner === 'function') {
+      showDataUnavailableBanner('Пайплайн недоступен: API сделок не отвечает. Показаны только данные звонков.');
+    }
+  } else {
+    if (typeof hideDataUnavailableBanner === 'function') {
+      hideDataUnavailableBanner();
+    }
+  }
 
   const heroPipelineDelta = document.getElementById('heroPipelineDelta');
   if (heroPipelineDelta) {

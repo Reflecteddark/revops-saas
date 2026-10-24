@@ -1577,6 +1577,41 @@ window.handleAuthSubmit = handleAuthSubmit;
 window.logout = logout;
 window.toggleSidebar = toggleSidebar;
 window.closeMobileSidebar = closeMobileSidebar;
+// ============================================================
+// HONEST ZERO-STATE BANNER (когда API недоступен — говорим об этом)
+// ============================================================
+function showDataUnavailableBanner(message) {
+  let banner = document.getElementById('dataUnavailableBanner');
+  if (banner) {
+    const txt = banner.querySelector('.banner-text');
+    if (txt) txt.textContent = message;
+    return;
+  }
+  banner = document.createElement('div');
+  banner.id = 'dataUnavailableBanner';
+  banner.style.cssText = [
+    'position:fixed', 'top:72px', 'left:50%', 'transform:translateX(-50%)',
+    'z-index:99999', 'padding:10px 20px', 'border-radius:8px',
+    'background:rgba(251,113,133,0.15)', 'border:1px solid #fb7185',
+    'color:#fb7185', 'font-size:13px', 'font-weight:600',
+    'display:flex', 'align-items:center', 'gap:12px',
+    'box-shadow:0 4px 16px rgba(0,0,0,0.3)', 'max-width:90vw'
+  ].join(';');
+  banner.innerHTML = '<span>⚠️</span><span class="banner-text">' + message + '</span>' +
+    '<button onclick="hideDataUnavailableBanner()" style="background:none;border:none;color:#fb7185;cursor:pointer;font-size:16px;line-height:1;">✕</button>';
+  document.body.appendChild(banner);
+  window._DEALS_DATA_UNAVAILABLE = true;
+}
+
+function hideDataUnavailableBanner() {
+  const banner = document.getElementById('dataUnavailableBanner');
+  if (banner) banner.remove();
+  window._DEALS_DATA_UNAVAILABLE = false;
+}
+
+window.showDataUnavailableBanner = showDataUnavailableBanner;
+window.hideDataUnavailableBanner = hideDataUnavailableBanner;
+
 window.filterSidebarItems = filterSidebarItems;
 window.ALL_TABS = ALL_TABS;
 window.switchTab = switchTab;
@@ -1613,6 +1648,8 @@ if (typeof module !== 'undefined' && module.exports) {
     logout,
     updateCrmUiState,
     loadCrmProviderStatus,
-    switchActiveCrm
+    switchActiveCrm,
+    showDataUnavailableBanner,
+    hideDataUnavailableBanner
   };
 }

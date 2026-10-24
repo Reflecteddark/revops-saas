@@ -214,12 +214,11 @@ def parse_call_from_text(text: str, default_manager: str = "Менеджер", d
     lower = (text or "").lower()
 
     if "слив" in lower or "нет next step" in lower or "отказ" in lower:
-        cr = [1] * 13
-        cr[0] = 0
-        cr[6] = 0
-        cr[11] = 0
+        # Fallback — НЕ "все пройдены", а "не оценено". Иначе звонки без аудита
+        # получают идеальный скор 13/13 и портят аналитику РОПа.
+        cr = [0] * 13
         return {
-            "score": 6,
+            "score": 0,
             "cr": cr,
             "next_step": 0,
             "status": "risk",

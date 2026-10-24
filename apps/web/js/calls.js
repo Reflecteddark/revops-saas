@@ -7,13 +7,13 @@ var CALLS_DATA = window.CALLS_DATA || [];
 window.CALLS_DATA = CALLS_DATA;
 
 function getCallAmount(c) {
-  if (!c) return 300000;
+  if (!c) return 0;
   if (typeof c.amount_num === 'number' && c.amount_num > 0) return c.amount_num;
   if (c.amount) {
     const parsed = parseInt(String(c.amount).replace(/\D/g, ''), 10);
     if (!isNaN(parsed) && parsed > 0) return parsed;
   }
-  return 300000;
+  return 0;
 }
 
 function getPlaybookDiff(call) {
@@ -408,7 +408,7 @@ function filterCallsTable() {
       if (val === 1) crSums[idx]++;
     });
     totalScore += call.score;
-    if (call.status === 'risk') totalRisk += 500000;
+    if (call.status === 'risk') totalRisk += getCallAmount(call);
 
     let statusClass = 'status-norm';
     let statusText = 'Норма';
