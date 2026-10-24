@@ -5,8 +5,10 @@ Calls Router: Speech AI Auditing, 13 Evaluation Criteria, Google Sheets Sync, an
 import logging
 import os
 import re
+import secrets
 import time
 from datetime import datetime
+from ipaddress import ip_address, ip_network
 from pathlib import Path
 from typing import Any
 
@@ -27,11 +29,28 @@ from ..cache_client import (
 from ..schemas import SpeechEvaluationRequest
 from ..tenant_registry import get_tenant_spreadsheet_id
 from ..websocket_manager import manager
+from .admin_router import ALLOWED_ADMIN_KEYS
 from .deals_router import get_deals_lookup
 
 logger = logging.getLogger("calls_router")
 
 router = APIRouter(prefix="/calls", tags=["Speech AI & 13 Criteria Scorecard"])
+
+INTERNAL_NETS = [
+    ip_network("10.0.0.0/8"),
+    ip_network("172.16.0.0/12"),
+    ip_network("192.168.0.0/16"),
+    ip_network("127.0.0.0/8"),
+    ip_network("::1/128"),
+]
+
+
+def _is_internal_ip(ip_str: str) -> bool:
+    try:
+        ip = ip_address(ip_str)
+        return any(ip in net for net in INTERNAL_NETS)
+    except ValueError:
+        return False
 
 
 class CallIngestPayload(BaseModel):
@@ -57,18 +76,12 @@ class CallIngestPayload(BaseModel):
     tenant_id: str = "TNT-001"
 
 
-def verify_internal_or_admin(request: Request):
-    """Allows requests from localhost/internal docker network or with valid REVOPS_ADMIN_KEY."""
+def verify_internal_or_admin(request: Request) -> bool:
+    """Allows requests from internal networks or with valid admin key."""
     client_ip = request.client.host if request.client else ""
-    is_local = (
-        client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
-        or client_ip.startswith("172.")
-        or client_ip.startswith("10.")
-    )
-    if is_local:
+    if client_ip and _is_internal_ip(client_ip):
         return True
 
-    from .admin_router import ALLOWED_ADMIN_KEYS
     secret = (
         request.headers.get("x-admin-key")
         or request.headers.get("x-revops-secret")
@@ -78,7 +91,7 @@ def verify_internal_or_admin(request: Request):
     if auth_header.startswith("Bearer "):
         secret = auth_header.split(" ", 1)[1]
 
-    if secret and any(secret == k for k in ALLOWED_ADMIN_KEYS):
+    if secret and any(secrets.compare_digest(secret, k) for k in ALLOWED_ADMIN_KEYS):
         return True
 
     raise HTTPException(
