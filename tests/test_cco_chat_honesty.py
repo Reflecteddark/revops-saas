@@ -122,7 +122,8 @@ def test_leak_rub_does_not_exceed_pipeline():
         for i in range(5)
     ]
 
-    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=(calls, deals)):
+    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=(calls, deals)), \
+         patch("apps.api.routers.insights_router.get_tenant_config", return_value={"avg_deal_check": 150000.0, "tenant_name": "Test Tenant"}):
         resp = client.post(
             "/api/v1/insights/analyst/chat",
             json={
@@ -223,7 +224,9 @@ def test_leak_breakdown_present_in_reply():
         }
     ]
 
-    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=(calls, deals)):
+    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=(calls, deals)), \
+         patch("apps.api.routers.insights_router.get_tenant_config", return_value={"avg_deal_check": 150000.0, "tenant_name": "Test Tenant"}), \
+         patch("apps.api.routers.insights_router.generate_gemini_content_cascade", return_value={"status": "error"}):
         resp = client.post(
             "/api/v1/insights/analyst/chat",
             json={

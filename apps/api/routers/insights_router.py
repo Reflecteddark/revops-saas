@@ -248,6 +248,101 @@ def load_tenant_dataset(
     return calls_list, deals_list
 
 
+def compute_leak_metrics(
+    calls: list[dict[str, Any]],
+    deals: list[dict[str, Any]],
+    tenant_avg_check: float | None,
+) -> dict[str, Any]:
+    """
+    Unified Single-Source-Of-Truth computation of revenue leaks (P1-1 & P1-4).
+    Calculates fake_yes (missed Next Steps in audited calls) and stuck pipeline deals.
+    Strictly caps the total leak by active pipeline amount.
+    Handles None tenant_avg_check without falling back to magic numbers.
+    """
+    fake_yes_calls = [
+        c for c in calls
+        if c.get("score") is not None
+        and c.get("next_step") not in (1, None)
+        and c.get("status") not in ("won",)
+    ]
+    fake_yes_count = len(fake_yes_calls)
+
+    active_deals = [
+        d for d in deals
+        if str(d.get("status", "")).upper() in ("ACTIVE", "NEW", "PREPARATION", "PREPAYMENT_INVOICE", "EXECUTING", "FINAL_INVOICE")
+        and str(d.get("stage", "")).upper() not in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "7. ЗАКРЫТО И НЕ РЕАЛИЗОВАНО")
+    ]
+    active_pipeline = sum(float(d.get("budget", 0.0) or 0.0) for d in active_deals)
+    stuck_deals = [d for d in active_deals if d.get("is_at_risk")]
+    stuck_amount = sum(float(d.get("budget", 0.0) or 0.0) for d in stuck_deals)
+    stuck_avg = (stuck_amount / len(stuck_deals)) if stuck_deals else 0.0
+
+    if tenant_avg_check is None:
+        fake_yes_leak = 0.0
+        fake_yes_sum = None
+        fake_yes_avg_check = None
+        assumed_default = True
+        uncapped_leak = stuck_amount
+    else:
+        fake_yes_avg_check = float(tenant_avg_check)
+        fake_yes_leak = fake_yes_count * fake_yes_avg_check
+        fake_yes_sum = round(fake_yes_leak, 2)
+        assumed_default = False
+        uncapped_leak = stuck_amount + fake_yes_leak
+
+    if active_pipeline > 0:
+        leak_rub = min(uncapped_leak, active_pipeline)
+        is_capped = uncapped_leak > active_pipeline
+    else:
+        leak_rub = uncapped_leak
+        is_capped = False
+
+    if tenant_avg_check is None or fake_yes_avg_check is None:
+        calc_str = (
+            f"Расчёт: средний чек не задан (Fake Yes не включён) + "
+            f"{len(stuck_deals)} зависших сделок × {int(stuck_avg):,} ₽ = {int(leak_rub):,} ₽"
+        ).replace(",", " ")
+    else:
+        calc_str = (
+            f"Расчёт: {fake_yes_count} fake_yes × {int(fake_yes_avg_check):,} ₽ + "
+            f"{len(stuck_deals)} зависших сделок × {int(stuck_avg):,} ₽ = {int(leak_rub):,} ₽"
+        ).replace(",", " ")
+
+    leak_breakdown = {
+        "fake_yes": {
+            "count": fake_yes_count,
+            "avg_check": int(fake_yes_avg_check) if fake_yes_avg_check is not None else None,
+            "sum": int(fake_yes_sum) if fake_yes_sum is not None else None,
+            "assumed_default": assumed_default,
+        },
+        "stuck_deals": {
+            "count": len(stuck_deals),
+            "avg": round(stuck_avg, 2),
+            "sum": round(stuck_amount, 2),
+        },
+        "total_leak_rub": round(leak_rub, 2),
+        "capped_by_pipeline": is_capped,
+    }
+
+    return {
+        "fake_yes_calls": fake_yes_calls,
+        "fake_yes_count": fake_yes_count,
+        "active_deals": active_deals,
+        "active_pipeline": active_pipeline,
+        "stuck_deals": stuck_deals,
+        "stuck_amount": stuck_amount,
+        "stuck_avg": stuck_avg,
+        "fake_yes_leak": fake_yes_leak,
+        "uncapped_leak": uncapped_leak,
+        "leak_rub": leak_rub,
+        "is_capped": is_capped,
+        "calc_str": calc_str,
+        "leak_breakdown": leak_breakdown,
+        "total_leak_rub": round(leak_rub, 2),
+        "assumed_default": assumed_default,
+    }
+
+
 # ==========================================================================
 # 1. SUMMARY ENDPOINT (HONEST MONTE-CARLO / DETERMINISTIC FALLBACK)
 # ==========================================================================
@@ -277,14 +372,17 @@ async def get_ai_insights_summary(
         raise HTTPException(status_code=403, detail="cross-tenant access denied")
 
     effective_tenant = target_tenant
-    _, deals_list = load_tenant_dataset(effective_tenant, db)
+    calls_list, deals_list = load_tenant_dataset(effective_tenant, db)
 
-    active_deals = [
-        d for d in deals_list
-        if str(d.get("status", "")).upper() in ("ACTIVE", "NEW", "PREPARATION", "PREPAYMENT_INVOICE", "EXECUTING", "FINAL_INVOICE")
-        and str(d.get("stage", "")).upper() not in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "7. ЗАКРЫТО И НЕ РЕАЛИЗОВАНО")
-    ]
-    active_sum = sum(d.get("budget", 0.0) for d in active_deals)
+    cfg = get_tenant_config(effective_tenant) or {}
+    raw_avg = cfg.get("avg_deal_check")
+    tenant_avg_check = float(raw_avg) if raw_avg is not None else None
+
+    leak_metrics = compute_leak_metrics(calls_list, deals_list, tenant_avg_check)
+    active_deals = leak_metrics["active_deals"]
+    active_sum = leak_metrics["active_pipeline"]
+    leak_breakdown = leak_metrics["leak_breakdown"]
+    total_leak_rub = leak_metrics["total_leak_rub"]
 
     if p10 is not None and p50 is not None and p90 is not None:
         eff_p10, eff_p50, eff_p90 = float(p10), float(p50), float(p90)
@@ -334,7 +432,9 @@ async def get_ai_insights_summary(
                 "p50_corridor_rub": eff_p50,
                 "p90_corridor_rub": eff_p90,
                 "confidence_score": 0.94,
-                "calculation_method": "linear_scenario (not Monte-Carlo)"
+                "calculation_method": "linear_scenario (not Monte-Carlo)",
+                "leak_breakdown": leak_breakdown,
+                "total_leak_rub": total_leak_rub
             }
         except Exception as e:
             logger.warning(f"Claude API unavailable: {e}")
@@ -375,7 +475,9 @@ async def get_ai_insights_summary(
         "recommendations": recommendations,
         "insights": recommendations,
         "synthesis": summary_text,
-        "executive_summary": summary_text
+        "executive_summary": summary_text,
+        "leak_breakdown": leak_breakdown,
+        "total_leak_rub": total_leak_rub
     }
 
 
@@ -430,50 +532,30 @@ async def get_analyst_overview(
         }
 
     total_calls = len(calls)
-    total_score_sum = sum(c.get("score", 0) for c in calls)
-    avg_score = round(total_score_sum / max(1, total_calls), 1) if total_calls > 0 else 0.0
+    scored_calls = [c for c in calls if c.get("score") is not None]
+    total_score_sum = sum(float(c["score"]) for c in scored_calls)
+    avg_score = round(total_score_sum / max(1, len(scored_calls)), 1) if scored_calls else 0.0
     next_step_wins = sum(1 for c in calls if c.get("next_step") == 1 or c.get("status") == "won")
     next_step_pct = round((next_step_wins / max(1, total_calls)) * 100, 1) if total_calls > 0 else 0.0
-    fake_yes_count = sum(1 for c in calls if c.get("status") == "risk" or c.get("next_step") == 0)
 
     cfg = get_tenant_config(clean_tenant) or {}
-    tenant_avg_check = float(cfg.get("avg_deal_check") or 150000.0)
+    raw_avg = cfg.get("avg_deal_check")
+    tenant_avg_check = float(raw_avg) if raw_avg is not None else None
 
-    # Pipeline math
-    active_deals = [
-        d for d in deals
-        if str(d.get("status", "")).upper() in ("ACTIVE", "NEW", "PREPARATION", "PREPAYMENT_INVOICE", "EXECUTING", "FINAL_INVOICE")
-        and str(d.get("stage", "")).upper() not in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "7. ЗАКРЫТО И НЕ РЕАЛИЗОВАНО")
-    ]
-    pipeline_amount = sum(d.get("budget", 0.0) for d in active_deals)
-    stuck_deals = [d for d in active_deals if d.get("is_at_risk")]
-    stuck_amount = sum(d.get("budget", 0.0) for d in stuck_deals)
-    stuck_avg = (stuck_amount / len(stuck_deals)) if stuck_deals else 0.0
-
-    fake_yes_leak = fake_yes_count * tenant_avg_check
-    uncapped_leak = stuck_amount + fake_yes_leak
-    leak_rub = min(uncapped_leak, pipeline_amount) if pipeline_amount > 0 else uncapped_leak
-    is_capped = uncapped_leak > pipeline_amount if pipeline_amount > 0 else False
-
-    calc_str = (
-        f"Расчёт: {fake_yes_count} fake_yes × {int(tenant_avg_check):,} ₽ + "
-        f"{len(stuck_deals)} зависших сделок × {int(stuck_avg):,} ₽ = {int(leak_rub):,} ₽"
-    ).replace(",", " ")
-
-    leak_breakdown = {
-        "fake_yes": {
-            "count": fake_yes_count,
-            "avg_check": int(tenant_avg_check),
-            "sum": int(fake_yes_leak)
-        },
-        "stuck_deals": {
-            "count": len(stuck_deals),
-            "avg": round(stuck_avg, 2),
-            "sum": round(stuck_amount, 2)
-        },
-        "total_leak_rub": round(leak_rub, 2),
-        "capped_by_pipeline": is_capped
-    }
+    # Compute leaks with canonical unified function
+    leak_metrics = compute_leak_metrics(calls, deals, tenant_avg_check)
+    fake_yes_count = leak_metrics["fake_yes_count"]
+    active_deals = leak_metrics["active_deals"]
+    pipeline_amount = leak_metrics["active_pipeline"]
+    stuck_deals = leak_metrics["stuck_deals"]
+    stuck_amount = leak_metrics["stuck_amount"]
+    stuck_avg = leak_metrics["stuck_avg"]
+    fake_yes_leak = leak_metrics["fake_yes_leak"]
+    uncapped_leak = leak_metrics["uncapped_leak"]
+    leak_rub = leak_metrics["leak_rub"]
+    calc_str = leak_metrics["calc_str"]
+    leak_breakdown = leak_metrics["leak_breakdown"]
+    total_leak_rub = leak_metrics["total_leak_rub"]
 
     # Pipeline health index (0-100)
     health_score = int(min(98, max(45, (avg_score / 13.0) * 50 + (next_step_pct / 100.0) * 40 + 10))) if total_calls > 0 else 50
@@ -562,6 +644,7 @@ async def get_analyst_overview(
         "anomalies": anomalies,
         "quick_prompts": quick_prompts,
         "leak_breakdown": leak_breakdown,
+        "total_leak_rub": total_leak_rub,
         "metrics_summary": {
             "total_calls": total_calls,
             "avg_score": avg_score,
@@ -570,6 +653,7 @@ async def get_analyst_overview(
             "pipeline_amount_rub": pipeline_amount,
             "stuck_amount_rub": stuck_amount,
             "leak_rub": leak_rub,
+            "total_leak_rub": total_leak_rub,
             "health_score": health_score,
             "leak_breakdown": leak_breakdown
         }
@@ -609,7 +693,8 @@ async def chat_with_analyst(
     tenant = db.query(Tenant).filter(Tenant.id == clean_tenant).first()
     cfg = get_tenant_config(clean_tenant) or {}
     tenant_name = tenant.name if tenant else (cfg.get("tenant_name") or clean_tenant)
-    tenant_avg_check = float(cfg.get("avg_deal_check") or 150000.0)
+    raw_avg = cfg.get("avg_deal_check")
+    tenant_avg_check = float(raw_avg) if raw_avg is not None else None
 
     if ctx and (ctx.get("calls") or ctx.get("deals")):
         logger.warning("Client attempted to inject custom context, ignored")
@@ -631,7 +716,6 @@ async def chat_with_analyst(
     avg_score = round(sum(scores) / max(1, len(scores)), 1) if scores else 0.0
     next_step_calls = [c for c in calls_list if c.get("next_step") == 1 or c.get("status") == "won"]
     next_step_pct = round((len(next_step_calls) / max(1, calls_cnt)) * 100, 1) if calls_cnt > 0 else 0.0
-    fake_yes = max(0, calls_cnt - len(next_step_calls))
 
     # Real managers mapping from calls and deals
     managers_dict: dict[str, list[float]] = {}
@@ -696,41 +780,20 @@ async def chat_with_analyst(
     else:
         weak_criteria_summary = "Детализированный срез по 13 критериям: недостаточно расширенных скорингов."
 
-    # Active deals & Leaks calculation
-    active_deals = [
-        d for d in deals_list
-        if str(d.get("status", "")).upper() in ("ACTIVE", "NEW", "PREPARATION", "PREPAYMENT_INVOICE", "EXECUTING", "FINAL_INVOICE")
-        and str(d.get("stage", "")).upper() not in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "7. ЗАКРЫТО И НЕ РЕАЛИЗОВАНО")
-    ]
-    active_pipeline = sum(d.get("budget", 0.0) for d in active_deals)
-    stalled_deals = [d for d in active_deals if d.get("is_at_risk")]
-    stalled_amount = sum(d.get("budget", 0.0) for d in stalled_deals)
-    stuck_avg = (stalled_amount / len(stalled_deals)) if stalled_deals else 0.0
-
-    fake_yes_leak = fake_yes * tenant_avg_check
-    uncapped_leak = stalled_amount + fake_yes_leak
-    leak_rub = min(uncapped_leak, active_pipeline) if active_pipeline > 0 else uncapped_leak
-    is_capped = uncapped_leak > active_pipeline if active_pipeline > 0 else False
-
-    calc_str = (
-        f"Расчёт: {fake_yes} fake_yes × {int(tenant_avg_check):,} ₽ + "
-        f"{len(stalled_deals)} зависших сделок × {int(stuck_avg):,} ₽ = {int(leak_rub):,} ₽"
-    ).replace(",", " ")
-
-    leak_breakdown = {
-        "fake_yes": {
-            "count": fake_yes,
-            "avg_check": int(tenant_avg_check),
-            "sum": int(fake_yes_leak)
-        },
-        "stuck_deals": {
-            "count": len(stalled_deals),
-            "avg": round(stuck_avg, 2),
-            "sum": round(stalled_amount, 2)
-        },
-        "total_leak_rub": round(leak_rub, 2),
-        "capped_by_pipeline": is_capped
-    }
+    # Unified leak computation
+    leak_metrics = compute_leak_metrics(calls_list, deals_list, tenant_avg_check)
+    fake_yes = leak_metrics["fake_yes_count"]
+    active_deals = leak_metrics["active_deals"]
+    active_pipeline = leak_metrics["active_pipeline"]
+    stalled_deals = leak_metrics["stuck_deals"]
+    stalled_amount = leak_metrics["stuck_amount"]
+    stuck_avg = leak_metrics["stuck_avg"]
+    fake_yes_leak = leak_metrics["fake_yes_leak"]
+    uncapped_leak = leak_metrics["uncapped_leak"]
+    leak_rub = leak_metrics["leak_rub"]
+    calc_str = leak_metrics["calc_str"]
+    leak_breakdown = leak_metrics["leak_breakdown"]
+    total_leak_rub = leak_metrics["total_leak_rub"]
 
     if stalled_deals:
         stalled_lines = [
@@ -773,6 +836,15 @@ async def chat_with_analyst(
         if lines:
             history_ctx = "ПРЕДЫДУЩИЙ ДИАЛОГ С ДИРЕКТОРОМ:\n" + "\n".join(lines) + "\n\n"
 
+    if tenant_avg_check is None:
+        fake_yes_prompt_line = (
+            f"- Срывы Next Step («Fake Yes»): {fake_yes} звонков. "
+            "Средний чек не задан в настройках компании. Оценка потерь от Fake Yes не проводилась. "
+            "Рекомендуй руководителю указать средний чек в Настройках."
+        )
+    else:
+        fake_yes_prompt_line = f"- Срывы Next Step («Fake Yes»): {fake_yes} звонков"
+
     system_prompt = (
         f"Ты — Главный Коммерческий Директор (Chief Commercial Officer / CCO) и ведущий RevOps-аналитик компании «{tenant_name}» (ID кабинета: {clean_tenant}).\n"
         f"Твой стиль: сильный, авторитетный, финансово ориентированный лидер B2B-продаж. Ты говоришь языком маржи, конверсий и дисциплины.\n\n"
@@ -781,7 +853,7 @@ async def chat_with_analyst(
         f"- Звонков в базе: {calls_cnt}\n"
         f"- Средний скоринг звонков: {avg_score} / 13 баллов\n"
         f"- Фиксация Next Step (договоренность о следующем контакте): {next_step_pct}%\n"
-        f"- Срывы Next Step («Fake Yes»): {fake_yes} звонков\n"
+        f"{fake_yes_prompt_line}\n"
         f"- Сумма утечек в зависших сделках: {leak_rub:,.0f} ₽\n"
         f"- Активный пайплайн ({len(active_deals)} сделок): {active_pipeline:,.0f} ₽\n"
         f"- Строка формулы расчета утечек: {calc_str}\n"
@@ -816,7 +888,8 @@ async def chat_with_analyst(
             "model": ai_result.get("model"),
             "reply": reply_text,
             "latency_ms": ai_result.get("latency_ms"),
-            "leak_breakdown": leak_breakdown
+            "leak_breakdown": leak_breakdown,
+            "total_leak_rub": total_leak_rub
         }
 
     # 4. Tier 4 Failover: Contextual CCO Deterministic Intelligence
@@ -842,10 +915,17 @@ async def chat_with_analyst(
             f"3. **Рост среднего чека**: Добавить пакетные предложения на этапе презентации."
         )
     elif "где" in msg_lower and ("теря" in msg_lower or "утечк" in msg_lower or "деньг" in msg_lower or "зон" in msg_lower):
+        if tenant_avg_check is None:
+            fake_yes_desc = (
+                f"1. **Срывы договоренностей Next Step**: {fake_yes} звонков завершились без даты и времени следующего контакта. "
+                "Средний чек не задан в настройках компании. Оценка потерь от Fake Yes не проводилась. Рекомендуем указать средний чек в Настройках.\n"
+            )
+        else:
+            fake_yes_desc = f"1. **Срывы договоренностей Next Step**: {fake_yes} звонков завершились без даты и времени следующего контакта.\n"
         reply = (
             f"### Аудит ключевых утечек выручки от Коммерческого Директора\n\n"
             f"Текущий объем выявленных потерь и рисков составляет **{leak_rub:,.0f} ₽**.\n\n"
-            f"1. **Срывы договоренностей Next Step**: {fake_yes} звонков завершились без даты и времени следующего контакта.\n"
+            f"{fake_yes_desc}"
             f"2. **Зависшие сделки в зоне риска**: {len(stalled_deals)} сделок на сумму {stalled_amount:,.0f} ₽ превысили норматив нахождения на этапе.\n\n"
             f"#### Директива CCO:\n"
             f"1. Запретить закрывать звонки фразой «я вам перезвоню» без конкретного времени в календаре.\n"
@@ -873,6 +953,10 @@ async def chat_with_analyst(
             f"**Текущий активный пайплайн в CRM**: {active_pipeline:,.0f} ₽ ({len(active_deals)} активных сделок)."
         )
     else:
+        if tenant_avg_check is None:
+            avg_check_note = "\n\n**Примечание**: Средний чек не задан в настройках компании. Рекомендуем указать средний чек в Настройках."
+        else:
+            avg_check_note = ""
         reply = (
             f"### Аналитическая сводка Коммерческого Директора (CCO)\n\n"
             f"Сводка по контуру компании «{tenant_name}»:\n\n"
@@ -882,7 +966,7 @@ async def chat_with_analyst(
             f"- **Утечки выручки в зоне риска**: {leak_rub:,.0f} ₽\n"
             f"- **Активный пайплайн**: {active_pipeline:,.0f} ₽\n\n"
             f"По вопросу: *«{payload.message}»*\n\n"
-            f"Главная рекомендация — усилить контроль менеджеров на этапе перехода от презентации к сделке."
+            f"Главная рекомендация — усилить контроль менеджеров на этапе перехода от презентации к сделке.{avg_check_note}"
         )
 
     if "Расчёт:" not in reply:
@@ -892,5 +976,6 @@ async def chat_with_analyst(
         "status": "ok",
         "engine": "Chief Commercial Officer Intelligence Engine (Deterministic SSOT)",
         "reply": reply,
-        "leak_breakdown": leak_breakdown
+        "leak_breakdown": leak_breakdown,
+        "total_leak_rub": total_leak_rub
     }
