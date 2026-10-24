@@ -390,18 +390,6 @@ async function fetchLiveDealsData(showFeedback = false) {
       });
     }
 
-    // Graceful fallback to public endpoint if protected endpoint returns 401/403
-    if (!res || !res.ok) {
-      try {
-        const publicUrl = REVOPS_API_BASE
-          ? `${REVOPS_API_BASE}/api/v1/deals/public?tenant_id=${encodeURIComponent(tenantId)}`
-          : `/api/v1/deals/public?tenant_id=${encodeURIComponent(tenantId)}`;
-        res = await fetch(publicUrl);
-      } catch (e_pub) {
-        // Continue to check res
-      }
-    }
-
     if (!res || !res.ok) throw new Error('API status ' + (res ? res.status : 'network error'));
     const data = await res.json();
     if (data && Array.isArray(data.deals)) {

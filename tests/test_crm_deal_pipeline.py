@@ -683,16 +683,13 @@ def test_tenant_isolation_deals_and_url_tamper():
         assert res_tamper.status_code == 403
         assert "Cross-tenant access forbidden" in res_tamper.json()["detail"]
 
-        # Test A3: Public endpoint with tenant filter returns strictly that tenant's deals
+        # Test A3: Public endpoint is completely disabled/removed for security (returns 404)
         res_pub1 = client.get(f"/api/v1/deals/public?tenant_id={t1_id}")
-        assert res_pub1.status_code == 200
-        pub_deals1 = [d["id"] for d in res_pub1.json().get("deals", [])]
-        assert "DEAL-T1-01" in pub_deals1
-        assert "DEAL-T2-01" not in pub_deals1
+        assert res_pub1.status_code == 404
 
-        # Test A4: Public endpoint without tenant_id is rejected
+        # Test A4: Public endpoint without query param is also 404 Not Found
         res_pub_missing = client.get("/api/v1/deals/public")
-        assert res_pub_missing.status_code in (400, 422)
+        assert res_pub_missing.status_code == 404
 
     finally:
         db.query(Deal).filter(Deal.id.in_(["DEAL-T1-01", "DEAL-T2-01"])).delete(synchronize_session=False)
