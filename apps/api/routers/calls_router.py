@@ -203,19 +203,31 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
             duration_str = f"{dur_sec // 60}:{dur_sec % 60:02d}"
 
             # 13 criteria: columns index 6 to 18 (cr1 to cr13)
-            cr_list = []
+            cr_list: list[int | None] = []
             for col_idx in range(6, 19):
-                val = r[col_idx] if len(r) > col_idx else "0"
-                cr_list.append(1 if val == "1" else 0)
+                val = r[col_idx].strip() if len(r) > col_idx else ""
+                cr_list.append(1 if val == "1" else (0 if val == "0" else None))
             while len(cr_list) < 13:
-                cr_list.append(0)
+                cr_list.append(None)
 
             # Score and next_step
-            score = int(r[19]) if len(r) > 19 and r[19].isdigit() else sum(cr_list)
-            next_step = int(r[20]) if len(r) > 20 and r[20] in ("0", "1") else (1 if score >= 8 else 0)
+            raw_score = r[19].strip() if len(r) > 19 else ""
+            if raw_score.isdigit():
+                score: int | None = int(raw_score)
+            elif not raw_score or any(c is None for c in cr_list):
+                score = None
+            else:
+                score = sum(int(c) for c in cr_list if c is not None)
+
+            raw_ns = r[20].strip() if len(r) > 20 else ""
+            next_step: int | None = int(raw_ns) if raw_ns in ("0", "1") else None
 
             # Status derivation
-            if score >= 10 and next_step == 1:
+            if score is None or next_step is None:
+                status = "unknown"
+                status_label = "НЕТ ДАННЫХ"
+                risk_amt = "0 ₽"
+            elif score >= 10 and next_step == 1:
                 status = "won"
                 status_label = "ЭТАЛОН"
                 risk_amt = "0 ₽"
