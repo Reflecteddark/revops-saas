@@ -71,7 +71,7 @@ function populateOnePagerModal() {
     });
   } else {
     calls.forEach(c => {
-      const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 300000;
+      const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 0;
       if (c.status === 'won') {
         wonFact += amt;
       } else {
@@ -104,7 +104,7 @@ function populateOnePagerModal() {
   const nsPct = totalCalls > 0 ? Math.round((nsCount / totalCalls) * 100) : 0;
 
   const riskCallsList = calls.filter(c => c.status === 'risk' || c.next_step === 0 || (c.score !== undefined && c.score < 8));
-  const riskSum = riskCallsList.reduce((s, c) => s + ((typeof getCallAmount === 'function') ? getCallAmount(c) : 300000), 0);
+  const riskSum = riskCallsList.reduce((s, c) => s + ((typeof getCallAmount === 'function') ? getCallAmount(c) : 0), 0);
   const wonCallsList = calls.filter(c => c.status === 'won' || (c.score !== undefined && c.score >= 10));
 
   const elScore = document.getElementById('onePagerScoreVal');
@@ -131,7 +131,7 @@ function populateOnePagerModal() {
       let rHtml = '';
       riskCallsList.slice(0, 5).forEach((c, i) => {
         const client = c.client || c.client_name || `Клиент #${i+1}`;
-        const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 300000;
+        const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 0;
         const err = c.error_summary || (c.next_step === 0 ? 'Слив Next Step' : 'Возражения не отработаны');
         const rec = c.ai_recommendation ? c.ai_recommendation.slice(0, 55) + '...' : 'Контрольный звонок РОПа';
         rHtml += `<div>&bull; <strong>Кейс 0${i+1} (${escapeHtml(client)}):</strong> ${(amt/1000).toFixed(0)}k ₽ &bull; ${escapeHtml(err)} &bull; ${escapeHtml(rec)}</div>`;
@@ -236,7 +236,7 @@ function setPulsePeriod(period) {
     });
   } else {
     callsList.forEach(c => {
-      const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 300000;
+      const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 0;
       if (c.status === 'won') {
         baseFact += amt;
         baseSsot += amt;
@@ -1247,7 +1247,7 @@ function renderDynamicRopPodium() {
     const m = mgrMap[name];
     m.callsCount += 1;
     m.scoresSum += (typeof c.score === 'number' ? c.score : 8);
-    const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 300000;
+    const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 0;
     m.pipeAmt += amt;
     if (c.next_step === 1 || (c.cr && c.cr[0] === 1)) {
       m.nextStepWon += 1;
@@ -1419,7 +1419,7 @@ function renderDynamicRescueDeals() {
     const clientTitle = c.client || c.client_name || c.contact || `Клиент #${idx + 1}`;
     const niche = c.client_niche || c.niche || 'B2B';
     const mgr = c.manager || c.manager_name || 'Менеджер';
-    const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 300000;
+    const amt = (typeof getCallAmount === 'function') ? getCallAmount(c) : 0;
     const amtStr = `${amt.toLocaleString('ru-RU')} ₽`;
 
     let symptom = c.error_summary || c.errors;

@@ -141,3 +141,39 @@ jobs:
               -d "parse_mode=HTML")
             echo "Telegram Alert Response: $RESPONSE"
           fi
+
+  anti-fake-fallback-guard:
+    name: Anti-Fake-Fallback Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for fake fallback patterns
+        run: |
+          echo "🔍 Scanning for fake data fallbacks in apps/web/js/..."
+          FAILED=0
+          if grep -rE "length\s*\*\s*[1-9][0-9]{4,}" apps/web/js/ --include="*.js" --exclude="*.test.js" --exclude-dir="tests" | grep -v "fallback-allowed"; then
+            echo "❌ length * CONSTANT detected"; FAILED=1
+          fi
+          if grep -rE "return\s+300000" apps/web/js/calls.js; then
+            echo "❌ getCallAmount returns 300000"; FAILED=1
+          fi
+          if grep -rE "\[1\] \* 13" apps/api/routers/; then
+            echo "❌ cr = [1]*13 (fake all-passed)"; FAILED=1
+          fi
+          if [ $FAILED -eq 1 ]; then
+            echo "🚨 BLOCKING MERGE: Fake data fallbacks detected!"
+            exit 1
+          fi
+          echo "✅ No fake fallbacks detected"
+
+  anti-fake-fallback-tests:
+    name: Anti-Fake-Fallback Pytest
+    runs-on: ubuntu-latest
+    needs: [backend-quality-and-test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest tests/test_no_fake_fallbacks.py -v

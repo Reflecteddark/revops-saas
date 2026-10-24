@@ -597,7 +597,7 @@ def register_tenant(req: RegisterTenantRequest):
         "contact_name": req.contact_name or "Руководитель",
         "niche_id": req.niche_id or "general_b2b",
         "niche_name": req.niche_name or "Универсальный B2B",
-        "avg_deal_check": req.avg_deal_check or 150000.0,
+        "avg_deal_check": req.avg_deal_check or 150000.0,  # fallback-allowed: new tenant default
         "status": "active",
         "created_at": datetime.now().isoformat(),
         "version": "20.4"

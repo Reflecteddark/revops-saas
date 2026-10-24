@@ -64,7 +64,7 @@ function getActiveTenantId() {
   } catch (e) {
     console.warn('[Tenant] Error resolving active tenant:', e);
   }
-  return 'TNT-001';
+  return 'TNT-001'; // fallback-allowed: nav default when no tenant selected
 }
 
 async function onTenantSelected(tenantId) {
@@ -106,7 +106,7 @@ async function onTenantSelected(tenantId) {
 }
 
 function updateSidebarTenantChip(tenantId) {
-  const cleanId = (tenantId || getActiveTenantId() || 'TNT-001').trim().toUpperCase();
+  const cleanId = (tenantId || getActiveTenantId() || 'TNT-001').trim().toUpperCase(); // fallback-allowed: nav default when no tenant selected
   const chipName = document.getElementById('sidebarTenantName');
   const chipAvatar = document.getElementById('sidebarTenantAvatar');
   const chipContainer = document.getElementById('sidebarTenantChip');

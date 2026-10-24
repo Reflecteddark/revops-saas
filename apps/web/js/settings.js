@@ -213,7 +213,7 @@ async function submitSystemSettingsForm() {
   }
 
   try {
-    const targetVal = Number(document.getElementById('cfgMonthlyTarget')?.value) || 5000000;
+    const targetVal = Number(document.getElementById('cfgMonthlyTarget')?.value) || 5000000; // fallback-allowed: form default when field empty
     const periodStart = document.getElementById('cfgPeriodStart')?.value || '2026-10-01';
     const periodEnd = document.getElementById('cfgPeriodEnd')?.value || '2026-10-31';
     const company = document.getElementById('cfgCompanyName')?.value || 'Самозанятый';

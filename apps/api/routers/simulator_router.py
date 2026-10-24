@@ -42,7 +42,9 @@ def run_simulation(req: MonteCarloRequest):
     else:
         close_pct = req.conv_close_pct if req.conv_close_pct is not None else 25.0
 
-    avg_ticket = req.avg_ticket if req.avg_ticket is not None else (req.avg_ticket_rub or 220000.0)
+    avg_ticket = req.avg_ticket if req.avg_ticket is not None else (req.avg_ticket_rub or 0.0)
+    if avg_ticket <= 0:
+        return {"error": "Укажите средний чек сделки для симуляции", "success": False}
 
     config = SimulationConfig(
         leads_mean=leads,

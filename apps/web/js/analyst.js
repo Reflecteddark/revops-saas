@@ -179,7 +179,10 @@ async function sendAnalystChat(customText = null) {
 
   const liveCalls = (typeof CALLS_DATA !== 'undefined' && Array.isArray(CALLS_DATA)) ? CALLS_DATA : [];
   const nextSteps = liveCalls.filter(c => c.next_step === 1 || c.status === 'won').length;
-  const pct = Math.round((nextSteps / Math.max(1, liveCalls.length)) * 100);
+  const pct = liveCalls.length > 0 ? Math.round((nextSteps / liveCalls.length) * 100) : 0;
+  const avgScore = liveCalls.length > 0 ? Number((liveCalls.reduce((s, c) => s + (c.score || 0), 0) / liveCalls.length).toFixed(1)) : 0;
+  const fakeYesCount = Math.max(0, liveCalls.length - nextSteps);
+  const leakRub = liveCalls.filter(c => c.status === 'risk' || c.next_step === 0).reduce((acc, c) => acc + (typeof getCallAmount === 'function' ? getCallAmount(c) : 0), 0);
 
   const prevHistory = ANALYST_CHAT_HISTORY.slice(-6);
   ANALYST_CHAT_HISTORY.push({ role: 'user', text });
@@ -190,11 +193,11 @@ async function sendAnalystChat(customText = null) {
     tenant_id: (typeof getActiveTenantId === 'function') ? getActiveTenantId() : 'TNT-001',
     history: prevHistory,
     context: {
-      total_calls: liveCalls.length || 12,
-      avg_score: 9.5,
-      next_step_pct: pct || 75.0,
-      fake_yes_count: liveCalls.length - nextSteps || 2,
-      leak_rub: (liveCalls.length - nextSteps || 2) * 500000
+      total_calls: liveCalls.length,
+      avg_score: avgScore,  // honest: если нет данных — 0
+      next_step_pct: pct,
+      fake_yes_count: fakeYesCount,
+      leak_rub: leakRub
     }
   };
 

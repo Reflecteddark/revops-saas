@@ -1403,7 +1403,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
             amo_domain=req.amo_domain,
             amo_token=req.amo_token,
             niche_name=req.niche_name or "Универсальный B2B",
-            avg_deal_check=req.avg_deal_check or 150000,
+            avg_deal_check=req.avg_deal_check or 150000,  # fallback-allowed: new tenant default
             target_next_step=req.target_next_step or "Фиксация следующего контакта с датой и временем",
         )
     except Exception as e:

@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+echo "🔍 Pre-commit: anti-fake-fallback scan..."
+
+STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM | grep -E "apps/web/js/.*\.js$" | grep -v "\.test\.js$" | grep -v "tests/" || true)
+STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep -E "apps/api/routers/.*\.py$" | grep -v "test_" || true)
+
+FAILED=0
+for file in $STAGED_JS; do
+  if grep -E "length\s*\*\s*[1-9][0-9]{4,}" "$file" | grep -v "fallback-allowed"; then
+    echo "❌ $file: length * CONSTANT"; FAILED=1
+  fi
+  if grep -E "return\s+300000" "$file"; then
+    echo "❌ $file: return 300000"; FAILED=1
+  fi
+done
+for file in $STAGED_PY; do
+  if grep -E "\[1\] \* 13" "$file"; then
+    echo "❌ $file: [1]*13 fake all-passed"; FAILED=1
+  fi
+done
+
+if [ $FAILED -eq 1 ]; then
+  echo "🚨 COMMIT BLOCKED: fake fallback detected."
+  echo "   Rule: return 0 + visible error, NEVER fake numbers."
+  echo "   Docs: docs/NO_FAKE_FALLBACK_POLICY.md"
+  exit 1
+fi
+echo "✅ Pre-commit anti-fake check passed"
