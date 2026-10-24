@@ -20,6 +20,13 @@ from sqlalchemy.orm import Session
 from packages.database.models import Deal, DealStage, SubscriptionTier, Tenant, Workspace
 from packages.database.session import get_db
 
+import jwt
+from ..auth import ALGORITHM, SECRET_KEY
+from ..cache_client import (
+    delete_cached_json_sync,
+    get_cached_json_sync,
+    set_cached_json_sync,
+)
 from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
 from .admin_router import verify_admin_access
@@ -65,6 +72,25 @@ def parse_amount(val: Any) -> float:
 def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> list[dict[str, Any]]:
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
+    cache_key = f"deals:{clean_tenant}"
+
+    # 1. Check Redis cache first
+    cached_redis = get_cached_json_sync(cache_key)
+    if cached_redis is not None and isinstance(cached_redis, list) and len(cached_redis) > 0:
+        if clean_tenant not in _DEALS_CACHE or not _DEALS_CACHE[clean_tenant].get("lookup"):
+            redis_lookup: dict[str, dict[str, Any]] = {}
+            for d in cached_redis:
+                d_id = str(d.get("id") or "").upper().strip()
+                if d_id:
+                    redis_lookup[d_id] = d
+                    num = re.sub(r"\D", "", d_id)
+                    if num:
+                        redis_lookup[num] = d
+                        redis_lookup[f"B24-{num}"] = d
+                        redis_lookup[f"AMO-{num}"] = d
+            _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": cached_redis, "lookup": redis_lookup}
+        return cached_redis
+
     cached = _DEALS_CACHE.get(clean_tenant)
     if cached and (now - cached.get("timestamp", 0) < 15):
         return cached.get("deals", [])
@@ -128,6 +154,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
             "deals": fallback_deals,
             "lookup": lookup
         }
+        set_cached_json_sync(cache_key, fallback_deals, ex=60)
         return fallback_deals
 
     try:
@@ -140,6 +167,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
         if len(rows) < 2:
             empty_res: list[dict[str, Any]] = []
             _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
+            set_cached_json_sync(cache_key, empty_res, ex=60)
             return empty_res
 
         deals = []
@@ -226,6 +254,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
             "deals": deals,
             "lookup": lookup
         }
+        set_cached_json_sync(cache_key, deals, ex=60)
         return deals
     except Exception as e:
         logger.error(f"Error reading raw_deals from Google Sheets for tenant {clean_tenant}: {e}")
@@ -238,56 +267,86 @@ def get_deals_lookup(tenant_id: str = "TNT-001") -> dict[str, dict[str, Any]]:
     return _DEALS_CACHE.get(clean_tenant, {}).get("lookup", {})
 
 
+def get_authenticated_tenant_or_verify_admin(request: Request, requested_tenant: str | None = None) -> str:
+    """
+    Extracts tenant_id strictly from auth-context (JWT token or admin context).
+    Guards against cross-tenant URL tampering.
+    """
+    # 1. Check Bearer JWT token
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            user_tenant = str(payload.get("tenant_id") or "").strip().upper()
+            if user_tenant:
+                # Prevent cross-tenant URL tampering
+                if requested_tenant:
+                    clean_req = requested_tenant.strip().upper()
+                    if clean_req != user_tenant:
+                        raise HTTPException(
+                            status_code=403,
+                            detail=f"Cross-tenant access forbidden: token belongs to {user_tenant}, cannot query {clean_req}"
+                        )
+                return user_tenant
+        except jwt.PyJWTError:
+            raise HTTPException(status_code=401, detail="Токен истек или недействителен")
+
+    # 2. Check Admin Access (Admin cookie, X-Admin-Key, session, or internal docker network)
+    verify_admin_access(request)
+    return (requested_tenant or "TNT-001").strip().upper()
+
+
 @router.get("")
 @router.get("/")
 def list_deals(
     request: Request,
     stage: str | None = None,
     sla_risk_only: bool = False,
-    org_id: str = "TNT-001",
+    org_id: str | None = None,
     tenant_id: str | None = None,
     db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """Returns active CRM deals directly from raw_deals Google Sheets or local DB for given tenant."""
-    verify_admin_access(request)
-    effective_tenant = tenant_id or org_id or "TNT-001"
-    is_demo_tenant = str(effective_tenant).lower().startswith("demo_") or str(effective_tenant).lower().startswith("demo-")
-    all_deals = [] if is_demo_tenant else fetch_deals_from_sheets(tenant_id=effective_tenant)
-    source = "google_sheets_raw_deals"
-    if not all_deals:
-        db_deals = (
-            db.query(Deal)
-            .filter(
-                (Deal.tenant_id == effective_tenant)
-                | (Deal.tenant_id == effective_tenant.lower())
-                | (Deal.tenant_id == effective_tenant.upper())
-            )
-            .all()
+    requested = tenant_id or org_id
+    effective_tenant = get_authenticated_tenant_or_verify_admin(request, requested)
+    db_deals = (
+        db.query(Deal)
+        .filter(
+            (Deal.tenant_id == effective_tenant)
+            | (Deal.tenant_id == effective_tenant.lower())
+            | (Deal.tenant_id == effective_tenant.upper())
         )
-        if db_deals:
-            source = "database"
-            all_deals = [
-                {
-                    "id": d.id,
-                    "deal_id": d.id,
-                    "org_id": effective_tenant,
-                    "crm_deal_id": d.external_crm_id or d.id,
-                    "crm_source": d.lead_source or "CRM",
-                    "title": d.title,
-                    "amount": float(d.budget),
-                    "amount_str": f"{int(d.budget):,} ₽".replace(",", " "),
-                    "stage_id": "1",
-                    "stage": d.stage.value if d.stage else "Первичный контакт",
-                    "status": "won" if (d.stage and "успешно" in d.stage.value.lower()) else ("lost" if (d.stage and "закрыто" in d.stage.value.lower()) else "active"),
-                    "sla_risk": d.is_at_risk,
-                    "responsible_user": d.assigned_user.full_name if d.assigned_user else "Менеджер",
-                    "segment": "General B2B",
-                    "created_at": d.created_at.isoformat() if d.created_at else "",
-                    "updated_at": d.updated_at.isoformat() if d.updated_at else "",
-                    "synced_at": datetime.now(timezone.utc).isoformat(),
-                }
-                for d in db_deals
-            ]
+        .all()
+    )
+    if db_deals:
+        source = "database"
+        all_deals = [
+            {
+                "id": d.id,
+                "deal_id": d.id,
+                "org_id": effective_tenant,
+                "crm_deal_id": d.external_crm_id or d.id,
+                "crm_source": d.crm_source or d.lead_source or "CRM",
+                "title": d.title,
+                "amount": float(d.budget),
+                "amount_str": f"{int(d.budget):,} ₽".replace(",", " "),
+                "stage_id": "1",
+                "stage": d.stage.value if d.stage else "Первичный контакт",
+                "status": "won" if (d.stage and "успешно" in d.stage.value.lower()) else ("lost" if (d.stage and "закрыто" in d.stage.value.lower()) else "active"),
+                "sla_risk": d.is_at_risk,
+                "responsible_user": d.assigned_user.full_name if d.assigned_user else "Менеджер",
+                "segment": "General B2B",
+                "created_at": d.created_at.isoformat() if d.created_at else "",
+                "updated_at": d.updated_at.isoformat() if d.updated_at else "",
+                "synced_at": datetime.now(timezone.utc).isoformat(),
+            }
+            for d in db_deals
+        ]
+    else:
+        is_demo_tenant = str(effective_tenant).lower().startswith("demo_") or str(effective_tenant).lower().startswith("demo-")
+        all_deals = [] if is_demo_tenant else fetch_deals_from_sheets(tenant_id=effective_tenant)
+        source = "google_sheets_raw_deals"
     results = all_deals
     if stage:
         results = [d for d in results if d["stage"] == stage]
@@ -304,13 +363,94 @@ def list_deals(
     }
 
 
+@router.get("/public")
+def get_public_deals(
+    tenant_id: str = Query(..., min_length=1, description="Tenant ID is mandatory for public dashboard reads"),
+    stage: str | None = None,
+    sla_risk_only: bool = False,
+    db: Session = Depends(get_db)
+) -> dict[str, Any]:
+    """
+    Public dashboard endpoint for embedded read.
+    STRICTLY requires and filters by tenant_id (zero cross-tenant leakage).
+    """
+    clean_tenant = tenant_id.strip().upper()
+    if not clean_tenant:
+        raise HTTPException(status_code=400, detail="tenant_id parameter is strictly required for public dashboard reads")
+
+    db_deals = (
+        db.query(Deal)
+        .filter(
+            (Deal.tenant_id == clean_tenant)
+            | (Deal.tenant_id == clean_tenant.lower())
+            | (Deal.tenant_id == clean_tenant.upper())
+        )
+        .all()
+    )
+    if db_deals:
+        source = "database"
+        all_deals = [
+            {
+                "id": d.id,
+                "deal_id": d.id,
+                "org_id": clean_tenant,
+                "crm_deal_id": d.external_crm_id or d.id,
+                "crm_source": d.crm_source or d.lead_source or "CRM",
+                "title": d.title,
+                "amount": float(d.budget),
+                "amount_str": f"{int(d.budget):,} ₽".replace(",", " "),
+                "stage_id": "1",
+                "stage": d.stage.value if d.stage else "Первичный контакт",
+                "status": "won" if (d.stage and "успешно" in d.stage.value.lower()) else ("lost" if (d.stage and "закрыто" in d.stage.value.lower()) else "active"),
+                "sla_risk": d.is_at_risk,
+                "responsible_user": d.assigned_user.full_name if d.assigned_user else "Менеджер",
+                "segment": "General B2B",
+                "created_at": d.created_at.isoformat() if d.created_at else "",
+                "updated_at": d.updated_at.isoformat() if d.updated_at else "",
+                "synced_at": datetime.now(timezone.utc).isoformat(),
+            }
+            for d in db_deals
+        ]
+    else:
+        cache_key = f"deals:{clean_tenant}"
+        cached = get_cached_json_sync(cache_key)
+        if cached is not None and isinstance(cached, list):
+            all_deals = cached
+            source = "redis_cache"
+        else:
+            is_demo_tenant = clean_tenant.startswith("DEMO_") or clean_tenant.startswith("DEMO-")
+            all_deals = [] if is_demo_tenant else fetch_deals_from_sheets(tenant_id=clean_tenant)
+            source = "google_sheets_raw_deals"
+            set_cached_json_sync(cache_key, all_deals, ex=60)
+
+    results = all_deals
+    if stage:
+        results = [d for d in results if d["stage"] == stage]
+    if sla_risk_only:
+        results = [d for d in results if d.get("sla_risk")]
+
+    return {
+        "status": "ok",
+        "tenant_id": clean_tenant,
+        "source": source,
+        "deals": results,
+        "total": len(results),
+        "sla_risk_count": sum(1 for d in results if d.get("sla_risk")),
+        "total_amount": sum(d.get("amount", 0) for d in results)
+    }
+
+
 STAGE_MAPPING: dict[str, DealStage] = {
-    # Direct mappings required by specification
+    # Direct mappings required by specification (Bitrix24)
     "NEW": DealStage.LEAD_INCOMING,
+    "PREPARATION": DealStage.QUALIFICATION,
+    "PREPAYMENT": DealStage.MEETING_SCHEDULED,
+    "EXECUTING": DealStage.MEETING_DONE,
+    "FINAL": DealStage.CONTRACT_PAYMENT,
     "WON": DealStage.WON,
     "LOSE": DealStage.LOST,
     "LOST": DealStage.LOST,
-    # Common CRM numeric and stage identifiers
+    # Common CRM numeric and stage identifiers (amoCRM & standard)
     "1": DealStage.LEAD_INCOMING,
     "2": DealStage.QUALIFICATION,
     "3": DealStage.MEETING_SCHEDULED,
@@ -318,6 +458,9 @@ STAGE_MAPPING: dict[str, DealStage] = {
     "5": DealStage.COMMERCIAL_PROPOSAL,
     "6": DealStage.WON,
     "7": DealStage.LOST,
+    # amoCRM specific pipeline stages
+    "142": DealStage.WON,
+    "143": DealStage.LOST,
     # Standard DealStage enum name/values
     "LEAD_INCOMING": DealStage.LEAD_INCOMING,
     "QUALIFICATION": DealStage.QUALIFICATION,
@@ -383,23 +526,38 @@ async def ingest_deal(
     tenant_id: str | None = None,
     db: Session = Depends(get_db)
 ) -> dict[str, Any]:
-    # Protect endpoint: allow local n8n / docker network or require admin auth
-    client_ip = request.client.host if request.client else ""
-    cf_connecting_ip = request.headers.get("cf-connecting-ip") if hasattr(request, "headers") else None
-    if not cf_connecting_ip and (
-        client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
-        or client_ip.startswith("172.")
-        or client_ip.startswith("10.")
-    ):
-        pass
-    else:
-        verify_admin_access(request)
-
     deal_id = payload.get("deal_id") or payload.get("id")
     clean_tid = tenant_id if isinstance(tenant_id, str) and tenant_id.strip() else None
     effective_tenant = str(clean_tid or payload.get("tenant_id") or "TNT-001").strip().upper()
     if not deal_id:
         raise HTTPException(status_code=400, detail="deal_id is required")
+
+    # Check authentication & cross-tenant write security
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        try:
+            jwt_data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            jwt_tenant = str(jwt_data.get("tenant_id") or "").strip().upper()
+            if jwt_tenant and jwt_tenant != effective_tenant:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Cross-tenant write forbidden: token belongs to {jwt_tenant}, cannot ingest into {effective_tenant}"
+                )
+        except jwt.PyJWTError:
+            raise HTTPException(status_code=401, detail="Токен истек или недействителен")
+    else:
+        # Protect endpoint: allow local n8n / docker network or require admin auth
+        client_ip = request.client.host if request.client else ""
+        cf_connecting_ip = request.headers.get("cf-connecting-ip") if hasattr(request, "headers") else None
+        if not cf_connecting_ip and (
+            client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
+            or client_ip.startswith("172.")
+            or client_ip.startswith("10.")
+        ):
+            pass
+        else:
+            verify_admin_access(request)
 
     # 1. Foreign Key Guard for Tenant: ensure Tenant exists in DB before Workspace / Deal
     tenant = db.query(Tenant).filter(Tenant.id == effective_tenant).first()
@@ -433,12 +591,23 @@ async def ingest_deal(
     if not workspace:
         workspace = db.query(Workspace).filter(Workspace.tenant_id == effective_tenant).first()
     if not workspace:
+        cfg = get_tenant_config(effective_tenant) or {}
+        raw_crm = (
+            payload.get("crm_source")
+            or payload.get("source")
+            or payload.get("channel")
+            or cfg.get("crm_type")
+            or "bitrix24"
+        )
+        crm_str = str(raw_crm).strip().lower()
+        crm_source = "amocrm" if "amo" in crm_str else ("bitrix24" if ("bitrix" in crm_str or "b24" in crm_str) else crm_str)
+
         ws_id = f"ws_{effective_tenant}"
         workspace = Workspace(
             id=ws_id,
             tenant_id=effective_tenant,
             name="Default Workspace",
-            crm_type=payload.get("channel") or payload.get("source") or "amocrm"
+            crm_type=crm_source
         )
         db.add(workspace)
         try:
@@ -484,7 +653,16 @@ async def ingest_deal(
 
     status = "WON" if stage_enum == DealStage.WON else ("LOST" if stage_enum == DealStage.LOST else (raw_status or "ACTIVE"))
     is_deleted = bool(payload.get("is_deleted") in (True, "1", 1) or status == "DELETED")
-    crm_source = str(payload.get("source") or payload.get("channel") or "bitrix24")
+    cfg = get_tenant_config(effective_tenant) or {}
+    raw_crm = (
+        payload.get("crm_source")
+        or payload.get("source")
+        or payload.get("channel")
+        or cfg.get("crm_type")
+        or "bitrix24"
+    )
+    crm_str = str(raw_crm).strip().lower()
+    crm_source = "amocrm" if "amo" in crm_str else ("bitrix24" if ("bitrix" in crm_str or "b24" in crm_str) else crm_str)
     is_at_risk = bool(payload.get("sla_risk") or payload.get("is_at_risk"))
 
     # 4. Insert or update Deal in Postgres
@@ -520,6 +698,10 @@ async def ingest_deal(
             setattr(db_deal, "custom_payload", payload.get("custom_payload"))
 
     db.commit()
+
+    # Invalidate Redis and in-memory cache for this tenant
+    delete_cached_json_sync(f"deals:{effective_tenant}")
+    _DEALS_CACHE.pop(effective_tenant, None)
 
     # 5. Broadcast real-time WebSocket update
     try:

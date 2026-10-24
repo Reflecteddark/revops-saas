@@ -19,6 +19,11 @@ from packages.database.models import CallRecording, Deal, User
 from packages.database.session import get_db
 
 from ..auth import get_current_user
+from ..cache_client import (
+    delete_cached_json_sync,
+    get_cached_json_sync,
+    set_cached_json_sync,
+)
 from ..schemas import SpeechEvaluationRequest
 from ..tenant_registry import get_tenant_spreadsheet_id
 from ..websocket_manager import manager
@@ -105,6 +110,15 @@ def get_service_account_path() -> Path | None:
 def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list[dict[str, Any]]:
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
+    cache_key = f"calls:{clean_tenant}"
+
+    # 1. Check Redis cache first (strictly scoped to tenant_id)
+    cached_redis = get_cached_json_sync(cache_key)
+    if cached_redis is not None and isinstance(cached_redis, list) and len(cached_redis) > 0:
+        _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": cached_redis}
+        _CALLS_CACHE["calls"] = cached_redis
+        return cached_redis[:limit]
+
     cached = _CALLS_CACHE.get(clean_tenant)
     if isinstance(cached, dict) and (now - cached.get("timestamp", 0) < 15):
         return cached.get("calls", [])
@@ -125,6 +139,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
             empty_calls: list[dict[str, Any]] = []
             _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": empty_calls}
             _CALLS_CACHE["calls"] = empty_calls
+            set_cached_json_sync(cache_key, empty_calls, ex=60)
             return empty_calls
 
         calls = []
@@ -233,6 +248,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
 
         _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": calls}
         _CALLS_CACHE["calls"] = calls
+        set_cached_json_sync(cache_key, calls, ex=60)
         return calls
     except Exception as e:
         logger.error(f"Error fetching calls from Google Sheets: {e}")
@@ -346,6 +362,7 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
             logger.debug(f"Read-After-Write verification note: {ex_raw}")
 
         # Invalidate cache so fresh calls appear immediately
+        delete_cached_json_sync(f"calls:{tenant_id}")
         _CALLS_CACHE.pop(tenant_id, None)
         _CALLS_CACHE.clear()
         return True
@@ -507,6 +524,8 @@ async def ingest_call_from_n8n(
         "call": formatted_call
     })
 
+    delete_cached_json_sync(f"calls:{(payload.tenant_id or 'TNT-001').strip().upper()}")
+
     return {
         "status": "ok",
         "call_id": call_id,
@@ -521,6 +540,7 @@ def force_sync_from_sheets(request: Request, tenant_id: str = Query("TNT-001")):
     """Forces an immediate pull from Google Sheets raw_calls for given tenant."""
     verify_internal_or_admin(request)
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
+    delete_cached_json_sync(f"calls:{clean_tenant}")
     if clean_tenant in _CALLS_CACHE and isinstance(_CALLS_CACHE[clean_tenant], dict):
         _CALLS_CACHE[clean_tenant]["timestamp"] = 0
     calls = fetch_calls_from_sheets(tenant_id=clean_tenant, limit=100)

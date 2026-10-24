@@ -364,15 +364,44 @@ async function fetchLiveCallsData(showFeedback = false) {
 async function fetchLiveDealsData(showFeedback = false) {
   try {
     const tenantId = getActiveTenantId();
+    let authHeaders = {};
+    if (typeof getAdminAuthHeaders === 'function') {
+      authHeaders = getAdminAuthHeaders();
+    } else if (typeof window !== 'undefined' && typeof window.getAdminAuthHeaders === 'function') {
+      authHeaders = window.getAdminAuthHeaders();
+    }
+
     let res;
     try {
-      res = await fetch(`${REVOPS_API_BASE}/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
+      res = await fetch(`${REVOPS_API_BASE}/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`, {
+        headers: authHeaders,
+        credentials: 'include'
+      });
       if (!res.ok && REVOPS_API_BASE) {
-        res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
+        res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`, {
+          headers: authHeaders,
+          credentials: 'include'
+        });
       }
     } catch (e) {
-      res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`, { credentials: 'include' });
+      res = await fetch(`/api/v1/deals?tenant_id=${encodeURIComponent(tenantId)}`, {
+        headers: authHeaders,
+        credentials: 'include'
+      });
     }
+
+    // Graceful fallback to public endpoint if protected endpoint returns 401/403
+    if (!res || !res.ok) {
+      try {
+        const publicUrl = REVOPS_API_BASE
+          ? `${REVOPS_API_BASE}/api/v1/deals/public?tenant_id=${encodeURIComponent(tenantId)}`
+          : `/api/v1/deals/public?tenant_id=${encodeURIComponent(tenantId)}`;
+        res = await fetch(publicUrl);
+      } catch (e_pub) {
+        // Continue to check res
+      }
+    }
+
     if (!res || !res.ok) throw new Error('API status ' + (res ? res.status : 'network error'));
     const data = await res.json();
     if (data && Array.isArray(data.deals)) {

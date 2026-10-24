@@ -359,7 +359,11 @@ def test_deals_router_crm_type_routing():
 
 def test_deals_sheets_parsing_multi_source():
     from unittest import mock
+    from apps.api.cache_client import delete_cached_json_sync
     from apps.api.routers.deals_router import _DEALS_CACHE
+
+    for k in ("deals:TNT-B24", "deals:TNT-AMO", "deals:TNT-BOTH"):
+        delete_cached_json_sync(k)
 
     fake_rows = [
         ["deal_id", "company_name", "amount", "stage_id", "stage_name", "created_at", "updated_at", "responsible_user", "segment", "source", "", "", "status", "", "is_won", "is_lost"],
@@ -631,5 +635,235 @@ def test_calls_cache_persistence_on_sync_sheets():
         overview = res_overview.json()
         assert overview["metrics_summary"]["total_calls"] == 1
         assert overview["metrics_summary"]["avg_score"] == 85.0
+
+
+# ==============================================================================
+# 8. Required Multi-Tenant & Dual CRM Integration Tests (Cases A, B, C, D, E)
+# ==============================================================================
+
+def test_tenant_isolation_deals_and_url_tamper():
+    """Case A: TNT-001 cannot see TNT-002 data, and cross-tenant URL tampering is rejected with 403."""
+    from apps.api.auth import create_access_token
+    from packages.database.models import Deal, DealStage, SubscriptionTier, Tenant, Workspace
+    from packages.database.session import SessionLocal
+
+    db = SessionLocal()
+    t1_id = "TNT-ISO-001"
+    t2_id = "TNT-ISO-002"
+
+    try:
+        # 1. Setup tenants and workspaces
+        for tid, name in [(t1_id, "Tenant 1"), (t2_id, "Tenant 2")]:
+            if not db.query(Tenant).filter(Tenant.id == tid).first():
+                db.add(Tenant(id=tid, name=name, slug=tid.lower(), tier=SubscriptionTier.PRO))
+            if not db.query(Workspace).filter(Workspace.id == f"ws_{tid}").first():
+                db.add(Workspace(id=f"ws_{tid}", tenant_id=tid, name=f"Workspace {tid}"))
+        db.commit()
+
+        # 2. Add deal for each tenant
+        d1 = Deal(id="DEAL-T1-01", tenant_id=t1_id, workspace_id=f"ws_{t1_id}", title="T1 Exclusive Deal", stage=DealStage.LEAD_INCOMING, budget=100000.0)
+        d2 = Deal(id="DEAL-T2-01", tenant_id=t2_id, workspace_id=f"ws_{t2_id}", title="T2 Secret Deal", stage=DealStage.LEAD_INCOMING, budget=200000.0)
+        db.add(d1)
+        db.add(d2)
+        db.commit()
+
+        # 3. User token for Tenant 1
+        t1_token = create_access_token({"sub": "user_t1", "tenant_id": t1_id})
+
+        # Test A1: Querying without query param returns strictly T1 deals
+        res1 = client.get("/api/v1/deals", headers={"Authorization": f"Bearer {t1_token}"})
+        assert res1.status_code == 200
+        data1 = res1.json()
+        deal_ids = [d["id"] for d in data1.get("deals", [])]
+        assert "DEAL-T1-01" in deal_ids
+        assert "DEAL-T2-01" not in deal_ids
+
+        # Test A2: URL tampering (Token is for T1, but query param asks for T2) -> MUST RAISE 403
+        res_tamper = client.get(f"/api/v1/deals?tenant_id={t2_id}", headers={"Authorization": f"Bearer {t1_token}"})
+        assert res_tamper.status_code == 403
+        assert "Cross-tenant access forbidden" in res_tamper.json()["detail"]
+
+        # Test A3: Public endpoint with tenant filter returns strictly that tenant's deals
+        res_pub1 = client.get(f"/api/v1/deals/public?tenant_id={t1_id}")
+        assert res_pub1.status_code == 200
+        pub_deals1 = [d["id"] for d in res_pub1.json().get("deals", [])]
+        assert "DEAL-T1-01" in pub_deals1
+        assert "DEAL-T2-01" not in pub_deals1
+
+        # Test A4: Public endpoint without tenant_id is rejected
+        res_pub_missing = client.get("/api/v1/deals/public")
+        assert res_pub_missing.status_code in (400, 422)
+
+    finally:
+        db.query(Deal).filter(Deal.id.in_(["DEAL-T1-01", "DEAL-T2-01"])).delete(synchronize_session=False)
+        db.query(Workspace).filter(Workspace.id.in_([f"ws_{t1_id}", f"ws_{t2_id}"])).delete(synchronize_session=False)
+        db.query(Tenant).filter(Tenant.id.in_([t1_id, t2_id])).delete(synchronize_session=False)
+        db.commit()
+        db.close()
+
+
+def test_amocrm_deal_ingest_stages():
+    """Case B: Ingest deal from amoCRM with stages '1' -> LEAD_INCOMING, '142' -> WON, '143' -> LOST."""
+    import asyncio
+    from unittest.mock import MagicMock
+    from apps.api.routers.deals_router import ingest_deal
+    from packages.database.models import Deal, DealStage, Tenant, Workspace
+    from packages.database.session import SessionLocal
+
+    db = SessionLocal()
+    tenant_id = "TNT-AMO-TEST"
+
+    cases = [
+        ("AMO-STG-1", "1", DealStage.LEAD_INCOMING, "ACTIVE"),
+        ("AMO-STG-142", "142", DealStage.WON, "WON"),
+        ("AMO-STG-143", "143", DealStage.LOST, "LOST"),
+    ]
+
+    mock_req = MagicMock()
+    mock_req.client.host = "127.0.0.1"
+    mock_req.headers = {}
+
+    try:
+        for deal_id, stage_val, expected_stage, expected_status in cases:
+            payload = {
+                "deal_id": deal_id,
+                "tenant_id": tenant_id,
+                "company_name": f"amoCRM Deal {deal_id}",
+                "amount": 250000.0,
+                "stage": stage_val,
+                "crm_source": "amocrm"
+            }
+            res = asyncio.run(ingest_deal(request=mock_req, payload=payload, db=db))
+            assert res["status"] == "ok"
+            assert res["stage"] == expected_stage.name
+
+            saved = db.query(Deal).filter(Deal.id == deal_id).first()
+            assert saved is not None
+            assert saved.stage == expected_stage
+            assert saved.crm_source == "amocrm"
+            assert saved.status == expected_status
+    finally:
+        for deal_id, _, _, _ in cases:
+            db.query(Deal).filter(Deal.id == deal_id).delete(synchronize_session=False)
+        db.query(Workspace).filter(Workspace.tenant_id == tenant_id).delete(synchronize_session=False)
+        db.query(Tenant).filter(Tenant.id == tenant_id).delete(synchronize_session=False)
+        db.commit()
+        db.close()
+
+
+def test_bitrix24_deal_ingest_stages():
+    """Case C: Ingest deal from Bitrix24 with stages 'NEW' -> LEAD_INCOMING, 'WON' -> WON, 'LOSE' -> LOST."""
+    import asyncio
+    from unittest.mock import MagicMock
+    from apps.api.routers.deals_router import ingest_deal
+    from packages.database.models import Deal, DealStage, Tenant, Workspace
+    from packages.database.session import SessionLocal
+
+    db = SessionLocal()
+    tenant_id = "TNT-B24-TEST"
+
+    cases = [
+        ("B24-STG-NEW", "NEW", DealStage.LEAD_INCOMING, "ACTIVE"),
+        ("B24-STG-WON", "WON", DealStage.WON, "WON"),
+        ("B24-STG-LOSE", "LOSE", DealStage.LOST, "LOST"),
+    ]
+
+    mock_req = MagicMock()
+    mock_req.client.host = "127.0.0.1"
+    mock_req.headers = {}
+
+    try:
+        for deal_id, stage_val, expected_stage, expected_status in cases:
+            payload = {
+                "deal_id": deal_id,
+                "tenant_id": tenant_id,
+                "company_name": f"B24 Deal {deal_id}",
+                "amount": 350000.0,
+                "stage": stage_val,
+                "crm_source": "bitrix24"
+            }
+            res = asyncio.run(ingest_deal(request=mock_req, payload=payload, db=db))
+            assert res["status"] == "ok"
+            assert res["stage"] == expected_stage.name
+
+            saved = db.query(Deal).filter(Deal.id == deal_id).first()
+            assert saved is not None
+            assert saved.stage == expected_stage
+            assert saved.crm_source == "bitrix24"
+            assert saved.status == expected_status
+    finally:
+        for deal_id, _, _, _ in cases:
+            db.query(Deal).filter(Deal.id == deal_id).delete(synchronize_session=False)
+        db.query(Workspace).filter(Workspace.tenant_id == tenant_id).delete(synchronize_session=False)
+        db.query(Tenant).filter(Tenant.id == tenant_id).delete(synchronize_session=False)
+        db.commit()
+        db.close()
+
+
+def test_foreign_tenant_write_rejection():
+    """Case D: Writing deals for a foreign tenant with regular user credentials is rejected (403 Forbidden)."""
+    from apps.api.auth import create_access_token
+
+    user_token = create_access_token({"sub": "user_legit", "tenant_id": "TNT-MINE"})
+
+    # Attempt to write into TNT-OTHER using token for TNT-MINE
+    payload = {
+        "deal_id": "DEAL-ATTACK-01",
+        "tenant_id": "TNT-OTHER",
+        "title": "Malicious Deal Ingestion",
+        "amount": 999999.0,
+        "stage": "NEW"
+    }
+
+    res = client.post(
+        "/api/v1/deals/ingest",
+        json=payload,
+        headers={"Authorization": f"Bearer {user_token}"}
+    )
+    assert res.status_code == 403
+    assert "Cross-tenant write forbidden" in res.json()["detail"]
+
+
+def test_redis_multitenant_caching():
+    """Case E: Multi-tenant Redis caching with strictly scoped keys calls:{tenant_id} and deals:{tenant_id}."""
+    from apps.api.cache_client import (
+        delete_cached_json_sync,
+        get_cached_json_sync,
+        set_cached_json_sync,
+    )
+
+    t1 = "TNT-CACHE-01"
+    t2 = "TNT-CACHE-02"
+
+    calls_k1 = f"calls:{t1}"
+    calls_k2 = f"calls:{t2}"
+    deals_k1 = f"deals:{t1}"
+    deals_k2 = f"deals:{t2}"
+
+    # Set distinct tenant cache values
+    set_cached_json_sync(calls_k1, [{"id": "c1", "title": "Call T1"}])
+    set_cached_json_sync(calls_k2, [{"id": "c2", "title": "Call T2"}])
+    set_cached_json_sync(deals_k1, [{"id": "d1", "title": "Deal T1"}])
+    set_cached_json_sync(deals_k2, [{"id": "d2", "title": "Deal T2"}])
+
+    # Assert tenant isolation in cache
+    assert get_cached_json_sync(calls_k1)[0]["id"] == "c1"
+    assert get_cached_json_sync(calls_k2)[0]["id"] == "c2"
+    assert get_cached_json_sync(deals_k1)[0]["id"] == "d1"
+    assert get_cached_json_sync(deals_k2)[0]["id"] == "d2"
+
+    # Assert deletion of one tenant key does not affect other tenant
+    delete_cached_json_sync(calls_k1)
+    delete_cached_json_sync(deals_k1)
+
+    assert get_cached_json_sync(calls_k1) is None
+    assert get_cached_json_sync(deals_k1) is None
+    assert get_cached_json_sync(calls_k2)[0]["id"] == "c2"
+    assert get_cached_json_sync(deals_k2)[0]["id"] == "d2"
+
+    # Clean up
+    delete_cached_json_sync(calls_k2)
+    delete_cached_json_sync(deals_k2)
+
 
 
