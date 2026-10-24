@@ -411,3 +411,62 @@ def test_sla_risk_suppressed_for_deleted_and_closed_deals():
         lost_deals = [d for d in deals if d["status"] == "lost"]
         for d in won_deals + lost_deals:
             assert d["sla_risk"] is False, f"Deal {d['deal_id']} with status {d['status']} must have sla_risk=False"
+
+
+def test_ingest_deal_auto_provisions_tenant_and_workspace():
+    import asyncio
+    from apps.api.routers.deals_router import ingest_deal
+    from packages.database.models import Deal, Tenant, Workspace
+    from packages.database.session import get_db
+
+    # Use in-memory SQLite session from test setup
+    db = next(get_db())
+    test_tenant_id = "TNT-TEST-AUTO"
+    test_deal_id = "B24-TEST-999"
+
+    # Ensure clean slate
+    db.query(Deal).filter(Deal.id == test_deal_id).delete()
+    db.query(Workspace).filter(Workspace.tenant_id == test_tenant_id).delete()
+    db.query(Tenant).filter(Tenant.id == test_tenant_id).delete()
+    db.commit()
+
+    payload = {
+        "deal_id": test_deal_id,
+        "tenant_id": test_tenant_id,
+        "company_name": "Test Company Auto-Provision",
+        "amount": 250000.0,
+        "is_won": "0",
+        "is_lost": "0",
+        "status": "ACTIVE"
+    }
+
+    # Calling ingest_deal when tenant doesn't exist in DB must NOT raise ForeignKeyViolation
+    res = asyncio.run(ingest_deal(payload=payload, db=db, _=None))
+    assert res["status"] == "ok"
+    assert res["deal_id"] == test_deal_id
+
+
+    # Verify Tenant was auto-created
+    t = db.query(Tenant).filter(Tenant.id == test_tenant_id).first()
+    assert t is not None
+    assert t.id == test_tenant_id
+
+    # Verify Workspace was auto-created with FK
+    ws = db.query(Workspace).filter(Workspace.tenant_id == test_tenant_id).first()
+    assert ws is not None
+    assert ws.tenant_id == test_tenant_id
+
+    # Verify Deal was created with proper fields
+    d = db.query(Deal).filter(Deal.id == test_deal_id).first()
+    assert d is not None
+    assert d.title == "Test Company Auto-Provision"
+    assert d.budget == 250000.0
+    assert d.tenant_id == test_tenant_id
+    assert d.workspace_id == ws.id
+
+    # Clean up
+    db.query(Deal).filter(Deal.id == test_deal_id).delete()
+    db.query(Workspace).filter(Workspace.tenant_id == test_tenant_id).delete()
+    db.query(Tenant).filter(Tenant.id == test_tenant_id).delete()
+    db.commit()
+

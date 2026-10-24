@@ -13,19 +13,21 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from packages.database.models import Deal
+from packages.database.models import Deal, DealStage, SubscriptionTier, Tenant, Workspace
 from packages.database.session import get_db
 
 from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
+from .admin_router import verify_admin_access
 
 logger = logging.getLogger("deals_router")
 
 router = APIRouter(prefix="/deals", tags=["Deals Management"])
+
 
 
 class FixNextStepPayload(BaseModel):
@@ -239,12 +241,14 @@ def get_deals_lookup(tenant_id: str = "TNT-001") -> dict[str, dict[str, Any]]:
 @router.get("")
 @router.get("/")
 def list_deals(
+    request: Request,
     stage: str | None = None,
     sla_risk_only: bool = False,
     org_id: str = "TNT-001",
     tenant_id: str | None = None,
     db: Session = Depends(get_db)
 ) -> dict[str, Any]:
+    verify_admin_access(request)
     """Returns active CRM deals directly from raw_deals Google Sheets or local DB for given tenant."""
     effective_tenant = tenant_id or org_id or "TNT-001"
     is_demo_tenant = str(effective_tenant).lower().startswith("demo_") or str(effective_tenant).lower().startswith("demo-")
@@ -300,7 +304,144 @@ def list_deals(
     }
 
 
+@router.post("/ingest")
+async def ingest_deal(
+    payload: dict,
+    db: Session = Depends(get_db),
+    _=Depends(verify_admin_access)
+) -> dict[str, Any]:
+    deal_id = payload.get("deal_id") or payload.get("id")
+    tenant_id = str(payload.get("tenant_id") or "TNT-001").strip().upper()
+    if not deal_id:
+        raise HTTPException(status_code=400, detail="deal_id is required")
+
+    # 1. Обеспечиваем наличие тенанта в базе данных (Foreign Key Guard)
+    tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+    if not tenant:
+        cfg = get_tenant_config(tenant_id) or {}
+        t_name = cfg.get("tenant_name") or f"Tenant {tenant_id}"
+        tenant = Tenant(
+            id=tenant_id,
+            name=t_name,
+            slug=tenant_id.lower().replace("_", "-"),
+            tier=SubscriptionTier.PRO,
+            is_active=True,
+            settings=cfg
+        )
+        db.add(tenant)
+        try:
+            db.commit()
+            db.refresh(tenant)
+        except Exception as e_t:
+            db.rollback()
+            tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+            if not tenant:
+                logger.error(f"Failed to provision tenant {tenant_id}: {e_t}")
+                raise HTTPException(status_code=500, detail=f"Failed to provision tenant {tenant_id}: {e_t}")
+
+    # 2. Обеспечиваем наличие Workspace
+    workspace_id = payload.get("workspace_id")
+    workspace = None
+    if workspace_id:
+        workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+    if not workspace:
+        workspace = db.query(Workspace).filter(Workspace.tenant_id == tenant_id).first()
+    if not workspace:
+        workspace = Workspace(
+            id=f"ws_{tenant_id}",
+            tenant_id=tenant_id,
+            name="Default Workspace",
+            crm_type=payload.get("channel") or payload.get("source") or "crm"
+        )
+        db.add(workspace)
+        try:
+            db.commit()
+            db.refresh(workspace)
+        except Exception as e_w:
+            db.rollback()
+            workspace = db.query(Workspace).filter(Workspace.tenant_id == tenant_id).first()
+            if not workspace:
+                logger.error(f"Failed to provision workspace for tenant {tenant_id}: {e_w}")
+                raise HTTPException(status_code=500, detail=f"Failed to provision workspace: {e_w}")
+    workspace_id = workspace.id
+
+    # 3. Нормализация полей сделки
+    title = payload.get("company_name") or payload.get("title") or f"Сделка {deal_id}"
+    amt_raw = payload.get("amount") if payload.get("amount") is not None else payload.get("budget", 0.0)
+    try:
+        budget = float(amt_raw) if amt_raw is not None else 0.0
+    except (ValueError, TypeError):
+        budget = 0.0
+
+    stage_val = DealStage.LEAD_INCOMING
+    is_won = str(payload.get("is_won", "0")) == "1" or str(payload.get("status", "")).upper() == "WON"
+    is_lost = str(payload.get("is_lost", "0")) == "1" or str(payload.get("status", "")).upper() == "LOST"
+    if is_won:
+        stage_val = DealStage.WON
+    elif is_lost:
+        stage_val = DealStage.LOST
+    elif "КП" in str(title) or "кп" in str(payload.get("stage_name", "")).lower():
+        stage_val = DealStage.COMMERCIAL_PROPOSAL
+    elif "встреч" in str(payload.get("stage_name", "")).lower():
+        stage_val = DealStage.MEETING_SCHEDULED
+
+    status = "WON" if is_won else ("LOST" if is_lost else str(payload.get("status") or "ACTIVE"))
+    is_deleted = bool(payload.get("is_deleted") in (True, "1", 1) or status == "DELETED")
+    crm_source = str(payload.get("source") or payload.get("channel") or "bitrix24")
+    is_at_risk = bool(payload.get("sla_risk") or payload.get("is_at_risk"))
+
+    # 4. Обновляем или создаем сделку
+    db_deal = db.query(Deal).filter(Deal.id == deal_id).first()
+    if not db_deal:
+        db_deal = Deal(
+            id=str(deal_id),
+            tenant_id=tenant_id,
+            workspace_id=str(workspace_id),
+            title=str(title),
+            company_name=str(payload.get("company_name") or title),
+            budget=budget,
+            stage=stage_val,
+            crm_source=crm_source,
+            status=status,
+            is_deleted=is_deleted,
+            is_at_risk=is_at_risk,
+            custom_payload=payload.get("custom_payload") or {}
+        )
+        db.add(db_deal)
+    else:
+        setattr(db_deal, "workspace_id", str(workspace_id))
+        setattr(db_deal, "title", str(title))
+        if payload.get("company_name"):
+            setattr(db_deal, "company_name", str(payload.get("company_name")))
+        setattr(db_deal, "budget", budget)
+        setattr(db_deal, "stage", stage_val)
+        setattr(db_deal, "crm_source", crm_source)
+        setattr(db_deal, "status", status)
+        setattr(db_deal, "is_deleted", is_deleted)
+        setattr(db_deal, "is_at_risk", is_at_risk)
+        if payload.get("custom_payload"):
+            setattr(db_deal, "custom_payload", payload.get("custom_payload"))
+
+    db.commit()
+
+
+    # 5. Broadcast WebSocket уведомление
+    try:
+        await manager.broadcast(tenant_id, {
+            "type": "deal_synced",
+            "action": "ingest",
+            "deal_id": deal_id,
+            "status": status,
+            "title": title
+        })
+    except Exception as e_ws:
+        logger.debug(f"WebSocket broadcast note: {e_ws}")
+
+    return {"status": "ok", "deal_id": deal_id, "tenant_id": tenant_id}
+
+
 @router.post("/{deal_id}/fix-next-step")
+
 async def fix_next_step(
     deal_id: str,
     payload: FixNextStepPayload | None = None,
