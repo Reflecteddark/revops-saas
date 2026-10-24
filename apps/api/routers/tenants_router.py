@@ -155,6 +155,7 @@ class UpdateTenantCrmRequest(BaseModel):
 # ============================================================================
 
 @router.get("", response_model=list[dict[str, Any]])
+@router.get("/summary", response_model=list[dict[str, Any]])
 def list_tenants():
     """List all available client tenants and templates for dynamic switcher."""
     return get_all_tenants_summary()
