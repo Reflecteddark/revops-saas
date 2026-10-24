@@ -320,13 +320,13 @@ function initSparklines() {
       maintainAspectRatio: false,
       animation: { duration: 600 },
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      elements: { point: { radius: 0 }, line: { tension: 0.4, borderWidth: 2 } },
+      elements: { point: { radius: 0 }, line: { tension: 0.4, borderWidth: 1.5 } },
       scales: { x: { display: false }, y: { display: false } }
     }
   };
 
   const ids = ['sparkRevenue', 'sparkPipeline', 'sparkQuality', 'sparkSla'];
-  const colors = ['#7c3aed', '#f59e0b', '#06b6d4', '#f43f5e'];
+  const colors = ['#7c3aed', '#7c3aed', '#71717a', '#7c3aed'];
 
   if (!hasCrmData()) {
     ids.forEach(id => {
@@ -433,8 +433,8 @@ function initSparklines() {
         datasets: [{
           data: seriesData,
           borderColor: colors[i],
-          backgroundColor: colors[i] + '1a',
-          fill: true
+          backgroundColor: 'transparent',
+          fill: false
         }]
       }
     });
