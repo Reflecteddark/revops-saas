@@ -499,11 +499,11 @@ function initDevelopSplineChart() {
   developSplineChartInstance = null;
   const isLight = getThemeMode() === 'light';
   const c2d = ctx.getContext('2d');
-  let grad1 = 'rgba(124, 58, 237, 0.20)';
+  let grad1 = 'rgba(124, 58, 237, 0.10)';
   if (c2d) {
     const h = ctx.clientHeight || 180;
     const g1 = c2d.createLinearGradient(0, 0, 0, h);
-    g1.addColorStop(0, 'rgba(124, 58, 237, 0.35)');
+    g1.addColorStop(0, 'rgba(124, 58, 237, 0.10)');
     g1.addColorStop(1, 'rgba(124, 58, 237, 0.00)');
     grad1 = g1;
   }
@@ -522,8 +522,8 @@ function initDevelopSplineChart() {
           data: isEmpty ? [] : [240, 310, 460, 380, 540, 470, 610],
           borderColor: '#7c3aed',
           backgroundColor: grad1,
-          borderWidth: 2.2,
-          tension: 0.42,
+          borderWidth: 1.5,
+          tension: 0.4,
           fill: true,
           pointRadius: 0,
           pointHoverRadius: 5,
@@ -537,7 +537,7 @@ function initDevelopSplineChart() {
           borderColor: isLight ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.22)',
           borderDash: [4, 4],
           borderWidth: 1.5,
-          tension: 0.42,
+          tension: 0.4,
           fill: false,
           pointRadius: 0,
           pointHoverRadius: 4,
