@@ -68,12 +68,14 @@ def test_unauthorized_remote_admin_access_rejected():
 
 def test_authorized_remote_admin_access_with_key():
     """Verifies that remote requests with correct X-RevOps-Admin-Key succeed."""
+    import os
+    admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
     resp = client.get(
         "/api/v1/admin/status",
         headers={
             "host": "report.ai-rop.ru",
             "cf-connecting-ip": "194.87.12.34",
-            "x-revops-admin-key": "revops_admin_fleet_secret_2026"
+            "x-revops-admin-key": admin_key
         }
     )
     assert resp.status_code == 200
@@ -81,13 +83,13 @@ def test_authorized_remote_admin_access_with_key():
 
 
 def test_authorized_remote_admin_access_with_session():
-    """Verifies that remote requests with valid cryptographic HMAC session succeed."""
+    """Verifies that remote requests with deprecated raw_session backdoor are blocked with 403 (P0-Auth-5)."""
     import hashlib
     import json
     import time
 
     now_ms = int(time.time() * 1000)
-    login = "dmitriyfedotov1908@gmail.com"
+    login = "rop@revops.local"
     pwd_hash = "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b"
     salt = "revops_tnt001_enterprise_sec_v20_2"
     sig = hashlib.sha256(f"{login}:{pwd_hash}:{now_ms}:{salt}".encode()).hexdigest()
@@ -107,12 +109,14 @@ def test_authorized_remote_admin_access_with_session():
             "x-revops-session": session_payload
         }
     )
-    assert resp.status_code == 200
-    assert "fleet_status" in resp.json()
+    assert resp.status_code == 403
 
 
 def test_clients_list_and_register():
     """Verifies listing and registering new client access records."""
+    from apps.api.auth import create_access_token
+    from packages.database.models import UserRole
+
     # 1. Get initial list
     resp = client.get("/api/v1/admin/clients")
     assert resp.status_code == 200
@@ -131,8 +135,20 @@ def test_clients_list_and_register():
     assert reg_resp.status_code == 200
     assert reg_resp.json()["success"] is True
 
-    # 3. Check public auth endpoint
-    auth_resp = client.get("/api/v1/auth/registered-clients")
+    # 3. Check public auth endpoint (requires admin auth per P0-Auth-3)
+    unauth_resp = client.get("/api/v1/auth/registered-clients")
+    assert unauth_resp.status_code == 401
+
+    admin_token = create_access_token({
+        "sub": "usr-admin-test",
+        "tenant_id": "TNT-001",
+        "role": UserRole.ADMIN.value,
+        "email": "admin@revops-test.io"
+    })
+    auth_resp = client.get(
+        "/api/v1/auth/registered-clients",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
     assert auth_resp.status_code == 200
     found = any(c["login"] == "test_client_qa@example.com" for c in auth_resp.json()["clients"])
     assert found is True

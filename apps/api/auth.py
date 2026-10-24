@@ -3,6 +3,7 @@ Authentication, Password Hashing, JWT, and Multi-Tenant Context for RevOps SaaS.
 """
 
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -11,10 +12,14 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from packages.database.models import User, UserRole
+from packages.database.models import RevokedToken, User, UserRole
 from packages.database.session import get_db
 
-SECRET_KEY = os.getenv("SECRET_KEY", "revops-enterprise-os-v17-6-saas-secret-key-change-in-prod")
+_raw_secret = os.getenv("SECRET_KEY")
+if not _raw_secret or len(_raw_secret) < 32:
+    raise RuntimeError("SECRET_KEY is required and must be at least 32 characters")
+SECRET_KEY: str = _raw_secret
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
@@ -36,6 +41,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    if "jti" not in to_encode:
+        to_encode["jti"] = str(uuid.uuid4())
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -57,8 +64,13 @@ def get_current_user(
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = str(payload.get("sub") or "")
         tenant_id = str(payload.get("tenant_id") or "")
+        jti = payload.get("jti")
         if not user_id or not tenant_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный токен")
+        if jti:
+            revoked = db.query(RevokedToken).filter(RevokedToken.jti == str(jti)).first()
+            if revoked:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен отозван")
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен истек или недействителен")
 

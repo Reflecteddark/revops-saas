@@ -29,7 +29,7 @@ from apps.api.services.crm_deal_normalizer import (
     sanitize_custom_payload,
 )
 
-client = TestClient(app)
+client = TestClient(app, client=("172.16.0.5", 50000))
 
 
 # ==============================================================================

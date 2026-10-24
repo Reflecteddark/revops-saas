@@ -221,78 +221,71 @@ def load_tenants_registry() -> dict[str, Any]:
     if _REGISTRY_CACHE["data"] and (now - _REGISTRY_CACHE["timestamp"] < 10):
         return _REGISTRY_CACHE["data"]
 
-    # 1. Operational Source of Truth: Database (PostgreSQL / SQLite)
+    # 1. Всегда читаем JSON как baseline (там живут TNT-001 и legacy-клиенты)
+    json_tenants = []
+    reg_path = get_tenants_registry_path()
+    if reg_path:
+        try:
+            with open(reg_path, "r", encoding="utf-8") as f:
+                json_data = json.load(f)
+                json_tenants = json_data.get("tenants", [])
+        except Exception as e:
+            logger.warning(f"Could not read JSON registry: {e}")
+
+    # 2. Читаем БД (там живут новые клиенты из /admin/tenants/provision)
+    db_tenants: list[dict[str, Any]] = []
+    master_template = None
     try:
         from packages.database.models import Tenant
         from packages.database.session import SessionLocal
         db = SessionLocal()
         try:
-            db_tenants = db.query(Tenant).all()
-            if db_tenants:
-                active_list = []
-                master_template = None
-                for t in db_tenants:
-                    t_dict = t.to_registry_dict()
-                    if t.id == "TNT-CLEAN-001" or t_dict.get("is_template"):
-                        master_template = t_dict
-                    else:
-                        active_list.append(t_dict)
-
-                if not master_template:
-                    master_template = {
-                        "tenant_id": "TNT-CLEAN-001",
-                        "tenant_name": "Clean Starter Template",
-                        "spreadsheet_id": "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A",
-                        "crm_type": "template",
-                        "status": "template",
-                        "is_template": True
-                    }
-
-                data = {
-                    "tenants": active_list,
-                    "master_template": master_template
-                }
-                _REGISTRY_CACHE["data"] = data
-                _REGISTRY_CACHE["timestamp"] = now
-                return data
+            for tenant_obj in db.query(Tenant).all():
+                t_dict = tenant_obj.to_registry_dict()
+                if tenant_obj.id == "TNT-CLEAN-001" or t_dict.get("is_template"):
+                    master_template = t_dict
+                else:
+                    db_tenants.append(t_dict)
         finally:
             db.close()
-    except Exception as dbe:
-        logger.debug(f"DB tenant query fallback to JSON file: {dbe}")
+    except Exception as e:
+        logger.debug(f"DB tenant query failed, using JSON only: {e}")
 
-    # 2. Fallback: Local JSON Registry File Mirror
-    reg_path = get_tenants_registry_path()
-    if not reg_path:
-        logger.warning("tenants_registry.json not found in candidate paths. Using fallback defaults.")
-        default_data = {
-            "tenants": [
-                {
-                    "tenant_id": "TNT-001",
-                    "tenant_name": "Самозанятый (Master)",
-                    "spreadsheet_id": DEFAULT_SPREADSHEET_ID,
-                    "crm_type": "bitrix24",
-                    "status": "active"
-                }
-            ],
-            "master_template": {
-                "tenant_id": "TNT-CLEAN-001",
-                "tenant_name": "Clean Starter Template",
-                "spreadsheet_id": "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A"
-            }
+    # 3. Мержим: JSON baseline + override из БД (по tenant_id)
+    merged: dict[str, dict[str, Any]] = {}
+    for item in json_tenants:
+        tid = str(item.get("tenant_id", "")).strip().upper()
+        if tid:
+            merged[tid] = item
+    for item in db_tenants:
+        tid = str(item.get("tenant_id", "")).strip().upper()
+        if tid:
+            merged[tid] = item  # БД перезаписывает JSON-запись тем же tenant_id
+
+    # 4. Fallback для TNT-001, если его нет ни там, ни там (защита от полного сноса)
+    if "TNT-001" not in merged:
+        merged["TNT-001"] = {
+            "tenant_id": "TNT-001",
+            "tenant_name": "Самозанятый (Master)",
+            "spreadsheet_id": DEFAULT_SPREADSHEET_ID,
+            "crm_type": "bitrix24",
+            "status": "active",
         }
-        _REGISTRY_CACHE["data"] = default_data
-        _REGISTRY_CACHE["timestamp"] = now
-        return default_data
 
-    try:
-        with open(reg_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            _REGISTRY_CACHE["data"] = data
-            _REGISTRY_CACHE["timestamp"] = now
-            return data
-    except Exception as ex:
-        logger.error(f"Failed to read {reg_path}: {ex}")
-        return _REGISTRY_CACHE["data"] or {"tenants": []}
+    if not master_template:
+        master_template = {
+            "tenant_id": "TNT-CLEAN-001",
+            "tenant_name": "Clean Starter Template",
+            "spreadsheet_id": "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A",
+            "crm_type": "template",
+            "status": "template",
+            "is_template": True,
+        }
+
+    data = {"tenants": list(merged.values()), "master_template": master_template}
+    _REGISTRY_CACHE["data"] = data
+    _REGISTRY_CACHE["timestamp"] = now
+    return data
 
 
 def get_tenant_config(tenant_id: str) -> dict[str, Any] | None:

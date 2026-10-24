@@ -77,10 +77,10 @@ class Tenant(Base):
     call_recordings = relationship("CallRecording", back_populates="tenant", cascade="all, delete-orphan")
 
     @property
-    def spreadsheet_id(self) -> str:
+    def spreadsheet_id(self) -> str | None:
         if self.settings and isinstance(self.settings, dict):
-            return self.settings.get("spreadsheet_id", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk")
-        return "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk"
+            return self.settings.get("spreadsheet_id")
+        return None
 
     @property
     def crm_type(self) -> str:
@@ -101,7 +101,7 @@ class Tenant(Base):
         return {
             "tenant_id": self.id,
             "tenant_name": self.name,
-            "spreadsheet_id": st.get("spreadsheet_id", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk"),
+            "spreadsheet_id": st.get("spreadsheet_id"),
             "crm_type": st.get("crm_type", "bitrix24"),
             "status": "active" if self.is_active else st.get("status", "offboarded"),
             "niche_name": st.get("niche_name", "Универсальный B2B"),
@@ -138,7 +138,7 @@ class User(Base):
 
     @property
     def is_admin(self) -> bool:
-        return bool(self.role == UserRole.ADMIN or "admin" in str(getattr(self.role, "value", self.role)).lower())
+        return bool(self.role == UserRole.ADMIN)
 
 
 
@@ -247,3 +247,14 @@ class CallRecording(Base):
     tenant = relationship("Tenant", back_populates="call_recordings")
     deal = relationship("Deal", back_populates="calls")
     manager = relationship("User", back_populates="call_recordings")
+
+
+class RevokedToken(Base):
+    """Blacklist of revoked JWT tokens (identified by jti)."""
+    __tablename__ = "revoked_tokens"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    jti = Column(String(64), unique=True, index=True, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+

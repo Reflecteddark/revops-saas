@@ -4,6 +4,8 @@ Processes deal status updates, SLA breaches, call events, writes to tenant Googl
 and triggers real-time WebSocket broadcasts to client dashboards.
 """
 
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -12,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 
 from ..services.crm_deal_normalizer import (
@@ -168,7 +170,7 @@ def resolve_webhook_tenant(
     tenant_param: str | None = None,
     body: dict[str, Any] | None = None
 ) -> str:
-    """Resolves target tenant_id from Path, Query param, Header, or Body."""
+    """Resolves target tenant_id from Path or Header only."""
     # 1. From path parameter
     if tenant_param and tenant_param.strip():
         t = tenant_param.strip().upper()
@@ -176,68 +178,68 @@ def resolve_webhook_tenant(
             t = f"TNT-{int(t):03d}"
         return t
 
-    # 2. From query parameters ?tenant_id=... or ?tenant=...
-    q_tenant = request.query_params.get("tenant_id") or request.query_params.get("tenant")
-    if q_tenant and q_tenant.strip():
-        return q_tenant.strip().upper()
-
-    # 3. From custom headers
+    # 2. From custom headers
     h_tenant = request.headers.get("x-tenant-id") or request.headers.get("x-tenant")
     if h_tenant and h_tenant.strip():
         return h_tenant.strip().upper()
-
-    # 4. From body payload org_id or tenant_id
-    if isinstance(body, dict):
-        b_tenant = body.get("tenant_id") or body.get("org_id")
-        if b_tenant and str(b_tenant).strip():
-            return str(b_tenant).strip().upper()
 
     # Fallback default master tenant
     return "TNT-001"
 
 
 def verify_tenant_active(tenant_id: str):
-    """Enforces tenant lifecycle state: rejects requests for archived or frozen tenants."""
+    """Enforces tenant lifecycle state: rejects requests for unknown, archived or frozen tenants."""
     from ..tenant_registry import get_tenant_config
     cfg = get_tenant_config(tenant_id)
-    if cfg:
-        st = str(cfg.get("status", "active")).lower()
-        if st in ("archived", "offboarded"):
-            raise HTTPException(
-                status_code=410,
-                detail=f"Клиент {tenant_id} деактивирован / архивный (Offboarded). Приём данных остановлен."
-            )
-        if st in ("frozen", "blocked"):
-            raise HTTPException(
-                status_code=423,
-                detail=f"Доступ клиента {tenant_id} временно заморожен (Frozen)."
-            )
+    if not cfg:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Тенант {tenant_id} не найден в реестре"
+        )
+    st = str(cfg.get("status", "active")).lower()
+    if st in ("archived", "offboarded"):
+        raise HTTPException(
+            status_code=410,
+            detail=f"Клиент {tenant_id} деактивирован / архивный (Offboarded). Приём данных остановлен."
+        )
+    if st in ("frozen", "blocked"):
+        raise HTTPException(
+            status_code=423,
+            detail=f"Доступ клиента {tenant_id} временно заморожен (Frozen)."
+        )
 
 
 def parse_call_from_text(text: str, default_manager: str = "Менеджер", default_client: str = "Клиент") -> dict[str, Any]:
     """Helper to detect score and criteria from CRM note / transcription text."""
-    score = 10
-    cr = [1] * 13
-    next_step = 1
-    lower = text.lower()
+    lower = (text or "").lower()
 
     if "слив" in lower or "нет next step" in lower or "отказ" in lower:
-        score = 6
+        cr = [1] * 13
         cr[0] = 0
         cr[6] = 0
         cr[11] = 0
-        next_step = 0
+        return {
+            "score": 6,
+            "cr": cr,
+            "next_step": 0,
+            "status": "risk",
+            "status_label": "СЛИВ (НЕТ NEXT STEP)"
+        }
     elif "эталон" in lower or "успешно" in lower or "договорились" in lower:
-        score = 12
-        cr = [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1]
-        next_step = 1
+        return {
+            "score": 12,
+            "cr": [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
+            "next_step": 1,
+            "status": "won",
+            "status_label": "ЭТАЛОН"
+        }
 
     return {
-        "score": score,
-        "cr": cr,
-        "next_step": next_step,
-        "status": "won" if next_step == 1 and score >= 10 else ("warn" if score >= 8 else "risk"),
-        "status_label": "ЭТАЛОН" if score >= 10 else ("СЛИВ (НЕТ NEXT STEP)" if next_step == 0 else "В РАБОТЕ")
+        "score": None,
+        "cr": [None] * 13,
+        "next_step": None,
+        "status": "unknown",
+        "status_label": "НЕТ ДАННЫХ"
     }
 
 
@@ -263,6 +265,28 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
 
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
+
+    # Validate security: internal IP / admin key OR amoCRM HMAC-SHA256 signature
+    is_internal = False
+    try:
+        is_internal = verify_internal_or_admin(request)
+    except HTTPException:
+        is_internal = False
+
+    if not is_internal:
+        from ..tenant_registry import get_tenant_config
+        cfg = get_tenant_config(org_id)
+        secret = (cfg.get("amo_secret") or cfg.get("amo_webhook_secret") or cfg.get("amo_token")) if cfg else None
+        if not secret:
+            raise HTTPException(status_code=403, detail="AmoCRM webhook secret not configured for tenant")
+        signature = request.headers.get("x-amo-signature")
+        if not signature:
+            raise HTTPException(status_code=403, detail="X-Amo-Signature header missing")
+        raw_body = await request.body()
+        expected_sig = hmac.new(str(secret).encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected_sig.lower(), signature.lower()):
+            raise HTTPException(status_code=403, detail="Invalid X-Amo-Signature")
+
     record_incoming_webhook("amocrm", org_id, body, dict(request.headers), event="amocrm_webhook")
 
     # 1. Check if amoCRM sent a call event or note
@@ -289,9 +313,12 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
                 client=call_info.get("phone", "Клиент amoCRM"),
                 duration_sec=dur_sec,
                 duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
-                score=10,
-                next_step=1,
-                cr=[1] * 13,
+                score=None,
+                status="unknown",
+                status_label="НЕТ ДАННЫХ",
+                risk_amount="0 ₽",
+                next_step=None,
+                cr=None,
                 error_summary="Звонок принят из amoCRM",
                 recommendation="Своевременная фиксация договоренностей",
                 transcript=f"amoCRM звонок ID: {call_id}. Аудиозапись прикреплена к сделке #{entity_id}.",
@@ -300,6 +327,7 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
             )
 
     # Direct custom integration from n8n / amoCRM
+    cr_arg = None
     if not is_call_event and isinstance(body, dict) and ("call_id" in body or "transcript" in body or "manager" in body):
         is_call_event = True
         c_text = str(body.get("transcript") or body.get("amo_note_text") or "")
@@ -308,6 +336,10 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
         call_id = str(body.get("call_id", f"amo_{int(time.time())}"))
         deal_id = str(body.get("lead_id", body.get("deal_id", "amo_lead")))
         dur_sec = int(body.get("duration_sec", 135))
+
+        parsed_cr = parsed.get("cr")
+        cr_arg = body.get("cr", parsed_cr)
+        safe_cr_payload = None if (cr_arg is None or any(c is None for c in cr_arg)) else cr_arg
 
         call_payload = CallIngestPayload(
             id=call_id,
@@ -320,8 +352,9 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
             score=body.get("score", parsed["score"]),
             status=parsed["status"],
             status_label=parsed["status_label"],
+            risk_amount="0 ₽" if parsed["status"] in ("won", "unknown") or parsed["score"] is None else (body.get("risk_amount") or "500 000 ₽"),
             next_step=body.get("next_step", parsed["next_step"]),
-            cr=body.get("cr", parsed["cr"]),
+            cr=safe_cr_payload,
             error_summary=body.get("key_mistakes", body.get("error_summary", "Аудит завершен")),
             recommendation=body.get("improvements", body.get("recommendation", "Следовать сценарию звонка")),
             transcript=c_text or f"Звонок amoCRM сделка #{deal_id}",
@@ -332,6 +365,13 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
     # If call event processed: append to Google Sheets & push to dashboard!
     if call_payload:
         sheets_ok = append_call_to_sheets(call_payload)
+        if call_payload.status in ("won", "unknown") or call_payload.score is None:
+            cr_output: list[int | None] = [None] * 13 if (call_payload.status == "unknown" or call_payload.score is None) else (list(call_payload.cr) if call_payload.cr is not None else [None] * 13)
+            amo_risk_amount = "0 ₽"
+        else:
+            cr_output = list(call_payload.cr) if call_payload.cr is not None else (list(cr_arg) if cr_arg is not None else [None] * 13)
+            amo_risk_amount = call_payload.risk_amount or "500 000 ₽"
+
         formatted = {
             "id": call_payload.id,
             "deal_id": call_payload.deal_id,
@@ -344,9 +384,9 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
             "score": call_payload.score,
             "status": call_payload.status,
             "status_label": call_payload.status_label,
-            "risk_amount": call_payload.risk_amount or ("0 ₽" if call_payload.status == "won" else "500 000 ₽"),
+            "risk_amount": amo_risk_amount,
             "next_step": call_payload.next_step,
-            "cr": call_payload.cr,
+            "cr": cr_output,
             "error_summary": call_payload.error_summary,
             "recommendation": call_payload.recommendation,
             "transcript": call_payload.transcript
@@ -468,6 +508,24 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
 
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
+
+    # Validate security: internal IP / admin key OR Bitrix24 token
+    is_internal = False
+    try:
+        is_internal = verify_internal_or_admin(request)
+    except HTTPException:
+        is_internal = False
+
+    if not is_internal:
+        from ..tenant_registry import get_tenant_config
+        cfg = get_tenant_config(org_id)
+        expected_token = (cfg.get("bitrix_token") or cfg.get("bitrix_webhook_token") or cfg.get("bitrix_auth_token")) if cfg else None
+        if not expected_token:
+            raise HTTPException(status_code=403, detail="Bitrix24 webhook token not configured for tenant")
+        token_header = request.headers.get("x-bitrix-token")
+        if not token_header or not hmac.compare_digest(token_header, str(expected_token)):
+            raise HTTPException(status_code=403, detail="Invalid X-Bitrix-Token")
+
     record_incoming_webhook("bitrix24", org_id, body, dict(request.headers), event="bitrix24_webhook")
 
     event_name = body.get("event", "") if isinstance(body, dict) else ""
@@ -483,6 +541,9 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
         dur_sec = int(data_fields.get("DURATION", 140)) if str(data_fields.get("DURATION", "")).isdigit() else 140
 
         parsed = parse_call_from_text(desc, "Алексей Смирнов")
+        parsed_cr = parsed.get("cr")
+        safe_cr_payload = None if (parsed_cr is None or any(c is None for c in parsed_cr)) else parsed_cr
+
         call_payload = CallIngestPayload(
             id=f"b24_activity_{act_id}",
             deal_id=f"B24-{deal_id}",
@@ -494,8 +555,9 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
             score=parsed["score"],
             status=parsed["status"],
             status_label=parsed["status_label"],
+            risk_amount="0 ₽" if parsed["status"] in ("won", "unknown") or parsed["score"] is None else "500 000 ₽",
             next_step=parsed["next_step"],
-            cr=parsed["cr"],
+            cr=safe_cr_payload,
             error_summary=desc[:80] if desc else "Звонок зафиксирован в CRM",
             recommendation="Фиксировать точное время следующего Zoom-контакта",
             transcript=desc or f"Аудиозапись Битрикс24 активность #{act_id}.",
@@ -504,6 +566,13 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
         )
 
         sheets_ok = append_call_to_sheets(call_payload)
+        if call_payload.status in ("won", "unknown") or call_payload.score is None:
+            b24_cr_output: list[int | None] = [None] * 13 if (call_payload.status == "unknown" or call_payload.score is None) else (list(call_payload.cr) if call_payload.cr is not None else [None] * 13)
+            b24_risk_amount = "0 ₽"
+        else:
+            b24_cr_output = list(call_payload.cr) if call_payload.cr is not None else (list(parsed_cr) if parsed_cr is not None else [None] * 13)
+            b24_risk_amount = call_payload.risk_amount or "500 000 ₽"
+
         formatted = {
             "id": call_payload.id,
             "deal_id": call_payload.deal_id,
@@ -516,9 +585,9 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
             "score": call_payload.score,
             "status": call_payload.status,
             "status_label": call_payload.status_label,
-            "risk_amount": "0 ₽" if call_payload.status == "won" else "500 000 ₽",
+            "risk_amount": b24_risk_amount,
             "next_step": call_payload.next_step,
-            "cr": call_payload.cr,
+            "cr": b24_cr_output,
             "error_summary": call_payload.error_summary,
             "recommendation": call_payload.recommendation,
             "transcript": call_payload.transcript
@@ -671,6 +740,7 @@ async def _process_telephony_call(
     in FastAPI BackgroundTasks to eliminate telephony provider timeouts.
     """
     t_start = time.time()
+    verify_internal_or_admin(request)
     try:
         body = await request.json()
     except Exception:
@@ -691,6 +761,11 @@ async def _process_telephony_call(
     score = int(body.get("score")) if body.get("score") is not None else parsed["score"]
     next_step = int(body.get("next_step")) if body.get("next_step") is not None else parsed["next_step"]
     cr = body.get("cr") if body.get("cr") and len(body.get("cr")) == 13 else parsed["cr"]
+    safe_cr_payload = None if (cr is None or any(c is None for c in cr)) else cr
+
+    status_val = "won" if next_step == 1 and score is not None and score >= 10 else ("warn" if score is not None and score >= 8 else ("risk" if score is not None else "unknown"))
+    status_label_val = "ЭТАЛОН" if score is not None and score >= 10 else ("СЛИВ (НЕТ NEXT STEP)" if next_step == 0 else ("В РАБОТЕ" if score is not None else "НЕТ ДАННЫХ"))
+    risk_val = "0 ₽" if status_val in ("won", "unknown") or score is None else (body.get("risk_amount") or "500 000 ₽")
 
     call_payload = CallIngestPayload(
         id=call_id,
@@ -702,10 +777,11 @@ async def _process_telephony_call(
         duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
         amount=body.get("amount") or "300 000 ₽",
         score=score,
-        status="won" if next_step == 1 and score >= 10 else ("warn" if score >= 8 else "risk"),
-        status_label="ЭТАЛОН" if score >= 10 else ("СЛИВ (НЕТ NEXT STEP)" if next_step == 0 else "В РАБОТЕ"),
+        status=status_val,
+        status_label=status_label_val,
+        risk_amount=risk_val,
         next_step=next_step,
-        cr=cr,
+        cr=safe_cr_payload,
         error_summary=body.get("error_summary") or "Аудит завершен ИИ",
         recommendation=body.get("recommendation") or "Следовать регламенту фиксации Next Step",
         transcript=transcript or "Транскрипт аудиозаписи",
@@ -714,6 +790,8 @@ async def _process_telephony_call(
     )
 
     call_dict = call_payload.model_dump() if hasattr(call_payload, "model_dump") else call_payload.dict()
+    call_dict["cr"] = [None] * 13 if (status_val == "unknown" or score is None) else (cr or [None] * 13)
+    call_dict["risk_amount"] = risk_val
     task_id = None
     queue_driver = "celery"
 
@@ -748,13 +826,13 @@ async def _process_telephony_call(
     }
 
 
-@router.post("/call")
+@router.post("/call", dependencies=[Depends(verify_internal_or_admin)])
 async def receive_telephony_call(request: Request, background_tasks: BackgroundTasks):
     """Universal Telephony receiver endpoint (queued with BackgroundTasks, <50ms response)."""
     return await _process_telephony_call(request, None, background_tasks)
 
 
-@router.post("/{tenant_id}/call")
+@router.post("/{tenant_id}/call", dependencies=[Depends(verify_internal_or_admin)])
 async def receive_telephony_call_scoped(tenant_id: str, request: Request, background_tasks: BackgroundTasks):
     """Universal Telephony receiver scoped to specific tenant in URL."""
     return await _process_telephony_call(request, tenant_id, background_tasks)
@@ -837,13 +915,13 @@ async def test_bitrix24_call_simulation(request: Request, tenant_id: str | None 
     return {"status": "ok", "tenant_id": clean_tenant, "source": "Bitrix24_test", "call_id": call_id, "sheets_synced": sheets_ok}
 
 
-@router.get("/last-incoming")
+@router.get("/last-incoming", dependencies=[Depends(verify_internal_or_admin)])
 def get_last_incoming_webhook():
     """Returns the most recent incoming webhook payload for live debugging in the Admin UI."""
     return LAST_INCOMING_WEBHOOK
 
 
-@router.get("/history")
+@router.get("/history", dependencies=[Depends(verify_internal_or_admin)])
 def get_webhooks_history(limit: int = 15):
     """Returns the ring buffer of recent incoming webhooks for the Dead Letter Queue (DLQ) inspector."""
     return {
@@ -853,7 +931,7 @@ def get_webhooks_history(limit: int = 15):
     }
 
 
-@router.post("/{webhook_id}/replay")
+@router.post("/{webhook_id}/replay", dependencies=[Depends(verify_internal_or_admin)])
 async def replay_webhook(
     webhook_id: str,
     background_tasks: BackgroundTasks
@@ -901,11 +979,21 @@ async def replay_webhook(
 
     dur_sec = int(replay_payload.get("duration_sec", 120))
     raw_score = replay_payload.get("score")
-    score = int(raw_score) if raw_score is not None else int(parsed["score"])
+    score = int(raw_score) if raw_score is not None else (int(parsed["score"]) if parsed["score"] is not None else None)
     raw_next_step = replay_payload.get("next_step")
-    next_step = int(raw_next_step) if raw_next_step is not None else int(parsed["next_step"])
+    next_step = int(raw_next_step) if raw_next_step is not None else (int(parsed["next_step"]) if parsed["next_step"] is not None else None)
     raw_cr = replay_payload.get("cr")
     cr = raw_cr if isinstance(raw_cr, list) and len(raw_cr) == 13 else parsed["cr"]
+    safe_cr_payload = None if (cr is None or any(c is None for c in cr)) else cr
+
+    if score is None or next_step is None:
+        status_val = "unknown"
+        status_label_val = "НЕТ ДАННЫХ"
+        risk_val = "0 ₽"
+    else:
+        status_val = "won" if next_step == 1 and score >= 10 else ("warn" if score >= 8 else "risk")
+        status_label_val = "ЭТАЛОН" if score >= 10 else ("СЛИВ (НЕТ NEXT STEP)" if next_step == 0 else "В РАБОТЕ")
+        risk_val = "0 ₽" if status_val == "won" else (replay_payload.get("risk_amount") or "500 000 ₽")
 
     call_payload = CallIngestPayload(
         id=call_id,
@@ -917,10 +1005,11 @@ async def replay_webhook(
         duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
         amount=replay_payload.get("amount") or "300 000 ₽",
         score=score,
-        status="won" if next_step == 1 and score >= 10 else ("warn" if score >= 8 else "risk"),
-        status_label="ЭТАЛОН" if score >= 10 else ("СЛИВ (НЕТ NEXT STEP)" if next_step == 0 else "В РАБОТЕ"),
+        status=status_val,
+        status_label=status_label_val,
+        risk_amount=risk_val,
         next_step=next_step,
-        cr=cr,
+        cr=safe_cr_payload,
         error_summary=replay_payload.get("error_summary") or "Повторный прогон через очередь DLQ",
         recommendation=replay_payload.get("recommendation") or "Проверено",
         transcript=transcript,

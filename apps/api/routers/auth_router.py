@@ -8,18 +8,20 @@ import logging
 import re
 import secrets
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from packages.database.models import SubscriptionTier, Tenant, User, UserRole, Workspace
+from packages.database.models import RevokedToken, SubscriptionTier, Tenant, User, UserRole, Workspace
 from packages.database.session import get_db
 
 from ..auth import create_access_token, get_current_user, hash_password, verify_password
 from ..schemas import LoginRequest, TenantRegisterRequest, TokenResponse, UserResponse
+from ..tenant_provisioner import generate_tenant_id
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +39,16 @@ def register_tenant(req: TenantRegisterRequest, db: Session = Depends(get_db)):
     while db.query(Tenant).filter(Tenant.slug == slug).first():
         slug = f"{base_slug}-{uuid.uuid4().hex[:8]}"
 
-    # 1. Create Tenant
+    # 1. Create Tenant with unified TNT-XXX namespace and clean spreadsheet settings
+    new_tnt_id = generate_tenant_id()
     tenant = Tenant(
+        id=new_tnt_id,
         name=req.company_name,
         slug=slug,
         tier=SubscriptionTier.PRO,
         max_seats=15,
         ai_minutes_quota=2500,
+        settings={"spreadsheet_id": None},
     )
     db.add(tenant)
     db.flush()
@@ -68,6 +73,10 @@ def register_tenant(req: TenantRegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    from ..tenant_registry import _REGISTRY_CACHE
+    _REGISTRY_CACHE["data"] = None
+    _REGISTRY_CACHE["timestamp"] = 0
 
     # Generate Token
     token = create_access_token({
@@ -144,7 +153,6 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
     Sets signed HttpOnly session cookie and returns user profile.
     """
     from .admin_router import (
-        ALLOWED_ADMIN_KEYS,
         COOKIE_ADMIN_AUTH_NAME,
         generate_admin_cookie_token,
         load_registered_clients,
@@ -169,18 +177,7 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
                 matched_client = c
                 break
 
-    # Also check if login is 'admin' with default admin key
-    if not matched_client and login_clean == "admin":
-        if any(hmac.compare_digest(pass_clean, k) for k in ALLOWED_ADMIN_KEYS):
-            matched_client = {
-                "login": "admin",
-                "name": "Администратор RevOps",
-                "role": "Admin / Супервайзер",
-                "tenant": "TNT-001 • Самозанятый",
-                "is_active": True
-            }
-
-    # Also check database users table with bcrypt password verification
+    # Check database users table with bcrypt password verification
     if not matched_client:
         from packages.database.models import User
         from packages.database.session import SessionLocal
@@ -218,10 +215,11 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
     cookie_domain = ".ai-rop.ru" if (is_https and ("ai-rop.ru" in host or bool(request.headers.get("cf-connecting-ip")))) else None
     cookie_samesite: Literal["lax", "strict", "none"] = "none" if (is_https and cookie_domain) else "lax"
 
+    role_str = str(matched_client.get("role", "")).lower()
     is_admin = (
-        matched_client.get("login") in ("admin", "dmitriyfedotov1908@gmail.com")
-        or "admin" in str(matched_client.get("role", "")).lower()
-        or "супервайзер" in str(matched_client.get("role", "")).lower()
+        matched_client.get("role") == UserRole.ADMIN
+        or "admin" in role_str
+        or "супервайзер" in role_str
     )
 
     # Set admin cookie if user has admin privileges
@@ -264,6 +262,31 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
     }
 
 
+def _revoke_current_token(request: Request, db: Session):
+    token = None
+    auth_header = request.headers.get("Authorization") or ""
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1]
+    elif request.cookies.get("access_token"):
+        token = request.cookies.get("access_token")
+
+    if token:
+        try:
+            from ..auth import ALGORITHM, SECRET_KEY
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_exp": False})
+            jti = payload.get("jti")
+            exp = payload.get("exp")
+            if jti:
+                expires_at = datetime.fromtimestamp(exp, tz=timezone.utc) if exp else datetime.now(timezone.utc) + timedelta(days=1)
+                existing = db.query(RevokedToken).filter(RevokedToken.jti == str(jti)).first()
+                if not existing:
+                    revoked = RevokedToken(jti=str(jti), expires_at=expires_at)
+                    db.add(revoked)
+                    db.commit()
+        except Exception as e:
+            logger.debug(f"Could not revoke token on logout: {e}")
+
+
 def _clear_auth_cookies(response: Response, request: Request):
     from .admin_router import COOKIE_ADMIN_AUTH_NAME
     is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
@@ -279,22 +302,26 @@ def _clear_auth_cookies(response: Response, request: Request):
 
 
 @router.post("/logout")
-def logout_alias(response: Response, request: Request):
-    """Logs out user, clears session/access cookies and returns 200 OK."""
+def logout_alias(response: Response, request: Request, db: Session = Depends(get_db)):
+    """Logs out user, revokes JWT token, clears session/access cookies and returns 200 OK."""
+    _revoke_current_token(request, db)
     _clear_auth_cookies(response, request)
     return {"status": "logged_out", "message": "Сессия успешно завершена"}
 
 
 @router.post("/client-logout")
-def client_logout(response: Response, request: Request):
-    """Logs out client and clears session cookies."""
+def client_logout(response: Response, request: Request, db: Session = Depends(get_db)):
+    """Logs out client, revokes JWT token and clears session cookies."""
+    _revoke_current_token(request, db)
     _clear_auth_cookies(response, request)
     return {"status": "ok", "message": "Сессия успешно завершена"}
 
 
 @router.get("/registered-clients")
-def get_registered_clients_public():
-    """Returns safe client directory with zero password hashes exposed to frontend."""
+def get_registered_clients_public(current_user: User = Depends(get_current_user)):
+    """Returns safe client directory with zero password hashes exposed to frontend. Admin only."""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ разрешен только администраторам")
     from .admin_router import load_registered_clients
     clients = load_registered_clients()
     safe_clients = [
@@ -328,92 +355,47 @@ class UpdateProfileRequest(BaseModel):
 
 
 @router.post("/change-password")
-def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db)):
+def change_password(
+    req: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
-    Allows clients or admins to change their password securely.
-    Verifies old password SHA-256, updates hash in registered_clients.json,
-    tenants_registry.json, and the database.
+    Allows authenticated users to change their password securely.
+    Verifies current password via bcrypt in database, updates hashed_password,
+    enforces minimum 12 characters.
     """
-    import hashlib
-
-    from ..tenant_registry import (
-        load_tenants_registry,
-        save_tenants_registry,
-    )
-    from .admin_router import load_registered_clients, save_registered_clients
+    if len(req.new_password) < 12:
+        raise HTTPException(
+            status_code=400,
+            detail="Новый пароль слишком короткий (минимум 12 символов)"
+        )
 
     target_login = (req.login or "").strip().lower()
-    target_tenant = (req.tenant_id or "TNT-001").strip().upper()
+    if target_login and target_login != current_user.email.lower():
+        if not current_user.is_admin:
+            raise HTTPException(status_code=403, detail="Недостаточно прав для смены пароля другого пользователя")
+        target_user = db.query(User).filter(User.email == target_login).first()
+        if not target_user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+    else:
+        target_user = current_user
 
-    def to_sha256(val: str) -> str:
-        if len(val) == 64 and all(c in "0123456789abcdefABCDEF" for c in val):
-            return val.lower()
-        return hashlib.sha256(val.encode("utf-8")).hexdigest()
-
-    curr_hash = to_sha256(req.current_password)
-    new_hash = to_sha256(req.new_password)
-
-    if len(req.new_password) < 4:
-        raise HTTPException(status_code=400, detail="Новый пароль слишком короткий (минимум 4 символа)")
-
-    # 1. Check & Update in registered_clients.json
-    clients = load_registered_clients()
-    matched_client = None
-
-    for c in clients:
-        c_login = str(c.get("login", "")).lower()
-        c_tenant = str(c.get("tenant", "")).upper()
-        if (target_login and c_login == target_login) or (target_tenant in c_tenant) or (c_login in ("admin", "rop", "dmitriyfedotov1908@gmail.com")):
-            hashes = [h.lower() for h in c.get("keyHashes", [])]
-            if curr_hash in hashes or req.current_password == "1908":
-                matched_client = c
-                break
-
-    if not matched_client:
-        # Fallback check any client that matches current hash
-        for c in clients:
-            if curr_hash in [h.lower() for h in c.get("keyHashes", [])]:
-                matched_client = c
-                break
-
-    if not matched_client:
+    if not verify_password(req.current_password, str(target_user.hashed_password)):
         raise HTTPException(status_code=401, detail="Текущий пароль указан неверно")
 
-    # Update hash in client record
-    existing_hashes = [h for h in matched_client.get("keyHashes", []) if h.lower() != curr_hash]
-    existing_hashes.insert(0, new_hash)
-    matched_client["keyHashes"] = existing_hashes
-    save_registered_clients(clients)
-
-    # 2. Check & Update in tenants_registry.json
-    try:
-        registry = load_tenants_registry()
-        updated = False
-        for t in registry.get("tenants", []):
-            if str(t.get("tenant_id", "")).upper() == target_tenant or (target_login and str(t.get("email", "")).lower() == target_login):
-                t["password_hash"] = new_hash
-                t["updated_at"] = datetime.now().isoformat()
-                updated = True
-                break
-        if updated:
-            save_tenants_registry(registry)
-    except Exception as e:
-        logger.warning(f"Failed to update tenant password in registry: {e}")
-
-    # 3. Update in Database if user exists
-    db_user = None
-    if target_login:
-        db_user = db.query(User).filter(User.email == target_login).first()
-    if db_user:
-        setattr(db_user, "hashed_password", hash_password(req.new_password))
-        db.commit()
-
+    setattr(target_user, "hashed_password", hash_password(req.new_password))
+    db.commit()
 
     return {"status": "ok", "message": "Пароль успешно обновлен. Новый ключ доступа активен."}
 
 
 @router.post("/update-profile")
-def update_profile(req: UpdateProfileRequest):
+def update_profile(
+    req: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Updates client contact info (Email, Full Name, Telegram) in registry and auth config."""
     from ..tenant_registry import (
         load_tenants_registry,
@@ -421,8 +403,11 @@ def update_profile(req: UpdateProfileRequest):
     )
     from .admin_router import load_registered_clients, save_registered_clients
 
-    target_tenant = (req.tenant_id or "TNT-001").strip().upper()
+    target_tenant = (req.tenant_id or current_user.tenant_id or "TNT-001").strip().upper()
     target_login = (req.login or "").strip().lower()
+
+    if target_tenant != str(current_user.tenant_id).upper() and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
 
     # 1. Update in tenants_registry.json
     updated_tenant: dict[str, Any] | None = None
