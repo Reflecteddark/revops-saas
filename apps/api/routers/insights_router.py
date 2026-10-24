@@ -590,7 +590,7 @@ async def get_analyst_overview(
     total_leak_rub = leak_metrics["total_leak_rub"]
 
     # Pipeline health index (0-100)
-    health_score = int(min(98, max(45, (avg_score / 13.0) * 50 + (next_step_pct / 100.0) * 40 + 10))) if total_calls > 0 else 50
+    health_score = int(min(98, max(0, (avg_score / 13.0) * 50 + (next_step_pct / 100.0) * 40 + 10))) if total_calls > 0 else 0
     p50_revenue = pipeline_amount
 
     executive_summary = (
@@ -607,8 +607,8 @@ async def get_analyst_overview(
             "id": "health_index",
             "title": "Индекс здоровья воронки",
             "value": f"{health_score} / 100",
-            "delta": "Расчет по звонкам и SLA",
-            "delta_type": "positive" if health_score >= 70 else "warning",
+            "delta": "Расчет по звонкам и SLA" if total_calls > 0 else "Нет данных по звонкам",
+            "delta_type": "neutral" if total_calls == 0 else ("positive" if health_score >= 70 else "warning"),
             "desc": "Интегральный скоринг качества звонков и SLA сделок"
         },
         {
