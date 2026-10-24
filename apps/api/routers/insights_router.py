@@ -395,11 +395,7 @@ async def get_ai_insights_summary(
     """
     requested_tenant = tenant_id if tenant_id is not None else (org_id if org_id != "org_default" else current_user.tenant_id)
     target_tenant = (requested_tenant or current_user.tenant_id or "").strip().upper()
-    is_admin = (
-        getattr(current_user, "is_admin", False)
-        or current_user.role == "admin"
-        or getattr(current_user.role, "value", "") == "⚙️ Admin"
-    )
+    is_admin = bool(getattr(current_user, "is_admin", False))
     if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
         raise HTTPException(status_code=403, detail="cross-tenant access denied")
 
@@ -529,11 +525,7 @@ async def get_analyst_overview(
     Uses unified multi-tenant dataset.
     """
     target_tenant = (payload.tenant_id or current_user.tenant_id or "").strip().upper()
-    is_admin = (
-        getattr(current_user, "is_admin", False)
-        or current_user.role == "admin"
-        or getattr(current_user.role, "value", "") == "⚙️ Admin"
-    )
+    is_admin = bool(getattr(current_user, "is_admin", False))
     if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
         raise HTTPException(status_code=403, detail="cross-tenant access denied")
 
@@ -708,11 +700,7 @@ async def chat_with_analyst(
     strictly scoped to the active tenant's real CRM and call metrics.
     """
     target_tenant = (payload.tenant_id or current_user.tenant_id or "").strip().upper()
-    is_admin = (
-        getattr(current_user, "is_admin", False)
-        or current_user.role == "admin"
-        or getattr(current_user.role, "value", "") == "⚙️ Admin"
-    )
+    is_admin = bool(getattr(current_user, "is_admin", False))
     if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
         raise HTTPException(status_code=403, detail="cross-tenant access denied")
 

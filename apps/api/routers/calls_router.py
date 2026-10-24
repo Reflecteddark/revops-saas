@@ -441,11 +441,7 @@ def get_dashboard_calls_data(
         if not current_user:
             raise HTTPException(status_code=401, detail="Требуется авторизация")
         target_tenant = (tenant_id or current_user.tenant_id or "").strip().upper()
-        is_admin = (
-            getattr(current_user, "is_admin", False)
-            or current_user.role == "admin"
-            or getattr(current_user.role, "value", "") == "⚙️ Admin"
-        )
+        is_admin = bool(getattr(current_user, "is_admin", False))
         if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
             raise HTTPException(status_code=403, detail="cross-tenant access denied")
 
