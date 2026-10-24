@@ -36,17 +36,12 @@ STRICT_LIVE_DATA = os.getenv("STRICT_LIVE_DATA", "True").lower() in ("true", "1"
 
 # Primary rotated admin secret key (must be provided via REVOPS_ADMIN_KEY env var in production)
 REVOPS_ADMIN_KEY = os.getenv("REVOPS_ADMIN_KEY")
-if not REVOPS_ADMIN_KEY:
-    REVOPS_ADMIN_KEY = os.getenv("REVOPS_ADMIN_SECRET") or "revops_admin_fleet_secret_2026"
-    logger.warning("REVOPS_ADMIN_KEY not set in environment, falling back to rotation secret")
+if not REVOPS_ADMIN_KEY or len(REVOPS_ADMIN_KEY) < 32:
+    raise RuntimeError("REVOPS_ADMIN_KEY is required and must be at least 32 characters")
 
-# Fallback keys accepted during rolling migration
-ALLOWED_ADMIN_KEYS = {
-    REVOPS_ADMIN_KEY,
-    "revops_admin_fleet_secret_2026",  # legacy migration fallback
-}
+ALLOWED_ADMIN_KEYS = {REVOPS_ADMIN_KEY}
 fallback_admin_key = os.getenv("REVOPS_ADMIN_FALLBACK_KEY")
-if fallback_admin_key:
+if fallback_admin_key and len(fallback_admin_key) >= 32:
     ALLOWED_ADMIN_KEYS.add(fallback_admin_key)
 
 
@@ -79,16 +74,6 @@ def verify_admin_cookie_token(token: str, max_age_sec: int = 7 * 86400) -> bool:
     except Exception:
         return False
 
-AUTH_SIGN_SALT = "revops_tnt001_enterprise_sec_v20_2"
-ADMIN_KEY_HASHES = [
-    "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
-    "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
-    "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
-    "9d3ba5c08978d3354103973088fcc0df35ece2ea9de24c9dfc250d46375c9eec",
-    "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410",
-]
-ADMIN_AUTHORIZED_LOGINS = {"admin", "dmitriyfedotov1908@gmail.com"}
-
 
 def verify_admin_access(request: Request):
     """
@@ -96,8 +81,7 @@ def verify_admin_access(request: Request):
     Public requests via Cloudflare Tunnel / Vercel are allowed if:
     1. Localhost direct request without public proxy headers, OR
     2. Valid HttpOnly signed cookie (revops_admin_token), OR
-    3. Valid X-Admin-Key or X-RevOps-Admin-Key header, OR
-    4. Valid X-RevOps-Session header with verified cryptographic signature.
+    3. Valid X-Admin-Key or X-RevOps-Admin-Key header.
     Otherwise returns 403 Forbidden.
     """
     client_ip = request.client.host if request.client else ""
@@ -116,40 +100,23 @@ def verify_admin_access(request: Request):
     ):
         return True
 
+    # Allow internal docker network (e.g. 172.16.0.0/12, 10.0.0.0/8)
+    from .calls_router import _is_internal_ip
+    if client_ip and _is_internal_ip(client_ip) and not is_tunnel:
+        return True
+
     # 1. HttpOnly signed cookie check
     cookie_token = request.cookies.get(COOKIE_ADMIN_AUTH_NAME)
     if cookie_token and verify_admin_cookie_token(cookie_token):
         return True
 
-    # 2. Direct secret admin key check (X-Admin-Key, X-RevOps-Admin-Key, or query param)
+    # 2. Direct secret admin key check (X-Admin-Key or X-RevOps-Admin-Key header only)
     admin_key = (
         request.headers.get("x-admin-key")
         or request.headers.get("x-revops-admin-key")
-        or request.query_params.get("admin_key")
     )
     if admin_key and any(hmac.compare_digest(admin_key, k) for k in ALLOWED_ADMIN_KEYS):
         return True
-
-    # 2. Cryptographic session signature check
-    raw_session = request.headers.get("x-revops-session")
-    if raw_session:
-        try:
-            session_data = json.loads(raw_session)
-            login = (session_data.get("login") or "").lower().strip()
-            ts = session_data.get("timestamp")
-            sig = session_data.get("signature")
-
-            if login in ADMIN_AUTHORIZED_LOGINS and ts and sig:
-                # 7 days TTL (7 * 86400 * 1000 ms)
-                if abs(time.time() * 1000 - ts) < (7 * 86400 * 1000):
-                    import hashlib
-                    for valid_hash in ADMIN_KEY_HASHES:
-                        candidate = f"{login}:{valid_hash}:{ts}:{AUTH_SIGN_SALT}"
-                        expected_sig = hashlib.sha256(candidate.encode("utf-8")).hexdigest()
-                        if hmac.compare_digest(expected_sig, sig):
-                            return True
-        except Exception as e:
-            logger.debug(f"Session verification failed: {e}")
 
     logger.warning(
         f"Blocked unauthorized admin access attempt from IP={cf_connecting_ip or client_ip}, Host={host_header}"
@@ -540,7 +507,7 @@ def get_admin_system_status():
         },
         "gemini_ai": {
             "model": "Google Gemini 3.5 Flash",
-            "proxy_worker": "https://gemini-proxy.dmitriyfedotov1908.workers.dev",
+            "proxy_worker": os.getenv("GEMINI_WORKER_URL", "https://gemini-proxy.revops.workers.dev"),
             "criteria_count": 13,
             "status_label": "🟢 ПОДКЛЮЧЕНО (Direct API)"
         }
@@ -953,7 +920,7 @@ def test_gemini_api_connection():
     """
     append_console_log("Тестирование прямого подключения к Google Gemini API...", "info")
 
-    worker_url = os.getenv("GEMINI_WORKER_URL", "https://gemini-proxy.dmitriyfedotov1908.workers.dev")
+    worker_url = os.getenv("GEMINI_WORKER_URL", "https://gemini-proxy.revops.workers.dev")
     api_key = os.getenv("GEMINI_API_KEY", "")
     if not api_key:
         try:
@@ -1098,14 +1065,7 @@ CLIENTS_FILE = DATA_DIR / "registered_clients.json"
 
 DEFAULT_SYSTEM_CLIENTS = [
     {
-        "login": "dmitriyfedotov1908@gmail.com",
-        "keyHashes": [
-            "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
-            "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
-            "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
-            "9d3ba5c08978d3354103973088fcc0df35ece2ea9de24c9dfc250d46375c9eec",
-            "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410"
-        ],
+        "login": "rop@revops.local",
         "name": "Дмитрий Федотов",
         "role": "РОП • Руководитель ОП",
         "tenant": "TNT-001 • Самозанятый",
@@ -1114,12 +1074,6 @@ DEFAULT_SYSTEM_CLIENTS = [
     },
     {
         "login": "admin",
-        "keyHashes": [
-            "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
-            "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
-            "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
-            "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410"
-        ],
         "name": "Администратор RevOps",
         "role": "Admin / Супервайзер",
         "tenant": "TNT-001 • Самозанятый",
@@ -1128,12 +1082,6 @@ DEFAULT_SYSTEM_CLIENTS = [
     },
     {
         "login": "rop",
-        "keyHashes": [
-            "f82d5f1f10fc36e941922f73e9b7ad871bace49786bd408a135359a3346df27b",
-            "00f6112fe58387958ef80793a34746429f40c97fe7b51d6a576705acbf8fc6af",
-            "dff496958fb64f93c897156c9bfcbfe6a32975efadaa21d957a82b9b9f4801bd",
-            "d7baef91d7e90fe49774b6bcabcca33ac3cc2296d5622b250ee836f78f1cd410"
-        ],
         "name": "Дмитрий Федотов",
         "role": "РОП • Руководитель ОП",
         "tenant": "TNT-001 • Самозанятый",
@@ -1230,7 +1178,7 @@ def register_client(req: ClientRegisterRequest):
 def delete_client(login: str):
     """Deletes custom client by login (system accounts protected)."""
     clean_login = login.lower().strip()
-    if clean_login in ("admin", "rop", "dmitriyfedotov1908@gmail.com"):
+    if clean_login in ("admin", "rop", "rop@revops.local"):
         raise HTTPException(status_code=400, detail="Системные аккаунты администратора защищены от удаления")
 
     with _CLIENTS_LOCK:

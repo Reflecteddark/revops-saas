@@ -25,7 +25,7 @@ def setup_database():
 
 @pytest.fixture
 def client():
-    return TestClient(app, raise_server_exceptions=False)
+    return TestClient(app, client=("172.16.0.5", 50000), raise_server_exceptions=False)
 
 
 def test_telephony_webhook_celery_dispatch(client):

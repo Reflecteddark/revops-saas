@@ -18,7 +18,7 @@ from apps.api.main import app
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return TestClient(app, client=("172.16.0.5", 50000))
 
 
 def test_deals_list_and_fix_step(client):

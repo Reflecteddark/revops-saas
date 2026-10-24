@@ -69,14 +69,8 @@ def get_current_tenant_user_or_admin(
     admin_key = (
         request.headers.get("x-admin-key")
         or request.headers.get("x-revops-admin-key")
-        or request.query_params.get("admin_key")
     )
-    all_allowed_keys = set(ALLOWED_ADMIN_KEYS) | {
-        os.getenv("REVOPS_ADMIN_KEY", "revops-admin-secret-2026-aeza"),
-        "revops-admin-secret-2026-aeza",
-        "revops_admin_fleet_secret_2026",
-        "1908"
-    }
+    all_allowed_keys = set(ALLOWED_ADMIN_KEYS)
     if admin_key and any(hmac.compare_digest(admin_key, k) for k in all_allowed_keys if k):
         return User(
             id="admin-sys",
