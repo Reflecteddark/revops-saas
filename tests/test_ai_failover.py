@@ -124,7 +124,13 @@ def test_analyst_chat_api_endpoint():
             "leak_rub": 1500000.0,
         },
     }
-    response = client.post("/api/v1/insights/analyst/chat", json=payload)
+    from apps.api.auth import create_access_token
+    token = create_access_token({"sub": "usr-tnt-001", "tenant_id": "TNT-001"})
+    response = client.post(
+        "/api/v1/insights/analyst/chat",
+        json=payload,
+        headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"

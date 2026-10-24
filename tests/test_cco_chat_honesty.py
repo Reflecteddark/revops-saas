@@ -12,12 +12,44 @@ Verifies that:
 """
 
 from unittest.mock import patch
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
+from apps.api.auth import create_access_token
 from apps.api.main import app
+from packages.database.models import User, UserRole
+from packages.database.session import SessionLocal
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def admin_auth():
+    db = SessionLocal()
+    admin = db.query(User).filter(User.id == "usr-admin-test").first()
+    if not admin:
+        admin = User(
+            id="usr-admin-test",
+            email="admin@revops-test.io",
+            full_name="Admin Test",
+            hashed_password="mock_hashed_password",
+            tenant_id="TNT-001",
+            role=UserRole.ADMIN,
+            is_active=True,
+        )
+        db.add(admin)
+        db.commit()
+    db.close()
+
+    token = create_access_token({
+        "sub": "usr-admin-test",
+        "tenant_id": "TNT-001",
+        "role": UserRole.ADMIN.value,
+        "email": "admin@revops-test.io",
+    })
+    client.headers.update({"Authorization": f"Bearer {token}"})
+    yield
+    client.headers.pop("Authorization", None)
 
 
 def test_cco_chat_empty_tenant_returns_honest_no_data():
@@ -90,14 +122,14 @@ def test_leak_rub_does_not_exceed_pipeline():
         for i in range(5)
     ]
 
-    resp = client.post(
-        "/api/v1/insights/analyst/chat",
-        json={
-            "message": "Посчитай утечки",
-            "tenant_id": "TNT-TEST-CAP",
-            "context": {"calls": calls, "deals": deals}
-        }
-    )
+    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=(calls, deals)):
+        resp = client.post(
+            "/api/v1/insights/analyst/chat",
+            json={
+                "message": "Посчитай утечки",
+                "tenant_id": "TNT-TEST-CAP",
+            }
+        )
     assert resp.status_code == 200
     data = resp.json()
     breakdown = data.get("leak_breakdown", {})
@@ -135,14 +167,14 @@ def test_leak_rub_uses_tenant_avg_check():
         for i in range(2)
     ]
 
-    resp = client.post(
-        "/api/v1/insights/analyst/chat",
-        json={
-            "message": "Какой размер утечек?",
-            "tenant_id": "TNT-001",
-            "context": {"calls": calls, "deals": deals}
-        }
-    )
+    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=(calls, deals)):
+        resp = client.post(
+            "/api/v1/insights/analyst/chat",
+            json={
+                "message": "Какой размер утечек?",
+                "tenant_id": "TNT-001",
+            }
+        )
     assert resp.status_code == 200
     data = resp.json()
     breakdown = data.get("leak_breakdown", {})
@@ -191,14 +223,14 @@ def test_leak_breakdown_present_in_reply():
         }
     ]
 
-    resp = client.post(
-        "/api/v1/insights/analyst/chat",
-        json={
-            "message": "Где утечки?",
-            "tenant_id": "TNT-TEST-BREAKDOWN",
-            "context": {"calls": calls, "deals": deals}
-        }
-    )
+    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=(calls, deals)):
+        resp = client.post(
+            "/api/v1/insights/analyst/chat",
+            json={
+                "message": "Где утечки?",
+                "tenant_id": "TNT-TEST-BREAKDOWN",
+            }
+        )
     assert resp.status_code == 200
     data = resp.json()
     reply = data.get("reply", "")
@@ -237,6 +269,9 @@ def test_cco_chat_with_real_data_uses_actual_names_and_metrics():
 
     # Force Tier 4 Local SSOT generation to inspect deterministic formatting
     with patch(
+        "apps.api.routers.insights_router.load_tenant_dataset",
+        return_value=(real_calls, real_deals)
+    ), patch(
         "apps.api.routers.insights_router.generate_gemini_content_cascade",
         return_value={"status": "error", "error": "Simulated AI Outage for deterministic check"}
     ):
@@ -245,10 +280,6 @@ def test_cco_chat_with_real_data_uses_actual_names_and_metrics():
             json={
                 "message": "Кто из менеджеров слабее?",
                 "tenant_id": "TNT-REAL-TEST",
-                "context": {
-                    "calls": real_calls,
-                    "deals": real_deals
-                }
             }
         )
         assert resp.status_code == 200

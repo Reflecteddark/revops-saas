@@ -9,14 +9,15 @@ import os
 import time
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from packages.database.models import CallRecording, Deal, Tenant
+from packages.database.models import CallRecording, Deal, Tenant, User
 from packages.database.session import get_db
 from packages.monitoring.ai_probe import generate_gemini_content_cascade
 
+from ..auth import get_current_user
 from ..tenant_registry import DEFAULT_SPREADSHEET_ID, get_tenant_config
 
 logger = logging.getLogger("insights_router")
@@ -258,13 +259,24 @@ async def get_ai_insights_summary(
     p10: float | None = Query(default=None),
     p50: float | None = Query(default=None),
     p90: float | None = Query(default=None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
     Synthesizes AI insights analyzing Monte Carlo corridors and at-risk deals.
     Provides prioritized action items to achieve target P50 based on real CRM data.
     """
-    effective_tenant = (tenant_id or org_id or "TNT-001").strip().upper()
+    requested_tenant = tenant_id if tenant_id is not None else (org_id if org_id != "org_default" else current_user.tenant_id)
+    target_tenant = (requested_tenant or current_user.tenant_id or "").strip().upper()
+    is_admin = (
+        getattr(current_user, "is_admin", False)
+        or current_user.role == "admin"
+        or getattr(current_user.role, "value", "") == "⚙️ Admin"
+    )
+    if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+
+    effective_tenant = target_tenant
     _, deals_list = load_tenant_dataset(effective_tenant, db)
 
     active_deals = [
@@ -374,15 +386,27 @@ async def get_ai_insights_summary(
 @router.post("/analyst/overview")
 async def get_analyst_overview(
     payload: AnalystOverviewRequest = Body(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
     Returns high-level CCO Intelligence Overview:
     Executive Summary, 4 Core KPI Cards, Top Anomalies, and Suggested Prompts.
     Uses unified multi-tenant dataset.
     """
-    calls, deals = load_tenant_dataset(payload.tenant_id, db, payload.calls, payload.deals)
-    clean_tenant = (payload.tenant_id or "TNT-001").strip().upper()
+    target_tenant = (payload.tenant_id or current_user.tenant_id or "").strip().upper()
+    is_admin = (
+        getattr(current_user, "is_admin", False)
+        or current_user.role == "admin"
+        or getattr(current_user.role, "value", "") == "⚙️ Admin"
+    )
+    if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+
+    clean_tenant = target_tenant
+    if payload.calls or payload.deals:
+        logger.warning("Client attempted to inject custom context, ignored")
+    calls, deals = load_tenant_dataset(clean_tenant, db, payload_calls=None, payload_deals=None)
 
     if len(calls) == 0 and len(deals) == 0:
         return {
@@ -559,15 +583,24 @@ async def get_analyst_overview(
 @router.post("/analyst/chat")
 async def chat_with_analyst(
     payload: AnalystChatRequest = Body(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
     Direct Interactive Dialogue with Chief Commercial Officer (CCO / Agent 2).
     Multi-tier AI failover (Gemini Tier 1/2/3 -> Tier 4 Local SSOT)
     strictly scoped to the active tenant's real CRM and call metrics.
     """
-    tenant_id = (payload.tenant_id or "TNT-001").strip()
-    clean_tenant = tenant_id.upper()
+    target_tenant = (payload.tenant_id or current_user.tenant_id or "").strip().upper()
+    is_admin = (
+        getattr(current_user, "is_admin", False)
+        or current_user.role == "admin"
+        or getattr(current_user.role, "value", "") == "⚙️ Admin"
+    )
+    if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+
+    clean_tenant = target_tenant
     msg = payload.message.strip()
     msg_lower = msg.lower()
     ctx = payload.context or {}
@@ -578,9 +611,9 @@ async def chat_with_analyst(
     tenant_name = tenant.name if tenant else (cfg.get("tenant_name") or clean_tenant)
     tenant_avg_check = float(cfg.get("avg_deal_check") or 150000.0)
 
-    payload_calls = ctx.get("calls") if isinstance(ctx.get("calls"), list) else None
-    payload_deals = ctx.get("deals") if isinstance(ctx.get("deals"), list) else None
-    calls_list, deals_list = load_tenant_dataset(clean_tenant, db, payload_calls, payload_deals)
+    if ctx and (ctx.get("calls") or ctx.get("deals")):
+        logger.warning("Client attempted to inject custom context, ignored")
+    calls_list, deals_list = load_tenant_dataset(clean_tenant, db, payload_calls=None, payload_deals=None)
 
     calls_cnt = len(calls_list)
     deals_cnt = len(deals_list)
@@ -713,12 +746,30 @@ async def chat_with_analyst(
     # Multi-turn dialogue history
     history_ctx = ""
     if payload.history:
+        valid_history = []
+        for h in payload.history:
+            if not isinstance(h, dict):
+                continue
+            raw_role = str(h.get("role", "")).lower().strip()
+            if raw_role in ("user", "human"):
+                role_label = "user"
+            elif raw_role in ("assistant", "cco", "ai"):
+                role_label = "assistant"
+            else:
+                continue
+
+            raw_text = str(h.get("text") or h.get("content") or "").strip()
+            if not raw_text:
+                continue
+
+            truncated_text = raw_text[:500]
+            sanitized_text = truncated_text.replace('"""', "'''").replace("---", "— — —")
+            valid_history.append((role_label, sanitized_text))
+
         lines = []
-        for h in payload.history[-4:]:
-            r = "Директор" if h.get("role") in ("user", "human") else "CCO"
-            t = (h.get("text") or "").strip()
-            if t:
-                lines.append(f"{r}: {t[:250]}")
+        for role_label, text in valid_history[-4:]:
+            r = "Директор" if role_label == "user" else "CCO"
+            lines.append(f"{r}: {text}")
         if lines:
             history_ctx = "ПРЕДЫДУЩИЙ ДИАЛОГ С ДИРЕКТОРОМ:\n" + "\n".join(lines) + "\n\n"
 

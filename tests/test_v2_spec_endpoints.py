@@ -54,7 +54,12 @@ def test_metrics_revenue_history(client):
 
 
 def test_ai_insights_summary(client):
-    res = client.get("/api/v1/insights/summary?org_id=org_demo&p10=3000000&p50=7500000&p90=14000000")
+    from apps.api.auth import create_access_token
+    token = create_access_token({"sub": "usr-admin-test", "tenant_id": "TNT-001", "role": "⚙️ Admin"})
+    res = client.get(
+        "/api/v1/insights/summary?org_id=org_demo&p10=3000000&p50=7500000&p90=14000000",
+        headers={"Authorization": f"Bearer {token}"}
+    )
     assert res.status_code == 200
     data = res.json()
     assert "insights" in data

@@ -629,7 +629,9 @@ def test_calls_cache_persistence_on_sync_sheets():
         assert "calls" not in _CALLS_CACHE, "Global _CALLS_CACHE['calls'] must not exist"
 
         # Verify CCO Analyst Overview picks up the cached calls without synthetic fallback
-        res_overview = client.post("/api/v1/insights/analyst/overview", json={"tenant_id": "TNT-001"})
+        from apps.api.auth import create_access_token
+        auth_hdr = {"Authorization": f"Bearer {create_access_token({'sub': 'usr-tnt-001', 'tenant_id': 'TNT-001'})}"}
+        res_overview = client.post("/api/v1/insights/analyst/overview", json={"tenant_id": "TNT-001"}, headers=auth_hdr)
         assert res_overview.status_code == 200
         overview = res_overview.json()
         assert overview["metrics_summary"]["total_calls"] == 1

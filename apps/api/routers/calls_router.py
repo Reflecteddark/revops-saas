@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -20,7 +21,7 @@ from packages.analytics_engine.speech_scoring import evaluate_speech_scorecard
 from packages.database.models import CallRecording, Deal, User
 from packages.database.session import get_db
 
-from ..auth import get_current_user
+from ..auth import get_current_user, security
 from ..cache_client import (
     delete_cached_json_sync,
     get_cached_json_sync,
@@ -51,6 +52,17 @@ def _is_internal_ip(ip_str: str) -> bool:
         return any(ip in net for net in INTERNAL_NETS)
     except ValueError:
         return False
+
+
+def get_calls_data_user(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    db: Session = Depends(get_db),
+) -> User | None:
+    raw_tenant = (request.query_params.get("tenant_id") or "TNT-001").strip()
+    if raw_tenant.lower().startswith("demo_") or raw_tenant.lower().startswith("demo-"):
+        return None
+    return get_current_user(credentials, db)
 
 
 class CallIngestPayload(BaseModel):
@@ -390,7 +402,8 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
 def get_dashboard_calls_data(
     tenant_id: str = Query("TNT-001"),
     limit: int = Query(50),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_calls_data_user),
 ):
     """
     Public dashboard endpoint: pulls real audited calls from Google Sheets (raw_calls)
@@ -399,6 +412,19 @@ def get_dashboard_calls_data(
     raw_tenant = (tenant_id or "TNT-001").strip()
     effective_tenant = raw_tenant.upper()
     is_demo_tenant = raw_tenant.lower().startswith("demo_") or raw_tenant.lower().startswith("demo-")
+
+    if not is_demo_tenant:
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Требуется авторизация")
+        target_tenant = (tenant_id or current_user.tenant_id or "").strip().upper()
+        is_admin = (
+            getattr(current_user, "is_admin", False)
+            or current_user.role == "admin"
+            or getattr(current_user.role, "value", "") == "⚙️ Admin"
+        )
+        if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
+            raise HTTPException(status_code=403, detail="cross-tenant access denied")
+
     calls = [] if is_demo_tenant else fetch_calls_from_sheets(tenant_id=effective_tenant, limit=limit)
     if not calls:
         # Fallback to local tenant database
