@@ -217,16 +217,17 @@ async def get_ai_insights_summary(
             "status": "no_data",
             "engine": "no_data",
             "tenant_id": effective_tenant,
-            "message": f"Нет данных по активным сделкам для расчета Монте-Карло по тенанту {effective_tenant}."
+            "message": f"Нет данных по активным сделкам для расчета сценариев выручки по тенанту {effective_tenant}."
         }
 
     anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+    anthropic_model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
     if anthropic_api_key:
         try:
             import anthropic
             client = anthropic.AsyncAnthropic(api_key=anthropic_api_key)
             prompt = f"""
-            Проанализируй Monte-Carlo симуляцию выручки:
+            Проанализируй линейный прогноз сценариев выручки (не Монте-Карло):
             - P10 (консервативный): {eff_p10:,.0f} ₽
             - P50 (медиана): {eff_p50:,.0f} ₽
             - P90 (оптимистичный): {eff_p90:,.0f} ₽
@@ -235,7 +236,7 @@ async def get_ai_insights_summary(
             Дай 3 конкретные рекомендации для отдела продаж, чтобы увеличить вероятность достижения P50.
             """
             msg = await client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model=anthropic_model,
                 max_tokens=600,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -246,12 +247,14 @@ async def get_ai_insights_summary(
             return {
                 "status": "ok",
                 "engine": "Claude 3.5 Sonnet",
+                "claude_model": anthropic_model,
                 "tenant_id": effective_tenant,
                 "summary": ai_text,
                 "p10_corridor_rub": eff_p10,
                 "p50_corridor_rub": eff_p50,
                 "p90_corridor_rub": eff_p90,
-                "confidence_score": 0.94
+                "confidence_score": 0.94,
+                "calculation_method": "linear_scenario (not Monte-Carlo)"
             }
         except Exception as e:
             logger.warning(f"Claude API unavailable: {e}")
@@ -283,12 +286,12 @@ async def get_ai_insights_summary(
     return {
         "status": "ok",
         "engine": "deterministic_fallback",
-        "claude_model": "claude-3-5-sonnet-20241022",
         "tenant_id": effective_tenant,
         "p10_corridor_rub": eff_p10,
         "p50_corridor_rub": eff_p50,
         "p90_corridor_rub": eff_p90,
         "confidence_score": 0.88,
+        "calculation_method": "linear_scenario (not Monte-Carlo)",
         "recommendations": recommendations,
         "insights": recommendations,
         "synthesis": summary_text,
@@ -341,6 +344,9 @@ async def get_analyst_overview(
     next_step_pct = round((next_step_wins / max(1, total_calls)) * 100, 1) if total_calls > 0 else 0.0
     fake_yes_count = sum(1 for c in calls if c.get("status") == "risk" or c.get("next_step") == 0)
 
+    cfg = get_tenant_config(clean_tenant) or {}
+    tenant_avg_check = float(cfg.get("avg_deal_check") or 150000.0)
+
     # Pipeline math
     active_deals = [
         d for d in deals
@@ -350,8 +356,32 @@ async def get_analyst_overview(
     pipeline_amount = sum(d.get("budget", 0.0) for d in active_deals)
     stuck_deals = [d for d in active_deals if d.get("is_at_risk")]
     stuck_amount = sum(d.get("budget", 0.0) for d in stuck_deals)
-    avg_check = (pipeline_amount / len(active_deals)) if active_deals else 0.0
-    leak_rub = stuck_amount + (fake_yes_count * avg_check if avg_check > 0 else 0.0)
+    stuck_avg = (stuck_amount / len(stuck_deals)) if stuck_deals else 0.0
+
+    fake_yes_leak = fake_yes_count * tenant_avg_check
+    uncapped_leak = stuck_amount + fake_yes_leak
+    leak_rub = min(uncapped_leak, pipeline_amount) if pipeline_amount > 0 else uncapped_leak
+    is_capped = uncapped_leak > pipeline_amount if pipeline_amount > 0 else False
+
+    calc_str = (
+        f"Расчёт: {fake_yes_count} fake_yes × {int(tenant_avg_check):,} ₽ + "
+        f"{len(stuck_deals)} зависших сделок × {int(stuck_avg):,} ₽ = {int(leak_rub):,} ₽"
+    ).replace(",", " ")
+
+    leak_breakdown = {
+        "fake_yes": {
+            "count": fake_yes_count,
+            "avg_check": int(tenant_avg_check),
+            "sum": int(fake_yes_leak)
+        },
+        "stuck_deals": {
+            "count": len(stuck_deals),
+            "avg": round(stuck_avg, 2),
+            "sum": round(stuck_amount, 2)
+        },
+        "total_leak_rub": round(leak_rub, 2),
+        "capped_by_pipeline": is_capped
+    }
 
     # Pipeline health index (0-100)
     health_score = int(min(98, max(45, (avg_score / 13.0) * 50 + (next_step_pct / 100.0) * 40 + 10))) if total_calls > 0 else 50
@@ -362,7 +392,8 @@ async def get_analyst_overview(
         f"({len(active_deals)} сделок). "
         f"По аудиту {total_calls} звонков конверсия в следующий шаг составляет **{next_step_pct}%**. "
         f"Выявлено {fake_yes_count} срывов Next Step и {len(stuck_deals)} зависших сделок, "
-        f"создающих риск на сумму **{leak_rub:,.0f} ₽**."
+        f"создающих риск на сумму **{leak_rub:,.0f} ₽**.\n\n"
+        f"{calc_str}"
     )
 
     kpi_cards = [
@@ -388,7 +419,8 @@ async def get_analyst_overview(
             "value": f"{leak_rub:,.0f} ₽",
             "delta": f"{fake_yes_count} сливов в звонках и {len(stuck_deals)} зависших сделок",
             "delta_type": "negative" if leak_rub > 0 else "positive",
-            "desc": "Сумма в зоне риска по воронке и звонкам"
+            "desc": calc_str,
+            "leak_breakdown": leak_breakdown
         },
         {
             "id": "next_step_compliance",
@@ -406,7 +438,7 @@ async def get_analyst_overview(
             "id": "anom_1",
             "priority": "HIGH",
             "title": f"Слив сделок без назначения даты встречи ({fake_yes_count} звонков)",
-            "impact_rub": fake_yes_count * avg_check,
+            "impact_rub": fake_yes_leak,
             "category": "Речевой регламент",
             "root_cause": "Менеджеры отпускают клиентов без фиксации точной даты и времени следующего контакта.",
             "action_text": "Внедрить чек-лист обязательного согласования слота Zoom в Google Календаре перед завершением звонка."
@@ -437,6 +469,7 @@ async def get_analyst_overview(
         "kpi_cards": kpi_cards,
         "anomalies": anomalies,
         "quick_prompts": quick_prompts,
+        "leak_breakdown": leak_breakdown,
         "metrics_summary": {
             "total_calls": total_calls,
             "avg_score": avg_score,
@@ -444,7 +477,9 @@ async def get_analyst_overview(
             "fake_yes_count": fake_yes_count,
             "pipeline_amount_rub": pipeline_amount,
             "stuck_amount_rub": stuck_amount,
-            "health_score": health_score
+            "leak_rub": leak_rub,
+            "health_score": health_score,
+            "leak_breakdown": leak_breakdown
         }
     }
 
@@ -473,6 +508,7 @@ async def chat_with_analyst(
     tenant = db.query(Tenant).filter(Tenant.id == clean_tenant).first()
     cfg = get_tenant_config(clean_tenant) or {}
     tenant_name = tenant.name if tenant else (cfg.get("tenant_name") or clean_tenant)
+    tenant_avg_check = float(cfg.get("avg_deal_check") or 150000.0)
 
     payload_calls = ctx.get("calls") if isinstance(ctx.get("calls"), list) else None
     payload_deals = ctx.get("deals") if isinstance(ctx.get("deals"), list) else None
@@ -568,8 +604,32 @@ async def chat_with_analyst(
     active_pipeline = sum(d.get("budget", 0.0) for d in active_deals)
     stalled_deals = [d for d in active_deals if d.get("is_at_risk")]
     stalled_amount = sum(d.get("budget", 0.0) for d in stalled_deals)
-    avg_deal_budget = (active_pipeline / len(active_deals)) if active_deals else 0.0
-    leak_rub = stalled_amount + (fake_yes * avg_deal_budget if avg_deal_budget > 0 else 0.0)
+    stuck_avg = (stalled_amount / len(stalled_deals)) if stalled_deals else 0.0
+
+    fake_yes_leak = fake_yes * tenant_avg_check
+    uncapped_leak = stalled_amount + fake_yes_leak
+    leak_rub = min(uncapped_leak, active_pipeline) if active_pipeline > 0 else uncapped_leak
+    is_capped = uncapped_leak > active_pipeline if active_pipeline > 0 else False
+
+    calc_str = (
+        f"Расчёт: {fake_yes} fake_yes × {int(tenant_avg_check):,} ₽ + "
+        f"{len(stalled_deals)} зависших сделок × {int(stuck_avg):,} ₽ = {int(leak_rub):,} ₽"
+    ).replace(",", " ")
+
+    leak_breakdown = {
+        "fake_yes": {
+            "count": fake_yes,
+            "avg_check": int(tenant_avg_check),
+            "sum": int(fake_yes_leak)
+        },
+        "stuck_deals": {
+            "count": len(stalled_deals),
+            "avg": round(stuck_avg, 2),
+            "sum": round(stalled_amount, 2)
+        },
+        "total_leak_rub": round(leak_rub, 2),
+        "capped_by_pipeline": is_capped
+    }
 
     if stalled_deals:
         stalled_lines = [
@@ -605,13 +665,16 @@ async def chat_with_analyst(
         f"- Срывы Next Step («Fake Yes»): {fake_yes} звонков\n"
         f"- Сумма утечек в зависших сделках: {leak_rub:,.0f} ₽\n"
         f"- Активный пайплайн ({len(active_deals)} сделок): {active_pipeline:,.0f} ₽\n"
+        f"- Строка формулы расчета утечек: {calc_str}\n"
         f"{managers_summary}\n"
         f"{weak_criteria_summary}\n"
         f"{stalled_deals_summary}\n\n"
         f"ПРАВИЛА ГИБКОГО И РАЗНООБРАЗНОГО ОТВЕТА (КРИТИЧЕСКИ ВАЖНО):\n"
         f"1. Отвечай СТРОГО по фактическим данным этого кабинета. Запрещено выдумывать имена менеджеров или суммы!\n"
-        f"2. Если звонки или сделки отсутствуют — прямо укажи на это.\n"
-        f"3. Используй структурированный Markdown: заголовки ###, списки, выделение ключевых сумм жирным."
+        f"2. ОБЯЗАТЕЛЬНО включи в ответ строку расшифровки утечек ровно в таком виде:\n"
+        f"   {calc_str}\n"
+        f"3. Если звонки или сделки отсутствуют — прямо укажи на это.\n"
+        f"4. Используй структурированный Markdown: заголовки ###, списки, выделение ключевых сумм жирным."
     )
 
     full_user_message = f"{history_ctx}ВОПРОС ДИРЕКТОРА: {msg}"
@@ -624,13 +687,17 @@ async def chat_with_analyst(
     )
 
     if ai_result.get("status") == "ok" and ai_result.get("reply"):
+        reply_text = str(ai_result["reply"])
+        if "Расчёт:" not in reply_text:
+            reply_text = f"{reply_text.rstrip()}\n\n---\n**Прозрачность расчета утечек:**\n{calc_str}"
         return {
             "status": "ok",
             "engine": ai_result.get("engine", "Gemini AI Cascade"),
             "tier": ai_result.get("tier", "Tier 1"),
             "model": ai_result.get("model"),
-            "reply": ai_result["reply"],
-            "latency_ms": ai_result.get("latency_ms")
+            "reply": reply_text,
+            "latency_ms": ai_result.get("latency_ms"),
+            "leak_breakdown": leak_breakdown
         }
 
     # 4. Tier 4 Failover: Contextual CCO Deterministic Intelligence
@@ -680,7 +747,7 @@ async def chat_with_analyst(
         p50_c = round(active_pipeline * 1.0, 2)
         p90_c = round(active_pipeline * 1.35, 2)
         reply = (
-            f"### Прогноз выполнения плана (Монте-Карло)\n\n"
+            f"### Прогноз выполнения плана (Линейные сценарии воронки)\n\n"
             f"- **Оптимистичный сценарий (P90)**: **{p90_c:,.0f} ₽**\n"
             f"- **Медианный целевой план (P50)**: **{p50_c:,.0f} ₽**\n"
             f"- **Пессимистичный порог (P10)**: **{p10_c:,.0f} ₽**\n\n"
@@ -699,8 +766,12 @@ async def chat_with_analyst(
             f"Главная рекомендация — усилить контроль менеджеров на этапе перехода от презентации к сделке."
         )
 
+    if "Расчёт:" not in reply:
+        reply = f"{reply.rstrip()}\n\n---\n**Прозрачность расчета утечек:**\n{calc_str}"
+
     return {
         "status": "ok",
         "engine": "Chief Commercial Officer Intelligence Engine (Deterministic SSOT)",
-        "reply": reply
+        "reply": reply,
+        "leak_breakdown": leak_breakdown
     }

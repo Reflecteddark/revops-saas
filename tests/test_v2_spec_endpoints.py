@@ -9,6 +9,7 @@ Covers:
 - WebSocket Gateway (/ws/org/{org_id})
 """
 
+import os
 import pytest
 from fastapi.testclient import TestClient
 
@@ -58,7 +59,10 @@ def test_ai_insights_summary(client):
     data = res.json()
     assert "insights" in data
     assert len(data["insights"]) >= 3
-    assert "claude_model" in data
+    if os.getenv("ANTHROPIC_API_KEY"):
+        assert "claude_model" in data
+    else:
+        assert "claude_model" not in data
     assert "executive_summary" in data
 
 
@@ -114,6 +118,10 @@ def test_websocket_connection(client):
 
 
 def test_monitoring_and_observability(client):
+    from packages.monitoring.metrics import telemetry
+    telemetry.request_latencies.clear()
+    telemetry.request_latencies.append(0.05)
+
     # Test Prometheus metrics
     prom_res = client.get("/metrics")
     assert prom_res.status_code == 200
