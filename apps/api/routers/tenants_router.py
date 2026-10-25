@@ -21,7 +21,7 @@ import zipfile
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
@@ -144,14 +144,50 @@ class UpdateTenantCrmRequest(BaseModel):
     b24_webhook_url: str | None = None
 
 
+def _is_admin_request(request: Request, x_admin_key: str | None = None) -> bool:
+    """Check if the incoming request has valid admin credentials (header or cookie)."""
+    admin_key = (
+        x_admin_key
+        or request.headers.get("x-admin-key")
+        or request.headers.get("x-revops-admin-key")
+    )
+    all_allowed_keys = set(ALLOWED_ADMIN_KEYS)
+    if admin_key and any(hmac.compare_digest(admin_key, k) for k in all_allowed_keys if k):
+        return True
+
+    cookie_token = request.cookies.get(COOKIE_ADMIN_AUTH_NAME)
+    if cookie_token and verify_admin_cookie_token(cookie_token):
+        return True
+
+    return False
+
+
 # ============================================================================
 # 1. FLEET & NICHE CATALOG ENDPOINTS
 # ============================================================================
 
 @router.get("", response_model=list[dict[str, Any]])
-def list_tenants():
-    """List all available client tenants and templates for dynamic switcher."""
-    return get_all_tenants_summary()
+def list_tenants(
+    request: Request,
+    x_admin_key: str | None = Header(None, alias="X-Admin-Key"),
+):
+    """List all available client tenants for dynamic switcher.
+    Admins (with X-Admin-Key or admin cookie) receive full objects including spreadsheet_id.
+    Public callers receive only sanitized fields (tenant_id, tenant_name, status, crm_type).
+    """
+    all_tenants = get_all_tenants_summary()
+    if _is_admin_request(request, x_admin_key):
+        return all_tenants
+
+    return [
+        {
+            "crm_type": t.get("crm_type"),
+            "status": t.get("status"),
+            "tenant_id": t.get("tenant_id"),
+            "tenant_name": t.get("tenant_name"),
+        }
+        for t in all_tenants
+    ]
 
 
 @router.get("/summary")
