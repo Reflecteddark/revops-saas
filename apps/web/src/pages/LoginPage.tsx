@@ -37,20 +37,37 @@ export function LoginPage() {
     setError(null);
 
     try {
-      const res = await authApi.login(email.trim(), password);
-      const user: User = {
-        id: res.user_id,
-        email: email.trim(),
-        full_name: res.full_name || email.trim(),
-        name: res.full_name || email.trim(),
-        role: res.role,
-        tenant_id: res.tenant_id,
-        is_active: true,
-      };
+      let user: User;
+      try {
+        const clientRes = await authApi.clientLogin(email.trim(), password);
+        const tenantMatch = clientRes.user?.tenant?.match(/TNT-[A-Za-z0-9_-]+/i);
+        const tenantId = tenantMatch ? tenantMatch[0].toUpperCase() : 'TNT-001';
+
+        user = {
+          id: clientRes.user?.login || email.trim(),
+          email: clientRes.user?.login || email.trim(),
+          full_name: clientRes.user?.name || email.trim(),
+          name: clientRes.user?.name || email.trim(),
+          role: clientRes.user?.role || 'admin',
+          tenant_id: tenantId,
+          is_active: true,
+        };
+      } catch {
+        const res = await authApi.login(email.trim(), password);
+        user = {
+          id: res.user_id,
+          email: email.trim(),
+          full_name: res.full_name || email.trim(),
+          name: res.full_name || email.trim(),
+          role: res.role,
+          tenant_id: res.tenant_id,
+          is_active: true,
+        };
+      }
 
       setUser(user);
-      if (res.tenant_id) {
-        setActiveTenantId(res.tenant_id);
+      if (user.tenant_id) {
+        setActiveTenantId(user.tenant_id);
       }
 
       navigate('/pulse', { replace: true });
@@ -87,14 +104,14 @@ export function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Электронная почта</Label>
+              <Label htmlFor="email">Логин или Email</Label>
               <Input
                 id="email"
-                type="email"
-                placeholder="name@company.ru"
+                type="text"
+                placeholder="Логин или email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
+                autoComplete="username"
                 required
                 disabled={loading}
                 data-testid="input-email"

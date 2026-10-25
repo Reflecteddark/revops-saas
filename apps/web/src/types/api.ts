@@ -44,7 +44,12 @@ export interface TokenResponse {
 }
 
 export interface ClientLoginResponse {
-  status: string;
+  authenticated?: boolean;
+  status?: string;
+  session_token?: string;
+  access_token?: string;
+  token?: string;
+  is_admin?: boolean;
   user: ClientProfile;
 }
 
