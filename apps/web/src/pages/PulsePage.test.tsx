@@ -112,7 +112,7 @@ describe('PulsePage', () => {
     // Wait for async queries to resolve
     expect(await screen.findByText('Ускорить квалификацию')).toBeInTheDocument();
 
-    expect(screen.getByText('Выручка факт')).toBeInTheDocument();
+    expect(screen.getAllByText('Выручка факт').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Пайплайн')).toBeInTheDocument();
     expect(screen.getByText('Качество звонков')).toBeInTheDocument();
     expect(screen.getByText('Дефицит до плана')).toBeInTheDocument();
@@ -125,6 +125,9 @@ describe('PulsePage', () => {
     // Verify widgets
     expect(screen.getByTestId('lost-deals-banner')).toBeInTheDocument();
     expect(screen.getByTestId('pipeline-funnel')).toBeInTheDocument();
+    expect(screen.getByTestId('monte-carlo-corridor')).toBeInTheDocument();
+    expect(screen.getByTestId('express-scenario-calculator')).toBeInTheDocument();
+    expect(screen.getByTestId('ai-impact-card')).toBeInTheDocument();
   });
 
   it('shows skeleton cards during initial loading', () => {

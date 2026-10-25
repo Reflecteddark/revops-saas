@@ -2,8 +2,9 @@
  * apps/web/src/pages/PulsePage.tsx
  *
  * Operational pulse page featuring 5 primary KPIs, SSOT sales funnel,
- * yesterday's lost deals banner, AI recommendations, recent calls table,
- * and deep call inspection slide-over drawer.
+ * yesterday's lost deals banner, Monte Carlo revenue corridors,
+ * express scenario calculator, AI impact matrix with Fake Yes detection,
+ * AI recommendations, and deep call inspection slide-over drawer.
  */
 
 import * as React from 'react';
@@ -18,6 +19,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LostDealsBanner } from '@/components/LostDealsBanner';
 import { PipelineFunnel } from '@/components/PipelineFunnel';
 import { CallDetailsDrawer } from '@/components/CallDetailsDrawer';
+import { ExpressScenarioCalculator } from '@/components/ExpressScenarioCalculator';
+import { MonteCarloCorridor } from '@/components/MonteCarloCorridor';
+import { AiImpactCard } from '@/components/AiImpactCard';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { callsApi, dealsApi, insightsApi } from '@/lib/api';
 import type { Call, RecommendationItem } from '@/types/api';
@@ -311,6 +315,29 @@ export function PulsePage() {
               Пока нет рекомендаций
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Monte Carlo Probabilistic Corridor */}
+      <MonteCarloCorridor
+        p10={Number(insights?.p10_corridor_rub ?? 2000000)}
+        p50={Number(insights?.p50_corridor_rub ?? 3500000)}
+        p90={Number(insights?.p90_corridor_rub ?? 4800000)}
+        monthlyTarget={planTarget}
+        confidenceScore={insights?.confidence_score ?? 0.92}
+      />
+
+      {/* Financial Scenario Math & AI Impact Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-6">
+          <ExpressScenarioCalculator
+            initialLeads={50}
+            initialCheck={300000}
+            initialManagers={4}
+          />
+        </div>
+        <div className="lg:col-span-6">
+          <AiImpactCard calls={calls} />
         </div>
       </div>
 
