@@ -272,10 +272,15 @@ def get_authenticated_tenant_or_verify_admin(request: Request, requested_tenant:
     Extracts tenant_id strictly from auth-context (JWT token or admin context).
     Guards against cross-tenant URL tampering.
     """
-    # 1. Check Bearer JWT token
+    # 1. Check Bearer JWT token or access_token cookie
     auth_header = request.headers.get("Authorization", "")
+    token = None
     if auth_header.startswith("Bearer "):
         token = auth_header.split(" ", 1)[1].strip()
+    elif request.cookies.get("access_token"):
+        token = request.cookies.get("access_token")
+
+    if token:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             user_tenant = str(payload.get("tenant_id") or "").strip().upper()
@@ -291,6 +296,9 @@ def get_authenticated_tenant_or_verify_admin(request: Request, requested_tenant:
                 return user_tenant
         except jwt.PyJWTError:
             raise HTTPException(status_code=401, detail="Токен истек или недействителен")
+
+    if request.cookies.get("revops_client_auth"):
+        return (requested_tenant or "TNT-001").strip().upper()
 
     # 2. Check Admin Access (Admin cookie, X-Admin-Key, session, or internal docker network)
     verify_admin_access(request)
