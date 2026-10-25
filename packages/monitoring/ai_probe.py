@@ -61,20 +61,26 @@ GEMINI_PROXY_KEY = _resolve_gemini_proxy_key()
 AI_TIERS = [
     {
         "tier": "Tier 1",
+        "name": "Gemini 3.5 Flash (Cloudflare Proxy)",
+        "model": "gemini-3.5-flash",
+        "type": "proxy",
+    },
+    {
+        "tier": "Tier 2",
         "name": "Gemini 3.5 Flash-Lite (Cloudflare Proxy)",
         "model": "gemini-3.5-flash-lite",
         "type": "proxy",
     },
     {
-        "tier": "Tier 2",
-        "name": "Gemini Flash-Lite Latest (Cloudflare Proxy)",
-        "model": "gemini-flash-lite-latest",
+        "tier": "Tier 3",
+        "name": "Gemini 3.8 Flash (Cloudflare Proxy)",
+        "model": "gemini-3.8-flash",
         "type": "proxy",
     },
     {
-        "tier": "Tier 3",
-        "name": "Google Gemini 1.5 Flash (Direct API)",
-        "model": "gemini-1.5-flash",
+        "tier": "Tier 4",
+        "name": "Google Gemini 3.5 Flash (Direct API)",
+        "model": "gemini-3.5-flash",
         "type": "direct",
     },
 ]
@@ -84,7 +90,7 @@ def notify_ai_outage(error_detail: str) -> bool:
     """Dispatches high-priority Telegram alert when all AI model tiers fail."""
     alert_text = (
         "🚨 <b>[RevOps AI Incident Alert — Отказ моделей Gemini]</b>\n\n"
-        "<b>Статус:</b> Сбой внешних ИИ-моделей (Tier 1 и Tier 2 недоступны).\n"
+        "<b>Статус:</b> Сбой внешних ИИ-моделей (все тиры Gemini недоступны).\n"
         f"<b>Причина / Ошибка:</b> <code>{error_detail[:300]}</code>\n\n"
         "🛡️ <b>Защита:</b> Диалог с Коммерческим Директором (CCO) автоматически "
         "переведён на автономный локальный SSOT-движок воронки."
@@ -194,7 +200,8 @@ def probe_gemini_models_sync(timeout: float = 12.0) -> dict[str, Any]:
 
     last_error: str | None = None
 
-    for tier_info in AI_TIERS[:2]:  # Test Tier 1 and Tier 2
+    proxy_tiers = [t for t in AI_TIERS if t.get("type") == "proxy"]
+    for tier_info in proxy_tiers:
         tier_name = tier_info["tier"]
         model_id = tier_info["model"]
         url = f"{GEMINI_PROXY_URL}/v1beta/models/{model_id}:generateContent?key={GEMINI_PROXY_KEY}"

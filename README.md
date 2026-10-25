@@ -77,6 +77,11 @@ python -m uvicorn apps.api.main:app --host 127.0.0.1 --port 8000 --reload
 pytest tests/ -v
 ```
 
+### 3. ⚠️ Anti-Fake-Fallback Policy
+НИКОГДА не подставляйте выдуманные данные. 
+См. [docs/NO_FAKE_FALLBACK_POLICY.md](docs/NO_FAKE_FALLBACK_POLICY.md).
+CI и pre-commit блокируют `length * CONSTANT`, `return 300000`, `[1]*13`.
+
 ---
 
 ## 🐳 Контейнеризация и Продакшн-Деплой (Production)

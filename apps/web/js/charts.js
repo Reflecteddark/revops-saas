@@ -611,7 +611,7 @@ window.initDevelopSplineChart = initDevelopSplineChart;
 // ==========================================================================
 function recalcExpress() {
   const leads = parseInt(document.getElementById('rngLeadsExp').value, 10) || 50;
-  const check = parseInt(document.getElementById('rngCheckExp').value, 10) || 300000;
+  const check = parseInt(document.getElementById('rngCheckExp').value, 10) || 300000; // fallback-allowed: UI slider default
   const mgr = parseInt(document.getElementById('rngMgrExp').value, 10) || 4;
 
   document.getElementById('valLeadsExp').textContent = leads + ' шт';
@@ -714,10 +714,10 @@ function runMonteCarloSimulation(notify = false) {
   if (lblQ) lblQ.textContent = `${qualPct}%`;
   if (lblC) lblC.textContent = `${closePct}%`;
 
-  let avgCheck = 300000;
+  let avgCheck = 300000; // fallback-allowed: UI calculator default
   if (CALLS_DATA && CALLS_DATA.length > 0) {
     const totalAmt = CALLS_DATA.reduce((s, c) => s + getCallAmount(c), 0);
-    avgCheck = Math.round(totalAmt / CALLS_DATA.length) || 300000;
+    avgCheck = Math.round(totalAmt / CALLS_DATA.length) || 300000; // fallback-allowed: UI calculator default
   }
   const monthlyTarget = getMonthlyTarget();
 

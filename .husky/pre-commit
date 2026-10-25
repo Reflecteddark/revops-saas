@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+echo "🔍 Pre-commit: fast checks (anti-fake + lint staged)..."
+
+# 1. Anti-fake scan
+STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM | grep -E "apps/web/js/.*\.js$" || true)
+STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep -E "apps/api/routers/.*\.py$" || true)
+FAILED=0
+for file in $STAGED_JS; do
+  if [ -f "$file" ]; then
+    grep -E "length\s*\*\s*[1-9][0-9]{4,}" "$file" | grep -v "fallback-allowed" >/dev/null 2>&1 && FAILED=1
+    grep -E "return\s+300000" "$file" >/dev/null 2>&1 && FAILED=1
+  fi
+done
+for file in $STAGED_PY; do
+  if [ -f "$file" ]; then
+    grep -E "\[1\] \* 13" "$file" >/dev/null 2>&1 && FAILED=1
+  fi
+done
+if [ $FAILED -eq 1 ]; then
+  echo "🚨 Fake fallback detected. See docs/NO_FAKE_FALLBACK_POLICY.md"
+  exit 1
+fi
+
+# 2. Ruff (быстро, только staged)
+if command -v ruff >/dev/null 2>&1; then
+  if [ -n "$STAGED_PY" ]; then
+    ruff check $(echo "$STAGED_PY" | tr '\n' ' ') || exit 1
+  fi
+fi
+
+# 3. Prettier для staged JS (если есть)
+if [ -d "apps/web" ] && [ -f "apps/web/package.json" ]; then
+  (cd apps/web && npx lint-staged --allow-empty 2>/dev/null || true)
+fi
+
+echo "✅ Pre-commit passed"

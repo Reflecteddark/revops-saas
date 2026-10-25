@@ -20,6 +20,7 @@ import sys
 import time
 import urllib.request
 from datetime import datetime, timezone
+from ipaddress import ip_address, ip_network
 from pathlib import Path
 from threading import Lock
 from typing import Any
@@ -75,6 +76,23 @@ def verify_admin_cookie_token(token: str, max_age_sec: int = 7 * 86400) -> bool:
         return False
 
 
+INTERNAL_NETS = [
+    ip_network("10.0.0.0/8"),
+    ip_network("172.16.0.0/12"),
+    ip_network("192.168.0.0/16"),
+    ip_network("127.0.0.0/8"),
+    ip_network("::1/128"),
+]
+
+
+def _is_internal_ip(ip_str: str) -> bool:
+    try:
+        ip = ip_address(ip_str)
+        return any(ip in net for net in INTERNAL_NETS)
+    except Exception:
+        return False
+
+
 def verify_admin_access(request: Request):
     """
     Guarantees zero unauthorized access to admin fleet actions.
@@ -101,7 +119,6 @@ def verify_admin_access(request: Request):
         return True
 
     # Allow internal docker network (e.g. 172.16.0.0/12, 10.0.0.0/8)
-    from .calls_router import _is_internal_ip
     if client_ip and _is_internal_ip(client_ip) and not is_tunnel:
         return True
 
@@ -1386,7 +1403,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
             amo_domain=req.amo_domain,
             amo_token=req.amo_token,
             niche_name=req.niche_name or "Универсальный B2B",
-            avg_deal_check=req.avg_deal_check or 150000,
+            avg_deal_check=req.avg_deal_check or 150000,  # fallback-allowed: new tenant default
             target_next_step=req.target_next_step or "Фиксация следующего контакта с датой и временем",
         )
     except Exception as e:
@@ -3306,7 +3323,9 @@ async def resolve_quarantined_call(req: QuarantineResolveRequest):
             status="won" if target.get("score", 10) >= 10 else "warn",
             status_label="ОДОБРЕНО ИЗ КАРАНТИНА",
             next_step=1,
-            cr=target.get("cr") or [1] * 13,
+            # Fallback — 0, не идеальный скор. Иначе админ-эмуляция показывает
+            # 13/13 как будто звонок идеален.
+            cr=target.get("cr") or [0] * 13,
             error_summary=f"Карантин снят: {target.get('flagged_criterion')}",
             recommendation="Подтверждено ручной верификацией РОПа/Администратора",
             transcript=target.get("transcript", ""),

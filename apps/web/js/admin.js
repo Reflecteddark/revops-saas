@@ -844,7 +844,7 @@ function renderAdminTenantsTable(tenants) {
             <span style="font-weight: 600; color: #fff;">${escapeHtml(t.tenant_name || '')}</span>
           </div>
           <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 3px;">
-            Ниша: <span style="color: #cbd5e1;">${escapeHtml(t.niche_name || 'B2B')}</span> &bull; Чек: <span style="color: #cbd5e1;">${(t.avg_deal_check || 150000).toLocaleString('ru-RU')} ₽</span>
+            Ниша: <span style="color: #cbd5e1;">${escapeHtml(t.niche_name || 'B2B')}</span> &bull; Чек: <span style="color: #cbd5e1;">${(t.avg_deal_check || 150000).toLocaleString('ru-RU')} ₽</span> <!-- fallback-allowed: default when creating new tenant -->
           </div>
         </td>
         <td style="padding: 12px 14px;">
@@ -986,7 +986,7 @@ async function submitProvisionTenant() {
   const amoToken = (document.getElementById('adminProvAmoToken')?.value || '').trim();
   const b24Webhook = (document.getElementById('adminProvB24Webhook')?.value || '').trim();
   const niche = (document.getElementById('adminProvNiche')?.value || '').trim() || 'Универсальный B2B';
-  const avgCheck = parseInt(document.getElementById('adminProvAvgCheck')?.value || '150000', 10);
+  const avgCheck = parseInt(document.getElementById('adminProvAvgCheck')?.value || '150000', 10); // fallback-allowed: default when creating new tenant
   const sheetId = (document.getElementById('adminProvSheetId')?.value || '').trim();
 
   if (!name) {
@@ -1084,7 +1084,7 @@ function openTenantEditModal(tenantId) {
   document.getElementById('modalTenantAmoToken').value = '';
   document.getElementById('modalTenantB24Webhook').value = tenant.crm_webhook_url || tenant.b24_webhook_url || '';
   document.getElementById('modalTenantNiche').value = tenant.niche_name || '';
-  document.getElementById('modalTenantAvgCheck').value = tenant.avg_deal_check || 150000;
+  document.getElementById('modalTenantAvgCheck').value = tenant.avg_deal_check || 150000; // fallback-allowed: default when creating new tenant
   document.getElementById('modalTenantNextStep').value = tenant.target_next_step || '';
   document.getElementById('modalTenantNewPass').value = '';
 
@@ -1124,7 +1124,7 @@ async function saveTenantEdit() {
     amo_token: (document.getElementById('modalTenantAmoToken')?.value || '').trim() || undefined,
     crm_webhook_url: (document.getElementById('modalTenantB24Webhook')?.value || '').trim() || undefined,
     niche_name: (document.getElementById('modalTenantNiche')?.value || '').trim() || undefined,
-    avg_deal_check: parseInt(document.getElementById('modalTenantAvgCheck')?.value || '150000', 10),
+    avg_deal_check: parseInt(document.getElementById('modalTenantAvgCheck')?.value || '150000', 10), // fallback-allowed: default when creating new tenant
     target_next_step: (document.getElementById('modalTenantNextStep')?.value || '').trim() || undefined,
     new_password: (document.getElementById('modalTenantNewPass')?.value || '').trim() || undefined
   };

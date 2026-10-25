@@ -101,6 +101,7 @@ def test_monte_carlo_endpoint(client):
         "leads_mean": 300.0,
         "conv_qual_pct": 50.0,
         "conv_close_pct": 20.0,
+        "avg_ticket_rub": 250000.0,
         "iterations": 1000
     }
     mc_res = client.post("/api/v1/simulator/run-monte-carlo", json=mc_payload, headers=headers)

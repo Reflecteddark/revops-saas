@@ -67,14 +67,17 @@ describe('calculateFinancials', () => {
     expect(r.activeDealsCount).toBe(1);
   });
 
-  it('fallback на calls если deals пустой', () => {
+  it('honest zero-state если deals пустой (calls не используются как fallback)', () => {
     const calls = [
       { amount: 300000, status: 'won', score: 12, next_step: 1 },
       { amount: 300000, status: 'norm', score: 9, next_step: 1 }
     ];
     const r = calculateFinancials([], calls);
-    expect(r.totalFact).toBe(300000);
-    expect(r.computedPipeline).toBeGreaterThan(0);
+    expect(r.totalFact).toBe(0);
+    expect(r.computedPipeline).toBe(0);
+    expect(r.computedSsot).toBe(0);
+    expect(r.activeDealsCount).toBe(0);
+    expect(window._DEALS_DATA_UNAVAILABLE).toBe(true);
   });
 });
 

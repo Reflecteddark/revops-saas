@@ -55,8 +55,8 @@ def test_ai_probe_sync_healthy():
     assert "healthy" in res
     assert "latency_ms" in res
     if res["healthy"]:
-        assert res["active_tier"] in ("Tier 1", "Tier 2")
-        assert res["model"] in ("gemini-3.5-flash-lite", "gemini-flash-lite-latest")
+        assert res["active_tier"] in ("Tier 1", "Tier 2", "Tier 3")
+        assert res["model"] in ("gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.8-flash")
 
 
 def test_ai_cascade_success_tier1():
@@ -70,7 +70,7 @@ def test_ai_cascade_success_tier1():
     )
     assert isinstance(res, dict)
     if res.get("status") == "ok":
-        assert res.get("tier") in ("Tier 1", "Tier 2")
+        assert res.get("tier") in ("Tier 1", "Tier 2", "Tier 3")
         assert len(res.get("reply", "")) > 10
         assert res.get("latency_ms", 0) > 0
 
@@ -114,7 +114,7 @@ def test_ai_cascade_failover_to_tier4_ssot():
     dummy_req = httpx.Request("POST", "https://gemini-proxy.test")
     resp_500 = httpx.Response(500, text="Internal Error", request=dummy_req)
 
-    with patch.object(httpx.AsyncClient, "post", side_effect=[resp_500, resp_500, resp_500]):
+    with patch.object(httpx.AsyncClient, "post", side_effect=[resp_500, resp_500, resp_500, resp_500]):
         res = asyncio.run(
             generate_gemini_content_cascade(
                 system_prompt="Ты CCO",
