@@ -3,20 +3,21 @@
 @tailwind utilities;
 
 @layer base {
-  .dark, [data-theme="dark"] {
+  .dark,
+  [data-theme='dark'] {
     color-scheme: dark;
     --background: #09090b;
-    --surface-from: #121215;       /* верх карточки */
-    --surface-to: #0d0d10;         /* низ карточки */
-    --surface: #0e0e11;            /* плоская поверхность (строки, поповеры-основа) */
-    --surface-raised: #141418;     /* dropdown, popover, dialog */
+    --surface-from: #121215; /* верх карточки */
+    --surface-to: #0d0d10; /* низ карточки */
+    --surface: #0e0e11; /* плоская поверхность (строки, поповеры-основа) */
+    --surface-raised: #141418; /* dropdown, popover, dialog */
     --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-strong: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.1);
     --hover: rgba(255, 255, 255, 0.03);
     --active: rgba(255, 255, 255, 0.07);
     --text: #fafafa;
     --text-secondary: #a1a1aa;
-    --text-tertiary: #8b8b94;      /* ≈5.7:1 на поверхности; НЕ zinc-500 */
+    --text-tertiary: #8b8b94; /* ≈5.7:1 на поверхности; НЕ zinc-500 */
     --accent: #8b5cf6;
 
     /* shadcn mappings */
@@ -37,20 +38,21 @@
     --font-kpi: var(--font-sans);
   }
 
-  :root, [data-theme="light"] {
+  :root,
+  [data-theme='light'] {
     color-scheme: light;
-    --background: #fafafa;
+    --background: #f8fafc;
     --surface-from: #ffffff;
     --surface-to: #ffffff;
     --surface: #ffffff;
     --surface-raised: #ffffff;
-    --border-subtle: rgba(9, 9, 11, 0.07);
-    --border-strong: rgba(9, 9, 11, 0.14);
-    --hover: rgba(9, 9, 11, 0.03);
-    --active: rgba(9, 9, 11, 0.06);
-    --text: #09090b;
-    --text-secondary: #52525b;
-    --text-tertiary: #71717a;
+    --border-subtle: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --hover: #f1f5f9;
+    --active: #e2e8f0;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #64748b;
     --accent: #7c3aed;
 
     /* shadcn mappings */
@@ -72,7 +74,7 @@
   }
 
   /* Default theme is dark when no explicit light theme is set */
-  :root:not([data-theme="light"]):not(.light) {
+  :root:not([data-theme='light']):not(.light) {
     color-scheme: dark;
     --background: #09090b;
     --surface-from: #121215;
@@ -80,7 +82,7 @@
     --surface: #0e0e11;
     --surface-raised: #141418;
     --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-strong: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.1);
     --hover: rgba(255, 255, 255, 0.03);
     --active: rgba(255, 255, 255, 0.07);
     --text: #fafafa;
@@ -111,7 +113,7 @@
     scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
   }
 
-  :root:not(.dark):not([data-theme="dark"]) * {
+  :root:not(.dark):not([data-theme='dark']) * {
     scrollbar-color: rgba(9, 9, 11, 0.15) transparent;
   }
 
@@ -133,7 +135,7 @@
     border-radius: 9999px;
   }
 
-  :root:not(.dark):not([data-theme="dark"]) ::-webkit-scrollbar-thumb {
+  :root:not(.dark):not([data-theme='dark']) ::-webkit-scrollbar-thumb {
     background: rgba(9, 9, 11, 0.15);
   }
 
@@ -142,9 +144,13 @@
     color: var(--text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
     font-variant-numeric: tabular-nums;
-    transition: background-color 150ms ease-out, color 150ms ease-out;
+    transition:
+      background-color 150ms ease-out,
+      color 150ms ease-out;
     position: relative;
     min-height: 100vh;
   }
@@ -158,7 +164,11 @@
     transform: translateX(-50%);
     width: 100%;
     height: 380px;
-    background: radial-gradient(60% 40% at 50% -10%, rgb(139 92 246 / 0.07), transparent);
+    background: radial-gradient(
+      60% 40% at 50% -10%,
+      rgb(139 92 246 / 0.07),
+      transparent
+    );
     pointer-events: none;
     z-index: 0;
   }
@@ -175,10 +185,12 @@
       0 12px 32px -16px rgba(0, 0, 0, 0.7);
   }
 
-  :root:not(.dark):not([data-theme="dark"]) .surface,
-  [data-theme="light"] .surface {
+  :root:not(.dark):not([data-theme='dark']) .surface,
+  [data-theme='light'] .surface {
     background: var(--surface);
-    box-shadow: 0 1px 2px rgba(9, 9, 11, 0.05);
+    box-shadow:
+      0 1px 3px 0 rgba(0, 0, 0, 0.04),
+      0 1px 2px -1px rgba(0, 0, 0, 0.02);
   }
 
   .surface-raised {
