@@ -31,17 +31,24 @@ const fleetColumns: ColumnDef<Tenant, unknown>[] = [
     accessorKey: 'tenant_name',
     header: 'Компания / Тенант',
     cell: ({ row }) => (
-      <span className="font-medium text-foreground">{row.original.tenant_name}</span>
+      <span className="font-medium text-foreground">
+        {row.original.tenant_name}
+      </span>
     ),
   },
   {
     accessorKey: 'crm_type',
     header: 'CRM система',
-    cell: ({ row }) => (
-      <Badge variant="secondary" className="font-mono text-[11px] capitalize">
-        {row.original.crm_type}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const crm = row.original.crm_type;
+      const label =
+        crm === 'amocrm' ? 'amoCRM' : crm === 'bitrix24' ? 'Битрикс24' : crm;
+      return (
+        <Badge variant="secondary" className="font-mono text-[11px]">
+          {label}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: 'status',
@@ -49,12 +56,20 @@ const fleetColumns: ColumnDef<Tenant, unknown>[] = [
     cell: ({ row }) => {
       const status = row.original.status;
       const isActive = status === 'active';
+      const label =
+        status === 'active'
+          ? 'Активен'
+          : status === 'paused'
+            ? 'Заморожен'
+            : status === 'archived'
+              ? 'В архиве'
+              : status;
       return (
         <Badge
           variant={isActive ? 'default' : 'secondary'}
           className={isActive ? 'bg-emerald-600 text-white' : ''}
         >
-          {status}
+          {label}
         </Badge>
       );
     },
@@ -63,14 +78,16 @@ const fleetColumns: ColumnDef<Tenant, unknown>[] = [
     accessorKey: 'niche_name',
     header: 'Ниша / Отрасль',
     cell: ({ row }) => (
-      <span className="text-xs text-muted-foreground">{row.original.niche_name || '—'}</span>
+      <span className="text-xs text-muted-foreground">
+        {row.original.niche_name || '—'}
+      </span>
     ),
   },
   {
     accessorKey: 'avg_deal_check',
     header: 'Средний чек',
     cell: ({ row }) => (
-      <span className="font-mono text-xs tabular-nums text-foreground font-medium">
+      <span className="font-mono text-xs font-medium tabular-nums text-foreground">
         {row.original.avg_deal_check
           ? `${row.original.avg_deal_check.toLocaleString('ru-RU')} ₽`
           : '—'}
@@ -82,7 +99,9 @@ const fleetColumns: ColumnDef<Tenant, unknown>[] = [
 export function FleetPage() {
   const setActiveTenantId = useRevOpsStore((s) => s.setActiveTenantId);
   const setTenants = useRevOpsStore((s) => s.setTenants);
-  const [selectedMessage, setSelectedMessage] = React.useState<string | null>(null);
+  const [selectedMessage, setSelectedMessage] = React.useState<string | null>(
+    null
+  );
 
   const {
     data: tenants = [],
@@ -102,29 +121,41 @@ export function FleetPage() {
 
   const handleTenantSelect = (tenant: Tenant) => {
     setActiveTenantId(tenant.tenant_id);
-    setSelectedMessage(`Тенант «${tenant.tenant_name}» (${tenant.tenant_id}) выбран`);
+    setSelectedMessage(
+      `Тенант «${tenant.tenant_name}» (${tenant.tenant_id}) выбран`
+    );
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Флот</h1>
-            <Badge variant="outline" className="font-mono text-xs" data-testid="fleet-count">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Флот
+            </h1>
+            <Badge
+              variant="outline"
+              className="font-mono text-xs"
+              data-testid="fleet-count"
+            >
               {tenants.length}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Реестр клиентских воронко-инстансов и подключенных рабочих пространств.
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Реестр клиентских воронко-инстансов и подключенных рабочих
+            пространств.
           </p>
         </div>
       </div>
 
       {/* Selected tenant notice */}
       {selectedMessage && (
-        <Alert className="bg-emerald-500/10 border-emerald-500/20 text-emerald-500 flex items-center justify-between" data-testid="tenant-selected-alert">
+        <Alert
+          className="flex items-center justify-between border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+          data-testid="tenant-selected-alert"
+        >
           <div className="flex items-center space-x-2">
             <Check className="h-4 w-4 shrink-0" />
             <AlertDescription className="text-xs font-medium text-foreground">
@@ -135,7 +166,7 @@ export function FleetPage() {
             variant="ghost"
             size="sm"
             onClick={() => setSelectedMessage(null)}
-            className="h-6 text-xs px-2 text-muted-foreground hover:text-foreground"
+            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             Закрыть
           </Button>
@@ -144,12 +175,23 @@ export function FleetPage() {
 
       {/* Error state */}
       {isError && (
-        <Alert variant="destructive" className="flex items-center justify-between" data-testid="fleet-error">
+        <Alert
+          variant="destructive"
+          className="flex items-center justify-between"
+          data-testid="fleet-error"
+        >
           <div>
             <AlertTitle>Ошибка загрузки</AlertTitle>
-            <AlertDescription>Не удалось загрузить реестр тенантов.</AlertDescription>
+            <AlertDescription>
+              Не удалось загрузить реестр тенантов.
+            </AlertDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-4 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="ml-4 shrink-0"
+          >
             Повторить
           </Button>
         </Alert>

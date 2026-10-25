@@ -6,7 +6,13 @@
 
 import * as React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity, ClipboardCheck, Settings, ShieldCheck, Users } from 'lucide-react';
+import {
+  Activity,
+  ClipboardCheck,
+  Settings,
+  ShieldCheck,
+  Users,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -21,11 +27,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { title: 'Pulse', href: '/pulse', icon: Activity },
-  { title: 'Audit', href: '/audit', icon: ClipboardCheck },
-  { title: 'Settings', href: '/settings', icon: Settings },
-  { title: 'Fleet', href: '/fleet', icon: Users },
-  { title: 'Admin', href: '/admin', icon: ShieldCheck },
+  { title: 'Пульс', href: '/pulse', icon: Activity },
+  { title: 'Аудит', href: '/audit', icon: ClipboardCheck },
+  { title: 'Настройки', href: '/settings', icon: Settings },
+  { title: 'Флот', href: '/fleet', icon: Users },
+  { title: 'Админ-панель', href: '/admin', icon: ShieldCheck },
 ];
 
 export function Sidebar({ className }: SidebarProps = {}) {
@@ -93,7 +99,7 @@ export function Sidebar({ className }: SidebarProps = {}) {
           variant="outline"
           className="border-subtle bg-hover px-1.5 py-0.5 text-[11px] font-normal tracking-wide text-tertiary"
         >
-          React migration
+          Платформа React
         </Badge>
       </div>
     </aside>

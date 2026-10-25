@@ -40,6 +40,12 @@ export function Header({ className }: HeaderProps) {
       disconnected: 'bg-rose-400',
     }[websocketStatus] || 'bg-rose-400';
 
+  const statusLabels: Record<string, string> = {
+    connected: 'В сети',
+    connecting: 'Подключение...',
+    disconnected: 'Не в сети',
+  };
+
   const handleLogout = async () => {
     try {
       await authApi.logout();
@@ -70,15 +76,15 @@ export function Header({ className }: HeaderProps) {
       <div className="flex items-center space-x-2.5">
         <div
           className="inline-flex h-6 items-center gap-1.5 rounded-full border border-subtle px-2.5 text-xs text-secondary"
-          title={`WebSocket: ${websocketStatus}`}
+          title={`Шлюз событий: ${statusLabels[websocketStatus] || websocketStatus}`}
           data-testid="websocket-status-indicator"
         >
           <div
             className={cn('h-1.5 w-1.5 rounded-full', statusDotColor)}
             data-testid="websocket-status-dot"
           />
-          <span className="hidden text-xs capitalize sm:inline">
-            {websocketStatus}
+          <span className="hidden text-xs sm:inline">
+            {statusLabels[websocketStatus] || websocketStatus}
           </span>
         </div>
 
