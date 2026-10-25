@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://report.ai-rop.ru/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
