@@ -2,6 +2,7 @@
  * apps/web/src/pages/AuditPage.tsx
  *
  * Calls audit page featuring comprehensive filtering by status, manager, and date period,
+ * ROP Leadership Podium, Speech Standards Radar, Skills Heatmap (CR1..CR13),
  * tabular inspection, and modal detailed view with 13 CR criteria audit scores and transcript.
  */
 
@@ -27,6 +28,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { RopPodium } from '@/components/RopPodium';
+import { SpeechRadarChart } from '@/components/SpeechRadarChart';
+import { SkillsHeatmap } from '@/components/SkillsHeatmap';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { callsApi } from '@/lib/api';
 import type { Call } from '@/types/api';
@@ -52,7 +56,7 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
     accessorKey: 'date',
     header: 'Дата',
     cell: ({ row }) => (
-      <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+      <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
         {row.original.date}
       </span>
     ),
@@ -63,7 +67,7 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
     cell: ({ row }) => (
       <div className="font-medium text-foreground">
         <div>{row.original.client}</div>
-        <div className="text-[11px] text-muted-foreground font-normal">
+        <div className="text-[11px] font-normal text-muted-foreground">
           {row.original.deal_title}
         </div>
       </div>
@@ -73,14 +77,18 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
     accessorKey: 'manager',
     header: 'Менеджер',
     cell: ({ row }) => (
-      <span className="text-muted-foreground text-xs">{row.original.manager}</span>
+      <span className="text-xs text-muted-foreground">
+        {row.original.manager}
+      </span>
     ),
   },
   {
     accessorKey: 'stage',
     header: 'Этап',
     cell: ({ row }) => (
-      <span className="text-xs text-muted-foreground">{row.original.stage || '—'}</span>
+      <span className="text-xs text-muted-foreground">
+        {row.original.stage || '—'}
+      </span>
     ),
   },
   {
@@ -106,8 +114,8 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
             score >= 9
               ? 'font-semibold text-emerald-500'
               : score >= 6
-              ? 'font-medium text-amber-500'
-              : 'font-medium text-red-500'
+                ? 'font-medium text-amber-500'
+                : 'font-medium text-red-500'
           }
         >
           {score}/13
@@ -125,8 +133,8 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
         status === 'won'
           ? 'default'
           : status === 'lost' || status === 'fake_yes'
-          ? 'destructive'
-          : 'secondary';
+            ? 'destructive'
+            : 'secondary';
 
       return <Badge variant={variant}>{label}</Badge>;
     },
@@ -156,22 +164,27 @@ export function AuditPage() {
   if (!tenantId) {
     return (
       <div
-        className="flex min-h-[400px] flex-col items-center justify-center text-center p-8"
+        className="flex min-h-[400px] flex-col items-center justify-center p-8 text-center"
         data-testid="empty-tenant-state"
       >
-        <div className="rounded-full bg-muted p-4 mb-4">
+        <div className="mb-4 rounded-full bg-muted p-4">
           <ClipboardCheck className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h2 className="text-lg font-semibold tracking-tight">Тенант не выбран</h2>
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">
-          Выберите тенант в шапке приложения для просмотра таблицы аудита звонков.
+        <h2 className="text-lg font-semibold tracking-tight">
+          Тенант не выбран
+        </h2>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+          Выберите тенант в шапке приложения для просмотра таблицы аудита
+          звонков.
         </p>
       </div>
     );
   }
 
   // Unique managers
-  const managers = Array.from(new Set(calls.map((c) => c.manager).filter(Boolean)));
+  const managers = Array.from(
+    new Set(calls.map((c) => c.manager).filter(Boolean))
+  );
 
   // Filtered dataset
   const filteredCalls = calls.filter((call) => {
@@ -188,7 +201,8 @@ export function AuditPage() {
       const callDate = new Date(call.date);
       if (!isNaN(callDate.getTime())) {
         const now = new Date();
-        const diffDays = (now.getTime() - callDate.getTime()) / (1000 * 3600 * 24);
+        const diffDays =
+          (now.getTime() - callDate.getTime()) / (1000 * 3600 * 24);
         if (periodFilter === '7d' && diffDays > 7) return false;
         if (periodFilter === '30d' && diffDays > 30) return false;
       }
@@ -199,17 +213,21 @@ export function AuditPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Аудит звонков
             </h1>
-            <Badge variant="outline" className="font-mono text-xs" data-testid="calls-count">
+            <Badge
+              variant="outline"
+              className="font-mono text-xs"
+              data-testid="calls-count"
+            >
               {filteredCalls.length}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="mt-0.5 text-sm text-muted-foreground">
             Детализированный реестр звонков с проверкой 13 критериев B2B-продаж.
           </p>
         </div>
@@ -217,22 +235,56 @@ export function AuditPage() {
 
       {/* Error Alert */}
       {isError && (
-        <Alert variant="destructive" className="flex items-center justify-between" data-testid="audit-error">
+        <Alert
+          variant="destructive"
+          className="flex items-center justify-between"
+          data-testid="audit-error"
+        >
           <div>
             <AlertTitle>Ошибка загрузки</AlertTitle>
             <AlertDescription>
               Не удалось загрузить реестр звонков для тенанта {tenantId}.
             </AlertDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-4 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="ml-4 shrink-0"
+          >
             Повторить
           </Button>
         </Alert>
       )}
 
+      {/* Sprint 2: ROP Podium & Hazard Rep Alert */}
+      <RopPodium
+        calls={calls}
+        selectedRep={managerFilter !== 'all' ? managerFilter : null}
+        onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+      />
+
+      {/* Sprint 2: Speech Radar & Skills Heatmap Grid */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <SpeechRadarChart
+            calls={calls}
+            selectedRep={managerFilter !== 'all' ? managerFilter : null}
+            onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+          />
+        </div>
+        <div className="lg:col-span-7">
+          <SkillsHeatmap
+            calls={calls}
+            selectedRep={managerFilter !== 'all' ? managerFilter : null}
+            onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+          />
+        </div>
+      </div>
+
       {/* Filters Bar */}
       <div className="surface flex flex-wrap items-center gap-3 p-3">
-        <div className="flex items-center space-x-2 text-xs font-medium text-muted-foreground mr-1">
+        <div className="mr-1 flex items-center space-x-2 text-xs font-medium text-muted-foreground">
           <Filter className="h-4 w-4" />
           <span>Фильтры:</span>
         </div>
@@ -244,10 +296,18 @@ export function AuditPage() {
               <SelectValue placeholder="Статус" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">Все статусы</SelectItem>
-              <SelectItem value="won" className="text-xs">Успешно (won)</SelectItem>
-              <SelectItem value="lost" className="text-xs">Отказ (lost)</SelectItem>
-              <SelectItem value="fake_yes" className="text-xs">Fake Yes</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                Все статусы
+              </SelectItem>
+              <SelectItem value="won" className="text-xs">
+                Успешно (won)
+              </SelectItem>
+              <SelectItem value="lost" className="text-xs">
+                Отказ (lost)
+              </SelectItem>
+              <SelectItem value="fake_yes" className="text-xs">
+                Fake Yes
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -259,7 +319,9 @@ export function AuditPage() {
               <SelectValue placeholder="Менеджер" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">Все менеджеры</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                Все менеджеры
+              </SelectItem>
               {managers.map((m) => (
                 <SelectItem key={m} value={m} className="text-xs">
                   {m}
@@ -276,14 +338,22 @@ export function AuditPage() {
               <SelectValue placeholder="Период" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">За все время</SelectItem>
-              <SelectItem value="7d" className="text-xs">Последние 7 дней</SelectItem>
-              <SelectItem value="30d" className="text-xs">Последние 30 дней</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                За все время
+              </SelectItem>
+              <SelectItem value="7d" className="text-xs">
+                Последние 7 дней
+              </SelectItem>
+              <SelectItem value="30d" className="text-xs">
+                Последние 30 дней
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {(statusFilter !== 'all' || managerFilter !== 'all' || periodFilter !== 'all') && (
+        {(statusFilter !== 'all' ||
+          managerFilter !== 'all' ||
+          periodFilter !== 'all') && (
           <Button
             variant="ghost"
             size="sm"
@@ -292,7 +362,7 @@ export function AuditPage() {
               setManagerFilter('all');
               setPeriodFilter('all');
             }}
-            className="h-8 text-xs px-2 text-muted-foreground hover:text-foreground"
+            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             Сбросить
           </Button>
@@ -310,33 +380,43 @@ export function AuditPage() {
       />
 
       {/* Call Detail Dialog with 13 CR Criteria Audit */}
-      <Dialog open={Boolean(selectedCall)} onOpenChange={(open) => !open && setSelectedCall(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col" data-testid="audit-dialog">
+      <Dialog
+        open={Boolean(selectedCall)}
+        onOpenChange={(open) => !open && setSelectedCall(null)}
+      >
+        <DialogContent
+          className="flex max-h-[90vh] max-w-3xl flex-col"
+          data-testid="audit-dialog"
+        >
           <DialogHeader>
             <DialogTitle>
               {selectedCall?.deal_title || selectedCall?.client || 'Звонок'}
             </DialogTitle>
             <DialogDescription>
-              Менеджер: {selectedCall?.manager} | Дата: {selectedCall?.date} | Длительность:{' '}
-              {selectedCall?.duration || '—'}
+              Менеджер: {selectedCall?.manager} | Дата: {selectedCall?.date} |
+              Длительность: {selectedCall?.duration || '—'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto space-y-5 pr-1 mt-2">
+          <div className="mt-2 flex-1 space-y-5 overflow-y-auto pr-1">
             {/* 13 CR Criteria visualization */}
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   13 Критериев аудита (CR1 – CR13)
                 </h4>
-                {selectedCall?.score !== null && selectedCall?.score !== undefined && (
-                  <span className="text-xs font-semibold text-foreground">
-                    Итоговый балл: {selectedCall.score}/13
-                  </span>
-                )}
+                {selectedCall?.score !== null &&
+                  selectedCall?.score !== undefined && (
+                    <span className="text-xs font-semibold text-foreground">
+                      Итоговый балл: {selectedCall.score}/13
+                    </span>
+                  )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="cr-criteria-grid">
+              <div
+                className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+                data-testid="cr-criteria-grid"
+              >
                 {Array.from({ length: 13 }).map((_, idx) => {
                   const val = selectedCall?.cr?.[idx];
                   const label = CR_LABELS[idx] || `Критерий ${idx + 1}`;
@@ -346,21 +426,25 @@ export function AuditPage() {
                   const colorClass = isPassed
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
                     : isFailed
-                    ? 'bg-red-500/10 border-red-500/20 text-red-500'
-                    : 'bg-hover border-subtle text-muted-foreground';
+                      ? 'bg-red-500/10 border-red-500/20 text-red-500'
+                      : 'bg-hover border-subtle text-muted-foreground';
 
                   return (
                     <div
                       key={idx}
                       data-testid={`cr-item-${idx + 1}`}
-                      className={`flex items-center justify-between p-2 rounded-md border text-xs transition-colors ${colorClass}`}
+                      className={`flex items-center justify-between rounded-md border p-2 text-xs transition-colors ${colorClass}`}
                     >
                       <div className="flex items-center space-x-2 truncate">
-                        <span className="font-mono font-bold shrink-0">CR{idx + 1}</span>
-                        <span className="truncate text-foreground/90">{label}</span>
+                        <span className="shrink-0 font-mono font-bold">
+                          CR{idx + 1}
+                        </span>
+                        <span className="text-foreground/90 truncate">
+                          {label}
+                        </span>
                       </div>
-                      <span className="font-bold shrink-0 ml-2">
-                        {isPassed ? '1' : isFailed ? '0' : 'null'}
+                      <span className="ml-2 shrink-0 font-mono font-bold">
+                        {val === 1 ? '1' : val === 0 ? '0' : 'null'}
                       </span>
                     </div>
                   );
@@ -368,35 +452,41 @@ export function AuditPage() {
               </div>
             </div>
 
-            {/* Error Summary & Recommendation */}
-            {(selectedCall?.error_summary || selectedCall?.recommendation) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                {selectedCall.error_summary && (
-                  <div className="p-3 rounded-md bg-red-500/10 border border-red-500/20 space-y-1">
-                    <h5 className="font-semibold text-red-500">Ошибки звонка</h5>
-                    <p className="text-foreground leading-relaxed">{selectedCall.error_summary}</p>
-                  </div>
-                )}
-                {selectedCall.recommendation && (
-                  <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/20 space-y-1">
-                    <h5 className="font-semibold text-emerald-500">Рекомендация РОПа</h5>
-                    <p className="text-foreground leading-relaxed">{selectedCall.recommendation}</p>
-                  </div>
-                )}
+            {/* Error Summary */}
+            {selectedCall?.error_summary && (
+              <div>
+                <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Причина потери / Замечания
+                </h4>
+                <p className="rounded-md border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
+                  {selectedCall.error_summary}
+                </p>
+              </div>
+            )}
+
+            {/* AI Recommendation */}
+            {selectedCall?.recommendation && (
+              <div>
+                <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Рекомендация РОПа
+                </h4>
+                <p className="rounded-md border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-400">
+                  {selectedCall.recommendation}
+                </p>
               </div>
             )}
 
             {/* Transcript */}
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Полный транскрипт диалога
+              <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Транскрипт звонка
               </h4>
-              <pre
-                className="whitespace-pre-wrap font-sans text-xs bg-hover/50 p-4 rounded-md border border-subtle text-foreground leading-relaxed max-h-60 overflow-y-auto"
+              <div
+                className="bg-muted/40 max-h-[300px] overflow-y-auto whitespace-pre-wrap rounded-md border p-4 font-sans text-xs leading-relaxed text-foreground"
                 data-testid="audit-call-transcript"
               >
                 {selectedCall?.transcript || 'Транскрипт отсутствует'}
-              </pre>
+              </div>
             </div>
           </div>
         </DialogContent>
