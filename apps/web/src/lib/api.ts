@@ -14,6 +14,7 @@ import type {
   ClientProfile,
   Deal,
   GeneralSettings,
+  InsightsSummaryResponse,
   Settings,
   StageConfig,
   TelegramConfig,
@@ -229,6 +230,38 @@ export const adminApi = {
   },
 };
 
+export const insightsApi = {
+  summary: async (tenantId: string): Promise<InsightsSummaryResponse> => {
+    const res = await api.get<InsightsSummaryResponse | { summary?: string; [key: string]: unknown }>(
+      '/insights/summary',
+      { params: { tenant_id: tenantId } }
+    );
+    const data = (res.data || {}) as Record<string, unknown>;
+    return {
+      status: (data.status as string) || 'ok',
+      engine: (data.engine as string) || 'default',
+      tenant_id: (data.tenant_id as string) || tenantId,
+      p10_corridor_rub: Number(data.p10_corridor_rub) || 0,
+      p50_corridor_rub: Number(data.p50_corridor_rub) || 0,
+      p90_corridor_rub: Number(data.p90_corridor_rub) || 0,
+      confidence_score: typeof data.confidence_score === 'number' ? data.confidence_score : 0.88,
+      calculation_method: (data.calculation_method as string) || 'linear_scenario',
+      recommendations: Array.isArray(data.recommendations)
+        ? (data.recommendations as any)
+        : Array.isArray(data.insights)
+        ? (data.insights as any)
+        : [],
+      insights: Array.isArray(data.insights) ? (data.insights as any) : [],
+      synthesis:
+        (data.synthesis as string) || (data.summary as string) || (data.executive_summary as string) || '',
+      executive_summary:
+        (data.executive_summary as string) || (data.synthesis as string) || (data.summary as string) || '',
+      leak_breakdown: (data.leak_breakdown as any) || {},
+      total_leak_rub: Number(data.total_leak_rub) || 0,
+    };
+  },
+};
+
 export const apiClient = {
   auth: authApi,
   tenants: tenantsApi,
@@ -236,6 +269,7 @@ export const apiClient = {
   calls: callsApi,
   settings: settingsApi,
   admin: adminApi,
+  insights: insightsApi,
 };
 
 export default apiClient;
