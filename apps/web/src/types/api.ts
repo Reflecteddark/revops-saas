@@ -420,3 +420,149 @@ export interface FleetActionResponse {
   message?: string;
 }
 
+// ============================================================================
+// 10. Multi-Tenant Onboarding & Client Lifecycle
+// ============================================================================
+
+export interface ConnectedClient {
+  login: string;
+  name: string;
+  role: string;
+  is_active: boolean;
+  is_system?: boolean;
+}
+
+export interface TenantLifecycleRecord {
+  tenant_id: string;
+  tenant_name: string;
+  effective_status: 'active' | 'frozen' | 'archived' | string;
+  crm_type: 'amocrm' | 'bitrix24' | 'hybrid' | string;
+  spreadsheet_id?: string;
+  spreadsheet_url?: string;
+  inbound_webhook_url?: string;
+  inbound_webhook_b24_url?: string;
+  niche_name?: string;
+  avg_deal_check?: number;
+  target_next_step?: string;
+  amo_domain?: string;
+  b24_webhook_url?: string;
+  connected_clients?: ConnectedClient[];
+  minutes_used?: number;
+  minutes_quota?: number;
+  spent_rub?: number;
+  created_at?: string;
+}
+
+export interface AdminTenantsListResponse {
+  tenants: TenantLifecycleRecord[];
+  archived: TenantLifecycleRecord[];
+  master_template?: Record<string, unknown>;
+  total_active: number;
+  total_frozen: number;
+  total_archived: number;
+}
+
+export interface TenantProvisionPayload {
+  name: string;
+  email?: string;
+  password?: string;
+  role?: string;
+  crm_type: 'amocrm' | 'bitrix24' | string;
+  amo_domain?: string;
+  amo_token?: string;
+  crm_webhook?: string;
+  niche_name?: string;
+  avg_deal_check?: number;
+  target_next_step?: string;
+  sheet_id?: string;
+}
+
+export interface TenantProvisionResponse {
+  success: boolean;
+  tenant_id: string;
+  tenant: Record<string, unknown>;
+  credentials: {
+    login: string;
+    password?: string;
+    role: string;
+  };
+  brief: string;
+  spreadsheet_url?: string;
+  webhook_url?: string;
+}
+
+export interface TenantHealthCheck {
+  key: string;
+  title: string;
+  status: 'ok' | 'warning' | 'error' | string;
+  details: string;
+  elapsed_ms?: number;
+}
+
+export interface TenantHealthDiagnostic {
+  tenant_id: string;
+  tenant_name: string;
+  overall_status: 'healthy' | 'degraded' | 'critical' | string;
+  checks: TenantHealthCheck[];
+  timestamp: string;
+}
+
+// ============================================================================
+// 11. CRM Status, Webhooks & Call Simulation
+// ============================================================================
+
+export interface CrmProviderStatus {
+  available: boolean;
+  connected: boolean;
+  label: string;
+  domain?: string;
+  webhook_url?: string;
+  rest_status?: string;
+  status_text?: string;
+}
+
+export interface CrmStatusResponse {
+  tenant_id: string;
+  tenant_name: string;
+  active_crm: 'amocrm' | 'bitrix24' | string;
+  spreadsheet_id?: string;
+  bitrix24: CrmProviderStatus;
+  amocrm: CrmProviderStatus;
+}
+
+export interface CrmActionPayload {
+  action: 'switch_crm' | 'show_stages' | 'dry_run' | 'sync_deals' | string;
+  tenant_id?: string;
+  crm_type?: 'amocrm' | 'bitrix24' | string;
+}
+
+export interface SimulateCallPayload {
+  tenant_id: string;
+  provider: 'amocrm' | 'bitrix24' | string;
+  manager_name: string;
+  client_phone: string;
+  duration_sec: number;
+  simulate_leak: boolean;
+}
+
+export interface QuarantineCallItem {
+  id: string;
+  deal_id?: string;
+  tenant_id?: string;
+  manager?: string;
+  client?: string;
+  reason?: string;
+  quarantine_reason?: string;
+  timestamp?: string;
+  status?: string;
+  audio_url?: string;
+}
+
+export interface QuarantineCallsResponse {
+  status: string;
+  total: number;
+  in_quarantine_count: number;
+  calls: QuarantineCallItem[];
+}
+
+

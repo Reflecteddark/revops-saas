@@ -14,21 +14,29 @@ import { useRevOpsStore } from '../store/useRevOpsStore';
 import type {
   AdminLogsResponse,
   AdminSystemStatus,
+  AdminTenantsListResponse,
   AnalystChatPayload,
   AnalystChatResponse,
   ApiError,
   Call,
   ClientLoginResponse,
   ClientProfile,
+  CrmActionPayload,
+  CrmStatusResponse,
   Deal,
   FleetActionRequest,
   FleetActionResponse,
   GeneralSettings,
   InsightsSummaryResponse,
+  QuarantineCallsResponse,
   Settings,
+  SimulateCallPayload,
   StageConfig,
   TelegramConfig,
   Tenant,
+  TenantHealthDiagnostic,
+  TenantProvisionPayload,
+  TenantProvisionResponse,
   TenantsSummary,
   TokenResponse,
   User,
@@ -309,6 +317,88 @@ export const adminApi = {
       '/auth/registered-clients',
       payload
     );
+    return res.data;
+  },
+
+  listTenants: async (): Promise<AdminTenantsListResponse> => {
+    const res = await api.get<AdminTenantsListResponse>('/admin/tenants');
+    return res.data;
+  },
+
+  provisionTenant: async (payload: TenantProvisionPayload): Promise<TenantProvisionResponse> => {
+    const res = await api.post<TenantProvisionResponse>('/admin/tenants/provision', payload);
+    return res.data;
+  },
+
+  setTenantStatus: async (
+    tenantId: string,
+    action: 'freeze' | 'unfreeze' | 'offboard' | 'restore' | string
+  ): Promise<{ success: boolean; message?: string }> => {
+    const res = await api.post<{ success: boolean; message?: string }>(
+      `/admin/tenants/${tenantId}/status`,
+      { action }
+    );
+    return res.data;
+  },
+
+  checkTenantHealth: async (tenantId: string): Promise<TenantHealthDiagnostic> => {
+    const res = await api.get<TenantHealthDiagnostic>(`/admin/tenants/${tenantId}/health`);
+    return res.data;
+  },
+
+  repairTenantSheet: async (sheetId: string): Promise<{ success: boolean; output?: string }> => {
+    const res = await api.post<{ success: boolean; output?: string }>('/admin/sheets/action', {
+      action: 'target',
+      spreadsheet_id: sheetId,
+    });
+    return res.data;
+  },
+
+  getCrmStatus: async (tenantId = 'TNT-001'): Promise<CrmStatusResponse> => {
+    const res = await api.get<CrmStatusResponse>('/admin/crm/status', {
+      params: { tenant_id: tenantId },
+    });
+    return res.data;
+  },
+
+  crmAction: async (payload: CrmActionPayload): Promise<{ success: boolean; output?: string; message?: string }> => {
+    const res = await api.post<{ success: boolean; output?: string; message?: string }>(
+      '/admin/crm/action',
+      payload
+    );
+    return res.data;
+  },
+
+  getLastIncomingWebhook: async (): Promise<Record<string, unknown>> => {
+    const res = await api.get<Record<string, unknown>>('/admin/webhooks/last-incoming');
+    return res.data;
+  },
+
+  simulateCall: async (
+    payload: SimulateCallPayload
+  ): Promise<{ success: boolean; call_id?: string; message?: string }> => {
+    const res = await api.post<{ success: boolean; call_id?: string; message?: string }>(
+      '/admin/webhooks/simulate-call',
+      payload
+    );
+    return res.data;
+  },
+
+  getQuarantineCalls: async (): Promise<QuarantineCallsResponse> => {
+    const res = await api.get<QuarantineCallsResponse>('/admin/quarantine/calls');
+    return res.data;
+  },
+
+  resolveQuarantineCall: async (
+    callId: string,
+    action: 'approve' | 'dismiss' | string,
+    note?: string
+  ): Promise<{ success: boolean; message?: string }> => {
+    const res = await api.post<{ success: boolean; message?: string }>('/admin/quarantine/resolve', {
+      call_id: callId,
+      action,
+      note,
+    });
     return res.data;
   },
 };

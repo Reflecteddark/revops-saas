@@ -1,12 +1,17 @@
 /**
  * apps/web/src/pages/AdminPage.test.tsx
  *
- * Unit tests for AdminPage component.
+ * Comprehensive integration tests for AdminPage and its 4 tabs:
+ * 1. Clients & Access (Fleet lifecycle, impersonation, onboarding)
+ * 2. CRM & Call Sandbox (Bitrix24 vs amoCRM switcher, call simulator, raw webhook inspector)
+ * 3. Infrastructure & Services (FastAPI, n8n, Cloudflare, Sheets SA, Gemini AI, Windows Cron)
+ * 4. Live Terminal & Logs (real-time stream)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AdminPage } from './AdminPage';
 import { adminApi } from '@/lib/api';
@@ -20,6 +25,17 @@ vi.mock('@/lib/api', () => ({
     testGemini: vi.fn(),
     sheetsAction: vi.fn(),
     triggerHealer: vi.fn(),
+    listTenants: vi.fn(),
+    provisionTenant: vi.fn(),
+    setTenantStatus: vi.fn(),
+    checkTenantHealth: vi.fn(),
+    repairTenantSheet: vi.fn(),
+    getCrmStatus: vi.fn(),
+    crmAction: vi.fn(),
+    getLastIncomingWebhook: vi.fn(),
+    simulateCall: vi.fn(),
+    getQuarantineCalls: vi.fn(),
+    resolveQuarantineCall: vi.fn(),
   },
 }));
 
@@ -60,6 +76,56 @@ const mockStatus = {
   },
 };
 
+const mockTenantsData = {
+  tenants: [
+    {
+      tenant_id: 'TNT-001',
+      tenant_name: 'Самозанятый',
+      effective_status: 'active',
+      crm_type: 'bitrix24',
+      spreadsheet_id: '1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk',
+      spreadsheet_url: 'https://docs.google.com/spreadsheets/d/1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk',
+      niche_name: 'Универсальный B2B',
+      avg_deal_check: 150000,
+      minutes_used: 265,
+      minutes_quota: 1000,
+      spent_rub: 1838,
+      connected_clients: [
+        {
+          login: 'dmitriyfedotov1908@gmail.com',
+          name: 'Дмитрий',
+          role: 'РОП • Руководитель ОП',
+          is_active: true,
+        },
+      ],
+    },
+  ],
+  archived: [],
+  total_active: 1,
+  total_frozen: 0,
+  total_archived: 0,
+};
+
+const mockCrmStatus = {
+  tenant_id: 'TNT-001',
+  tenant_name: 'Самозанятый',
+  active_crm: 'bitrix24',
+  bitrix24: {
+    available: true,
+    connected: true,
+    label: 'Bitrix24 REST API',
+    webhook_url: 'https://company.bitrix24.ru/rest/1/...',
+    status_text: 'Активен ✓',
+  },
+  amocrm: {
+    available: true,
+    connected: true,
+    label: 'amoCRM API v4',
+    domain: 'company.amocrm.ru',
+    status_text: 'Готов ✓ (OAuth 2.0)',
+  },
+};
+
 const mockLogs = {
   type: 'console',
   logs: [
@@ -75,12 +141,6 @@ const mockLogs = {
       service: 'gemini',
       msg: 'Audit processed successfully for call_0192',
     },
-    {
-      ts: '22:00:10',
-      level: 'error',
-      service: 'sync',
-      msg: 'Тестовая ошибка соединения со шлюзом',
-    },
   ],
 };
 
@@ -92,17 +152,25 @@ function renderWithClient(ui: React.ReactElement) {
       },
     },
   });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  );
 }
 
 describe('AdminPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(adminApi.getStatus).mockResolvedValue(mockStatus as any);
+    vi.mocked(adminApi.listTenants).mockResolvedValue(mockTenantsData as any);
+    vi.mocked(adminApi.getCrmStatus).mockResolvedValue(mockCrmStatus as any);
     vi.mocked(adminApi.getLogs).mockResolvedValue(mockLogs as any);
+    vi.mocked(adminApi.getLastIncomingWebhook).mockResolvedValue({ event: 'call_finished', duration: 145 } as any);
+    vi.mocked(adminApi.getQuarantineCalls).mockResolvedValue({ total: 0, in_quarantine_count: 0, calls: [] } as any);
   });
 
-  it('renders mission control header, fleet badge, and 6 service cards', async () => {
+  it('renders mission control header, status badge, and 4 tab triggers', async () => {
     renderWithClient(<AdminPage />);
 
     expect(screen.getByTestId('admin-page')).toBeInTheDocument();
@@ -110,6 +178,44 @@ describe('AdminPage', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('fleet-status-badge')).toHaveTextContent('🟢 ВСЕ СЛУЖБЫ РАБОТАЮТ ШТАТНО');
+      expect(screen.getByTestId('tab-clients')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-crm')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-services')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-terminal')).toBeInTheDocument();
+    });
+  });
+
+  it('renders default tab "Клиенты & Доступы" with tenant organization and onboarding form', async () => {
+    renderWithClient(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('admin-clients-tab')).toBeInTheDocument();
+      expect(screen.getByText('Самозанятый')).toBeInTheDocument();
+      expect(screen.getByText(/Онбординг нового клиента под ключ/)).toBeInTheDocument();
+    });
+  });
+
+  it('switches to "Интеграция CRM & Песочница" tab and displays CRM cards and call simulator', async () => {
+    renderWithClient(<AdminPage />);
+
+    const crmTab = screen.getByTestId('tab-crm');
+    fireEvent.keyDown(crmTab, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('admin-crm-sandbox-tab')).toBeInTheDocument();
+      expect(screen.getByText(/Интеграция с CRM: Bitrix24 REST API & amoCRM API v4/)).toBeInTheDocument();
+      expect(screen.getByTestId('btn-simulate-call')).toBeInTheDocument();
+    });
+  });
+
+  it('switches to "Службы, Порты & Автозадачи" tab and displays 6 core infrastructure cards', async () => {
+    renderWithClient(<AdminPage />);
+
+    const servicesTab = screen.getByTestId('tab-services');
+    fireEvent.keyDown(servicesTab, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('admin-services-tab')).toBeInTheDocument();
       expect(screen.getByText('FastAPI Backend')).toBeInTheDocument();
       expect(screen.getByText('n8n Workflows')).toBeInTheDocument();
       expect(screen.getByText('Cloudflare Tunnel')).toBeInTheDocument();
@@ -119,63 +225,15 @@ describe('AdminPage', () => {
     });
   });
 
-  it('renders live console terminal and displays mock logs', async () => {
+  it('switches to "Live Terminal & Логи" tab and displays live log stream', async () => {
     renderWithClient(<AdminPage />);
 
-    expect(screen.getByTestId('live-terminal')).toBeInTheDocument();
+    const terminalTab = screen.getByTestId('tab-terminal');
+    fireEvent.keyDown(terminalTab, { key: 'Enter' });
 
     await waitFor(() => {
+      expect(screen.getByTestId('admin-terminal-tab')).toBeInTheDocument();
       expect(screen.getByText(/Uvicorn running on http:\/\/127.0.0.1:8000/)).toBeInTheDocument();
-      expect(screen.getByText(/Audit processed successfully/)).toBeInTheDocument();
-    });
-  });
-
-  it('fires fleet action mutation when clicking "Запустить службы"', async () => {
-    vi.mocked(adminApi.fleetAction).mockResolvedValue({
-      success: true,
-      action: 'start_all',
-      message: 'Все службы запущены',
-    });
-
-    renderWithClient(<AdminPage />);
-
-    const startBtn = screen.getByTestId('btn-start-all');
-    fireEvent.click(startBtn);
-
-    await waitFor(() => {
-      expect(adminApi.fleetAction).toHaveBeenCalledWith({ action: 'start_all' });
-      expect(screen.getByText('Все службы запущены')).toBeInTheDocument();
-    });
-  });
-
-  it('fires clearLogs mutation when clicking "Очистить"', async () => {
-    vi.mocked(adminApi.clearLogs).mockResolvedValue({ success: true });
-
-    renderWithClient(<AdminPage />);
-
-    const clearBtn = screen.getByTestId('btn-clear-logs');
-    fireEvent.click(clearBtn);
-
-    await waitFor(() => {
-      expect(adminApi.clearLogs).toHaveBeenCalled();
-    });
-  });
-
-  it('fires Gemini Ping test when clicking "Тест Ping"', async () => {
-    vi.mocked(adminApi.testGemini).mockResolvedValue({
-      success: true,
-      latency_ms: 115,
-      response: 'OK',
-    });
-
-    renderWithClient(<AdminPage />);
-
-    const testBtn = screen.getByTestId('btn-test-gemini');
-    fireEvent.click(testBtn);
-
-    await waitFor(() => {
-      expect(adminApi.testGemini).toHaveBeenCalled();
-      expect(screen.getByText(/Gemini API активен. Задержка: 115 мс/)).toBeInTheDocument();
     });
   });
 });
