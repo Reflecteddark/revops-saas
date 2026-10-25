@@ -176,6 +176,18 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
             if any(hmac.compare_digest(input_hash, h) for h in user_hashes):
                 matched_client = c
                 break
+            pwd_hash = str(c.get("password_hash", "")).strip()
+            if pwd_hash:
+                if hmac.compare_digest(input_hash, pwd_hash.lower()):
+                    matched_client = c
+                    break
+                try:
+                    from ..auth import verify_password
+                    if verify_password(pass_clean, pwd_hash):
+                        matched_client = c
+                        break
+                except Exception:
+                    pass
 
     # Check database users table with bcrypt password verification
     if not matched_client:
@@ -236,6 +248,30 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
             path="/"
         )
 
+    tenant_str = str(matched_client.get("tenant") or "TNT-001")
+    t_match = re.search(r"TNT-[A-Z0-9_-]+", tenant_str, re.IGNORECASE)
+    effective_tenant = t_match.group(0).upper() if t_match else "TNT-001"
+
+    from ..auth import create_access_token
+    token_payload = {
+        "sub": matched_client.get("login"),
+        "tenant_id": effective_tenant,
+        "role": "admin" if is_admin else (matched_client.get("role") or "РОП"),
+        "name": matched_client.get("name") or matched_client.get("login")
+    }
+    jwt_access_token = create_access_token(token_payload)
+
+    response.set_cookie(
+        key="access_token",
+        value=jwt_access_token,
+        httponly=True,
+        secure=is_https,
+        samesite=cookie_samesite,
+        domain=cookie_domain,
+        max_age=7 * 86400,
+        path="/"
+    )
+
     session_token = secrets.token_hex(32)
     response.set_cookie(
         key="revops_client_auth",
@@ -251,6 +287,8 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
     return {
         "authenticated": True,
         "session_token": session_token,
+        "access_token": jwt_access_token,
+        "token": jwt_access_token,
         "is_admin": is_admin,
         "user": {
             "login": matched_client.get("login"),
