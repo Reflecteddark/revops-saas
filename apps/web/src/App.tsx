@@ -22,6 +22,7 @@ const SettingsPage = lazy(() =>
   import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 );
 const FleetPage = lazy(() => import('@/pages/FleetPage').then((m) => ({ default: m.FleetPage })));
+const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
 
 function PageFallback() {
   return (
@@ -88,6 +89,14 @@ export function App() {
             element={
               <Suspense fallback={<PageFallback />}>
                 <FleetPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="admin"
+            element={
+              <Suspense fallback={<PageFallback />}>
+                <AdminPage />
               </Suspense>
             }
           />

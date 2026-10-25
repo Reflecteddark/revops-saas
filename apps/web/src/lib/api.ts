@@ -12,6 +12,8 @@ import axios, {
 } from 'axios';
 import { useRevOpsStore } from '../store/useRevOpsStore';
 import type {
+  AdminLogsResponse,
+  AdminSystemStatus,
   AnalystChatPayload,
   AnalystChatResponse,
   ApiError,
@@ -19,6 +21,8 @@ import type {
   ClientLoginResponse,
   ClientProfile,
   Deal,
+  FleetActionRequest,
+  FleetActionResponse,
   GeneralSettings,
   InsightsSummaryResponse,
   Settings,
@@ -240,6 +244,50 @@ export const settingsApi = {
 };
 
 export const adminApi = {
+  getStatus: async (): Promise<AdminSystemStatus> => {
+    const res = await api.get<AdminSystemStatus>('/admin/status');
+    return res.data;
+  },
+
+  fleetAction: async (payload: FleetActionRequest): Promise<FleetActionResponse> => {
+    const res = await api.post<FleetActionResponse>('/admin/fleet/action', payload);
+    return res.data;
+  },
+
+  getLogs: async (logType = 'console', filterLevel = 'all'): Promise<AdminLogsResponse> => {
+    const res = await api.get<AdminLogsResponse>('/admin/logs', {
+      params: { log_type: logType, filter_level: filterLevel },
+    });
+    return res.data;
+  },
+
+  clearLogs: async (): Promise<{ success: boolean }> => {
+    const res = await api.post<{ success: boolean }>('/admin/logs/clear');
+    return res.data;
+  },
+
+  testGemini: async (): Promise<{ success: boolean; latency_ms?: number; response?: string; error?: string }> => {
+    const res = await api.post<{ success: boolean; latency_ms?: number; response?: string; error?: string }>(
+      '/admin/ai/test-gemini'
+    );
+    return res.data;
+  },
+
+  sheetsAction: async (action: string, target?: string): Promise<{ success: boolean; output?: string }> => {
+    const res = await api.post<{ success: boolean; output?: string }>('/admin/sheets/action', {
+      action,
+      target,
+    });
+    return res.data;
+  },
+
+  triggerHealer: async (action = 'status'): Promise<{ success: boolean; output?: string }> => {
+    const res = await api.post<{ success: boolean; output?: string }>('/admin/healer/action', {
+      action,
+    });
+    return res.data;
+  },
+
   listClients: async (): Promise<ClientProfile[]> => {
     const res = await api.get<{ clients?: ClientProfile[] } | ClientProfile[]>(
       '/auth/registered-clients'

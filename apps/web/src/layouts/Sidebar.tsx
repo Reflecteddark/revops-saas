@@ -6,7 +6,7 @@
 
 import * as React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity, ClipboardCheck, Settings, Users } from 'lucide-react';
+import { Activity, ClipboardCheck, Settings, ShieldCheck, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { title: 'Audit', href: '/audit', icon: ClipboardCheck },
   { title: 'Settings', href: '/settings', icon: Settings },
   { title: 'Fleet', href: '/fleet', icon: Users },
+  { title: 'Admin', href: '/admin', icon: ShieldCheck },
 ];
 
 export function Sidebar({ className }: SidebarProps = {}) {

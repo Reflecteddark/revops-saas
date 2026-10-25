@@ -342,3 +342,81 @@ export interface AnalystChatResponse {
   reply: string;
   status?: string;
 }
+
+// ============================================================================
+// 9. Admin Fleet & Mission Control Center
+// ============================================================================
+
+export interface AdminServiceStatus {
+  healthy?: boolean;
+  running?: boolean;
+  valid?: boolean;
+  port?: number;
+  pid?: number;
+  memory_mb?: number;
+  status_label: string;
+  details?: string;
+  url?: string;
+  docs_url?: string;
+}
+
+export interface AdminTaskStatus {
+  name?: string;
+  status_label: string;
+  last_run_time?: string;
+  next_run_time?: string;
+  exit_code?: number;
+  healthy?: boolean;
+}
+
+export interface AdminGeminiStatus {
+  model: string;
+  proxy_worker?: string;
+  criteria_count?: number;
+  status_label: string;
+  latency_ms?: number;
+}
+
+export interface AdminSystemStatus {
+  timestamp: string;
+  fleet_status: 'ALL_SYSTEMS_NOMINAL' | 'DEGRADED_LOCAL' | 'ACTION_REQUIRED' | string;
+  fleet_label: string;
+  fastapi: AdminServiceStatus;
+  n8n: AdminServiceStatus;
+  cloudflare_tunnel: AdminServiceStatus;
+  google_sheets: AdminServiceStatus;
+  tasks: {
+    fastapi_backend?: AdminTaskStatus;
+    daily_sync?: AdminTaskStatus;
+    devops_healer?: AdminTaskStatus;
+    n8n_runner?: AdminTaskStatus;
+    [key: string]: AdminTaskStatus | undefined;
+  };
+  gemini_ai: AdminGeminiStatus;
+}
+
+export interface AdminLogEntry {
+  ts: string;
+  level: 'info' | 'warn' | 'error' | 'success' | string;
+  msg: string;
+  service?: string;
+}
+
+export interface AdminLogsResponse {
+  type: string;
+  logs: AdminLogEntry[];
+  filter?: string;
+}
+
+export interface FleetActionRequest {
+  action: 'start_all' | 'stop_all' | 'restart_n8n' | 'restart_tunnel' | 'start_n8n' | 'start_tunnel' | string;
+  service?: string;
+}
+
+export interface FleetActionResponse {
+  success: boolean;
+  action: string;
+  output?: string[];
+  message?: string;
+}
+
