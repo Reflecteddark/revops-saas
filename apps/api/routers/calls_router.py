@@ -74,26 +74,28 @@ def get_calls_data_user(
             is_active=True
         )
 
-    # Check access_token cookie or Bearer token
-    token = None
-    if credentials and credentials.credentials:
-        token = credentials.credentials
-    elif request.cookies.get("access_token"):
-        token = request.cookies.get("access_token")
+    if credentials:
+        return get_current_user(credentials, db)
 
+    # If no Bearer credentials, check access_token cookie
+    token = request.cookies.get("access_token")
     if token:
         try:
             import jwt
             from ..auth import ALGORITHM, SECRET_KEY
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            user_tenant = str(payload.get("tenant_id") or "").strip().upper()
-            if user_tenant:
+            user_id = str(payload.get("sub") or "")
+            tenant_id = str(payload.get("tenant_id") or "").strip().upper()
+            if user_id:
+                u = db.query(User).filter(User.id == user_id).first()
+                if u:
+                    return u
                 return User(
-                    id=str(payload.get("sub") or "client-user"),
-                    tenant_id=user_tenant,
-                    email=str(payload.get("sub") or "client@ai-rop.ru"),
-                    full_name=str(payload.get("name") or "Client"),
-                    role=UserRole.ADMIN if payload.get("role") == "admin" else UserRole.KAM,
+                    id=user_id,
+                    tenant_id=tenant_id or "TNT-001",
+                    email=user_id,
+                    full_name=str(payload.get("name") or "User"),
+                    role=UserRole.ADMIN if "admin" in str(payload.get("role", "")).lower() else UserRole.KAM,
                     is_active=True
                 )
         except Exception:
@@ -109,7 +111,7 @@ def get_calls_data_user(
             is_active=True
         )
 
-    return get_current_user(credentials, db)
+    return None
 
 
 class CallIngestPayload(BaseModel):
