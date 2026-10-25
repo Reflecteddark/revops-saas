@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/KpiCard.test.tsx
  *
- * Unit tests for KpiCard component.
+ * Unit tests for KpiCard component including inverted trend logic.
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -70,5 +70,50 @@ describe('KpiCard', () => {
 
     fireEvent.click(screen.getByRole('button'));
     expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders downward trend as red when inverted is false (default)', () => {
+    render(
+      <KpiCard
+        title="Обычный показатель"
+        value={100}
+        trend={{ direction: 'down', value: 5 }}
+        inverted={false}
+      />
+    );
+
+    const downSpan = screen.getByText('-5%');
+    expect(downSpan).toHaveClass('text-red-500');
+    expect(screen.getByTestId('trend-down')).toBeInTheDocument();
+  });
+
+  it('renders downward trend as emerald (green) when inverted is true', () => {
+    render(
+      <KpiCard
+        title="SLA риск"
+        value={2}
+        trend={{ direction: 'down', value: 3 }}
+        inverted={true}
+      />
+    );
+
+    const downSpan = screen.getByText('-3%');
+    expect(downSpan).toHaveClass('text-emerald-500');
+    expect(screen.getByTestId('trend-down')).toBeInTheDocument();
+  });
+
+  it('renders upward trend as red when inverted is true', () => {
+    render(
+      <KpiCard
+        title="Дефицит до плана"
+        value="500 000"
+        trend={{ direction: 'up', value: 12 }}
+        inverted={true}
+      />
+    );
+
+    const upSpan = screen.getByText('+12%');
+    expect(upSpan).toHaveClass('text-red-500');
+    expect(screen.getByTestId('trend-up')).toBeInTheDocument();
   });
 });

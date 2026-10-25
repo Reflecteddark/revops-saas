@@ -32,11 +32,11 @@ export function Header({ className }: HeaderProps) {
   const websocketStatus = useRevOpsStore((s) => s.websocketStatus);
   const user = useRevOpsStore((s) => s.user);
 
-  const statusColor = {
-    connected: 'bg-emerald-500',
+  const statusDotColor = {
+    connected: 'bg-emerald-500 animate-pulse',
     connecting: 'bg-amber-500',
-    disconnected: 'bg-muted-foreground',
-  }[websocketStatus] || 'bg-muted-foreground';
+    disconnected: 'bg-rose-400',
+  }[websocketStatus] || 'bg-rose-400';
 
   const handleLogout = async () => {
     try {
@@ -54,53 +54,53 @@ export function Header({ className }: HeaderProps) {
   return (
     <header
       className={cn(
-        'flex h-14 w-full items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60',
+        'sticky top-0 z-30 flex h-[52px] w-full items-center justify-between border-b border-subtle bg-background/70 px-6 backdrop-blur-xl backdrop-saturate-150',
         className
       )}
       data-testid="app-header"
     >
       {/* Left side: tenant selector */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-3">
         <TenantSelector />
       </div>
 
       {/* Right side: theme toggle, websocket status, user menu */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2.5">
         <div
-          className="flex items-center space-x-1.5 px-2 py-1 text-xs text-muted-foreground"
+          className="inline-flex h-6 items-center gap-1.5 rounded-full border border-subtle px-2.5 text-xs text-secondary"
           title={`WebSocket: ${websocketStatus}`}
           data-testid="websocket-status-indicator"
         >
           <div
-            className={cn('h-2 w-2 rounded-full', statusColor)}
+            className={cn('h-1.5 w-1.5 rounded-full', statusDotColor)}
             data-testid="websocket-status-dot"
           />
-          <span className="hidden sm:inline capitalize font-mono text-[11px]">
+          <span className="hidden sm:inline text-xs capitalize">
             {websocketStatus}
           </span>
         </div>
 
         <ThemeToggle />
 
-        <div className="pl-1">
+        <div className="pl-0.5">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 gap-2 px-2 text-xs font-normal"
+                  className="h-8 gap-2 rounded-lg px-2.5 text-xs font-normal text-secondary hover:text-foreground"
                   data-testid="user-menu-trigger"
                 >
-                  <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="font-medium">{displayName}</span>
+                  <UserIcon className="h-3.5 w-3.5 text-tertiary" />
+                  <span className="font-normal text-secondary">{displayName}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-xs font-medium leading-none">{displayName}</p>
-                    <p className="text-[11px] leading-none text-muted-foreground">
+                    <p className="text-xs font-medium leading-none text-foreground">{displayName}</p>
+                    <p className="text-[11px] leading-none text-tertiary">
                       {user.email}
                     </p>
                   </div>
@@ -108,7 +108,7 @@ export function Header({ className }: HeaderProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}
-                  className="cursor-pointer text-xs text-red-500 focus:text-red-500"
+                  className="cursor-pointer text-xs text-rose-400 focus:text-rose-400 focus:bg-rose-500/10"
                   data-testid="menu-item-logout"
                 >
                   <LogOut className="mr-2 h-3.5 w-3.5" />
@@ -120,7 +120,7 @@ export function Header({ className }: HeaderProps) {
             <Badge
               variant="outline"
               onClick={() => navigate('/login')}
-              className="text-xs font-normal text-muted-foreground cursor-pointer hover:bg-muted"
+              className="h-7 cursor-pointer text-xs font-normal text-secondary hover:bg-hover hover:text-foreground"
               data-testid="user-badge"
             >
               Войти

@@ -231,7 +231,7 @@ export function AuditPage() {
       )}
 
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center gap-3 p-3 bg-card/60 border border-border rounded-lg">
+      <div className="surface flex flex-wrap items-center gap-3 p-3">
         <div className="flex items-center space-x-2 text-xs font-medium text-muted-foreground mr-1">
           <Filter className="h-4 w-4" />
           <span>Фильтры:</span>
@@ -347,7 +347,7 @@ export function AuditPage() {
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
                     : isFailed
                     ? 'bg-red-500/10 border-red-500/20 text-red-500'
-                    : 'bg-muted/40 border-border text-muted-foreground';
+                    : 'bg-hover border-subtle text-muted-foreground';
 
                   return (
                     <div
@@ -392,7 +392,7 @@ export function AuditPage() {
                 Полный транскрипт диалога
               </h4>
               <pre
-                className="whitespace-pre-wrap font-sans text-xs bg-muted/40 p-4 rounded-md border border-border text-foreground leading-relaxed max-h-60 overflow-y-auto"
+                className="whitespace-pre-wrap font-sans text-xs bg-hover/50 p-4 rounded-md border border-subtle text-foreground leading-relaxed max-h-60 overflow-y-auto"
                 data-testid="audit-call-transcript"
               >
                 {selectedCall?.transcript || 'Транскрипт отсутствует'}

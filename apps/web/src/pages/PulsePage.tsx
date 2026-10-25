@@ -11,8 +11,6 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { AlertTriangle, PhoneCall, Sparkles } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { DataTable } from '@/components/DataTable';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -33,14 +31,14 @@ const callColumns: ColumnDef<Call, unknown>[] = [
     header: 'Дата',
     cell: ({ row }) => {
       const d = row.original.date || row.original.created_at?.slice(0, 10) || '—';
-      return <span className="font-mono text-xs text-muted-foreground">{d}</span>;
+      return <span className="font-mono text-xs text-tertiary">{d}</span>;
     },
   },
   {
     accessorKey: 'client',
     header: 'Клиент',
     cell: ({ row }) => (
-      <span className="font-medium text-foreground">
+      <span className="text-[13px] font-medium text-foreground">
         {row.original.client || row.original.deal_title || row.original.client_phone || '—'}
       </span>
     ),
@@ -49,7 +47,7 @@ const callColumns: ColumnDef<Call, unknown>[] = [
     accessorKey: 'manager',
     header: 'Менеджер',
     cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.original.manager || '—'}</span>
+      <span className="text-[13px] text-secondary">{row.original.manager || '—'}</span>
     ),
   },
   {
@@ -58,21 +56,19 @@ const callColumns: ColumnDef<Call, unknown>[] = [
     cell: ({ row }) => {
       const score = row.original.score ?? (row.original as any)?.overall_score;
       if (score === null || score === undefined) {
-        return <span className="text-muted-foreground">—</span>;
+        return <span className="text-tertiary text-xs">—</span>;
       }
       const isGood = score >= 9;
       const isMid = score >= 6;
+      const scoreColor = isGood
+        ? 'text-emerald-400 font-semibold'
+        : isMid
+        ? 'text-amber-400 font-medium'
+        : 'text-rose-400 font-medium';
       return (
-        <span
-          className={
-            isGood
-              ? 'font-semibold text-emerald-500'
-              : isMid
-              ? 'font-medium text-amber-500'
-              : 'font-medium text-red-500'
-          }
-        >
-          {score}/13
+        <span className="font-mono text-xs tabular-nums" data-testid="call-score">
+          <span className={scoreColor}>{score}</span>
+          <span className="text-tertiary">/13</span>
         </span>
       );
     },
@@ -83,14 +79,31 @@ const callColumns: ColumnDef<Call, unknown>[] = [
     cell: ({ row }) => {
       const status = row.original.status || 'unknown';
       const label = row.original.status_label || status;
-      const variant =
-        status === 'won'
-          ? 'default'
-          : status === 'lost' || status === 'fake_yes'
-          ? 'destructive'
-          : 'secondary';
 
-      return <Badge variant={variant}>{label}</Badge>;
+      if (status === 'won') {
+        return (
+          <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-emerald-500/10 text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            {label}
+          </span>
+        );
+      }
+
+      if (status === 'lost' || status === 'fake_yes') {
+        return (
+          <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-zinc-800 text-zinc-300 ring-1 ring-inset ring-white/5">
+            <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
+            {label}
+          </span>
+        );
+      }
+
+      return (
+        <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-hover text-secondary ring-1 ring-inset border-subtle">
+          <span className="h-1.5 w-1.5 rounded-full bg-tertiary" />
+          {label}
+        </span>
+      );
     },
   },
 ];
@@ -117,11 +130,11 @@ export function PulsePage() {
         className="flex min-h-[400px] flex-col items-center justify-center text-center p-8"
         data-testid="empty-tenant-state"
       >
-        <div className="rounded-full bg-muted p-4 mb-4">
-          <PhoneCall className="h-8 w-8 text-muted-foreground" />
+        <div className="rounded-xl bg-hover p-4 mb-4 border border-subtle">
+          <PhoneCall className="h-7 w-7 text-tertiary" />
         </div>
-        <h2 className="text-lg font-semibold tracking-tight">Тенант не выбран</h2>
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+        <h2 className="text-base font-semibold tracking-tight text-foreground">Тенант не выбран</h2>
+        <p className="mt-1 text-xs text-secondary max-w-sm">
           Выберите тенант в шапке приложения для отображения оперативного пульса и аналитики.
         </p>
       </div>
@@ -161,13 +174,11 @@ export function PulsePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Пульс</h1>
-          <p className="text-sm text-muted-foreground">
-            Оперативная сводка показателей и рекомендации ИИ в реальном времени.
-          </p>
-        </div>
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Пульс</h1>
+        <p className="text-xs text-secondary mt-0.5">
+          Оперативная сводка показателей и рекомендации ИИ в реальном времени.
+        </p>
       </div>
 
       {/* Error state */}
@@ -192,13 +203,14 @@ export function PulsePage() {
           value={isLoading ? 0 : revenue.toLocaleString('ru-RU')}
           unit="₽"
           trend={{ direction: 'up', value: 12.5, label: 'vs прошлый период' }}
-          variant="accent"
+          inverted={false}
           loading={isLoading}
         />
         <KpiCard
           title="Звонков"
           value={isLoading ? 0 : callsTotal}
           trend={{ direction: 'up', value: 8, label: 'vs план' }}
+          inverted={false}
           loading={isLoading}
         />
         <KpiCard
@@ -206,6 +218,7 @@ export function PulsePage() {
           value={isLoading ? 0 : slaRiskCount}
           variant={slaRiskCount > 0 ? 'danger' : 'default'}
           trend={{ direction: 'down', value: 3, label: 'за сутки' }}
+          inverted={true}
           loading={isLoading}
         />
         <KpiCard
@@ -213,6 +226,7 @@ export function PulsePage() {
           value={isLoading ? 0 : winRate}
           unit="%"
           trend={{ direction: 'flat', value: 0 }}
+          inverted={false}
           loading={isLoading}
         />
       </div>
@@ -220,56 +234,53 @@ export function PulsePage() {
       {/* AI Recommendations */}
       <div className="space-y-3">
         <div className="flex items-center space-x-2">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+          <Sparkles className="h-4 w-4 text-violet-400" />
+          <h2 className="text-[13px] font-semibold text-foreground">
             Рекомендации ИИ
           </h2>
         </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="recommendations-loading">
-            <Skeleton className="h-28 w-full rounded-lg" />
-            <Skeleton className="h-28 w-full rounded-lg" />
-            <Skeleton className="h-28 w-full rounded-lg" />
+            <Skeleton className="h-28 w-full rounded-xl" />
+            <Skeleton className="h-28 w-full rounded-xl" />
+            <Skeleton className="h-28 w-full rounded-xl" />
           </div>
         ) : recommendations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="recommendations-list">
             {recommendations.map((item, idx) => (
-              <Card key={idx} className="border-border bg-card/60">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-semibold">{item.title}</CardTitle>
-                    {item.impact_rub > 0 && (
-                      <Badge variant="secondary" className="text-xs text-emerald-500 font-mono">
-                        +{item.impact_rub.toLocaleString('ru-RU')} ₽
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {item.description}
-                  </p>
-                </CardContent>
-              </Card>
+              <div
+                key={idx}
+                className="rounded-xl border border-violet-500/20 bg-transparent p-4 transition-colors duration-150 hover:border-violet-500/35"
+              >
+                <div className="flex items-start justify-between gap-2 pb-2">
+                  <h3 className="text-[13px] font-medium text-foreground">{item.title}</h3>
+                  {item.impact_rub > 0 && (
+                    <span className="shrink-0 font-mono text-sm font-medium tabular-nums text-emerald-400">
+                      +{item.impact_rub.toLocaleString('ru-RU')} ₽
+                    </span>
+                  )}
+                </div>
+                <p className="text-[13px] text-secondary leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
             ))}
           </div>
         ) : (
-          <Card className="border-dashed">
-            <CardContent className="flex items-center justify-center p-6 text-sm text-muted-foreground">
-              Пока нет рекомендаций
-            </CardContent>
-          </Card>
+          <div className="rounded-xl border border-dashed border-subtle p-6 text-center text-xs text-secondary">
+            Пока нет рекомендаций
+          </div>
         )}
       </div>
 
       {/* Recent Calls */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+          <h2 className="text-[13px] font-semibold text-foreground">
             Последние звонки
           </h2>
-          <span className="text-xs text-muted-foreground">Кликните на строку для просмотра транскрипта</span>
+          <span className="text-xs text-tertiary">Кликните на строку для просмотра транскрипта</span>
         </div>
 
         <DataTable
@@ -284,40 +295,43 @@ export function PulsePage() {
 
       {/* Leak Breakdown */}
       {hasLeaks && (
-        <Card className="border-border">
-          <CardHeader className="pb-3">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
-              <CardTitle className="text-sm font-semibold">Утечки выручки по категориям</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-              {leakCategories.map(([catKey, leak]) => {
-                const amount = Number(leak?.amount_rub ?? leak?.sum ?? 0);
-                const count = Number(leak?.count ?? 0);
-                return (
-                  <div
-                    key={catKey}
-                    className="flex items-center justify-between p-2.5 rounded-md bg-muted/40 border border-border/50"
-                  >
-                    <span className="font-medium text-foreground capitalize">
-                      {catKey.replace(/_/g, ' ')}
-                    </span>
-                    <div className="text-right">
-                      <div className="font-semibold text-red-500">
-                        {amount.toLocaleString('ru-RU')} ₽
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {count} сделок
-                      </div>
+        <div className="space-y-3">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="h-4 w-4 text-amber-400" />
+            <h2 className="text-[13px] font-semibold text-foreground">Утечки выручки по категориям</h2>
+          </div>
+          <div className="surface divide-y divide-subtle overflow-hidden">
+            {leakCategories.map(([catKey, leak]) => {
+              const amount = Number(leak?.amount_rub ?? leak?.sum ?? 0);
+              const count = Number(leak?.count ?? 0);
+              return (
+                <div
+                  key={catKey}
+                  className="flex h-12 items-center justify-between px-4 transition-colors duration-150 hover:bg-hover"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-amber-400/10">
+                      <AlertTriangle className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[13px] font-medium text-foreground capitalize truncate">
+                        {catKey.replace(/_/g, ' ')}
+                      </span>
+                      {count > 0 && (
+                        <span className="text-xs text-tertiary">
+                          {count} сделок
+                        </span>
+                      )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="text-right shrink-0 pl-4 font-mono text-[13px] font-medium tabular-nums text-rose-400">
+                    {amount.toLocaleString('ru-RU')} ₽
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Transcript Dialog */}
@@ -336,31 +350,29 @@ export function PulsePage() {
               )}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto mt-2">
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">
-                  Транскрипт
-                </h4>
-                <pre
-                  className="whitespace-pre-wrap font-sans text-xs bg-muted/40 p-4 rounded-md border border-border text-foreground leading-relaxed"
-                  data-testid="call-transcript"
-                >
-                  {selectedCall?.transcript || 'Транскрипт отсутствует'}
-                </pre>
-              </div>
-
-              {selectedCall?.recommendation && (
-                <div>
-                  <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">
-                    Рекомендация РОПа
-                  </h4>
-                  <p className="text-xs text-foreground bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-md">
-                    {selectedCall.recommendation}
-                  </p>
-                </div>
-              )}
+          <div className="flex-1 overflow-y-auto mt-2 space-y-4 pr-1">
+            <div>
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-tertiary mb-1.5">
+                Транскрипт
+              </h4>
+              <pre
+                className="whitespace-pre-wrap font-sans text-xs bg-hover/50 p-4 rounded-lg border border-subtle text-foreground leading-relaxed"
+                data-testid="call-transcript"
+              >
+                {selectedCall?.transcript || 'Транскрипт отсутствует'}
+              </pre>
             </div>
+
+            {selectedCall?.recommendation && (
+              <div>
+                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-tertiary mb-1.5">
+                  Рекомендация РОПа
+                </h4>
+                <p className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-lg leading-relaxed">
+                  {selectedCall.recommendation}
+                </p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

@@ -93,11 +93,11 @@ describe('AppLayout', () => {
     );
 
     const auditLink = screen.getByTestId('nav-link-audit');
-    expect(auditLink).toHaveClass('bg-primary');
-    expect(auditLink).toHaveClass('text-primary-foreground');
+    expect(auditLink).toHaveClass('bg-active');
+    expect(auditLink).toHaveClass('text-foreground');
 
     const pulseLink = screen.getByTestId('nav-link-pulse');
-    expect(pulseLink).not.toHaveClass('bg-primary');
+    expect(pulseLink).not.toHaveClass('bg-active');
   });
 
   it('displays user profile name and websocket connection status in header', () => {

@@ -2,7 +2,11 @@
  * apps/web/src/components/DataTable.tsx
  *
  * Generic typed DataTable using TanStack Table and shadcn/ui Table primitives.
- * Supports sorting, client-side pagination, skeleton loading, and empty states.
+ * Features:
+ * - .surface wrapper with subtle borders
+ * - 44px rows with smooth hover state
+ * - Column sorting icons revealed on hover and active sort
+ * - Client-side pagination, skeleton loading, and empty states
  */
 
 import * as React from 'react';
@@ -91,11 +95,11 @@ export function DataTable<TData>({
 
   return (
     <div className={cn('w-full space-y-4', className)}>
-      <div className="rounded-md border border-border">
+      <div className="surface overflow-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="border-b border-subtle">
                 {headerGroup.headers.map((header) => {
                   const canSort = enableSorting && header.column.getCanSort();
                   const isSorted = header.column.getIsSorted();
@@ -103,7 +107,10 @@ export function DataTable<TData>({
                   return (
                     <TableHead
                       key={header.id}
-                      className={cn(canSort && 'cursor-pointer select-none')}
+                      className={cn(
+                        'group h-9 px-4 text-left align-middle text-[11px] font-medium uppercase tracking-[0.06em] text-tertiary select-none',
+                        canSort && 'cursor-pointer'
+                      )}
                       onClick={
                         canSort
                           ? header.column.getToggleSortingHandler()
@@ -120,20 +127,27 @@ export function DataTable<TData>({
                               )}
                         </span>
                         {canSort && (
-                          <span className="inline-flex shrink-0">
+                          <span
+                            className={cn(
+                              'inline-flex shrink-0 transition-opacity duration-150',
+                              isSorted
+                                ? 'opacity-100 text-secondary'
+                                : 'opacity-0 group-hover:opacity-100 text-tertiary'
+                            )}
+                          >
                             {isSorted === 'asc' ? (
                               <ChevronUp
-                                className="h-4 w-4"
+                                className="h-3.5 w-3.5"
                                 data-testid="sort-asc"
                               />
                             ) : isSorted === 'desc' ? (
                               <ChevronDown
-                                className="h-4 w-4"
+                                className="h-3.5 w-3.5"
                                 data-testid="sort-desc"
                               />
                             ) : (
                               <ChevronsUpDown
-                                className="text-muted-foreground/60 h-4 w-4"
+                                className="h-3.5 w-3.5"
                                 data-testid="sort-none"
                               />
                             )}
@@ -153,9 +167,10 @@ export function DataTable<TData>({
                 <TableRow
                   key={`skeleton-row-${rowIndex}`}
                   data-testid="skeleton-row"
+                  className="h-11 border-b border-subtle"
                 >
                   {columns.map((_, colIndex) => (
-                    <TableCell key={`skeleton-cell-${rowIndex}-${colIndex}`}>
+                    <TableCell key={`skeleton-cell-${rowIndex}-${colIndex}`} className="px-4 py-3">
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
                   ))}
@@ -168,12 +183,13 @@ export function DataTable<TData>({
                   data-state={row.getIsSelected() && 'selected'}
                   onClick={() => onRowClick?.(row.original)}
                   className={cn(
-                    'transition-colors',
-                    onRowClick && 'cursor-pointer hover:bg-muted/50'
+                    'h-11 border-b border-subtle transition-colors duration-150',
+                    onRowClick &&
+                      'cursor-pointer hover:bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent/50'
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="px-4 py-3">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -186,7 +202,7 @@ export function DataTable<TData>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="text-muted-foreground h-24 text-center"
+                  className="text-tertiary h-24 text-center text-xs"
                 >
                   {emptyMessage}
                 </TableCell>
@@ -198,7 +214,7 @@ export function DataTable<TData>({
 
       {showPagination && (
         <div className="flex items-center justify-between px-2 py-2">
-          <div className="text-muted-foreground text-sm">
+          <div className="text-secondary text-xs">
             Страница {table.getState().pagination.pageIndex + 1} из{' '}
             {Math.max(1, table.getPageCount())}
           </div>

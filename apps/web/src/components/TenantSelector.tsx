@@ -45,7 +45,7 @@ export function TenantSelector({ className }: TenantSelectorProps) {
   if (isLoading) {
     return (
       <Skeleton
-        className={cn('h-9 w-[220px]', className)}
+        className={cn('h-8 w-[220px] rounded-lg', className)}
         data-testid="tenant-selector-skeleton"
       />
     );
@@ -80,7 +80,7 @@ export function TenantSelector({ className }: TenantSelectorProps) {
         onValueChange={(val) => setActiveTenantId(val)}
       >
         <SelectTrigger
-          className="h-9 w-[220px] text-xs font-medium"
+          className="h-8 w-[220px] rounded-lg border border-subtle bg-hover text-xs font-medium text-foreground hover:border-strong transition-colors duration-150"
           data-testid="tenant-selector-trigger"
         >
           <SelectValue placeholder="Выберите тенант" />

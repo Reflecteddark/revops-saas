@@ -114,7 +114,7 @@ describe('PulsePage', () => {
 
     // Verify calls table
     expect(screen.getByText('ООО АгроХим')).toBeInTheDocument();
-    expect(screen.getByText('11/13')).toBeInTheDocument();
+    expect(screen.getByTestId('call-score')).toHaveTextContent('11/13');
   });
 
   it('shows skeleton cards during initial loading', () => {

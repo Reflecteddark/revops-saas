@@ -180,33 +180,33 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                <div className="p-3 rounded-md border border-border bg-muted/30">
+                <div className="p-3 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">Компания</span>
                   <span className="font-semibold text-sm text-foreground">
                     {general?.company_name || '—'}
                   </span>
                 </div>
-                <div className="p-3 rounded-md border border-border bg-muted/30">
+                <div className="p-3 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">Валюта</span>
                   <span className="font-semibold text-sm text-foreground">
                     {general?.currency || 'RUB (₽)'}
                   </span>
                 </div>
-                <div className="p-3 rounded-md border border-border bg-muted/30">
+                <div className="p-3 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">Месячный план</span>
                   <span className="font-semibold text-sm text-foreground font-mono">
                     {general?.monthly_target ? `${general.monthly_target.toLocaleString('ru-RU')} ₽` : '—'}
                   </span>
                 </div>
-                <div className="p-3 rounded-md border border-border bg-muted/30">
+                <div className="p-3 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">Начало периода</span>
                   <span className="font-mono text-foreground">{general?.period_start || '—'}</span>
                 </div>
-                <div className="p-3 rounded-md border border-border bg-muted/30">
+                <div className="p-3 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">Окончание периода</span>
                   <span className="font-mono text-foreground">{general?.period_end || '—'}</span>
                 </div>
-                <div className="p-3 rounded-md border border-border bg-muted/30">
+                <div className="p-3 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">Старт проекта</span>
                   <span className="font-mono text-foreground">
                     {general?.project_start_date || '—'}
@@ -269,7 +269,7 @@ export function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 {/* Bot Token - Strictly masked */}
-                <div className="p-3.5 rounded-md border border-border bg-muted/30">
+                <div className="p-3.5 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">Bot Token</span>
                   <span className="font-mono text-sm tracking-widest text-foreground font-bold" data-testid="bot-token-masked">
                     ••••••••
@@ -277,7 +277,7 @@ export function SettingsPage() {
                 </div>
 
                 {/* Dispatcher Status */}
-                <div className="p-3.5 rounded-md border border-border bg-muted/30 flex items-center justify-between">
+                <div className="p-3.5 rounded-md border border-subtle bg-hover/50 flex items-center justify-between">
                   <div>
                     <span className="text-muted-foreground block mb-1">Статус диспетчера</span>
                     <span className="font-medium text-foreground">
@@ -290,21 +290,21 @@ export function SettingsPage() {
                 </div>
 
                 {/* Masked Chat IDs */}
-                <div className="p-3.5 rounded-md border border-border bg-muted/30">
+                <div className="p-3.5 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">РОП Chat ID</span>
                   <span className="font-mono text-foreground font-medium" data-testid="rop-chat-id">
                     {maskChatId(telegram?.rop_chat_id)}
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-md border border-border bg-muted/30">
+                <div className="p-3.5 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">CEO Chat ID</span>
                   <span className="font-mono text-foreground font-medium" data-testid="ceo-chat-id">
                     {maskChatId(telegram?.ceo_chat_id)}
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-md border border-border bg-muted/30">
+                <div className="p-3.5 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">Team Chat ID</span>
                   <span className="font-mono text-foreground font-medium" data-testid="team-chat-id">
                     {maskChatId(telegram?.team_chat_id)}
@@ -329,7 +329,7 @@ export function SettingsPage() {
                 {modules.map((mod) => (
                   <div
                     key={mod.code}
-                    className="flex items-center justify-between p-3.5 rounded-md border border-border bg-muted/20"
+                    className="flex items-center justify-between p-3.5 rounded-md border border-subtle bg-hover/50"
                     data-testid={`module-${mod.code}`}
                   >
                     <div className="space-y-1">

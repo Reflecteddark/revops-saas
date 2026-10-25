@@ -31,15 +31,15 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       onClick={toggleTheme}
       aria-label="Переключить тему"
       className={cn(
-        'text-muted-foreground h-9 w-9 hover:text-foreground',
+        'h-8 w-8 rounded-lg text-secondary hover:bg-hover hover:text-foreground transition-colors duration-150',
         className
       )}
     >
       {isDark ? (
-        <Sun className="h-4 w-4 transition-transform" data-testid="icon-sun" />
+        <Sun className="h-3.5 w-3.5 transition-transform" data-testid="icon-sun" />
       ) : (
         <Moon
-          className="h-4 w-4 transition-transform"
+          className="h-3.5 w-3.5 transition-transform"
           data-testid="icon-moon"
         />
       )}
