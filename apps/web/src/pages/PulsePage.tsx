@@ -139,21 +139,13 @@ export function PulsePage() {
   const calls = callsQuery.data || [];
   const recentCalls = calls.slice(0, 10);
 
-  // PulsePage KPI mapping
-  const kpi = {
-    revenue: (insights as any)?.kpi?.revenue ?? insights?.p50_corridor_rub ?? 0,
-    calls_total: (insights as any)?.kpi?.calls_total ?? calls.length,
-    sla_risk_count:
-      (insights as any)?.kpi?.sla_risk_count ??
-      calls.filter((c) => c.status === 'fake_yes' || c.status === 'lost').length,
-    win_rate:
-      (insights as any)?.kpi?.win_rate ??
-      (calls.length > 0
-        ? Math.round(
-            (calls.filter((c) => c.status === 'won').length / calls.length) * 100
-          )
-        : 34.2),
-  };
+  // Typed KPI mapping without fabricated fallbacks
+  const kpi = insights?.kpi;
+  const revenue = kpi?.revenue ?? insights?.p50_corridor_rub ?? 0;
+  const callsTotal = kpi?.calls_total ?? calls.length;
+  const wonCalls = calls.filter((c) => c.status === 'won').length;
+  const winRate = kpi?.win_rate ?? (callsTotal > 0 ? Math.round((wonCalls / callsTotal) * 100) : 0);
+  const slaRiskCount = kpi?.sla_risk_count ?? kpi?.sla_at_risk_count ?? 0;
 
   const recommendations: RecommendationItem[] = insights?.recommendations || [];
   const leakBreakdown = insights?.leak_breakdown || {};
@@ -190,7 +182,7 @@ export function PulsePage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           title="Выручка"
-          value={isLoading ? 0 : kpi.revenue.toLocaleString('ru-RU')}
+          value={isLoading ? 0 : revenue.toLocaleString('ru-RU')}
           unit="₽"
           trend={{ direction: 'up', value: 12.5, label: 'vs прошлый период' }}
           variant="accent"
@@ -198,20 +190,20 @@ export function PulsePage() {
         />
         <KpiCard
           title="Звонков"
-          value={isLoading ? 0 : kpi.calls_total}
+          value={isLoading ? 0 : callsTotal}
           trend={{ direction: 'up', value: 8, label: 'vs план' }}
           loading={isLoading}
         />
         <KpiCard
           title="SLA риск"
-          value={isLoading ? 0 : kpi.sla_risk_count}
-          variant={kpi.sla_risk_count > 0 ? 'danger' : 'default'}
+          value={isLoading ? 0 : slaRiskCount}
+          variant={slaRiskCount > 0 ? 'danger' : 'default'}
           trend={{ direction: 'down', value: 3, label: 'за сутки' }}
           loading={isLoading}
         />
         <KpiCard
           title="Конверсия"
-          value={isLoading ? 0 : kpi.win_rate}
+          value={isLoading ? 0 : winRate}
           unit="%"
           trend={{ direction: 'flat', value: 0 }}
           loading={isLoading}

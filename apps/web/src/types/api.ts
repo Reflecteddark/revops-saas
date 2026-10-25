@@ -248,37 +248,44 @@ export interface LeakCategoryBreakdown {
 }
 
 export interface KpiSummary {
-  active_pipeline_rub: number;
-  active_deals_count: number;
-  sla_at_risk_count: number;
-  sla_at_risk_rub: number;
-  total_leak_rub: number;
-  p10_corridor_rub: number;
-  p50_corridor_rub: number;
-  p90_corridor_rub: number;
-  average_call_score: number | null;
-  audited_calls_count: number;
-  plan_fact_percentage: number;
+  active_pipeline_rub?: number;
+  active_deals_count?: number;
+  sla_at_risk_count?: number;
+  sla_at_risk_rub?: number;
+  total_leak_rub?: number;
+  p10_corridor_rub?: number;
+  p50_corridor_rub?: number;
+  p90_corridor_rub?: number;
+  average_call_score?: number | null;
+  audited_calls_count?: number;
+  plan_fact_percentage?: number;
   confidence_score?: number;
   synthesis?: string;
   recommendations?: RecommendationItem[];
+  revenue?: number;
+  calls_total?: number;
+  sla_risk_count?: number;
+  win_rate?: number;
 }
 
 export interface InsightsSummaryResponse {
   status: string;
   engine: string;
   tenant_id: string;
-  p10_corridor_rub: number;
-  p50_corridor_rub: number;
-  p90_corridor_rub: number;
-  confidence_score: number;
-  calculation_method: string;
-  recommendations: RecommendationItem[];
-  insights: RecommendationItem[];
-  synthesis: string;
-  executive_summary: string;
-  leak_breakdown: Record<string, LeakCategoryBreakdown>;
-  total_leak_rub: number;
+  p10_corridor_rub?: number;
+  p50_corridor_rub?: number;
+  p90_corridor_rub?: number;
+  confidence_score?: number;
+  calculation_method?: string;
+  summary?: string;
+  synthesis?: string;
+  executive_summary?: string;
+  recommendations?: RecommendationItem[];
+  insights?: RecommendationItem[];
+  leak_breakdown?: Record<string, LeakCategoryBreakdown>;
+  total_leak_rub?: number;
+  message?: string;
+  kpi?: KpiSummary | null;
 }
 
 // ============================================================================

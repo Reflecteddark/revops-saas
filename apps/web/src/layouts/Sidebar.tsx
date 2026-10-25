@@ -1,17 +1,16 @@
 /**
  * apps/web/src/layouts/Sidebar.tsx
  *
- * Application sidebar navigation shell.
- * Uses static anchors without react-router (routing scheduled for Stage 8).
+ * Application sidebar navigation shell using react-router NavLink.
  */
 
 import * as React from 'react';
+import { NavLink } from 'react-router-dom';
 import { Activity, ClipboardCheck, Settings, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export interface SidebarProps {
-  activeHref?: string;
   className?: string;
 }
 
@@ -28,7 +27,7 @@ const navItems: NavItem[] = [
   { title: 'Fleet', href: '/fleet', icon: Users },
 ];
 
-export function Sidebar({ activeHref = '/pulse', className }: SidebarProps) {
+export function Sidebar({ className }: SidebarProps = {}) {
   return (
     <aside
       className={cn(
@@ -52,24 +51,24 @@ export function Sidebar({ activeHref = '/pulse', className }: SidebarProps) {
         <nav className="space-y-1" aria-label="Основная навигация">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeHref === item.href;
 
             return (
-              <a
+              <NavLink
                 key={item.href}
-                href="#"
-                onClick={(e) => e.preventDefault()}
+                to={item.href}
                 data-testid={`nav-link-${item.href.replace('/', '')}`}
-                className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'text-primary-foreground shadow-xs bg-primary font-semibold'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )
+                }
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 <span>{item.title}</span>
-              </a>
+              </NavLink>
             );
           })}
         </nav>
