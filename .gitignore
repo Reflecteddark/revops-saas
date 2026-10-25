@@ -45,6 +45,8 @@ test_vps_gemini.py
 scratch_test_live.py
 
 # Test artifacts from pytest pre-push hook
+requirements.txt.bak
 apps/api/data/registered_clients.json
 logs/webhooks_dlq_snapshot.json
+
 
