@@ -1392,7 +1392,10 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         sys.path.insert(0, str(prov_dir))
 
     try:
-        from tenant_provisioner import load_registry, provision_tenant
+        try:
+            from tenant_provisioner import load_registry, provision_tenant
+        except ImportError:
+            from apps.api.tenant_provisioner import load_registry, provision_tenant
         
         tenant_record = provision_tenant(
             company_name=company_name,
@@ -1424,7 +1427,10 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
 
     # Sync registry across all candidate paths
     try:
-        from tenant_provisioner import load_registry
+        try:
+            from tenant_provisioner import load_registry
+        except ImportError:
+            from apps.api.tenant_provisioner import load_registry
         reg_data = load_registry()
         sync_save_registry(reg_data)
     except Exception as e:
