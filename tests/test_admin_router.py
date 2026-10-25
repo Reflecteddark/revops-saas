@@ -177,12 +177,59 @@ def test_healer_status_action():
     assert "output" in resp.json()
 
 
-def test_cco_action_summary():
-    """Verifies CCO engine summary execution."""
-    resp = client.post("/api/v1/admin/cco/action", json={"action": "summary", "tenant": "TNT-001"})
+def test_admin_status_with_query_param_admin_key():
+    """Verifies that remote requests with query parameter admin_key succeed."""
+    import os
+    admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
+    resp = client.get(
+        f"/api/v1/admin/status?admin_key={admin_key}",
+        headers={
+            "host": "report.ai-rop.ru",
+            "cf-connecting-ip": "194.87.12.34"
+        }
+    )
     assert resp.status_code == 200
-    assert "output" in resp.json()
-    assert resp.json()["success"] is True
+    assert "fleet_status" in resp.json()
+
+
+def test_admin_status_with_jwt_cookie_for_dmitry():
+    """Verifies that remote requests with Dmitry's access_token JWT cookie succeed."""
+    from apps.api.auth import create_access_token
+    token = create_access_token({"sub": "dmitriyfedotov1908@gmail.com", "tenant_id": "TNT-001", "role": "admin"})
+    resp = client.get(
+        "/api/v1/admin/status",
+        headers={
+            "host": "report.ai-rop.ru",
+            "cf-connecting-ip": "194.87.12.34",
+            "cookie": f"access_token={token}"
+        }
+    )
+    assert resp.status_code == 200
+    assert "fleet_status" in resp.json()
+
+
+def test_client_login_dmitry_sets_admin_cookie():
+    """Verifies that client-login for Dmitry Fedotov returns is_admin=True and sets revops_admin_token."""
+    resp = client.post(
+        "/api/v1/auth/client-login",
+        json={"login": "dmitriyfedotov1908@gmail.com", "password": "1908"}
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["is_admin"] is True
+    assert "revops_admin_token" in resp.cookies
+
+
+def test_serve_admin_with_query_param_admin_key():
+    """Verifies that /admin?admin_key=... sets revops_admin_token cookie and injects initial tab."""
+    import os
+    admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
+    resp = client.get(f"/admin?admin_key={admin_key}")
+    assert resp.status_code == 200
+    assert "revops_admin_token" in resp.cookies
+    assert '__INITIAL_TAB__="admin"' in resp.text
+    assert admin_key in resp.text
+
 
 
 

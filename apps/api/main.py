@@ -56,7 +56,10 @@ from starlette.responses import HTMLResponse, JSONResponse
 
 from packages.monitoring.telegram_alerts import format_error_alert, send_telegram_alert
 
+import hmac
+
 from .routers.admin_router import (
+    ALLOWED_ADMIN_KEYS,
     COOKIE_ADMIN_AUTH_NAME,
     generate_admin_cookie_token,
     verify_admin_access,
@@ -303,18 +306,81 @@ if INDEX_HTML.exists():
     @app.get("/", response_class=HTMLResponse)
     @app.get("/app", response_class=HTMLResponse)
     @app.get("/app/", response_class=HTMLResponse)
-    def serve_dashboard():
+    def serve_dashboard(request: Request):
         with open(INDEX_HTML, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read(), headers=NO_CACHE_HEADERS)
+            content = f.read()
+
+        admin_key_param = request.query_params.get("admin_key")
+        is_admin_valid = bool(admin_key_param and any(hmac.compare_digest(admin_key_param, k) for k in ALLOWED_ADMIN_KEYS))
+        if is_admin_valid:
+            clean_script = (
+                f'<script>'
+                f'try{{localStorage.setItem("revops_admin_key","{admin_key_param}");'
+                f'if(window.location.search.includes("admin_key")){{'
+                f'const u=new URL(window.location.href);u.searchParams.delete("admin_key");'
+                f'window.history.replaceState({{}},document.title,u.pathname+(u.search?u.search:""));'
+                f'}}'
+                f'}}catch(e){{}}'
+                f'</script></head>'
+            )
+            content = content.replace("</head>", clean_script)
+
+        response = HTMLResponse(content=content, headers=NO_CACHE_HEADERS)
+        if is_admin_valid:
+            is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+            host = request.headers.get("host", "").lower()
+            cookie_domain = ".ai-rop.ru" if (is_https and ("ai-rop.ru" in host or bool(request.headers.get("cf-connecting-ip")))) else None
+            cookie_samesite: Literal["lax", "strict", "none"] = "none" if (is_https and cookie_domain) else "lax"
+            new_token = generate_admin_cookie_token()
+            response.set_cookie(
+                key=COOKIE_ADMIN_AUTH_NAME,
+                value=new_token,
+                httponly=True,
+                secure=is_https,
+                samesite=cookie_samesite,
+                domain=cookie_domain,
+                max_age=7 * 86400,
+                path="/"
+            )
+        return response
 
     @app.get("/admin", response_class=HTMLResponse)
     @app.get("/app/admin", response_class=HTMLResponse)
-    def serve_admin():
+    def serve_admin(request: Request):
         with open(INDEX_HTML, "r", encoding="utf-8") as f:
             content = f.read()
-            # Inject initial tab override for direct /admin URL
-            content = content.replace("</head>", '<script>window.__INITIAL_TAB__="admin";</script></head>')
-            return HTMLResponse(content=content, headers=NO_CACHE_HEADERS)
+
+        admin_key_param = request.query_params.get("admin_key")
+        is_admin_valid = bool(admin_key_param and any(hmac.compare_digest(admin_key_param, k) for k in ALLOWED_ADMIN_KEYS))
+        storage_inject = f'try{{localStorage.setItem("revops_admin_key","{admin_key_param}");}}catch(e){{}}' if is_admin_valid else ''
+        inject_script = (
+            f'<script>window.__INITIAL_TAB__="admin";{storage_inject}'
+            f'if(window.location.search.includes("admin_key")){{'
+            f'try{{const u=new URL(window.location.href);u.searchParams.delete("admin_key");'
+            f'window.history.replaceState({{}},document.title,u.pathname+(u.search?u.search:""));'
+            f'}}catch(e){{}}}}'
+            f'</script></head>'
+        )
+        content = content.replace("</head>", inject_script)
+
+        response = HTMLResponse(content=content, headers=NO_CACHE_HEADERS)
+        if is_admin_valid:
+            is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+            host = request.headers.get("host", "").lower()
+            cookie_domain = ".ai-rop.ru" if (is_https and ("ai-rop.ru" in host or bool(request.headers.get("cf-connecting-ip")))) else None
+            cookie_samesite: Literal["lax", "strict", "none"] = "none" if (is_https and cookie_domain) else "lax"
+            new_token = generate_admin_cookie_token()
+            response.set_cookie(
+                key=COOKIE_ADMIN_AUTH_NAME,
+                value=new_token,
+                httponly=True,
+                secure=is_https,
+                samesite=cookie_samesite,
+                domain=cookie_domain,
+                max_age=7 * 86400,
+                path="/"
+            )
+        return response
 
 if APP_JS.exists():
     @app.get("/app.js")

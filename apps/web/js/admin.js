@@ -111,8 +111,20 @@ function getAdminAuthHeaders() {
   } catch (e) {}
   let savedKey = null;
   try {
-    savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key');
+    if (typeof window !== 'undefined' && window.location) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlKey = urlParams.get('admin_key');
+      if (urlKey && urlKey.trim()) {
+        savedKey = urlKey.trim();
+        try { localStorage.setItem('revops_admin_key', savedKey); } catch (e) {}
+      }
+    }
   } catch (e) {}
+  if (!savedKey) {
+    try {
+      savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key');
+    } catch (e) {}
+  }
   if (!savedKey || savedKey === 'null' || savedKey === 'undefined' || !savedKey.trim()) {
     savedKey = 'revops_admin_fleet_secret_2026';
     try { localStorage.setItem('revops_admin_key', savedKey); } catch (e) {}

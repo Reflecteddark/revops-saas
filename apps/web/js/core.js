@@ -707,12 +707,30 @@ function animateCardsIn(container) {
 async function switchTab(tabId) {
   if (tabId === 'admin') {
     try {
+      try {
+        if (typeof window !== 'undefined' && window.location) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const urlKey = urlParams.get('admin_key');
+          if (urlKey && urlKey.trim()) {
+            localStorage.setItem('revops_admin_key', urlKey.trim());
+          }
+        }
+      } catch (e) {}
+
+      let currentKey = null;
+      try {
+        currentKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key');
+      } catch (e) {}
+      if (!currentKey || currentKey === 'null' || currentKey === 'undefined' || !currentKey.trim()) {
+        currentKey = 'revops_admin_fleet_secret_2026';
+      }
+
       const headers = (typeof getAdminAuthHeaders === 'function') 
         ? getAdminAuthHeaders() 
         : { 
             'Content-Type': 'application/json', 
-            'X-Admin-Key': 'revops_admin_fleet_secret_2026',
-            'X-RevOps-Admin-Key': 'revops_admin_fleet_secret_2026' 
+            'X-Admin-Key': currentKey,
+            'X-RevOps-Admin-Key': currentKey 
           };
       const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/status`, { 
         method: 'GET', 
