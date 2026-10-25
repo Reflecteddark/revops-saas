@@ -62,7 +62,7 @@ export function Header({ className }: HeaderProps) {
   return (
     <header
       className={cn(
-        'bg-background/70 sticky top-0 z-30 flex h-[52px] w-full items-center justify-between border-b border-subtle px-6 backdrop-blur-xl backdrop-saturate-150',
+        'bg-surface/90 sticky top-0 z-30 flex h-[52px] w-full items-center justify-between border-b border-subtle px-6 backdrop-blur-xl backdrop-saturate-150',
         className
       )}
       data-testid="app-header"

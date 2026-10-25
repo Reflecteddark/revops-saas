@@ -7,14 +7,14 @@
   [data-theme='light'],
   .light {
     color-scheme: light;
-    --background: #f8fafc;
+    --background: #f0f2f5;
     --surface-from: #ffffff;
     --surface-to: #ffffff;
     --surface: #ffffff;
     --surface-raised: #ffffff;
     --border-subtle: #e2e8f0;
     --border-strong: #cbd5e1;
-    --hover: #f1f5f9;
+    --hover: #eef2f6;
     --active: #e2e8f0;
     --text: #0f172a;
     --text-secondary: #475569;

@@ -27,21 +27,35 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
   return (
     <Button
       variant="ghost"
-      size="icon"
+      size="sm"
       onClick={toggleTheme}
       aria-label="Переключить тему"
+      title={
+        isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'
+      }
       className={cn(
-        'h-8 w-8 rounded-lg text-secondary hover:bg-hover hover:text-foreground transition-colors duration-150',
+        'bg-hover/80 shadow-xs group h-8 gap-2 rounded-lg border border-subtle px-2.5 text-xs font-medium text-secondary transition-all duration-150 hover:border-strong hover:bg-hover hover:text-foreground',
         className
       )}
     >
       {isDark ? (
-        <Sun className="h-3.5 w-3.5 transition-transform" data-testid="icon-sun" />
+        <>
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+            <Sun className="h-3 w-3" data-testid="icon-sun" />
+          </span>
+          <span className="hidden font-normal text-secondary group-hover:text-foreground sm:inline">
+            Светлая тема
+          </span>
+        </>
       ) : (
-        <Moon
-          className="h-3.5 w-3.5 transition-transform"
-          data-testid="icon-moon"
-        />
+        <>
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-violet-500/15 text-violet-600">
+            <Moon className="h-3 w-3" data-testid="icon-moon" />
+          </span>
+          <span className="hidden font-normal text-secondary group-hover:text-foreground sm:inline">
+            Тёмная тема
+          </span>
+        </>
       )}
     </Button>
   );

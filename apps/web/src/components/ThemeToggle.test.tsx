@@ -18,15 +18,17 @@ describe('ThemeToggle', () => {
     document.documentElement.className = '';
   });
 
-  it('renders Sun icon when theme is dark', () => {
+  it('renders Sun icon and light theme label when theme is dark', () => {
     render(<ThemeToggle />);
     expect(screen.getByTestId('icon-sun')).toBeInTheDocument();
+    expect(screen.getByText('Светлая тема')).toBeInTheDocument();
   });
 
-  it('renders Moon icon when theme is light', () => {
+  it('renders Moon icon and dark theme label when theme is light', () => {
     useRevOpsStore.setState({ theme: 'light' });
     render(<ThemeToggle />);
     expect(screen.getByTestId('icon-moon')).toBeInTheDocument();
+    expect(screen.getByText('Тёмная тема')).toBeInTheDocument();
   });
 
   it('toggles theme in store and updates document data-theme via ThemeProvider', () => {

@@ -38,7 +38,7 @@ export function Sidebar({ className }: SidebarProps = {}) {
   return (
     <aside
       className={cn(
-        'sticky top-0 flex h-screen w-60 min-w-60 flex-col justify-between border-r border-subtle bg-background p-3',
+        'sticky top-0 flex h-screen w-60 min-w-60 flex-col justify-between border-r border-subtle bg-surface p-3',
         className
       )}
       data-testid="app-sidebar"
