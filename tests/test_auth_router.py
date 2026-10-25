@@ -146,3 +146,38 @@ def test_cookie_after_login_is_httponly(client):
     assert "HttpOnly" in set_cookie_header or "httponly" in set_cookie_header.lower(), (
         f"Cookie must be HttpOnly. Got headers: {set_cookie_header}"
     )
+
+
+def test_get_me_with_cookie_success_200(client, seeded_users):
+    """8. GET /api/v1/auth/me с access_token cookie → 200 OK + JSON пользователя."""
+    login_res = client.post("/api/v1/auth/login", json={
+        "email": "active.user@revops.io",
+        "password": "ValidPassword123!"
+    })
+    assert login_res.status_code == 200
+    assert "access_token" in login_res.cookies
+
+    # Query /me using cookie (no Authorization header)
+    me_res = client.get("/api/v1/auth/me", cookies=login_res.cookies)
+    assert me_res.status_code == 200, f"Expected 200, got {me_res.status_code}: {me_res.text}"
+    data = me_res.json()
+    assert data["email"] == "active.user@revops.io"
+    assert data["is_active"] is True
+
+
+def test_get_me_with_client_login_cookie_200(client):
+    """9. GET /api/v1/auth/me с cookie после client-login → 200 OK."""
+    login_res = client.post("/api/v1/auth/client-login", json={
+        "login": "admin",
+        "password": "1908"
+    })
+    assert login_res.status_code == 200
+    assert "access_token" in login_res.cookies
+
+    # Query /me using cookie
+    me_res = client.get("/api/v1/auth/me", cookies=login_res.cookies)
+    assert me_res.status_code == 200, f"Expected 200, got {me_res.status_code}: {me_res.text}"
+    data = me_res.json()
+    assert data["id"] == "admin"
+    assert data["is_active"] is True
+
