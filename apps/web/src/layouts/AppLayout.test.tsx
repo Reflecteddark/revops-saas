@@ -1,0 +1,132 @@
+/**
+ * apps/web/src/layouts/AppLayout.test.tsx
+ *
+ * Unit tests for AppLayout, Sidebar (NavLink), and Header (User menu + logout) integration.
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AppLayout } from './AppLayout';
+import { useRevOpsStore } from '@/store/useRevOpsStore';
+import { authApi } from '@/lib/api';
+
+vi.mock('@/lib/api', () => ({
+  tenantsApi: {
+    list: vi.fn().mockResolvedValue([
+      {
+        tenant_id: 'TNT-001',
+        tenant_name: 'Демо Компания',
+        crm_type: 'amocrm',
+        spreadsheet_id: 'sheet_1',
+        status: 'active',
+        niche_name: 'Недвижимость',
+        avg_deal_check: 200000,
+        is_template: false,
+      },
+    ]),
+  },
+  authApi: {
+    logout: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+function renderWithClient(ui: React.ReactElement, initialEntry = '/pulse') {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[initialEntry]}>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  );
+}
+
+describe('AppLayout', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useRevOpsStore.setState({
+      activeTenantId: 'TNT-001',
+      websocketStatus: 'connected',
+      user: {
+        id: 'usr-1',
+        email: 'admin@revops.ai',
+        role: 'admin',
+        full_name: 'Алексей Смирнов',
+        name: 'Алексей Смирнов',
+        tenant_id: 'TNT-001',
+        is_active: true,
+      },
+    });
+  });
+
+  it('renders Sidebar, Header, and children correctly', () => {
+    renderWithClient(
+      <AppLayout>
+        <div data-testid="test-child">Контент страницы</div>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId('app-sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('app-header')).toBeInTheDocument();
+    expect(screen.getByTestId('test-child')).toBeInTheDocument();
+    expect(screen.getByText('Контент страницы')).toBeInTheDocument();
+  });
+
+  it('highlights the active link according to current router location', () => {
+    renderWithClient(
+      <AppLayout>
+        <div>Пусто</div>
+      </AppLayout>,
+      '/audit'
+    );
+
+    const auditLink = screen.getByTestId('nav-link-audit');
+    expect(auditLink).toHaveClass('bg-primary');
+    expect(auditLink).toHaveClass('text-primary-foreground');
+
+    const pulseLink = screen.getByTestId('nav-link-pulse');
+    expect(pulseLink).not.toHaveClass('bg-primary');
+  });
+
+  it('displays user profile name and websocket connection status in header', () => {
+    renderWithClient(
+      <AppLayout>
+        <div>Содержимое</div>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId('user-menu-trigger')).toHaveTextContent(
+      'Алексей Смирнов'
+    );
+    expect(screen.getByTestId('websocket-status-dot')).toHaveClass(
+      'bg-emerald-500'
+    );
+  });
+
+  it('triggers logout and clears store on user menu logout click', async () => {
+    renderWithClient(
+      <AppLayout>
+        <div>Содержимое</div>
+      </AppLayout>
+    );
+
+    const trigger = screen.getByTestId('user-menu-trigger');
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+
+    const logoutItem = await screen.findByTestId('menu-item-logout');
+    fireEvent.click(logoutItem);
+
+    await waitFor(() => {
+      expect(authApi.logout).toHaveBeenCalledTimes(1);
+      expect(useRevOpsStore.getState().user).toBeNull();
+    });
+  });
+});

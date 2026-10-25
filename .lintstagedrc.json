@@ -1,0 +1,7 @@
+{
+  "apps/web/src/**/*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+  "apps/web/src/**/*.{css,json}": ["prettier --write"],
+  "apps/web/js/**/*.js": [],
+  "apps/web/index.html": [],
+  "apps/api/**/*.py": ["ruff check --fix", "ruff format"]
+}
