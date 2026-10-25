@@ -96,8 +96,8 @@ def register_tenant(req: TenantRegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(req: LoginRequest, db: Session = Depends(get_db)):
-    """Authenticates user and returns JWT scoped to their tenant."""
+def login(req: LoginRequest, response: Response, request: Request, db: Session = Depends(get_db)):
+    """Authenticates user, returns JWT scoped to their tenant, and sets HttpOnly access_token cookie."""
     user = db.query(User).filter(User.email == req.email.lower()).first()
     if not user or not verify_password(req.password, str(user.hashed_password)):
         raise HTTPException(
@@ -117,6 +117,22 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         "role": user.role.value,
         "email": user.email
     })
+
+    is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
+    host = request.headers.get("host", "").lower()
+    cookie_domain = ".ai-rop.ru" if (is_https and ("ai-rop.ru" in host or bool(request.headers.get("cf-connecting-ip")))) else None
+    cookie_samesite: Literal["lax", "strict", "none"] = "none" if (is_https and cookie_domain) else "lax"
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=is_https,
+        samesite=cookie_samesite,
+        domain=cookie_domain,
+        max_age=7 * 86400,
+        path="/"
+    )
 
     return TokenResponse(
         access_token=token,

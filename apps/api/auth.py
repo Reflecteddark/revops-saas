@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -49,17 +49,23 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    request: Request = None,  # type: ignore[assignment]
 ) -> User:
-    """Extracts and verifies current user and tenant from Bearer token."""
-    if not credentials:
+    """Extracts and verifies current user and tenant from Bearer token or HttpOnly access_token cookie."""
+    token: str | None = None
+    if credentials:
+        token = credentials.credentials
+    elif request and request.cookies.get("access_token"):
+        token = request.cookies.get("access_token")
+
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Требуется авторизация (Bearer токен отсутствует)",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = str(payload.get("sub") or "")
@@ -74,10 +80,36 @@ def get_current_user(
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен истек или недействителен")
 
-    user = db.query(User).filter(User.id == user_id, User.tenant_id == tenant_id, User.is_active == True).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
-    return user
+    # 1. Primary lookup by User.id
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        # 2. Fallback lookup by User.email (when sub is login/email from client-login)
+        db_user = db.query(User).filter(User.email == user_id).first()
+
+    if db_user:
+        if not db_user.is_active:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
+        return db_user
+
+    # 3. Fallback for valid JWT belonging to registered/system client (not present in users DB)
+    role_raw = str(payload.get("role") or "").lower()
+    if "admin" in role_raw or "супервайзер" in role_raw:
+        assigned_role = UserRole.ADMIN
+    elif "ceo" in role_raw or "руководитель" in role_raw or "директор" in role_raw:
+        assigned_role = UserRole.CEO
+    elif "rop" in role_raw or "роп" in role_raw:
+        assigned_role = UserRole.ROP
+    else:
+        assigned_role = UserRole.KAM
+
+    return User(
+        id=user_id,
+        tenant_id=tenant_id or "TNT-001",
+        email=str(payload.get("email") or user_id),
+        full_name=str(payload.get("name") or user_id),
+        role=assigned_role,
+        is_active=True,
+    )
 
 
 def require_roles(*allowed_roles: UserRole):
