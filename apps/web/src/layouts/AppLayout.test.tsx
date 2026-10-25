@@ -33,6 +33,10 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
+vi.mock('@/hooks/useWebSocket', () => ({
+  useWebSocket: vi.fn(),
+}));
+
 function renderWithClient(ui: React.ReactElement, initialEntry = '/pulse') {
   const queryClient = new QueryClient({
     defaultOptions: {

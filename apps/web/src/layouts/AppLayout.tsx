@@ -9,6 +9,8 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { cn } from '@/lib/utils';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { useRevOpsStore } from '@/store/useRevOpsStore';
 
 export interface AppLayoutProps {
   children?: React.ReactNode;
@@ -16,6 +18,9 @@ export interface AppLayoutProps {
 }
 
 export function AppLayout({ children, className }: AppLayoutProps = {}) {
+  const activeTenantId = useRevOpsStore((s) => s.activeTenantId);
+  useWebSocket(activeTenantId);
+
   return (
     <div
       className={cn(

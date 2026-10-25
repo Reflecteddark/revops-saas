@@ -48,14 +48,19 @@ export function getWsUrl(tenantId: string): string {
   return `${cleanBase}/ws/org/${encodeURIComponent(tenantId)}`;
 }
 
-export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketReturn {
+export function useWebSocket(
+  options: UseWebSocketOptions | string | null = {}
+): UseWebSocketReturn {
   const storeTenantId = useRevOpsStore((s) => s.activeTenantId);
   const status = useRevOpsStore((s) => s.websocketStatus);
   const setWebsocketStatus = useRevOpsStore((s) => s.setWebsocketStatus);
 
-  const tenantId = options.tenantId !== undefined ? options.tenantId : storeTenantId;
-  const enabled = options.enabled !== undefined ? options.enabled : true;
-  const onMessage = options.onMessage;
+  const opts: UseWebSocketOptions =
+    typeof options === 'string' || options === null ? { tenantId: options } : options || {};
+
+  const tenantId = opts.tenantId !== undefined ? opts.tenantId : storeTenantId;
+  const enabled = opts.enabled !== undefined ? opts.enabled : true;
+  const onMessage = opts.onMessage;
 
   const queryClient = useQueryClient();
 
