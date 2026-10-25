@@ -1,7 +1,7 @@
 /**
  * apps/web/src/store/useRevOpsStore.ts
  *
- * Global client state for active tenant, user profile, fleet tenants, and UI theme.
+ * Global client state for active tenant, user profile, fleet tenants, UI theme, and WebSocket status.
  * Uses Zustand with persist middleware.
  * NOTE: Independent from api.ts to prevent circular dependencies.
  */
@@ -11,28 +11,33 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Tenant, User } from '../types/api';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected';
 
 export interface RevOpsState {
   user: User | null;
   activeTenantId: string | null;
   tenants: Tenant[];
   theme: ThemeMode;
+  websocketStatus: WebSocketStatus;
 
   // Actions
   setUser: (u: User | null) => void;
   setActiveTenantId: (id: string | null) => void;
   setTenants: (t: Tenant[]) => void;
   setTheme: (t: ThemeMode) => void;
+  toggleTheme: () => void;
+  setWebsocketStatus: (status: WebSocketStatus) => void;
   logout: () => void;
 }
 
 export const useRevOpsStore = create<RevOpsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       activeTenantId: null,
       tenants: [],
       theme: 'system',
+      websocketStatus: 'disconnected',
 
       setUser: (user) => set({ user }),
 
@@ -42,17 +47,26 @@ export const useRevOpsStore = create<RevOpsState>()(
 
       setTheme: (theme) => set({ theme }),
 
+      toggleTheme: () => {
+        const current = get().theme;
+        const next: ThemeMode = current === 'dark' ? 'light' : 'dark';
+        set({ theme: next });
+      },
+
+      setWebsocketStatus: (websocketStatus) => set({ websocketStatus }),
+
       logout: () =>
         set({
           user: null,
           activeTenantId: null,
+          websocketStatus: 'disconnected',
           // tenants list is preserved for fleet selector
         }),
     }),
     {
       name: 'revops-store',
       storage: createJSONStorage(() => localStorage),
-      // Only persist activeTenantId, theme, and user (tenants are fetched fresh)
+      // Only persist activeTenantId, theme, and user (tenants and websocketStatus are transient)
       partialize: (state) => ({
         activeTenantId: state.activeTenantId,
         theme: state.theme,
