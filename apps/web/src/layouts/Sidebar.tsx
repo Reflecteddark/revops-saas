@@ -40,7 +40,7 @@ export function Sidebar({ className }: SidebarProps = {}) {
         {/* Brand / Logo header */}
         <div className="flex items-center px-2 py-2">
           <div className="flex items-center space-x-2.5">
-            <div className="h-5 w-2 rounded-sm bg-[#7c3aed]" />
+            <div className="h-5 w-2 rounded-sm bg-primary" />
             <span className="font-sans text-sm font-semibold tracking-tight text-foreground">
               RevOps OS
             </span>
@@ -61,7 +61,7 @@ export function Sidebar({ className }: SidebarProps = {}) {
                   cn(
                     'group flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition-colors duration-150 ease-out',
                     isActive
-                      ? 'bg-active text-foreground font-semibold'
+                      ? 'bg-active font-semibold text-foreground'
                       : 'text-secondary hover:bg-hover hover:text-foreground'
                   )
                 }
@@ -90,7 +90,7 @@ export function Sidebar({ className }: SidebarProps = {}) {
         <span className="font-mono text-[11px] text-tertiary">v20.7.2</span>
         <Badge
           variant="outline"
-          className="border-subtle bg-hover text-[11px] font-normal text-tertiary tracking-wide px-1.5 py-0.5"
+          className="border-subtle bg-hover px-1.5 py-0.5 text-[11px] font-normal tracking-wide text-tertiary"
         >
           React migration
         </Badge>

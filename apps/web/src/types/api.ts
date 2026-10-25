@@ -320,3 +320,25 @@ export interface ApiError {
   detail: string;
   status_code?: number;
 }
+
+// ============================================================================
+// 8. CCO / CFO AI Analyst Interactive Chat
+// ============================================================================
+
+export interface AnalystChatPayload {
+  message: string;
+  tenant_id: string;
+  history?: { role: string; text?: string; content?: string }[];
+  context?: {
+    total_calls?: number;
+    avg_score?: number;
+    next_step_pct?: number;
+    fake_yes_count?: number;
+    leak_rub?: number;
+  };
+}
+
+export interface AnalystChatResponse {
+  reply: string;
+  status?: string;
+}

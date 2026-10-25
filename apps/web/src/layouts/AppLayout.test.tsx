@@ -31,6 +31,9 @@ vi.mock('@/lib/api', () => ({
   authApi: {
     logout: vi.fn().mockResolvedValue(undefined),
   },
+  insightsApi: {
+    chat: vi.fn().mockResolvedValue({ reply: 'Тестовый ответ CCO' }),
+  },
 }));
 
 vi.mock('@/hooks/useWebSocket', () => ({
@@ -132,5 +135,19 @@ describe('AppLayout', () => {
       expect(authApi.logout).toHaveBeenCalledTimes(1);
       expect(useRevOpsStore.getState().user).toBeNull();
     });
+  });
+
+  it('opens CcoChatDrawer when open-analyst-btn is clicked', async () => {
+    renderWithClient(
+      <AppLayout>
+        <div>Содержимое</div>
+      </AppLayout>
+    );
+
+    const openBtn = screen.getByTestId('open-analyst-btn');
+    expect(openBtn).toBeInTheDocument();
+    fireEvent.click(openBtn);
+
+    expect(await screen.findByTestId('cco-chat-drawer')).toBeInTheDocument();
   });
 });

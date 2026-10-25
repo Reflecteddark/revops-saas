@@ -19,6 +19,7 @@ export interface RevOpsState {
   tenants: Tenant[];
   theme: ThemeMode;
   websocketStatus: WebSocketStatus;
+  isAnalystChatOpen: boolean;
 
   // Actions
   setUser: (u: User | null) => void;
@@ -27,6 +28,8 @@ export interface RevOpsState {
   setTheme: (t: ThemeMode) => void;
   toggleTheme: () => void;
   setWebsocketStatus: (status: WebSocketStatus) => void;
+  setAnalystChatOpen: (open: boolean) => void;
+  toggleAnalystChat: () => void;
   logout: () => void;
 }
 
@@ -38,6 +41,7 @@ export const useRevOpsStore = create<RevOpsState>()(
       tenants: [],
       theme: 'system',
       websocketStatus: 'disconnected',
+      isAnalystChatOpen: false,
 
       setUser: (user) => set({ user }),
 
@@ -54,6 +58,11 @@ export const useRevOpsStore = create<RevOpsState>()(
       },
 
       setWebsocketStatus: (websocketStatus) => set({ websocketStatus }),
+
+      setAnalystChatOpen: (isAnalystChatOpen) => set({ isAnalystChatOpen }),
+
+      toggleAnalystChat: () =>
+        set((state) => ({ isAnalystChatOpen: !state.isAnalystChatOpen })),
 
       logout: () =>
         set({
@@ -74,7 +83,9 @@ export const useRevOpsStore = create<RevOpsState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.activeTenantId) {
-          console.log(`[useRevOpsStore] Rehydrated activeTenantId: ${state.activeTenantId}`);
+          console.log(
+            `[useRevOpsStore] Rehydrated activeTenantId: ${state.activeTenantId}`
+          );
         }
       },
     }

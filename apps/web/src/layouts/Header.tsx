@@ -6,7 +6,7 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User as UserIcon } from 'lucide-react';
+import { LogOut, Sparkles, User as UserIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,12 +31,14 @@ export function Header({ className }: HeaderProps) {
   const navigate = useNavigate();
   const websocketStatus = useRevOpsStore((s) => s.websocketStatus);
   const user = useRevOpsStore((s) => s.user);
+  const toggleAnalystChat = useRevOpsStore((s) => s.toggleAnalystChat);
 
-  const statusDotColor = {
-    connected: 'bg-emerald-500 animate-pulse',
-    connecting: 'bg-amber-500',
-    disconnected: 'bg-rose-400',
-  }[websocketStatus] || 'bg-rose-400';
+  const statusDotColor =
+    {
+      connected: 'bg-emerald-500 animate-pulse',
+      connecting: 'bg-amber-500',
+      disconnected: 'bg-rose-400',
+    }[websocketStatus] || 'bg-rose-400';
 
   const handleLogout = async () => {
     try {
@@ -54,7 +56,7 @@ export function Header({ className }: HeaderProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 flex h-[52px] w-full items-center justify-between border-b border-subtle bg-background/70 px-6 backdrop-blur-xl backdrop-saturate-150',
+        'bg-background/70 sticky top-0 z-30 flex h-[52px] w-full items-center justify-between border-b border-subtle px-6 backdrop-blur-xl backdrop-saturate-150',
         className
       )}
       data-testid="app-header"
@@ -75,10 +77,23 @@ export function Header({ className }: HeaderProps) {
             className={cn('h-1.5 w-1.5 rounded-full', statusDotColor)}
             data-testid="websocket-status-dot"
           />
-          <span className="hidden sm:inline text-xs capitalize">
+          <span className="hidden text-xs capitalize sm:inline">
             {websocketStatus}
           </span>
         </div>
+
+        {/* CCO AI Analyst Launcher Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => toggleAnalystChat()}
+          className="bg-hover/30 hover:bg-hover/80 h-8 gap-1.5 rounded-lg border border-subtle px-2 text-xs font-medium text-secondary hover:text-foreground"
+          data-testid="open-analyst-btn"
+          title="Открыть ИИ-Аналитика (CCO / Agent 2)"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+          <span className="hidden md:inline">ИИ-Аналитик</span>
+        </Button>
 
         <ThemeToggle />
 
@@ -93,13 +108,17 @@ export function Header({ className }: HeaderProps) {
                   data-testid="user-menu-trigger"
                 >
                   <UserIcon className="h-3.5 w-3.5 text-tertiary" />
-                  <span className="font-normal text-secondary">{displayName}</span>
+                  <span className="font-normal text-secondary">
+                    {displayName}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-xs font-medium leading-none text-foreground">{displayName}</p>
+                    <p className="text-xs font-medium leading-none text-foreground">
+                      {displayName}
+                    </p>
                     <p className="text-[11px] leading-none text-tertiary">
                       {user.email}
                     </p>
@@ -108,7 +127,7 @@ export function Header({ className }: HeaderProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}
-                  className="cursor-pointer text-xs text-rose-400 focus:text-rose-400 focus:bg-rose-500/10"
+                  className="cursor-pointer text-xs text-rose-400 focus:bg-rose-500/10 focus:text-rose-400"
                   data-testid="menu-item-logout"
                 >
                   <LogOut className="mr-2 h-3.5 w-3.5" />

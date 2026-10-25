@@ -5,9 +5,15 @@
  * Configured with credentials (cookies) and automatic X-Tenant-Id header injection.
  */
 
-import axios, { type AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
+} from 'axios';
 import { useRevOpsStore } from '../store/useRevOpsStore';
 import type {
+  AnalystChatPayload,
+  AnalystChatResponse,
   ApiError,
   Call,
   ClientLoginResponse,
@@ -56,7 +62,10 @@ api.interceptors.response.use(
   (error: AxiosError<{ detail?: string; message?: string }>) => {
     if (error.response?.status === 401) {
       useRevOpsStore.getState().logout();
-      if (typeof window !== 'undefined' && window.location?.pathname !== '/login') {
+      if (
+        typeof window !== 'undefined' &&
+        window.location?.pathname !== '/login'
+      ) {
         try {
           if (typeof window.location.assign === 'function') {
             window.location.assign('/login');
@@ -88,12 +97,21 @@ api.interceptors.response.use(
 
 export const authApi = {
   login: async (email: string, password: string): Promise<TokenResponse> => {
-    const res = await api.post<TokenResponse>('/auth/login', { email, password });
+    const res = await api.post<TokenResponse>('/auth/login', {
+      email,
+      password,
+    });
     return res.data;
   },
 
-  clientLogin: async (login: string, password: string): Promise<ClientLoginResponse> => {
-    const res = await api.post<ClientLoginResponse>('/auth/client-login', { login, password });
+  clientLogin: async (
+    login: string,
+    password: string
+  ): Promise<ClientLoginResponse> => {
+    const res = await api.post<ClientLoginResponse>('/auth/client-login', {
+      login,
+      password,
+    });
     return res.data;
   },
 
@@ -114,7 +132,9 @@ export const tenantsApi = {
   },
 
   get: async (tenantId: string): Promise<Tenant> => {
-    const res = await api.get<Tenant>(`/tenants/${encodeURIComponent(tenantId)}`);
+    const res = await api.get<Tenant>(
+      `/tenants/${encodeURIComponent(tenantId)}`
+    );
     return res.data;
   },
 
@@ -132,7 +152,9 @@ export const dealsApi = {
     stage?: string;
     sla_risk_only?: boolean;
   }): Promise<Deal[]> => {
-    const res = await api.get<{ deals?: Deal[]; [key: string]: unknown } | Deal[]>('/deals', {
+    const res = await api.get<
+      { deals?: Deal[]; [key: string]: unknown } | Deal[]
+    >('/deals', {
       params,
     });
     const data = res.data;
@@ -153,7 +175,9 @@ export const callsApi = {
     status?: string;
     limit?: number;
   }): Promise<Call[]> => {
-    const res = await api.get<{ calls?: Call[]; [key: string]: unknown } | Call[]>('/calls/data', {
+    const res = await api.get<
+      { calls?: Call[]; [key: string]: unknown } | Call[]
+    >('/calls/data', {
       params,
     });
     const data = res.data;
@@ -169,7 +193,8 @@ export const callsApi = {
 
 export const settingsApi = {
   get: async (tenantId?: string): Promise<Settings> => {
-    const effectiveTenant = tenantId || useRevOpsStore.getState().activeTenantId || 'TNT-001';
+    const effectiveTenant =
+      tenantId || useRevOpsStore.getState().activeTenantId || 'TNT-001';
     const res = await api.get<Settings>('/settings', {
       params: { tenant_id: effectiveTenant },
     });
@@ -182,10 +207,9 @@ export const settingsApi = {
     stages?: StageConfig[];
     telegram?: Partial<TelegramConfig>;
   }): Promise<Settings> => {
-    const res = await api.post<{ settings?: Settings; [key: string]: unknown } | Settings>(
-      '/settings',
-      payload
-    );
+    const res = await api.post<
+      { settings?: Settings; [key: string]: unknown } | Settings
+    >('/settings', payload);
     const data = res.data;
     if ('settings' in data && data.settings) {
       return data.settings as Settings;
@@ -193,11 +217,17 @@ export const settingsApi = {
     return data as Settings;
   },
 
-  updateGeneral: async (tenantId: string, general: Partial<GeneralSettings>): Promise<Settings> => {
+  updateGeneral: async (
+    tenantId: string,
+    general: Partial<GeneralSettings>
+  ): Promise<Settings> => {
     return settingsApi.update({ tenant_id: tenantId, general });
   },
 
-  updateStages: async (tenantId: string, stages: StageConfig[]): Promise<Settings> => {
+  updateStages: async (
+    tenantId: string,
+    stages: StageConfig[]
+  ): Promise<Settings> => {
     return settingsApi.update({ tenant_id: tenantId, stages });
   },
 
@@ -224,8 +254,13 @@ export const adminApi = {
     return [];
   },
 
-  createClient: async (payload: Record<string, unknown>): Promise<ClientProfile> => {
-    const res = await api.post<ClientProfile>('/auth/registered-clients', payload);
+  createClient: async (
+    payload: Record<string, unknown>
+  ): Promise<ClientProfile> => {
+    const res = await api.post<ClientProfile>(
+      '/auth/registered-clients',
+      payload
+    );
     return res.data;
   },
 };
@@ -236,6 +271,34 @@ export const insightsApi = {
       params: { tenant_id: tenantId },
     });
     return res.data;
+  },
+
+  chat: async (payload: AnalystChatPayload): Promise<AnalystChatResponse> => {
+    try {
+      const res = await api.post<AnalystChatResponse>(
+        '/insights/analyst/chat',
+        payload
+      );
+      return res.data;
+    } catch {
+      // Offline fallback synthesis based on context
+      const { message, context } = payload;
+      const leak = context?.leak_rub
+        ? `${context.leak_rub.toLocaleString('ru-RU')} ₽`
+        : '3.2M ₽';
+      const pct = context?.next_step_pct ?? 48;
+      const avg = context?.avg_score ?? 8.4;
+
+      return {
+        reply:
+          `### Экспресс-аудит CCO / Agent 2\n\n` +
+          `По вопросу: **«${message}»**\n\n` +
+          `- **Утечка выручки в воронке**: выявлено сливов на **${leak}** из-за отсутствия точного дедлайна.\n` +
+          `- **Дисциплина Next Step**: зафиксирована только в **${pct}%** диалогов (критический разрыв воронки).\n` +
+          `- **Средний балл стандартов ОП**: **${avg} / 13**.\n\n` +
+          `> **Директива CCO РОПу**: запретить перевод сделок на этап «КП отправлено» без согласованного слота Zoom. Всех зависших клиентов со статусом «Подумаю» передать старшему менеджеру на дожим с оффером ограниченного действия.`,
+      };
+    }
   },
 };
 

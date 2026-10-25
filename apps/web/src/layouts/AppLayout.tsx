@@ -1,13 +1,8 @@
-/**
- * apps/web/src/layouts/AppLayout.tsx
- *
- * Primary application shell layout combining Sidebar, Header, and Outlet viewport.
- */
-
 import * as React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { CcoChatDrawer } from '@/components/CcoChatDrawer';
 import { cn } from '@/lib/utils';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
@@ -19,6 +14,8 @@ export interface AppLayoutProps {
 
 export function AppLayout({ children, className }: AppLayoutProps = {}) {
   const activeTenantId = useRevOpsStore((s) => s.activeTenantId);
+  const isAnalystChatOpen = useRevOpsStore((s) => s.isAnalystChatOpen);
+  const setAnalystChatOpen = useRevOpsStore((s) => s.setAnalystChatOpen);
   useWebSocket(activeTenantId);
 
   return (
@@ -35,6 +32,12 @@ export function AppLayout({ children, className }: AppLayoutProps = {}) {
           {children || <Outlet />}
         </main>
       </div>
+
+      {/* Global CCO / CFO AI Analyst Interactive Drawer */}
+      <CcoChatDrawer
+        open={isAnalystChatOpen}
+        onOpenChange={setAnalystChatOpen}
+      />
     </div>
   );
 }
