@@ -31,6 +31,7 @@ from .routers import (
     public_router,
     radar_router,
     settings_router,
+    sheets_router,
     simulator_router,
     tenants_router,
     webhooks_router,
@@ -234,6 +235,7 @@ app.include_router(radar_router.router, prefix="/api/v1")
 app.include_router(calls_router.router, prefix="/api/v1")
 app.include_router(admin_router.router, prefix="/api/v1")
 app.include_router(settings_router.router, prefix="/api/v1")
+app.include_router(sheets_router.router, prefix="/api/v1")
 app.include_router(tenants_router.router, prefix="/api/v1")
 app.include_router(public_router.router, prefix="/api/v1/public")
 app.include_router(public_router.router, prefix="/api/v1")
