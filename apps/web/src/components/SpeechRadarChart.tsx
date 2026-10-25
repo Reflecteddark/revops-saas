@@ -175,7 +175,7 @@ export function SpeechRadarChart({
                 points={pts}
                 fill="none"
                 stroke="currentColor"
-                className="text-white/[0.05]"
+                className="text-foreground/10 dark:text-white/[0.05]"
                 strokeWidth={1}
               />
             );
@@ -192,7 +192,7 @@ export function SpeechRadarChart({
                 x2={outer.x}
                 y2={outer.y}
                 stroke="currentColor"
-                className="text-white/[0.06]"
+                className="text-foreground/10 dark:text-white/[0.06]"
                 strokeWidth={1}
               />
             );

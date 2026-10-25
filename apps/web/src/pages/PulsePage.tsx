@@ -94,8 +94,8 @@ const callColumns: ColumnDef<Call, unknown>[] = [
 
       if (status === 'won') {
         return (
-          <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-emerald-500/10 text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             {label}
           </span>
         );
@@ -103,15 +103,15 @@ const callColumns: ColumnDef<Call, unknown>[] = [
 
       if (status === 'lost' || status === 'fake_yes') {
         return (
-          <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-zinc-800 text-zinc-300 ring-1 ring-inset ring-white/5">
-            <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
+          <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 ring-1 ring-inset ring-rose-500/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
             {label}
           </span>
         );
       }
 
       return (
-        <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-hover text-secondary ring-1 ring-inset border-subtle">
+        <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-hover text-secondary ring-1 ring-inset ring-border-subtle">
           <span className="h-1.5 w-1.5 rounded-full bg-tertiary" />
           {label}
         </span>

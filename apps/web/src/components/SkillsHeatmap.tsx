@@ -198,9 +198,9 @@ export function SkillsHeatmap({
                       className={cn(
                         'font-medium',
                         rep.roleType === 'top'
-                          ? 'text-emerald-400'
+                          ? 'text-emerald-700 dark:text-emerald-400'
                           : rep.roleType === 'risk'
-                            ? 'text-rose-400'
+                            ? 'text-rose-700 dark:text-rose-400'
                             : 'text-secondary'
                       )}
                     >

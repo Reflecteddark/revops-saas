@@ -47,6 +47,19 @@ describe('ThemeProvider & useTheme', () => {
     expect(screen.getByTestId('theme').textContent).toBe('dark');
   });
 
+  it('initializes with light theme when store theme is light', () => {
+    useRevOpsStore.setState({ theme: 'light' });
+    render(
+      <ThemeProvider>
+        <TestConsumer />
+      </ThemeProvider>
+    );
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(document.documentElement.classList.contains('light')).toBe(true);
+    expect(screen.getByTestId('theme').textContent).toBe('light');
+  });
+
   it('updates data-theme attribute when theme changes to light', () => {
     render(
       <ThemeProvider>

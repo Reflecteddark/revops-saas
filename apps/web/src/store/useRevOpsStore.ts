@@ -39,7 +39,7 @@ export const useRevOpsStore = create<RevOpsState>()(
       user: null,
       activeTenantId: null,
       tenants: [],
-      theme: 'system',
+      theme: 'light',
       websocketStatus: 'disconnected',
       isAnalystChatOpen: false,
 
