@@ -10,7 +10,7 @@ import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PulsePage } from './PulsePage';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
-import { callsApi, insightsApi } from '@/lib/api';
+import { callsApi, dealsApi, insightsApi } from '@/lib/api';
 import type { Call, InsightsSummaryResponse } from '@/types/api';
 
 vi.mock('@/lib/api', () => ({
@@ -18,6 +18,9 @@ vi.mock('@/lib/api', () => ({
     summary: vi.fn(),
   },
   callsApi: {
+    list: vi.fn(),
+  },
+  dealsApi: {
     list: vi.fn(),
   },
 }));
@@ -64,7 +67,7 @@ const mockCalls: Call[] = [
     risk_amount: '0 ₽',
     next_step: 1,
     date: '2026-10-24 14:30',
-    cr: [],
+    cr: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
     error_summary: '',
     recommendation: 'Отличный контакт',
     transcript: '— Здравствуйте!\n— Добрый день, мы готовы подписать договор.',
@@ -87,6 +90,7 @@ describe('PulsePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useRevOpsStore.setState({ activeTenantId: 'TNT-001' });
+    vi.mocked(dealsApi.list).mockResolvedValue([]);
   });
 
   it('renders empty tenant state when activeTenantId is null', () => {
@@ -98,39 +102,47 @@ describe('PulsePage', () => {
     expect(screen.getByText('Тенант не выбран')).toBeInTheDocument();
   });
 
-  it('renders 4 KpiCards with correct values when data is loaded', async () => {
+  it('renders 5 KpiCards and widgets with correct values when data is loaded', async () => {
     vi.mocked(insightsApi.summary).mockResolvedValue(mockInsights);
     vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    vi.mocked(dealsApi.list).mockResolvedValue([]);
 
     renderWithClient(<PulsePage />);
 
     // Wait for async queries to resolve
     expect(await screen.findByText('Ускорить квалификацию')).toBeInTheDocument();
 
-    expect(screen.getByText('Выручка')).toBeInTheDocument();
-    expect(screen.getByText('Звонков')).toBeInTheDocument();
+    expect(screen.getByText('Выручка факт')).toBeInTheDocument();
+    expect(screen.getByText('Пайплайн')).toBeInTheDocument();
+    expect(screen.getByText('Качество звонков')).toBeInTheDocument();
+    expect(screen.getByText('Дефицит до плана')).toBeInTheDocument();
     expect(screen.getByText('SLA риск')).toBeInTheDocument();
-    expect(screen.getByText('Конверсия')).toBeInTheDocument();
 
     // Verify calls table
     expect(screen.getByText('ООО АгроХим')).toBeInTheDocument();
     expect(screen.getByTestId('call-score')).toHaveTextContent('11/13');
+
+    // Verify widgets
+    expect(screen.getByTestId('lost-deals-banner')).toBeInTheDocument();
+    expect(screen.getByTestId('pipeline-funnel')).toBeInTheDocument();
   });
 
   it('shows skeleton cards during initial loading', () => {
     vi.mocked(insightsApi.summary).mockReturnValue(new Promise(() => {}));
     vi.mocked(callsApi.list).mockReturnValue(new Promise(() => {}));
+    vi.mocked(dealsApi.list).mockReturnValue(new Promise(() => {}));
 
     renderWithClient(<PulsePage />);
 
     const skeletons = screen.getAllByTestId('kpi-skeleton');
-    expect(skeletons.length).toBe(4);
+    expect(skeletons.length).toBe(5);
     expect(screen.getByTestId('recommendations-loading')).toBeInTheDocument();
   });
 
   it('renders error alert with retry button when query fails', async () => {
     vi.mocked(insightsApi.summary).mockRejectedValue(new Error('Network error'));
     vi.mocked(callsApi.list).mockResolvedValue([]);
+    vi.mocked(dealsApi.list).mockResolvedValue([]);
 
     renderWithClient(<PulsePage />);
 
@@ -149,9 +161,10 @@ describe('PulsePage', () => {
     });
   });
 
-  it('opens transcript dialog when a call row is clicked', async () => {
+  it('opens transcript drawer when a call row is clicked', async () => {
     vi.mocked(insightsApi.summary).mockResolvedValue(mockInsights);
     vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    vi.mocked(dealsApi.list).mockResolvedValue([]);
 
     renderWithClient(<PulsePage />);
 
