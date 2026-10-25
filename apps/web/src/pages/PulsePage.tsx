@@ -32,6 +32,7 @@ import { AiImpactCard } from '@/components/AiImpactCard';
 import { PulseSmartAlert } from '@/components/PulseSmartAlert';
 import { BusinessEconomicsCard } from '@/components/BusinessEconomicsCard';
 import { StatusSegmentedBar } from '@/components/StatusSegmentedBar';
+import { DailyPulseMatrix } from '@/components/DailyPulseMatrix';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { callsApi, dealsApi, insightsApi } from '@/lib/api';
 import type { Call, RecommendationItem } from '@/types/api';
@@ -524,6 +525,9 @@ export function PulsePage() {
           <AiImpactCard calls={calls} />
         </div>
       </div>
+
+      {/* MPSTATS-style Daily Heatmap Matrix with Sparklines */}
+      <DailyPulseMatrix calls={calls} loading={isLoading} />
 
       {/* Recent Calls */}
       <div className="space-y-3">

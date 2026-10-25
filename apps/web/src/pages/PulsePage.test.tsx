@@ -128,6 +128,10 @@ describe('PulsePage', () => {
     expect(screen.getByTestId('monte-carlo-corridor')).toBeInTheDocument();
     expect(screen.getByTestId('express-scenario-calculator')).toBeInTheDocument();
     expect(screen.getByTestId('ai-impact-card')).toBeInTheDocument();
+    expect(screen.getByTestId('daily-pulse-matrix')).toBeInTheDocument();
+    expect(screen.getByTestId('business-economics-card')).toBeInTheDocument();
+    expect(screen.getByTestId('pulse-smart-alert')).toBeInTheDocument();
+    expect(screen.getAllByTestId('status-segmented-bar')).toHaveLength(2);
   });
 
   it('shows skeleton cards during initial loading', () => {
