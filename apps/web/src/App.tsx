@@ -13,6 +13,7 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { FullPageLoader } from '@/components/FullPageLoader';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const PulsePage = lazy(() => import('@/pages/PulsePage').then((m) => ({ default: m.PulsePage })));
@@ -37,7 +38,8 @@ export function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <Routes>
+      <ErrorBoundary>
+        <Routes>
         <Route
           path="/login"
           element={
@@ -92,6 +94,7 @@ export function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

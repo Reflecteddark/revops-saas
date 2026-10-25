@@ -31,31 +31,32 @@ const callColumns: ColumnDef<Call, unknown>[] = [
   {
     accessorKey: 'date',
     header: 'Дата',
-    cell: ({ row }) => (
-      <span className="font-mono text-xs text-muted-foreground">
-        {row.original.date}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const d = row.original.date || row.original.created_at?.slice(0, 10) || '—';
+      return <span className="font-mono text-xs text-muted-foreground">{d}</span>;
+    },
   },
   {
     accessorKey: 'client',
     header: 'Клиент',
     cell: ({ row }) => (
-      <span className="font-medium text-foreground">{row.original.client}</span>
+      <span className="font-medium text-foreground">
+        {row.original.client || row.original.deal_title || row.original.client_phone || '—'}
+      </span>
     ),
   },
   {
     accessorKey: 'manager',
     header: 'Менеджер',
     cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.original.manager}</span>
+      <span className="text-muted-foreground">{row.original.manager || '—'}</span>
     ),
   },
   {
     accessorKey: 'score',
     header: 'Балл',
     cell: ({ row }) => {
-      const score = row.original.score;
+      const score = row.original.score ?? (row.original as any)?.overall_score;
       if (score === null || score === undefined) {
         return <span className="text-muted-foreground">—</span>;
       }
@@ -80,7 +81,7 @@ const callColumns: ColumnDef<Call, unknown>[] = [
     accessorKey: 'status',
     header: 'Статус',
     cell: ({ row }) => {
-      const status = row.original.status;
+      const status = row.original.status || 'unknown';
       const label = row.original.status_label || status;
       const variant =
         status === 'won'
@@ -141,15 +142,21 @@ export function PulsePage() {
 
   // Typed KPI mapping without fabricated fallbacks
   const kpi = insights?.kpi;
-  const revenue = kpi?.revenue ?? insights?.p50_corridor_rub ?? 0;
+  const revenue = Number(kpi?.revenue ?? insights?.p50_corridor_rub ?? 0);
   const callsTotal = kpi?.calls_total ?? calls.length;
   const wonCalls = calls.filter((c) => c.status === 'won').length;
   const winRate = kpi?.win_rate ?? (callsTotal > 0 ? Math.round((wonCalls / callsTotal) * 100) : 0);
   const slaRiskCount = kpi?.sla_risk_count ?? kpi?.sla_at_risk_count ?? 0;
 
   const recommendations: RecommendationItem[] = insights?.recommendations || [];
-  const leakBreakdown = insights?.leak_breakdown || {};
-  const hasLeaks = Object.keys(leakBreakdown).length > 0;
+  const leakBreakdown = (insights?.leak_breakdown || {}) as Record<string, any>;
+  const leakCategories = Object.entries(leakBreakdown).filter(
+    ([key, val]) =>
+      typeof val === 'object' &&
+      val !== null &&
+      !['capped_by_pipeline', 'total_leak_rub'].includes(key)
+  ) as [string, { sum?: number; amount_rub?: number; count?: number }][];
+  const hasLeaks = leakCategories.length > 0;
 
   return (
     <div className="space-y-6">
@@ -286,24 +293,28 @@ export function PulsePage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-              {Object.entries(leakBreakdown).map(([catKey, leak]) => (
-                <div
-                  key={catKey}
-                  className="flex items-center justify-between p-2.5 rounded-md bg-muted/40 border border-border/50"
-                >
-                  <span className="font-medium text-foreground capitalize">
-                    {catKey.replace(/_/g, ' ')}
-                  </span>
-                  <div className="text-right">
-                    <div className="font-semibold text-red-500">
-                      {leak.amount_rub.toLocaleString('ru-RU')} ₽
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      {leak.count} сделок
+              {leakCategories.map(([catKey, leak]) => {
+                const amount = Number(leak?.amount_rub ?? leak?.sum ?? 0);
+                const count = Number(leak?.count ?? 0);
+                return (
+                  <div
+                    key={catKey}
+                    className="flex items-center justify-between p-2.5 rounded-md bg-muted/40 border border-border/50"
+                  >
+                    <span className="font-medium text-foreground capitalize">
+                      {catKey.replace(/_/g, ' ')}
+                    </span>
+                    <div className="text-right">
+                      <div className="font-semibold text-red-500">
+                        {amount.toLocaleString('ru-RU')} ₽
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {count} сделок
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

@@ -162,6 +162,10 @@ export interface Call {
   recommendation: string;
   transcript: string;
   duration_seconds?: number | null;
+  created_at?: string;
+  client_phone?: string;
+  overall_score?: number | null;
+  ai_summary?: string;
 }
 
 export interface CallsResponse {
