@@ -26,12 +26,14 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
+  Sliders,
   Snowflake,
   Sparkles,
   Stethoscope,
   Wrench,
 } from 'lucide-react';
 import { adminApi } from '@/lib/api';
+import { TenantEditModal } from './TenantEditModal';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -71,6 +73,9 @@ export function AdminClientsTab() {
   // Ready Brief Dialog State
   const [readyBrief, setReadyBrief] = React.useState<{ text: string; company: string } | null>(null);
   const [briefCopied, setBriefCopied] = React.useState(false);
+
+  // Edit & Integration Modal State
+  const [editingTenant, setEditingTenant] = React.useState<TenantLifecycleRecord | null>(null);
 
   // Form State for 1-Click Onboarding
   const [companyName, setCompanyName] = React.useState('');
@@ -505,6 +510,19 @@ export function AdminClientsTab() {
                             <span>Войти</span>
                           </Button>
 
+                          {/* Integrations & Settings */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingTenant(t)}
+                            className="h-7 px-2 text-[11px] gap-1 text-foreground hover:bg-hover hover:text-primary"
+                            title="Интеграции & Настройки контура (замена API, вебхуков, таблицы и параметров)"
+                            data-testid={`btn-edit-tenant-${t.tenant_id}`}
+                          >
+                            <Sliders className="h-3 w-3 text-primary" />
+                            <span>Интеграции</span>
+                          </Button>
+
                           {/* Doctor Check */}
                           <Button
                             variant="ghost"
@@ -847,6 +865,16 @@ export function AdminClientsTab() {
           </DialogContent>
         </Dialog>
       )}
+      {/* 5. Tenant Edit & Integration Modal */}
+      <TenantEditModal
+        tenant={editingTenant}
+        isOpen={Boolean(editingTenant)}
+        onClose={() => setEditingTenant(null)}
+        onSuccess={(msg) => {
+          queryClient.invalidateQueries({ queryKey: ['admin-tenants-list'] });
+          setActionAlert({ text: msg, type: 'success' });
+        }}
+      />
     </div>
   );
 }

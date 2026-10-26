@@ -456,11 +456,32 @@ export interface TenantLifecycleRecord {
   target_next_step?: string;
   amo_domain?: string;
   b24_webhook_url?: string;
+  crm_webhook_url?: string;
+  amo_token?: string;
+  client_email?: string;
+  telephony_webhook_url?: string;
+  amo_webhook_url?: string;
+  bitrix_webhook_url?: string;
   connected_clients?: ConnectedClient[];
   minutes_used?: number;
   minutes_quota?: number;
   spent_rub?: number;
   created_at?: string;
+}
+
+export interface TenantUpdatePayload {
+  tenant_name?: string;
+  client_email?: string;
+  crm_type?: 'amocrm' | 'bitrix24' | string;
+  amo_domain?: string;
+  amo_token?: string;
+  crm_webhook_url?: string;
+  niche_name?: string;
+  avg_deal_check?: number;
+  target_next_step?: string;
+  new_password?: string;
+  spreadsheet_id?: string;
+  minutes_quota?: number;
 }
 
 export interface AdminTenantsListResponse {

@@ -6,6 +6,7 @@ Verifies all new admin endpoints, fleet checks, task scheduler status, and live 
 from fastapi.testclient import TestClient
 
 from apps.api.main import app
+from apps.api.auth import create_access_token
 
 client = TestClient(app)
 
@@ -229,6 +230,47 @@ def test_serve_admin_with_query_param_admin_key():
     assert "revops_admin_token" in resp.cookies
     assert '__INITIAL_TAB__="admin"' in resp.text
     assert admin_key in resp.text
+
+
+def test_admin_update_tenant_and_get_webhooks():
+    """Verifies that PUT /admin/tenants/{id} updates CRM/webhook and GET returns explicit webhook URLs."""
+    token = create_access_token({"sub": "admin", "tenant_id": "TNT-001", "role": "admin"})
+    resp_put = client.put(
+        "/api/v1/admin/tenants/TNT-001",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "tenant_name": "Самозанятый (Master)",
+            "crm_type": "bitrix24",
+            "crm_webhook_url": "https://company.bitrix24.ru/rest/1/test_token/",
+            "spreadsheet_id": "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk"
+        }
+    )
+    assert resp_put.status_code == 200
+    data = resp_put.json()
+    assert data["success"] is True
+
+    resp_get = client.get(
+        "/api/v1/admin/tenants",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp_get.status_code == 200
+    tenants = resp_get.json().get("tenants", [])
+    t001 = next((t for t in tenants if t.get("tenant_id") == "TNT-001"), None)
+    assert t001 is not None
+    assert "https://report.ai-rop.ru/api/v1/webhooks/TNT-001/call" in t001["telephony_webhook_url"]
+    assert "https://report.ai-rop.ru/api/v1/webhooks/TNT-001/bitrix24" in t001["bitrix_webhook_url"]
+    assert "https://report.ai-rop.ru/api/v1/webhooks/TNT-001/amo-crm" in t001["amo_webhook_url"]
+
+
+def test_admin_delete_tenant_protects_master():
+    """Verifies that DELETE /admin/tenants/TNT-001 is rejected with 400 Bad Request."""
+    token = create_access_token({"sub": "admin", "tenant_id": "TNT-001", "role": "admin"})
+    resp_del = client.delete(
+        "/api/v1/admin/tenants/TNT-001",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp_del.status_code == 400
+    assert "TNT-001 запрещено" in resp_del.json()["detail"]
 
 
 

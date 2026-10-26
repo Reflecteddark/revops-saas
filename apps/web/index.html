@@ -9495,6 +9495,16 @@
           <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto;">
             <input type="hidden" id="modalTenantId">
             
+            <!-- Inbound Telephony Webhook Box -->
+            <div style="background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.25); border-radius: 10px; padding: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-size: 0.74rem; color: #c4b5fd; font-weight: 700;">📞 Входящий Webhook Телефонии (n8n / АТС):</label>
+                <button type="button" onclick="copyModalWebhookUrl()" class="btn-modern-ghost" style="padding: 1px 8px; font-size: 0.65rem; height: auto;"><i data-lucide="copy" style="width: 12px; height: 12px; margin-right: 4px;"></i> Скопировать</button>
+              </div>
+              <input type="text" id="modalTenantTelephonyWebhook" readonly style="width: 100%; box-sizing: border-box; padding: 6px 10px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.5); border: 1px solid var(--border-subtle); border-radius: 6px; color: #38bdf8;">
+              <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">Сюда отправляются события о завершении звонков с аудиофайлами mp3.</div>
+            </div>
+
             <div>
               <label for="modalTenantName" style="display: block; font-size: var(--fs-xs); color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">🏢 Название компании:</label>
               <input type="text" id="modalTenantName" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
@@ -9529,6 +9539,21 @@
               <input type="text" id="modalTenantB24Webhook" placeholder="https://portal.bitrix24.ru/rest/1/abc123xyz/" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
             </div>
 
+            <!-- CRM Connection Test Button -->
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: -4px;">
+              <button type="button" onclick="testModalCrmConnection()" class="btn-modern-ghost" style="padding: 5px 12px; font-size: 0.72rem; color: #34d399; border-color: rgba(52, 211, 153, 0.4); display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="zap" style="width: 14px; height: 14px;"></i> Проверить связь с CRM</button>
+              <span id="modalCrmTestStatus" style="font-size: 0.72rem; color: var(--text-muted);"></span>
+            </div>
+
+            <!-- Spreadsheet Configuration -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label for="modalTenantSpreadsheet" style="font-size: var(--fs-xs); color: var(--text-muted); font-weight: 600;">📊 Google Таблица (ID или URL):</label>
+                <a id="modalTenantSpreadsheetLink" href="#" target="_blank" style="font-size: 0.68rem; color: var(--accent-cyan); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">Открыть таблицу &nearr;</a>
+              </div>
+              <input type="text" id="modalTenantSpreadsheet" placeholder="1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
+            </div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div>
                 <label for="modalTenantNiche" style="display: block; font-size: var(--fs-xs); color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">🎯 Ниша бизнеса:</label>
@@ -9538,6 +9563,11 @@
                 <label for="modalTenantAvgCheck" style="display: block; font-size: var(--fs-xs); color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">💰 Средний чек (₽):</label>
                 <input type="number" id="modalTenantAvgCheck" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
               </div>
+            </div>
+
+            <div>
+              <label for="modalTenantQuota" style="display: block; font-size: var(--fs-xs); color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">⏱️ Лимит минут транскрипции в месяц:</label>
+              <input type="number" id="modalTenantQuota" placeholder="1000" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; color: #fff;">
             </div>
 
             <div>

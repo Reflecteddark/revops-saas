@@ -13,6 +13,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -1316,6 +1317,8 @@ class TenantUpdateRequest(BaseModel):
     avg_deal_check: int | None = None
     target_next_step: str | None = None
     new_password: str | None = None
+    spreadsheet_id: str | None = None
+    minutes_quota: int | None = None
 
 
 class TenantStatusRequest(BaseModel):
@@ -1356,6 +1359,13 @@ def get_admin_tenants():
         
         rec = dict(t)
         rec["effective_status"] = effective_status
+        rec["telephony_webhook_url"] = f"https://report.ai-rop.ru/api/v1/webhooks/{t_id}/call"
+        rec["amo_webhook_url"] = f"https://report.ai-rop.ru/api/v1/webhooks/{t_id}/amo-crm"
+        rec["bitrix_webhook_url"] = f"https://report.ai-rop.ru/api/v1/webhooks/{t_id}/bitrix24"
+        rec["crm_webhook_url"] = t.get("crm_webhook_url") or t.get("bitrix_webhook_url") or t.get("b24_webhook_url") or ""
+        rec["amo_domain"] = t.get("amo_domain") or t.get("amocrm_domain") or ""
+        rec["amo_token"] = t.get("amo_token") or t.get("amocrm_token") or ""
+        rec["spreadsheet_id"] = t.get("spreadsheet_id") or ""
         rec["connected_clients"] = [
             {
                 "login": c.get("login"),
@@ -1550,7 +1560,19 @@ def update_tenant_endpoint(tenant_id: str, req: TenantUpdateRequest):
             break
 
     if not target_tenant:
-        raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден в реестре")
+        from packages.database.models import Tenant
+        from packages.database.session import SessionLocal
+        db = SessionLocal()
+        try:
+            db_t = db.query(Tenant).filter(Tenant.id == clean_id).first()
+            if db_t:
+                target_tenant = db_t.to_registry_dict()
+                registry.setdefault("tenants", []).append(target_tenant)
+        finally:
+            db.close()
+
+    if not target_tenant:
+        raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден в реестре и базе данных")
 
     if req.tenant_name:
         target_tenant["tenant_name"] = req.tenant_name.strip()
@@ -1573,6 +1595,13 @@ def update_tenant_endpoint(tenant_id: str, req: TenantUpdateRequest):
         new_em = req.client_email.strip().lower()
         target_tenant["client_email"] = new_em
         target_tenant["client_emails"] = [new_em]
+    if req.spreadsheet_id is not None:
+        raw_sh = req.spreadsheet_id.strip()
+        sh_m = re.search(r"/spreadsheets/d/([a-zA-Z0-9-_]+)", raw_sh)
+        clean_sh = sh_m.group(1) if sh_m else raw_sh
+        target_tenant["spreadsheet_id"] = clean_sh
+    if req.minutes_quota is not None:
+        target_tenant["minutes_quota"] = req.minutes_quota
 
     sync_save_registry(registry)
 
@@ -1599,6 +1628,67 @@ def update_tenant_endpoint(tenant_id: str, req: TenantUpdateRequest):
         "password_reset": password_updated,
         "message": f"Конфигурация тенанта {clean_id} успешно обновлена"
     }
+
+
+@router.delete("/tenants/{tenant_id}")
+def delete_tenant_endpoint(tenant_id: str):
+    """
+    Permanently deletes a tenant and all associated data:
+    - Removes from PostgreSQL tenants, deals, calls, users
+    - Removes from tenants_registry.json
+    - Removes from registered_clients.json
+    - Removes from tenants_archive.json
+    """
+    clean_id = tenant_id.strip().upper()
+    if clean_id == "TNT-001":
+        raise HTTPException(status_code=400, detail="Удаление мастер-тенанта TNT-001 запрещено")
+
+    from ..tenant_registry import load_tenants_registry
+    from packages.database.models import Tenant, User, Deal, CallRecording
+    from packages.database.session import SessionLocal
+
+    # 1. Database cleanup
+    db = SessionLocal()
+    deleted_from_db = False
+    try:
+        users = db.query(User).filter(User.tenant_id == clean_id).all()
+        for u in users:
+            db.delete(u)
+        deals = db.query(Deal).filter(Deal.tenant_id == clean_id).all()
+        for d in deals:
+            db.delete(d)
+        calls = db.query(CallRecording).filter(CallRecording.tenant_id == clean_id).all()
+        for c in calls:
+            db.delete(c)
+        t = db.query(Tenant).filter(Tenant.id == clean_id).first()
+        if t:
+            db.delete(t)
+            deleted_from_db = True
+        db.commit()
+    finally:
+        db.close()
+
+    # 2. Registry cleanup
+    registry = load_tenants_registry()
+    orig_len = len(registry.get("tenants", []))
+    registry["tenants"] = [t for t in registry.get("tenants", []) if str(t.get("tenant_id", "")).upper() != clean_id]
+    if len(registry["tenants"]) != orig_len or deleted_from_db:
+        sync_save_registry(registry)
+
+    # 3. Archive cleanup
+    archives = load_archived_tenants()
+    new_archives = [a for a in archives if str(a.get("tenant_id", "")).upper() != clean_id]
+    if len(new_archives) != len(archives):
+        save_archived_tenants(new_archives)
+
+    # 4. Registered clients cleanup
+    clients = load_registered_clients()
+    new_clients = [c for c in clients if clean_id not in str(c.get("tenant", "")).upper()]
+    if len(new_clients) != len(clients):
+        save_registered_clients(new_clients)
+
+    append_console_log(f"🗑️ Контур {clean_id} полностью удалён из системы", "warning")
+    return {"success": True, "message": f"Организация {clean_id} полностью удалена"}
 
 
 @router.post("/tenants/{tenant_id}/status")

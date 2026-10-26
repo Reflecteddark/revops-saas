@@ -23,6 +23,9 @@ vi.mock('@/lib/api', () => ({
     setTenantStatus: vi.fn(),
     checkTenantHealth: vi.fn(),
     repairTenantSheet: vi.fn(),
+    updateTenant: vi.fn(),
+    deleteTenant: vi.fn(),
+    testCrm: vi.fn(),
   },
 }));
 
@@ -134,6 +137,41 @@ describe('AdminClientsTab', () => {
         })
       );
       expect(screen.getByText(/Клиент «ООО Вектор» успешно развернут!/)).toBeInTheDocument();
+    });
+  });
+
+  it('opens TenantEditModal when clicking "Интеграции" button and updates CRM parameters', async () => {
+    vi.mocked(adminApi.updateTenant).mockResolvedValue({
+      success: true,
+      message: 'Конфигурация тенанта TNT-001 успешно обновлена',
+    });
+
+    renderWithClient(<AdminClientsTab />);
+
+    const editBtn = await screen.findByTestId('btn-edit-tenant-TNT-001');
+    expect(editBtn).toBeInTheDocument();
+    fireEvent.click(editBtn);
+
+    // Modal opens and shows telephony webhook
+    await waitFor(() => {
+      expect(screen.getByText(/Персональный вебхук для телефонии клиента/)).toBeInTheDocument();
+      expect(screen.getByDisplayValue(/https:\/\/report\.ai-rop\.ru\/api\/v1\/webhooks\/TNT-001\/call/)).toBeInTheDocument();
+    });
+
+    // Change Bitrix webhook and save
+    const b24Input = screen.getByPlaceholderText(/https:\/\/company\.bitrix24\.ru\/rest\/1\//);
+    fireEvent.change(b24Input, { target: { value: 'https://new-b24.bitrix24.ru/rest/1/new_token/' } });
+
+    const saveBtn = screen.getByText('Сохранить изменения');
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(adminApi.updateTenant).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.objectContaining({
+          crm_webhook_url: 'https://new-b24.bitrix24.ru/rest/1/new_token/',
+        })
+      );
     });
   });
 });

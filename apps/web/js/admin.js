@@ -1100,9 +1100,77 @@ function openTenantEditModal(tenantId) {
   document.getElementById('modalTenantNextStep').value = tenant.target_next_step || '';
   document.getElementById('modalTenantNewPass').value = '';
 
+  const teleWebhook = tenant.telephony_webhook_url || `https://report.ai-rop.ru/api/v1/webhooks/${tenant.tenant_id}/call`;
+  const teleEl = document.getElementById('modalTenantTelephonyWebhook');
+  if (teleEl) teleEl.value = teleWebhook;
+
+  const sheetId = tenant.spreadsheet_id || '1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk';
+  const sheetEl = document.getElementById('modalTenantSpreadsheet');
+  if (sheetEl) sheetEl.value = sheetId;
+  const sheetLink = document.getElementById('modalTenantSpreadsheetLink');
+  if (sheetLink) sheetLink.href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+
+  const quotaEl = document.getElementById('modalTenantQuota');
+  if (quotaEl) quotaEl.value = tenant.quota_minutes || tenant.minutes_quota || 1000;
+
+  const testStatus = document.getElementById('modalCrmTestStatus');
+  if (testStatus) testStatus.textContent = '';
+
   modal.style.display = 'flex';
   if (typeof trapFocus === 'function') {
     trapFocus(modal);
+  }
+}
+
+function copyModalWebhookUrl() {
+  const el = document.getElementById('modalTenantTelephonyWebhook');
+  if (!el || !el.value) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    showToast('Скопировано', 'URL вебхука телефонии скопирован в буфер обмена');
+  }).catch(() => {
+    el.select();
+    document.execCommand('copy');
+    showToast('Скопировано', 'URL вебхука телефонии скопирован');
+  });
+}
+
+async function testModalCrmConnection() {
+  const tenantId = document.getElementById('modalTenantId')?.value;
+  const crmType = document.getElementById('modalTenantCrmType')?.value || 'amocrm';
+  const statusEl = document.getElementById('modalCrmTestStatus');
+  if (statusEl) {
+    statusEl.textContent = '⏳ Проверка связи...';
+    statusEl.style.color = 'var(--text-muted)';
+  }
+
+  try {
+    const res = await adminFetch('/api/v1/admin/crm/action', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'show_stages',
+        tenant_id: tenantId,
+        crm_type: crmType
+      })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (statusEl) {
+        statusEl.textContent = '✅ Соединение с CRM подтверждено!';
+        statusEl.style.color = '#34d399';
+      }
+      showToast('Успех', 'Связь с CRM успешно установлена');
+    } else {
+      if (statusEl) {
+        statusEl.textContent = '⚠️ CRM не отвечает. Проверьте данные.';
+        statusEl.style.color = '#f43f5e';
+      }
+      showToast('Ошибка CRM', data.detail || data.message || 'Ошибка подключения');
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = `❌ Ошибка: ${err.message}`;
+      statusEl.style.color = '#f43f5e';
+    }
   }
 }
 
@@ -1135,6 +1203,8 @@ async function saveTenantEdit() {
     amo_domain: (document.getElementById('modalTenantAmoDomain')?.value || '').trim() || undefined,
     amo_token: (document.getElementById('modalTenantAmoToken')?.value || '').trim() || undefined,
     crm_webhook_url: (document.getElementById('modalTenantB24Webhook')?.value || '').trim() || undefined,
+    spreadsheet_id: (document.getElementById('modalTenantSpreadsheet')?.value || '').trim() || undefined,
+    minutes_quota: parseInt(document.getElementById('modalTenantQuota')?.value || '1000', 10) || undefined,
     niche_name: (document.getElementById('modalTenantNiche')?.value || '').trim() || undefined,
     avg_deal_check: parseInt(document.getElementById('modalTenantAvgCheck')?.value || '150000', 10), // fallback-allowed: default when creating new tenant
     target_next_step: (document.getElementById('modalTenantNextStep')?.value || '').trim() || undefined,

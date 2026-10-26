@@ -40,6 +40,7 @@ import type {
   TenantHealthDiagnostic,
   TenantProvisionPayload,
   TenantProvisionResponse,
+  TenantUpdatePayload,
   TenantsSummary,
   TokenResponse,
   User,
@@ -366,6 +367,26 @@ export const adminApi = {
     const res = await api.post<TenantProvisionResponse>(
       '/admin/tenants/provision',
       payload
+    );
+    return res.data;
+  },
+
+  updateTenant: async (
+    tenantId: string,
+    payload: TenantUpdatePayload
+  ): Promise<{ success: boolean; tenant?: any; message?: string }> => {
+    const res = await api.put<{ success: boolean; tenant?: any; message?: string }>(
+      `/admin/tenants/${tenantId}`,
+      payload
+    );
+    return res.data;
+  },
+
+  deleteTenant: async (
+    tenantId: string
+  ): Promise<{ success: boolean; message?: string }> => {
+    const res = await api.delete<{ success: boolean; message?: string }>(
+      `/admin/tenants/${tenantId}`
     );
     return res.data;
   },
