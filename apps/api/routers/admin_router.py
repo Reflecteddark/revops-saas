@@ -1681,13 +1681,18 @@ def delete_tenant_endpoint(tenant_id: str):
 
     # 2. Registry cleanup
     registry = load_tenants_registry()
-    orig_len = len(registry.get("tenants", []))
+    found_in_registry = any(str(t.get("tenant_id", "")).upper() == clean_id for t in registry.get("tenants", []))
+    archives = load_archived_tenants()
+    found_in_archive = any(str(a.get("tenant_id", "")).upper() == clean_id for a in archives)
+
+    if not (deleted_from_db or found_in_registry or found_in_archive):
+        raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден")
+
     registry["tenants"] = [t for t in registry.get("tenants", []) if str(t.get("tenant_id", "")).upper() != clean_id]
-    if len(registry["tenants"]) != orig_len or deleted_from_db:
+    if found_in_registry or deleted_from_db:
         sync_save_registry(registry)
 
     # 3. Archive cleanup
-    archives = load_archived_tenants()
     new_archives = [a for a in archives if str(a.get("tenant_id", "")).upper() != clean_id]
     if len(new_archives) != len(archives):
         save_archived_tenants(new_archives)

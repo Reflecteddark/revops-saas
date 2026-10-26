@@ -8,9 +8,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PulsePage } from './PulsePage';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
-import { callsApi, dealsApi, insightsApi } from '@/lib/api';
+import { PulsePage } from './PulsePage';
+import { callsApi, dealsApi, insightsApi, settingsApi } from '@/lib/api';
 import type { Call, InsightsSummaryResponse } from '@/types/api';
 
 vi.mock('@/lib/api', () => ({
@@ -22,6 +22,9 @@ vi.mock('@/lib/api', () => ({
   },
   dealsApi: {
     list: vi.fn(),
+  },
+  settingsApi: {
+    get: vi.fn(),
   },
 }));
 
@@ -38,7 +41,8 @@ const mockInsights: InsightsSummaryResponse = {
     {
       title: 'Ускорить квалификацию',
       impact_rub: 450000,
-      description: 'Фокусироваться на лицах принимающих решения на первом этапе.',
+      description:
+        'Фокусироваться на лицах принимающих решения на первом этапе.',
     },
   ],
   insights: [],
@@ -83,7 +87,9 @@ function renderWithClient(ui: React.ReactElement) {
       },
     },
   });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+  );
 }
 
 describe('PulsePage', () => {
@@ -91,6 +97,30 @@ describe('PulsePage', () => {
     vi.clearAllMocks();
     useRevOpsStore.setState({ activeTenantId: 'TNT-001' });
     vi.mocked(dealsApi.list).mockResolvedValue([]);
+    vi.mocked(settingsApi.get).mockResolvedValue({
+      status: 'ok',
+      source: 'test',
+      tenant_id: 'TNT-001',
+      general: {
+        company_name: 'RevOps Демо',
+        currency: 'RUB (₽)',
+        period_start: '2026-10-01',
+        period_end: '2026-10-31',
+        monthly_target: 5000000,
+        project_start_date: '2026-10-01',
+      },
+      stages: [],
+      managers: [],
+      loss_reasons: [],
+      telegram: {
+        rop_chat_id: '',
+        ceo_chat_id: '',
+        team_chat_id: '',
+        dispatcher_schedule: '',
+        dispatcher_status: true,
+      },
+      modules: [],
+    });
   });
 
   it('renders empty tenant state when activeTenantId is null', () => {
@@ -110,9 +140,13 @@ describe('PulsePage', () => {
     renderWithClient(<PulsePage />);
 
     // Wait for async queries to resolve
-    expect(await screen.findByText('Ускорить квалификацию')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Ускорить квалификацию')
+    ).toBeInTheDocument();
 
-    expect(screen.getAllByText('Выручка факт').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Выручка факт').length).toBeGreaterThanOrEqual(
+      1
+    );
     expect(screen.getByText('Пайплайн')).toBeInTheDocument();
     expect(screen.getByText('Качество звонков')).toBeInTheDocument();
     expect(screen.getByText('Дефицит до плана')).toBeInTheDocument();
@@ -126,7 +160,9 @@ describe('PulsePage', () => {
     expect(screen.getByTestId('lost-deals-banner')).toBeInTheDocument();
     expect(screen.getByTestId('pipeline-funnel')).toBeInTheDocument();
     expect(screen.getByTestId('monte-carlo-corridor')).toBeInTheDocument();
-    expect(screen.getByTestId('express-scenario-calculator')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('express-scenario-calculator')
+    ).toBeInTheDocument();
     expect(screen.getByTestId('ai-impact-card')).toBeInTheDocument();
     expect(screen.getByTestId('daily-pulse-matrix')).toBeInTheDocument();
     expect(screen.getByTestId('business-economics-card')).toBeInTheDocument();
@@ -147,7 +183,9 @@ describe('PulsePage', () => {
   });
 
   it('renders error alert with retry button when query fails', async () => {
-    vi.mocked(insightsApi.summary).mockRejectedValue(new Error('Network error'));
+    vi.mocked(insightsApi.summary).mockRejectedValue(
+      new Error('Network error')
+    );
     vi.mocked(callsApi.list).mockResolvedValue([]);
     vi.mocked(dealsApi.list).mockResolvedValue([]);
 
@@ -182,6 +220,43 @@ describe('PulsePage', () => {
       expect(screen.getByTestId('call-transcript')).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/мы готовы подписать договор/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/мы готовы подписать договор/i)
+    ).toBeInTheDocument();
+  });
+
+  it('renders dynamic sales plan from settingsApi and computes deficit label correctly', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue({
+      status: 'ok',
+      source: 'test',
+      tenant_id: 'TNT-001',
+      general: {
+        company_name: 'ООО Прогресс',
+        currency: 'RUB (₽)',
+        period_start: '2026-10-01',
+        period_end: '2026-10-31',
+        monthly_target: 8000000,
+        project_start_date: '2026-10-01',
+      },
+      stages: [],
+      managers: [],
+      loss_reasons: [],
+      telegram: {
+        rop_chat_id: '',
+        ceo_chat_id: '',
+        team_chat_id: '',
+        dispatcher_schedule: '',
+        dispatcher_status: true,
+      },
+      modules: [],
+    });
+    vi.mocked(insightsApi.summary).mockResolvedValue(mockInsights);
+    vi.mocked(callsApi.list).mockResolvedValue([]);
+    vi.mocked(dealsApi.list).mockResolvedValue([]);
+
+    renderWithClient(<PulsePage />);
+
+    // Should display plan 8.0M in trend label
+    expect(await screen.findByText(/план 8\.0M ₽/i)).toBeInTheDocument();
   });
 });

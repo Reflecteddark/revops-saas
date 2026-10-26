@@ -274,6 +274,28 @@ def test_admin_delete_tenant_protects_master():
     assert "TNT-001 запрещено" in resp_del.json()["detail"]
 
 
+def test_admin_doctor_returns_404_on_missing_tenant():
+    """Verifies that GET /admin/tenants/{id}/health safely returns 404 instead of 500 when tenant not found."""
+    token = create_access_token({"sub": "admin", "tenant_id": "TNT-001", "role": "admin"})
+    resp = client.get(
+        "/api/v1/admin/tenants/TNT-NON-EXISTENT-999/health",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 404
+    assert "не найден" in resp.json()["detail"]
+
+
+def test_admin_delete_tenant_returns_404_on_missing():
+    """Verifies that DELETE /admin/tenants/{id} returns 404 when tenant is not in registry."""
+    token = create_access_token({"sub": "admin", "tenant_id": "TNT-001", "role": "admin"})
+    resp = client.delete(
+        "/api/v1/admin/tenants/TNT-NON-EXISTENT-999",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 404
+    assert "не найден" in resp.json()["detail"]
+
+
 
 
 

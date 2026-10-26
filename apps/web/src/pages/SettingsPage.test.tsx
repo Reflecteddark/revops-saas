@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsPage } from './SettingsPage';
@@ -16,6 +16,12 @@ import type { Settings } from '@/types/api';
 vi.mock('@/lib/api', () => ({
   settingsApi: {
     get: vi.fn(),
+    update: vi.fn(),
+    updateGeneral: vi.fn(),
+    updateStages: vi.fn(),
+    updateManagers: vi.fn(),
+    updateTelegram: vi.fn(),
+    updateModules: vi.fn(),
   },
 }));
 
@@ -73,7 +79,9 @@ function renderWithClient(ui: React.ReactElement) {
       },
     },
   });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+  );
 }
 
 describe('SettingsPage', () => {
@@ -142,8 +150,131 @@ describe('SettingsPage', () => {
     expect(activeModuleBadge).toHaveTextContent('Активен');
     expect(activeModuleBadge).toHaveClass('text-emerald-500');
 
-    const inactiveModuleBadge = screen.getByTestId('module-status-auto_webhook');
+    const inactiveModuleBadge = screen.getByTestId(
+      'module-status-auto_webhook'
+    );
     expect(inactiveModuleBadge).toHaveTextContent('Отключен');
     expect(inactiveModuleBadge).toHaveClass('text-muted-foreground');
+  });
+
+  it('triggers updateGeneral mutation when clicking "Сохранить план"', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    const saveButton = screen.getByRole('button', { name: /Сохранить план/i });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(settingsApi.updateGeneral).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.objectContaining({
+          monthly_target: 5000000,
+        })
+      );
+    });
+  });
+
+  it('triggers updateStages mutation when clicking "Сохранить регламент этапов"', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateStages).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    const stagesTab = screen.getByTestId('tab-stages');
+    fireEvent.keyDown(stagesTab, { key: 'Enter' });
+
+    const saveButton = await screen.findByRole('button', {
+      name: /Сохранить регламент этапов/i,
+    });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(settingsApi.updateStages).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'Квалификация' }),
+        ])
+      );
+    });
+  });
+
+  it('triggers updateManagers mutation when clicking "Сохранить лимиты менеджеров"', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateManagers).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    const managersTab = screen.getByTestId('tab-managers');
+    fireEvent.keyDown(managersTab, { key: 'Enter' });
+
+    const saveButton = await screen.findByRole('button', {
+      name: /Сохранить лимиты менеджеров/i,
+    });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(settingsApi.updateManagers).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'Сергей Иванов' }),
+        ])
+      );
+    });
+  });
+
+  it('triggers updateTelegram mutation when clicking "Сохранить настройки Telegram"', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateTelegram).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    const telegramTab = screen.getByTestId('tab-telegram');
+    fireEvent.keyDown(telegramTab, { key: 'Enter' });
+
+    const saveButton = await screen.findByRole('button', {
+      name: /Сохранить настройки Telegram/i,
+    });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(settingsApi.updateTelegram).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.objectContaining({
+          rop_chat_id: '12345678',
+          ceo_chat_id: '87654321',
+        })
+      );
+    });
+  });
+
+  it('triggers updateModules mutation when clicking "Применить конфигурацию модулей"', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateModules).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    const modulesTab = screen.getByTestId('tab-modules');
+    fireEvent.keyDown(modulesTab, { key: 'Enter' });
+
+    const saveButton = await screen.findByRole('button', {
+      name: /Применить конфигурацию модулей/i,
+    });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(settingsApi.updateModules).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'call_audit' }),
+        ])
+      );
+    });
   });
 });
