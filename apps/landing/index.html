@@ -31,8 +31,8 @@
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/fontawesome.min.css">
     <link rel="stylesheet" href="css/tailwind.min.css?v=20261015-violet">
-    <link rel="stylesheet" href="css/violet-palette.css?v=20261015-violet">
-    <link rel="stylesheet" href="css/dark-theme.css?v=20261026-white-v20">
+    <link rel="stylesheet" href="css/violet-palette.css?v=20261026-contrast-v21">
+    <link rel="stylesheet" href="css/dark-theme.css?v=20261026-contrast-v21">
 
     <!-- Подключение Inter Tight для 100% единства типографики с ЛК -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -166,37 +166,39 @@
             background-size: 24px 24px;
         }
 
-        /* Modern Bento Cards & Panels (Attio / Clay style) */
+        /* Modern Bento Cards & Panels with High-Contrast Depth & Elevation */
         .bento-card {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(203, 213, 225, 0.85);
             border-radius: 1.25rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 8px 24px -4px rgba(15, 23, 42, 0.04);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 10px 30px -4px rgba(15, 23, 42, 0.08);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
         }
         .bento-card:hover {
-            border-color: #cbd5e1;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 16px 32px -6px rgba(15, 23, 42, 0.06);
-            transform: translateY(-2px);
+            border-color: rgba(124, 58, 237, 0.4);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06), 0 20px 40px -8px rgba(124, 58, 237, 0.12);
+            transform: translateY(-4px);
         }
 
         .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+            border: 1px solid rgba(203, 213, 225, 0.9);
+            box-shadow: 0 8px 32px -4px rgba(15, 23, 42, 0.1);
         }
         .glass-card {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 6px 20px -4px rgba(15, 23, 42, 0.04);
-            transition: all 0.25s ease;
+            border: 1px solid rgba(203, 213, 225, 0.85);
+            border-radius: 1.25rem;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 10px 30px -4px rgba(15, 23, 42, 0.07);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .glass-card:hover {
-            border-color: #cbd5e1;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+            border-color: rgba(124, 58, 237, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -8px rgba(124, 58, 237, 0.12);
         }
 
         .glow-emerald {
@@ -730,7 +732,10 @@
                 </div>
 
                 <!-- Bento Grid Showcase: RevOps Enterprise OS Dashboard Preview (Synced with app.ai-rop.ru/pulse) -->
-                <div class="max-w-6xl mx-auto mt-12 sm:mt-16 rounded-2xl border border-slate-200/90 shadow-xl overflow-hidden bg-white">
+                <div class="relative max-w-6xl mx-auto mt-12 sm:mt-16">
+                    <!-- Radiant Stage Glow (Elevates preview from the dotted canvas) -->
+                    <div class="absolute -inset-1.5 bg-gradient-to-r from-violet-600/25 via-indigo-500/20 to-cyan-500/25 rounded-3xl blur-2xl opacity-70 pointer-events-none"></div>
+                    <div class="relative rounded-2xl border-2 border-slate-200/90 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.18)] overflow-hidden bg-white ring-1 ring-slate-900/5">
                     <!-- Browser Window Chrome Top Bar (Light FinTech Style) -->
                     <div class="px-4 py-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between gap-4">
                         <div class="flex items-center gap-2 shrink-0">
@@ -759,7 +764,7 @@
                         <!-- Top Live KPI Summary Strip (5 Canonical KPIs from PulsePage) -->
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 mb-4">
                             <!-- KPI 1 -->
-                            <div class="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs flex flex-col justify-between">
+                            <div class="bg-white border border-slate-200/90 border-t-3 border-t-rose-500 rounded-xl p-3 sm:p-3.5 shadow-xs flex flex-col justify-between">
                                 <div class="text-[10px] sm:text-[11px] font-mono text-slate-500 uppercase tracking-wider font-semibold">Выручка в риске</div>
                                 <div class="text-lg sm:text-2xl font-mono font-black text-rose-600 mt-1 tabular-nums">−480 000 ₽</div>
                                 <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 mt-1">
@@ -768,7 +773,7 @@
                                 </div>
                             </div>
                             <!-- KPI 2 -->
-                            <div class="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs flex flex-col justify-between">
+                            <div class="bg-white border border-slate-200/90 border-t-3 border-t-violet-500 rounded-xl p-3 sm:p-3.5 shadow-xs flex flex-col justify-between">
                                 <div class="text-[10px] sm:text-[11px] font-mono text-slate-500 uppercase tracking-wider font-semibold">Балл стандартов</div>
                                 <div class="text-lg sm:text-2xl font-mono font-black text-slate-900 mt-1 tabular-nums">9.1 <span class="text-xs text-slate-500 font-sans font-medium">/ 13</span></div>
                                 <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 mt-1">
@@ -777,7 +782,7 @@
                                 </div>
                             </div>
                             <!-- KPI 3 -->
-                            <div class="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs flex flex-col justify-between">
+                            <div class="bg-white border border-slate-200/90 border-t-3 border-t-amber-500 rounded-xl p-3 sm:p-3.5 shadow-xs flex flex-col justify-between">
                                 <div class="text-[10px] sm:text-[11px] font-mono text-slate-500 uppercase tracking-wider font-semibold">Ложное согласие</div>
                                 <div class="text-lg sm:text-2xl font-mono font-black text-amber-700 mt-1 tabular-nums">18.5%</div>
                                 <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 mt-1">
@@ -786,7 +791,7 @@
                                 </div>
                             </div>
                             <!-- KPI 4 -->
-                            <div class="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs flex flex-col justify-between">
+                            <div class="bg-white border border-slate-200/90 border-t-3 border-t-emerald-500 rounded-xl p-3 sm:p-3.5 shadow-xs flex flex-col justify-between">
                                 <div class="text-[10px] sm:text-[11px] font-mono text-slate-500 uppercase tracking-wider font-semibold">Спасенная выручка</div>
                                 <div class="text-lg sm:text-2xl font-mono font-black text-slate-900 mt-1 tabular-nums">1 240 000 ₽</div>
                                 <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 mt-1">
@@ -795,7 +800,7 @@
                                 </div>
                             </div>
                             <!-- KPI 5 -->
-                            <div class="col-span-2 md:col-span-1 lg:col-span-1 bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-2xs flex flex-col justify-between">
+                            <div class="col-span-2 md:col-span-1 lg:col-span-1 bg-white border border-slate-200/90 border-t-3 border-t-cyan-500 rounded-xl p-3 sm:p-3.5 shadow-xs flex flex-col justify-between">
                                 <div class="text-[10px] sm:text-[11px] font-mono text-slate-500 uppercase tracking-wider font-semibold">Монте-Карло P50</div>
                                 <div class="text-lg sm:text-2xl font-mono font-black text-violet-700 mt-1 tabular-nums">18.5M ₽</div>
                                 <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 mt-1">
@@ -963,6 +968,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
             </div>
         </section>
@@ -1010,70 +1016,90 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
                     <!-- Leak Card 1 -->
-                    <div class="bento-card p-6 sm:p-7 flex flex-col justify-between text-left h-full">
+                    <div class="relative rounded-2xl bg-white border-2 border-slate-200/90 border-t-4 border-t-rose-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:shadow-rose-500/15 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between text-left h-full group">
                         <div>
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200 font-mono font-bold text-xs mb-4 whitespace-nowrap">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> cr11 (Next Step)
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 font-mono font-bold text-xs uppercase tracking-wider">
+                                    <span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span> cr11 (Next Step)
+                                </span>
+                                <span class="text-[11px] font-mono text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">Срыв сделки</span>
                             </div>
-                            <div class="text-2xl lg:text-3xl font-black text-red-600 font-mono mb-2 whitespace-nowrap tracking-tight">−240&nbsp;000&nbsp;₽</div>
-                            <h3 class="font-display text-base sm:text-lg font-bold text-slate-900 mb-2 leading-snug">Не назван следующий шаг</h3>
+                            <div class="text-3xl lg:text-4xl font-black text-rose-600 font-mono tracking-tight my-2">−240&nbsp;000&nbsp;₽</div>
+                            <div class="text-[11px] font-mono text-slate-500 font-semibold mb-3">средняя потеря на 1 менеджера / мес</div>
+                            <h3 class="font-display text-base sm:text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-rose-600 transition-colors">Не назван следующий шаг</h3>
                             <p class="text-slate-600 text-sm leading-relaxed">
                                 Менеджер заканчивает разговор фразой «подумайте, если что — звоните». Клиент остывает, уходит к конкурентам, а сделка сгорает.
                             </p>
                         </div>
-                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans font-bold text-red-600">
-                            • Потеря теплого клиента
+                        <div class="mt-5 -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-5 py-3 bg-rose-50/90 border-t border-rose-100 rounded-b-2xl flex items-center justify-between text-xs font-bold text-rose-700">
+                            <span class="flex items-center gap-1.5"><i class="fas fa-triangle-exclamation text-rose-500"></i> Потеря теплого клиента</span>
+                            <span class="font-mono text-[10px] text-rose-600 uppercase bg-white px-2 py-0.5 rounded border border-rose-200">100% детект</span>
                         </div>
                     </div>
 
                     <!-- Leak Card 2 -->
-                    <div class="bento-card p-6 sm:p-7 flex flex-col justify-between text-left h-full">
+                    <div class="relative rounded-2xl bg-white border-2 border-slate-200/90 border-t-4 border-t-rose-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:shadow-rose-500/15 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between text-left h-full group">
                         <div>
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200 font-mono font-bold text-xs mb-4 whitespace-nowrap">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> cr3 (ЛПР)
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 font-mono font-bold text-xs uppercase tracking-wider">
+                                    <span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span> cr3 (ЛПР)
+                                </span>
+                                <span class="text-[11px] font-mono text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">Холостой прогон</span>
                             </div>
-                            <div class="text-2xl lg:text-3xl font-black text-red-600 font-mono mb-2 whitespace-nowrap tracking-tight">−450&nbsp;000&nbsp;₽</div>
-                            <h3 class="font-display text-base sm:text-lg font-bold text-slate-900 mb-2 leading-snug">Нет квалификации ЛПР</h3>
+                            <div class="text-3xl lg:text-4xl font-black text-rose-600 font-mono tracking-tight my-2">−450&nbsp;000&nbsp;₽</div>
+                            <div class="text-[11px] font-mono text-slate-500 font-semibold mb-3">средняя потеря на 1 менеджера / мес</div>
+                            <h3 class="font-display text-base sm:text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-rose-600 transition-colors">Нет квалификации ЛПР</h3>
                             <p class="text-slate-600 text-sm leading-relaxed">
                                 Продавец часами презентует продукт секретарям и линейным сотрудникам без бюджета и полномочий, не выясняя лицо, принимающее решение.
                             </p>
                         </div>
-                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans font-bold text-red-600">
-                            • Впустую сожженное время
+                        <div class="mt-5 -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-5 py-3 bg-rose-50/90 border-t border-rose-100 rounded-b-2xl flex items-center justify-between text-xs font-bold text-rose-700">
+                            <span class="flex items-center gap-1.5"><i class="fas fa-triangle-exclamation text-rose-500"></i> Впустую сожженное время</span>
+                            <span class="font-mono text-[10px] text-rose-600 uppercase bg-white px-2 py-0.5 rounded border border-rose-200">100% детект</span>
                         </div>
                     </div>
 
                     <!-- Leak Card 3 -->
-                    <div class="bento-card p-6 sm:p-7 flex flex-col justify-between text-left h-full">
+                    <div class="relative rounded-2xl bg-white border-2 border-slate-200/90 border-t-4 border-t-rose-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:shadow-rose-500/15 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between text-left h-full group">
                         <div>
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200 font-mono font-bold text-xs mb-4 whitespace-nowrap">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> cr10 (Слив на КП)
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 font-mono font-bold text-xs uppercase tracking-wider">
+                                    <span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span> cr10 (Слив на КП)
+                                </span>
+                                <span class="text-[11px] font-mono text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">Слив в торг</span>
                             </div>
-                            <div class="text-2xl lg:text-3xl font-black text-red-600 font-mono mb-2 whitespace-nowrap tracking-tight">−780&nbsp;000&nbsp;₽</div>
-                            <h3 class="font-display text-base sm:text-lg font-bold text-slate-900 mb-2 leading-snug">Отправка КП «в пустоту»</h3>
+                            <div class="text-3xl lg:text-4xl font-black text-rose-600 font-mono tracking-tight my-2">−780&nbsp;000&nbsp;₽</div>
+                            <div class="text-[11px] font-mono text-slate-500 font-semibold mb-3">средняя потеря на 1 менеджера / мес</div>
+                            <h3 class="font-display text-base sm:text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-rose-600 transition-colors">Отправка КП «в пустоту»</h3>
                             <p class="text-slate-600 text-sm leading-relaxed">
                                 Прайс высылается без фиксации даты и времени созвона для разбора спецификации. Клиент берёт прайс для торга со старыми поставщиками.
                             </p>
                         </div>
-                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans font-bold text-red-600">
-                            • Слитый рекламный лид
+                        <div class="mt-5 -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-5 py-3 bg-rose-50/90 border-t border-rose-100 rounded-b-2xl flex items-center justify-between text-xs font-bold text-rose-700">
+                            <span class="flex items-center gap-1.5"><i class="fas fa-triangle-exclamation text-rose-500"></i> Слитый рекламный лид</span>
+                            <span class="font-mono text-[10px] text-rose-600 uppercase bg-white px-2 py-0.5 rounded border border-rose-200">100% детект</span>
                         </div>
                     </div>
 
                     <!-- Leak Card 4 -->
-                    <div class="bento-card p-6 sm:p-7 flex flex-col justify-between text-left h-full">
+                    <div class="relative rounded-2xl bg-white border-2 border-slate-200/90 border-t-4 border-t-rose-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:shadow-rose-500/15 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between text-left h-full group">
                         <div>
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200 font-mono font-bold text-xs mb-4 whitespace-nowrap">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> cr6 (Защита цены)
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 font-mono font-bold text-xs uppercase tracking-wider">
+                                    <span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span> cr6 (Защита цены)
+                                </span>
+                                <span class="text-[11px] font-mono text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">Демпинг</span>
                             </div>
-                            <div class="text-2xl lg:text-3xl font-black text-red-600 font-mono mb-2 whitespace-nowrap tracking-tight">−1&nbsp;250&nbsp;000&nbsp;₽</div>
-                            <h3 class="font-display text-base sm:text-lg font-bold text-slate-900 mb-2 leading-snug">Спор вместо отработки цены</h3>
+                            <div class="text-3xl lg:text-4xl font-black text-rose-600 font-mono tracking-tight my-2">−1&nbsp;250&nbsp;000&nbsp;₽</div>
+                            <div class="text-[11px] font-mono text-slate-500 font-semibold mb-3">средняя потеря на 1 менеджера / мес</div>
+                            <h3 class="font-display text-base sm:text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-rose-600 transition-colors">Спор вместо отработки цены</h3>
                             <p class="text-slate-600 text-sm leading-relaxed">
                                 На сомнение «дорого» менеджер спорит или сразу даёт скидку без аргументации, уничтожая маржинальность сделки и ценность продукта.
                             </p>
                         </div>
-                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans font-bold text-red-600">
-                            • Убитая маржа компании
+                        <div class="mt-5 -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-5 py-3 bg-rose-50/90 border-t border-rose-100 rounded-b-2xl flex items-center justify-between text-xs font-bold text-rose-700">
+                            <span class="flex items-center gap-1.5"><i class="fas fa-triangle-exclamation text-rose-500"></i> Убитая маржа компании</span>
+                            <span class="font-mono text-[10px] text-rose-600 uppercase bg-white px-2 py-0.5 rounded border border-rose-200">100% детект</span>
                         </div>
                     </div>
                 </div>
@@ -1107,7 +1133,7 @@
                 </div>
 
                 <!-- Modern Light Audio Console -->
-                <div class="rounded-3xl bg-slate-50/80 p-6 sm:p-10 shadow-xl border border-slate-200">
+                <div class="rounded-3xl bg-slate-50 border-2 border-slate-200/90 p-6 sm:p-10 shadow-xl relative overflow-hidden">
                     
                     <!-- Track Tabs -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
@@ -1115,130 +1141,137 @@
                             <span class="text-xs font-sans text-violet-700 font-bold uppercase tracking-wide block mb-1">
                                 Выберите тестовый звонок:
                             </span>
-                            <div class="text-slate-900 font-bold text-base sm:text-lg">Записи реальных сделок клиентов</div>
+                            <div class="text-slate-900 font-extrabold text-base sm:text-lg">Записи реальных сделок клиентов</div>
                         </div>
                         
-                        <!-- Track Selector (No raw emojis, Added Etalon Variant) -->
+                        <!-- Track Selector (Standout Contrast Tabs) -->
                         <div class="flex flex-wrap items-center gap-2" id="trackTabs">
-                            <button onclick="switchTrack('variant_bitrix24')" data-track="variant_bitrix24" class="track-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-sm transition">
+                            <button onclick="switchTrack('variant_bitrix24')" data-track="variant_bitrix24" class="track-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-md shadow-violet-600/30 ring-2 ring-violet-500/30 transition">
                                 <i class="fas fa-fire text-amber-300 mr-1.5"></i>Битрикс24 (240k ₽)
                             </button>
-                            <button onclick="switchTrack('variant_cable')" data-track="variant_cable" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition shadow-2xs">
+                            <button onclick="switchTrack('variant_cable')" data-track="variant_cable" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-800 hover:bg-slate-50 border-2 border-slate-200 hover:border-violet-300 transition shadow-xs">
                                 <i class="fas fa-bolt text-yellow-500 mr-1.5"></i>Кабель (650k ₽)
                             </button>
-                            <button onclick="switchTrack('variant_equip')" data-track="variant_equip" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition shadow-2xs">
-                                <i class="fas fa-industry text-slate-500 mr-1.5"></i>УЗИП (480k ₽)
+                            <button onclick="switchTrack('variant_equip')" data-track="variant_equip" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-800 hover:bg-slate-50 border-2 border-slate-200 hover:border-violet-300 transition shadow-xs">
+                                <i class="fas fa-industry text-slate-600 mr-1.5"></i>УЗИП (480k ₽)
                             </button>
-                            <button onclick="switchTrack('variant_parts')" data-track="variant_parts" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition shadow-2xs">
+                            <button onclick="switchTrack('variant_parts')" data-track="variant_parts" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-800 hover:bg-slate-50 border-2 border-slate-200 hover:border-violet-300 transition shadow-xs">
                                 <i class="fas fa-microscope text-cyan-600 mr-1.5"></i>Медтехника (520k ₽)
                             </button>
-                            <button onclick="switchTrack('variant_won')" data-track="variant_won" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 transition shadow-2xs">
+                            <button onclick="switchTrack('variant_won')" data-track="variant_won" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-2 border-emerald-300 transition shadow-xs">
                                 <i class="fas fa-circle-check text-emerald-600 mr-1.5"></i>Эталон (850k ₽)
                             </button>
                         </div>
                     </div>
 
-                    <!-- Player Controller (Crisp White Card) -->
-                    <div class="py-6 my-2 px-5 sm:px-7 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-6">
+                    <!-- Player Controller (High-Contrast Deck Card) -->
+                    <div class="py-6 my-2 px-5 sm:px-7 rounded-2xl bg-white border-2 border-slate-200 shadow-md flex flex-col sm:flex-row items-center gap-6">
                         <audio id="demoAudio" src="audio/cold-call-bitrix24.mp3" preload="metadata"></audio>
                         
-                        <button id="playBtn" onclick="togglePlay()" class="w-16 h-16 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-violet-600/30 hover:scale-105 active:scale-95 transition cursor-pointer" title="Воспроизвести запись">
+                        <button id="playBtn" onclick="togglePlay()" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-violet-600/30 hover:scale-105 active:scale-95 transition cursor-pointer" title="Воспроизвести запись">
                             <i id="playIcon" class="fas fa-play text-xl ml-1"></i>
                         </button>
 
                         <div class="w-full">
-                            <div class="flex items-center justify-between text-xs sm:text-sm text-slate-500 font-mono mb-2">
-                                <span id="currentTime">00:00</span>
-                                <span class="text-slate-900 font-bold truncate max-w-xs sm:max-w-md" id="trackTitle">Холодный звонок: Продажа CRM Битрикс24 • Сделка на 240 000 ₽</span>
-                                <span id="totalDuration">00:00</span>
+                            <div class="flex items-center justify-between text-xs sm:text-sm text-slate-600 font-mono mb-2">
+                                <span id="currentTime" class="font-bold text-violet-700">00:00</span>
+                                <span class="text-slate-900 font-extrabold truncate max-w-xs sm:max-w-md" id="trackTitle">Холодный звонок: Продажа CRM Битрикс24 • Сделка на 240 000 ₽</span>
+                                <span id="totalDuration" class="font-bold text-slate-500">00:00</span>
                             </div>
 
                             <!-- Progress Track -->
-                            <div id="progressContainer" class="w-full h-3 bg-slate-200 rounded-full overflow-hidden cursor-pointer relative">
-                                <div id="progressBar" class="h-full bg-violet-500 rounded-full w-0 transition-all duration-100"></div>
+                            <div id="progressContainer" class="w-full h-3 bg-slate-200 rounded-full overflow-hidden cursor-pointer relative shadow-inner">
+                                <div id="progressBar" class="h-full bg-gradient-to-r from-violet-600 to-indigo-500 rounded-full w-0 transition-all duration-100"></div>
                             </div>
 
                             <!-- Animated Waveform -->
                             <div class="flex items-center gap-1.5 mt-3 h-7">
-                                <div class="wave-bar w-1.5 bg-slate-300 rounded-full h-2"></div>
-                                <div class="wave-bar w-1.5 bg-slate-300 rounded-full h-3"></div>
-                                <div class="wave-bar w-1.5 bg-slate-300 rounded-full h-4"></div>
-                                <div class="wave-bar w-1.5 bg-violet-500 rounded-full h-6"></div>
+                                <div class="wave-bar w-1.5 bg-violet-300 rounded-full h-2"></div>
+                                <div class="wave-bar w-1.5 bg-violet-400 rounded-full h-3"></div>
+                                <div class="wave-bar w-1.5 bg-violet-500 rounded-full h-4"></div>
+                                <div class="wave-bar w-1.5 bg-violet-600 rounded-full h-6"></div>
                                 <div class="wave-bar w-1.5 bg-violet-500 rounded-full h-5"></div>
-                                <div class="wave-bar w-1.5 bg-slate-300 rounded-full h-3"></div>
-                                <div class="wave-bar w-1.5 bg-slate-300 rounded-full h-4"></div>
-                                <div class="wave-bar w-1.5 bg-slate-300 rounded-full h-2"></div>
-                                <span class="text-xs text-slate-500 ml-2 font-mono">Нажмите Play для запуска аудиозаписи</span>
+                                <div class="wave-bar w-1.5 bg-violet-400 rounded-full h-3"></div>
+                                <div class="wave-bar w-1.5 bg-violet-300 rounded-full h-4"></div>
+                                <div class="wave-bar w-1.5 bg-violet-200 rounded-full h-2"></div>
+                                <span class="text-xs text-violet-900 font-semibold ml-2 font-mono">Нажмите Play для запуска аудиозаписи</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Realtime AI Verdict Card (Light Semantic Architecture) -->
-                    <div class="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200 shadow-sm mt-4 text-left">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 mb-5 border-b border-slate-100">
+                    <div class="p-6 sm:p-7 rounded-2xl bg-white border-2 border-slate-200 shadow-md mt-4 text-left">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 mb-5 border-b border-slate-200">
                             <div class="flex items-center gap-2.5">
-                                <span id="verdictBadge" class="px-3 py-1 rounded-lg bg-red-50 text-red-700 font-mono font-bold text-xs border border-red-200 flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+                                <span id="verdictBadge" class="px-3.5 py-1.5 rounded-xl bg-rose-100 text-rose-800 font-mono font-bold text-xs border border-rose-300 flex items-center gap-2 shadow-2xs">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span>
                                     <span>КРИТИЧЕСКИЙ СЛИВ СДЕЛКИ</span>
                                 </span>
-                                <span class="text-sm text-slate-700">Оценка ИИ: <strong id="verdictScore" class="text-red-600 font-black">4/13 (Слив)</strong></span>
+                                <span class="text-sm text-slate-800 font-medium">Оценка ИИ: <strong id="verdictScore" class="text-rose-600 font-black text-base">4/13 (Слив)</strong></span>
                             </div>
                             <div class="text-sm text-slate-700 font-mono">
-                                Потерянная выручка: <span id="verdictLoss" class="text-xl text-red-600 font-black">240 000 ₽</span>
+                                Потерянная выручка: <span id="verdictLoss" class="text-xl sm:text-2xl text-rose-600 font-black">240 000 ₽</span>
                             </div>
                         </div>
 
                         <!-- 13 Criteria Live Audit Bar -->
-                        <div class="mb-5 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                            <div class="flex items-center justify-between text-xs font-mono text-slate-600 mb-2.5">
-                                <span>Оцифровка 13 B2B-критериев звонка (Нейросетевой аудит):</span>
-                                <span id="demoCrSummary" class="text-slate-900 font-bold">4 из 13 выполнено</span>
+                        <div class="mb-5 p-4 rounded-xl bg-slate-50 border-2 border-slate-200">
+                            <div class="flex items-center justify-between text-xs font-mono text-slate-700 mb-2.5">
+                                <span class="font-bold">Оцифровка 13 B2B-критериев звонка (Нейросетевой аудит):</span>
+                                <span id="demoCrSummary" class="text-slate-900 font-extrabold bg-white px-2 py-0.5 rounded border border-slate-200">4 из 13 выполнено</span>
                             </div>
                             <div id="demoCrDots" class="grid-cols-13 gap-1 sm:gap-1.5 text-center">
                                 <!-- Populated dynamically by switchTrack -->
                             </div>
                         </div>
 
-                        <!-- Live Transcript Speech Bubbles -->
-                        <div class="space-y-3 text-sm font-sans mb-5">
-                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-left">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="w-2 h-2 rounded-full bg-violet-500"></span>
-                                    <span class="text-xs font-sans font-bold text-violet-700 uppercase">Клиент:</span>
+                        <!-- Live Transcript Speech Bubbles (High Contrast Visual Dialogue) -->
+                        <div class="space-y-3.5 text-sm font-sans mb-5">
+                            <div class="p-4 sm:p-5 rounded-2xl bg-sky-50/70 border-2 border-sky-200 text-left shadow-2xs">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <div class="w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-[10px] font-bold">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <span class="text-xs font-bold text-sky-950 uppercase tracking-wide">Потенциальный клиент:</span>
                                 </div>
-                                <p id="clientText" class="text-slate-700 italic leading-relaxed">
+                                <p id="clientText" class="text-slate-800 italic leading-relaxed pl-8">
                                     «Слушайте, отправьте ваше коммерческое предложение на общую почту info@... Руководство посмотрит, если будет интересно — свяжемся».
                                 </p>
                             </div>
-                            <div class="p-4 rounded-xl bg-red-50/50 border border-red-200/80 text-left">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                                    <span class="text-xs font-mono font-bold text-red-600 uppercase">Менеджер отдела продаж:</span>
+                            <div class="p-4 sm:p-5 rounded-2xl bg-rose-50/70 border-2 border-rose-200 text-left shadow-2xs">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <div class="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-[10px] font-bold">
+                                        <i class="fas fa-headset"></i>
+                                    </div>
+                                    <span class="text-xs font-mono font-bold text-rose-900 uppercase tracking-wide">Менеджер отдела продаж (Ошибка):</span>
                                 </div>
-                                <p id="managerText" class="text-slate-800 italic leading-relaxed">
+                                <p id="managerText" class="text-slate-900 font-medium italic leading-relaxed pl-8">
                                     «Ну понимаете, Битрикс24 система комплексная, там и CRM, и задачи... Ну ладно, давайте я вам на почту скину базовый тариф, а вы почитайте».
                                 </p>
                             </div>
                         </div>
 
                         <!-- Mistakes & Recommendation -->
-                        <div class="pt-4 border-t border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 text-sm">
-                            <div class="space-y-2 max-w-2xl">
-                                <div class="text-slate-600">
-                                    <strong class="text-slate-900">Нарушены критерии B2B (cr1..cr13):</strong> 
-                                    <span id="brokenCriteria" class="text-red-600 font-mono font-bold">cr3 (ЛПР не выявлен) • cr6 (Цена без ценности) • cr10 (Слив на КП) • cr11 (Нет фиксации шага)</span>
+                        <div class="pt-5 border-t border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 text-sm">
+                            <div class="space-y-2.5 max-w-2xl">
+                                <div class="text-slate-700">
+                                    <strong class="text-slate-900 font-bold">Нарушены критерии B2B (cr1..cr13):</strong> 
+                                    <span id="brokenCriteria" class="text-rose-600 font-mono font-black ml-1">cr3 (ЛПР не выявлен) • cr6 (Цена без ценности) • cr10 (Слив на КП) • cr11 (Нет фиксации шага)</span>
                                 </div>
-                                <div class="p-3.5 rounded-xl bg-violet-50 border border-violet-200 text-slate-800 text-xs sm:text-sm">
-                                    <strong class="text-violet-800 block mb-0.5">Рекомендация РОПу:</strong> 
-                                    <span id="aiAdvice" class="text-slate-700">«Срочно перезвонить в течение 15 минут, обойти секретаря вопросом об интеграции с 1С и зафиксировать 20-минутный онлайн-показ 3 отраслевых воронок на конкретную дату».</span>
+                                <div class="p-4 rounded-xl bg-violet-50/90 border-2 border-violet-200/90 text-slate-800 text-xs sm:text-sm">
+                                    <div class="flex items-center gap-1.5 text-violet-900 font-bold mb-1">
+                                        <i class="fas fa-lightbulb text-amber-500"></i>
+                                        <span>Рекомендация РОПу для спасения сделки:</span>
+                                    </div>
+                                    <span id="aiAdvice" class="text-slate-700 leading-relaxed font-medium">«Срочно перезвонить в течение 15 минут, обойти секретаря вопросом об интеграции с 1С и зафиксировать 20-минутный онлайн-показ 3 отраслевых воронок на конкретную дату».</span>
                                 </div>
                             </div>
-                            <div class="flex flex-col gap-2 shrink-0">
-                                <div class="flex items-center gap-2 text-xs font-mono font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                            <div class="flex flex-col gap-2.5 shrink-0 w-full md:w-auto">
+                                <div class="flex items-center justify-center gap-2 text-xs font-mono font-bold text-cyan-800 bg-cyan-50 border border-cyan-200 px-3.5 py-2 rounded-xl whitespace-nowrap shadow-2xs">
                                     <i class="fab fa-telegram text-cyan-600"></i>
                                     <span>TG/MAX алерт отправлен</span>
                                 </div>
-                                <a href="#cta" class="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow-md transition whitespace-nowrap text-center">
+                                <a href="#cta" class="px-6 py-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow-md shadow-violet-600/25 transition whitespace-nowrap text-center">
                                     Разобрать 50 звонков (0 ₽)
                                 </a>
                             </div>
@@ -1620,117 +1653,149 @@
                 <!-- 3 Pillars Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     
-                    <!-- Phase 1 -->
-                    <div class="rounded-3xl bg-white border border-slate-200 p-6 sm:p-7 border-t-4 border-t-violet-600 shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-xs font-sans font-bold text-slate-500 uppercase">Этап 1 // Вход и боли</span>
-                            <span class="text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-700 font-mono font-bold">cr1 – cr4</span>
+                    <!-- Phase 1: Qualification & Context (Sky FinTech Stage) -->
+                    <div class="rounded-3xl bg-white border-2 border-slate-200 border-t-4 border-t-sky-500 p-6 sm:p-7 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-bold text-sky-700 uppercase tracking-wider">Этап 1 // Вход и боли</span>
+                                <span class="text-xs px-3 py-1 rounded-full bg-sky-100 text-sky-900 font-mono font-bold border border-sky-300">cr1 – cr4</span>
+                            </div>
+                            <h4 class="font-display font-extrabold text-slate-900 text-lg mb-4">Квалификация и контекст</h4>
+                            
+                            <ul class="space-y-3.5 text-sm text-slate-700">
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-sky-900 font-bold bg-sky-100 border border-sky-200 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr1</span>
+                                    <span><strong>Приветствие по стандарту:</strong> Имя, компания, позиционирование.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-sky-900 font-bold bg-sky-100 border border-sky-200 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr2</span>
+                                    <span><strong>Выявление истинной боли:</strong> Проблематизирующие вопросы, контекст задачи.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-sky-900 font-bold bg-sky-100 border border-sky-200 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr3</span>
+                                    <span><strong>Идентификация ЛПР:</strong> Кто принимает решение и согласует бюджет.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-sky-900 font-bold bg-sky-100 border border-sky-200 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr4</span>
+                                    <span><strong>Сроки и бюджет:</strong> Понимание масштаба задачи и готовности к оплате.</span>
+                                </li>
+                            </ul>
                         </div>
-                        <h4 class="font-display font-bold text-slate-900 text-base sm:text-lg mb-4">Квалификация и контекст</h4>
-                        
-                        <ul class="space-y-3.5 text-sm text-slate-700">
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr1</span>
-                                <span><strong>Приветствие по стандарту:</strong> Имя, компания, позиционирование.</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr2</span>
-                                <span><strong>Выявление истинной боли:</strong> Проблематизирующие вопросы, контекст задачи.</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr3</span>
-                                <span><strong>Идентификация ЛПР:</strong> Кто принимает решение и согласует бюджет.</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr4</span>
-                                <span><strong>Сроки и бюджет:</strong> Понимание масштаба задачи и готовности к оплате.</span>
-                            </li>
-                        </ul>
+                        <div class="mt-6 pt-3 border-t border-slate-100 text-xs font-mono text-sky-800 font-semibold">
+                            Отсев нецелевых обращений на 1-й минуте
+                        </div>
                     </div>
 
-                    <!-- Phase 2 -->
-                    <div class="rounded-3xl bg-white border border-slate-200 p-6 sm:p-7 border-t-4 border-t-violet-500 shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-xs font-sans font-bold text-slate-500 uppercase">Этап 2 // Презентация</span>
-                            <span class="text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-700 font-mono font-bold">cr5 – cr8</span>
+                    <!-- Phase 2: Value Defense (Featured Violet Battlefield) -->
+                    <div class="rounded-3xl bg-gradient-to-b from-violet-50/50 via-white to-white border-2 border-violet-300 border-t-4 border-t-violet-600 ring-4 ring-violet-500/10 shadow-xl p-6 sm:p-7 lg:-translate-y-2 relative transition flex flex-col justify-between">
+                        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-violet-600 text-white font-mono font-bold text-[10px] tracking-wider uppercase shadow-md whitespace-nowrap">
+                            КЛЮЧЕВОЙ ЭТАП ЗАЩИТЫ ВЫРУЧКИ
                         </div>
-                        <h4 class="font-display font-bold text-slate-900 text-base sm:text-lg mb-4">Экспертность и защита ценности</h4>
-                        
-                        <ul class="space-y-3.5 text-sm text-slate-700">
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr5</span>
-                                <span><strong>Презентация под боли:</strong> Привязка выгод продукта к проблеме клиента.</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr6</span>
-                                <span><strong>Защита стоимости:</strong> Озвучивание цены только после раскрытия ценности.</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr7</span>
-                                <span><strong>Удержание инициативы:</strong> Менеджер ведет диалог, а не отвечает на допрос.</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr8</span>
-                                <span><strong>Этика и чистота речи:</strong> Отсутствие слов-паразитов, перебиваний и давления.</span>
-                            </li>
-                        </ul>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-bold text-violet-800 uppercase tracking-wider">Этап 2 // Презентация</span>
+                                <span class="text-xs px-3 py-1 rounded-full bg-violet-600 text-white font-mono font-bold shadow-2xs">cr5 – cr8</span>
+                            </div>
+                            <h4 class="font-display font-extrabold text-slate-900 text-lg mb-4">Экспертность и защита цены</h4>
+                            
+                            <ul class="space-y-3.5 text-sm text-slate-800">
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-violet-900 font-bold bg-violet-100 border border-violet-300 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr5</span>
+                                    <span><strong>Презентация под боли:</strong> Привязка выгод продукта к проблеме клиента.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-violet-900 font-bold bg-violet-100 border border-violet-300 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr6</span>
+                                    <span><strong>Защита стоимости:</strong> Озвучивание цены только после раскрытия ценности.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-violet-900 font-bold bg-violet-100 border border-violet-300 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr7</span>
+                                    <span><strong>Удержание инициативы:</strong> Менеджер ведет диалог, а не отвечает на допрос.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-violet-900 font-bold bg-violet-100 border border-violet-300 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr8</span>
+                                    <span><strong>Этика и чистота речи:</strong> Отсутствие слов-паразитов, перебиваний и давления.</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-6 pt-3 border-t border-violet-100 text-xs font-mono text-violet-800 font-bold">
+                            Предотвращение 70% необоснованных скидок
+                        </div>
                     </div>
 
-                    <!-- Phase 3 -->
-                    <div class="rounded-3xl bg-white border border-slate-200 p-6 sm:p-7 border-t-4 border-t-purple-500 shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-xs font-sans font-bold text-slate-500 uppercase">Этап 3 // Закрытие</span>
-                            <span class="text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-700 font-mono font-bold">cr9 – cr13</span>
+                    <!-- Phase 3: Closing & CRM (Emerald Success Stage) -->
+                    <div class="rounded-3xl bg-white border-2 border-slate-200 border-t-4 border-t-emerald-500 p-6 sm:p-7 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Этап 3 // Закрытие</span>
+                                <span class="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 font-mono font-bold border border-emerald-300">cr9 – cr13</span>
+                            </div>
+                            <h4 class="font-display font-extrabold text-slate-900 text-lg mb-4">Дожим и фиксация в CRM</h4>
+                            
+                            <ul class="space-y-3.5 text-sm text-slate-700">
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-emerald-900 font-bold bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr9</span>
+                                    <span><strong>Вскрытие возражений:</strong> Работа с «дорого», «подумаю», «не сейчас».</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-emerald-900 font-bold bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr10</span>
+                                    <span><strong>Отработка сомнений:</strong> Аргументация через твердые кейсы и гарантии.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-emerald-900 font-bold bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr11</span>
+                                    <span><strong>Жесткий следующий шаг:</strong> Конкретная дата и время следующего созвона.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-emerald-900 font-bold bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr12</span>
+                                    <span><strong>Назначение встречи/Zoom:</strong> Продажа следующего этапа воронки.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="font-mono text-emerald-900 font-bold bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">cr13</span>
+                                    <span><strong>Дисциплина в CRM:</strong> Корректный статус, дата задачи и резюме.</span>
+                                </li>
+                            </ul>
                         </div>
-                        <h4 class="font-display font-bold text-slate-900 text-base sm:text-lg mb-4">Дожим и фиксация в CRM</h4>
-                        
-                        <ul class="space-y-3.5 text-sm text-slate-700">
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr9</span>
-                                <span><strong>Вскрытие возражений:</strong> Работа с «дорого», «подумаю», «не сейчас».</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr10</span>
-                                <span><strong>Отработка сомнений:</strong> Аргументация через твердые кейсы и гарантии.</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr11</span>
-                                <span><strong>Жесткий следующий шаг:</strong> Конкретная дата и время следующего созвона.</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr12</span>
-                                <span><strong>Назначение встречи/Zoom:</strong> Продажа следующего этапа воронки.</span>
-                            </li>
-                            <li class="flex items-start gap-2.5">
-                                <span class="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-xs shrink-0 mt-0.5">cr13</span>
-                                <span><strong>Дисциплина в CRM:</strong> Корректный статус, дата задачи и резюме.</span>
-                            </li>
-                        </ul>
+                        <div class="mt-6 pt-3 border-t border-slate-100 text-xs font-mono text-emerald-800 font-semibold">
+                            Гарантированная конверсия в следующий этап
+                        </div>
                     </div>
 
                 </div>
 
-                <!-- Comparison Bar: Human vs AI -->
-                <div class="rounded-2xl p-6 sm:p-7 bg-white border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center shrink-0">
-                            <i class="fas fa-user-xmark text-xl"></i>
+                <!-- Comparison Bar: Human vs AI (High Visual Drama) -->
+                <div class="rounded-3xl p-6 sm:p-8 bg-white border-2 border-slate-200/90 shadow-lg flex flex-col md:flex-row items-stretch justify-between gap-6">
+                    <!-- Left: Human ROP (Danger / Ineffective) -->
+                    <div class="flex-1 rounded-2xl bg-rose-50/80 border-2 border-rose-200 p-5 flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 border border-rose-300 flex items-center justify-center shrink-0 shadow-xs">
+                            <i class="fas fa-user-xmark text-2xl"></i>
                         </div>
                         <div>
+                            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-rose-200/70 text-rose-800 font-mono font-bold text-[10px] uppercase mb-1">
+                                Ручной контроль
+                            </div>
                             <div class="text-base font-bold text-slate-900">Выборочная прослушка живым РОПом</div>
-                            <div class="text-sm text-slate-600">Слушает 2–3% звонков • Субъективно • Занимает 15 часов рутины в неделю</div>
+                            <div class="text-xs text-rose-900 mt-0.5 font-medium leading-relaxed">Слушает 2–3% звонков &bull; Субъективно &bull; Тратит 15 часов рутины в неделю</div>
                         </div>
                     </div>
 
-                    <div class="text-slate-400 font-bold text-lg hidden md:block">VS</div>
+                    <!-- Center VS Badge -->
+                    <div class="flex items-center justify-center shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-slate-900 text-white font-mono font-black text-xs flex items-center justify-center shadow-md">
+                            VS
+                        </div>
+                    </div>
 
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-violet-50 text-violet-600 border border-violet-200 flex items-center justify-center shrink-0">
-                            <i class="fas fa-robot text-xl"></i>
+                    <!-- Right: AI Supervisor (Superpower / 100% Coverage) -->
+                    <div class="flex-1 rounded-2xl bg-emerald-50/80 border-2 border-emerald-200 p-5 flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center justify-center shrink-0 shadow-xs">
+                            <i class="fas fa-robot text-2xl"></i>
                         </div>
                         <div>
+                            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-200/70 text-emerald-900 font-mono font-bold text-[10px] uppercase mb-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span> 100% покрытие
+                            </div>
                             <div class="text-base font-bold text-slate-900">ИИ-Супервайзер RevOps OS</div>
-                            <div class="text-sm text-slate-600">100% звонков без пропусков • Строгий B2B-скоринг • 0 часов рутины для РОПа</div>
+                            <div class="text-xs text-emerald-950 mt-0.5 font-medium leading-relaxed">100% звонков без пропусков &bull; Строгий B2B-скоринг &bull; 0 часов рутины для РОПа</div>
                         </div>
                     </div>
                 </div>
@@ -1758,69 +1823,72 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
                     
                     <!-- Case 1 -->
-                    <div class="rounded-3xl glass-card p-6 sm:p-7 border border-slate-200 flex flex-col justify-between">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-emerald-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-full">
                         <div>
-                            <div class="flex items-center justify-between text-xs font-mono text-slate-500 mb-3">
-                                <span>ПромОборудование</span>
-                                <span class="text-violet-600 font-bold font-mono text-sm">+3.84M ₽</span>
+                            <div class="flex items-center justify-between text-xs font-mono mb-3">
+                                <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 font-bold border border-slate-200">ПромОборудование</span>
+                                <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-black font-mono text-sm border border-emerald-300 shadow-2xs">+3.84M ₽</span>
                             </div>
-                            <h4 class="font-display font-bold text-slate-900 text-lg mb-3">Кейс: ООО «ТехноСнаб»</h4>
+                            <h4 class="font-display font-extrabold text-slate-900 text-lg mb-3">Кейс: ООО «ТехноСнаб»</h4>
                             
                             <div class="space-y-3 text-sm text-slate-700 mb-6 leading-relaxed">
                                 <p><strong class="text-slate-900">Точка А:</strong> 8 менеджеров, конверсия 12.3%, средний чек 450 000 ₽. РОП физически не успевал слушать созвоны.</p>
-                                <p><strong class="text-red-600">Что вскрыл ИИ:</strong> 71% диалогов завершались отправкой прайса на e-mail без фиксации следующего контакта.</p>
-                                <p><strong class="text-violet-700">Точка Б:</strong> Алерты заставили команду продавать Zoom. Конверсия выросла до 22.7%, <strong>+3 840 000 ₽ за 2 месяца</strong>.</p>
+                                <p><strong class="text-rose-600 font-bold">Что вскрыл ИИ:</strong> 71% диалогов завершались отправкой прайса на e-mail без фиксации следующего контакта.</p>
+                                <p><strong class="text-violet-700 font-bold">Точка Б:</strong> Алерты заставили команду продавать Zoom. Конверсия выросла до 22.7%, <span class="text-emerald-700 font-black bg-emerald-50 px-1 rounded">+3 840 000 ₽ за 2 месяца</span>.</p>
                             </div>
                         </div>
-                        <div class="pt-4 border-t border-slate-100 text-xs text-slate-500 font-mono">
-                            Окупаемость системы: 4 дня
+                        <div class="mt-4 -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-5 py-3.5 bg-emerald-50/80 border-t border-emerald-100 rounded-b-3xl text-xs font-mono text-emerald-900 font-bold flex items-center justify-between">
+                            <span><i class="fas fa-check-circle text-emerald-600 mr-1.5"></i> Окупаемость платформы:</span>
+                            <span class="bg-white px-2 py-0.5 rounded border border-emerald-200">4 дня</span>
                         </div>
                     </div>
 
                     <!-- Case 2 -->
-                    <div class="rounded-3xl glass-card p-6 sm:p-7 border border-slate-200 flex flex-col justify-between">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-violet-600 p-6 sm:p-7 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-full">
                         <div>
-                            <div class="flex items-center justify-between text-xs font-mono text-slate-500 mb-3">
-                                <span>Автозапчасти Опт</span>
-                                <span class="text-violet-600 font-bold font-mono text-sm">+2.15M ₽</span>
+                            <div class="flex items-center justify-between text-xs font-mono mb-3">
+                                <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 font-bold border border-slate-200">Автозапчасти Опт</span>
+                                <span class="px-3 py-1 rounded-full bg-violet-100 text-violet-800 font-black font-mono text-sm border border-violet-300 shadow-2xs">+2.15M ₽</span>
                             </div>
-                            <h4 class="font-display font-bold text-slate-900 text-lg mb-3">Кейс: Сеть «АвтоПартс»</h4>
+                            <h4 class="font-display font-extrabold text-slate-900 text-lg mb-3">Кейс: Сеть «АвтоПартс»</h4>
                             
                             <div class="space-y-3 text-sm text-slate-700 mb-6 leading-relaxed">
                                 <p><strong class="text-slate-900">Точка А:</strong> 5 менеджеров, средний чек 160 000 ₽. Текучка кадров, новички сливали звонки с рекламы.</p>
-                                <p><strong class="text-red-600">Что вскрыл ИИ:</strong> Менеджеры не выявляли маржинальные позиции и не отрабатывали возражение «дорого».</p>
-                                <p><strong class="text-violet-700">Точка Б:</strong> Утренние 10-минутки РОПа по рейтингу ошибок ИИ. Рост чека на +34%, <strong>+2 150 000 ₽ за 1 месяц</strong>.</p>
+                                <p><strong class="text-rose-600 font-bold">Что вскрыл ИИ:</strong> Менеджеры не выявляли маржинальные позиции и не отрабатывали возражение «дорого».</p>
+                                <p><strong class="text-violet-700 font-bold">Точка Б:</strong> Утренние 10-минутки РОПа по рейтингу ошибок ИИ. Рост чека на +34%, <span class="text-violet-700 font-black bg-violet-50 px-1 rounded">+2 150 000 ₽ за 1 месяц</span>.</p>
                             </div>
                         </div>
-                        <div class="pt-4 border-t border-slate-100 text-xs text-slate-500 font-mono">
-                            Окупаемость системы: 6 дней
+                        <div class="mt-4 -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-5 py-3.5 bg-violet-50/80 border-t border-violet-100 rounded-b-3xl text-xs font-mono text-violet-900 font-bold flex items-center justify-between">
+                            <span><i class="fas fa-check-circle text-violet-600 mr-1.5"></i> Окупаемость платформы:</span>
+                            <span class="bg-white px-2 py-0.5 rounded border border-violet-200">6 дней</span>
                         </div>
                     </div>
 
                     <!-- Case 3 -->
-                    <div class="rounded-3xl glass-card p-6 sm:p-7 border border-slate-200 flex flex-col justify-between">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-sky-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-full">
                         <div>
-                            <div class="flex items-center justify-between text-xs font-mono text-slate-500 mb-3">
-                                <span>B2B IT & Услуги</span>
-                                <span class="text-violet-600 font-bold font-mono text-sm">+1.92M ₽</span>
+                            <div class="flex items-center justify-between text-xs font-mono mb-3">
+                                <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 font-bold border border-slate-200">B2B IT & Услуги</span>
+                                <span class="px-3 py-1 rounded-full bg-sky-100 text-sky-800 font-black font-mono text-sm border border-sky-300 shadow-2xs">+1.92M ₽</span>
                             </div>
-                            <h4 class="font-display font-bold text-slate-900 text-lg mb-3">Кейс: IT-интегратор</h4>
+                            <h4 class="font-display font-extrabold text-slate-900 text-lg mb-3">Кейс: IT-интегратор</h4>
                             
                             <div class="space-y-3 text-sm text-slate-700 mb-6 leading-relaxed">
                                 <p><strong class="text-slate-900">Точка А:</strong> 4 менеджера, длинный цикл сделки (до 45 дней), «зависшие» сделки в CRM.</p>
-                                <p><strong class="text-red-600">Что вскрыл ИИ:</strong> Менеджеры общались с не-ЛПР (секретари, младшие спецы) без выхода на руководство.</p>
-                                <p><strong class="text-violet-700">Точка Б:</strong> Жесткий контроль cr3 (ЛПР). Цикл сделки сократился на 40%, <strong>+1 920 000 ₽ за 45 дней</strong>.</p>
+                                <p><strong class="text-rose-600 font-bold">Что вскрыл ИИ:</strong> Менеджеры общались с не-ЛПР (секретари, младшие спецы) без выхода на руководство.</p>
+                                <p><strong class="text-violet-700 font-bold">Точка Б:</strong> Жесткий контроль cr3 (ЛПР). Цикл сделки сократился на 40%, <span class="text-sky-800 font-black bg-sky-50 px-1 rounded">+1 920 000 ₽ за 45 дней</span>.</p>
                             </div>
                         </div>
-                        <div class="pt-4 border-t border-slate-100 text-xs text-slate-500 font-mono">
-                            Окупаемость системы: 1-я спасенная сделка
+                        <div class="mt-4 -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-5 py-3.5 bg-sky-50/80 border-t border-sky-100 rounded-b-3xl text-xs font-mono text-sky-900 font-bold flex items-center justify-between">
+                            <span><i class="fas fa-check-circle text-sky-600 mr-1.5"></i> Окупаемость платформы:</span>
+                            <span class="bg-white px-2 py-0.5 rounded border border-sky-200">1-я спасенная сделка</span>
                         </div>
                     </div>
 
                 </div>
 
                 <!-- Express 3-Number Diagnostic Calculator (ROI) -->
-                <div class="max-w-4xl mx-auto rounded-3xl bg-slate-50 p-6 sm:p-10 shadow-xl border border-slate-200">
+                <div class="max-w-4xl mx-auto rounded-3xl bg-slate-50 border-2 border-slate-200 p-6 sm:p-10 shadow-xl">
                     <div class="text-center max-w-xl mx-auto mb-8">
                         <span class="text-xs font-sans font-bold text-violet-700 uppercase tracking-wider">Экспресс-Калькулятор 3 Цифры</span>
                         <h3 class="font-display font-black text-2xl sm:text-3xl text-slate-900 mt-1">
@@ -1877,7 +1945,7 @@
                         </div>
 
                         <!-- Results Box -->
-                        <div class="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200 shadow-md space-y-4">
+                        <div class="p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-violet-50/50 via-white to-indigo-50/40 border-2 border-violet-200 shadow-xl space-y-4">
                             <div>
                                 <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
                                     <span>Дополнительная выручка в месяц:</span>
@@ -2374,10 +2442,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-16 items-stretch">
                     
                     <!-- Tier 1: Express Audit -->
-                    <div class="rounded-3xl bg-slate-50 border border-slate-200 p-6 sm:p-7 flex flex-col justify-between hover:shadow-md transition">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-slate-400 p-6 sm:p-7 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300">
                         <div>
-                            <span class="text-xs font-sans font-bold text-slate-500 uppercase tracking-wider">Тест-Драйв</span>
-                            <h3 class="font-display font-bold text-slate-900 text-xl sm:text-2xl mt-1 mb-2">Экспресс-Аудит</h3>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Тест-Драйв</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-bold">0 ₽ РИСК</span>
+                            </div>
+                            <h3 class="font-display font-extrabold text-slate-900 text-xl sm:text-2xl mt-1 mb-2">Экспресс-Аудит</h3>
                             <div class="text-3xl sm:text-4xl font-black text-slate-900 font-mono mb-4 whitespace-nowrap">
                                 0 ₽ <span class="text-xs sm:text-sm font-normal text-slate-500">/ 50 звонков</span>
                             </div>
@@ -2402,10 +2473,13 @@
                     </div>
 
                     <!-- Tier 2: Pilot 7 Days -->
-                    <div class="rounded-3xl bg-slate-50 border border-slate-200 p-6 sm:p-7 flex flex-col justify-between hover:shadow-md transition">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-emerald-500 p-6 sm:p-7 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300">
                         <div>
-                            <span class="text-xs font-sans font-bold text-slate-500 uppercase tracking-wider">Под ключ</span>
-                            <h3 class="font-display font-bold text-slate-900 text-xl sm:text-2xl mt-1 mb-2">Пилот 7 дней</h3>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Под ключ</span>
+                                <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono text-[10px] font-bold">ГАРАНТИЯ</span>
+                            </div>
+                            <h3 class="font-display font-extrabold text-slate-900 text-xl sm:text-2xl mt-1 mb-2">Пилот 7 дней</h3>
                             <div class="text-3xl sm:text-4xl font-black text-slate-900 font-mono mb-4 whitespace-nowrap">
                                 14 900 ₽ <span class="text-xs sm:text-sm font-normal text-slate-500">/ 7 дней</span>
                             </div>
@@ -2414,18 +2488,18 @@
                             </p>
 
                             <ul class="space-y-3 text-xs sm:text-sm text-slate-700 mb-8">
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>100% звонков всей команды за 7 дней</span></li>
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Личный кабинет RevOps OS V20.0 + экспорт отчетов (Excel / Sheets / PDF)</span></li>
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Подключение Telegram / MAX алертов РОПа</span></li>
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Опция: пилот по 50 файлам без IT-доступа</span></li>
-                                <li class="flex items-center gap-2 font-bold text-violet-800 bg-violet-50 px-2.5 py-1.5 rounded-lg border border-violet-200 text-xs">
-                                    <i class="fas fa-shield text-violet-600"></i> Гарантия: находим сливы минимум на 150k ₽
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-emerald-600"></i> <span>100% звонков всей команды за 7 дней</span></li>
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-emerald-600"></i> <span>Личный кабинет RevOps OS V20.0 + экспорт отчетов (Excel / Sheets / PDF)</span></li>
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-emerald-600"></i> <span>Подключение Telegram / MAX алертов РОПа</span></li>
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-emerald-600"></i> <span>Опция: пилот по 50 файлам без IT-доступа</span></li>
+                                <li class="flex items-center gap-2 font-bold text-emerald-900 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 text-xs">
+                                    <i class="fas fa-shield text-emerald-600"></i> Гарантия: находим сливы минимум на 150k ₽
                                 </li>
                             </ul>
                         </div>
 
                         <div>
-                            <div class="text-[11px] text-violet-700 font-mono text-center mb-2 font-semibold">Сумма засчитывается в 1-й месяц</div>
+                            <div class="text-[11px] text-emerald-700 font-mono text-center mb-2 font-semibold">Сумма засчитывается в 1-й месяц</div>
                             <button type="button" onclick="selectLeadTariff('pilot_7days'); scrollToSection('cta', true);" class="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider shadow-sm transition text-center cursor-pointer">
                                 Запустить пилот на 7 дней
                             </button>
@@ -2433,13 +2507,13 @@
                     </div>
 
                     <!-- Tier 3: RevOps Pro (FEATURED HIT!) -->
-                    <div class="rounded-3xl bg-violet-50/70 border-2 border-violet-500 ring-4 ring-violet-500/10 shadow-xl lg:-translate-y-2 relative p-6 sm:p-7 flex flex-col justify-between transition">
-                        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-violet-500 text-white font-black text-[11px] uppercase tracking-wider shadow-md whitespace-nowrap">
+                    <div class="rounded-3xl bg-white border-2 border-violet-500 border-t-4 border-t-violet-600 ring-4 ring-violet-500/10 shadow-xl lg:-translate-y-2 relative p-6 sm:p-7 flex flex-col justify-between transition">
+                        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-violet-600 text-white font-black text-[11px] uppercase tracking-wider shadow-md whitespace-nowrap">
                             ХИТ ПРОДАЖ // ВЫБОР РОПОВ
                         </div>
 
                         <div>
-                            <span class="text-xs font-sans font-bold text-violet-700 uppercase tracking-wider">Регулярный супервайзинг</span>
+                            <span class="text-xs font-bold text-violet-700 uppercase tracking-wider">Регулярный супервайзинг</span>
                             <h3 class="font-display font-black text-slate-900 text-xl sm:text-2xl mt-1 mb-2">RevOps Pro</h3>
                             <div class="text-3xl sm:text-4xl font-black text-violet-600 font-mono mb-4 whitespace-nowrap">
                                 29 900 ₽ <span class="text-xs sm:text-sm font-normal text-slate-600">/ месяц</span>
@@ -2459,16 +2533,19 @@
                             </ul>
                         </div>
 
-                        <button type="button" onclick="selectLeadTariff('pro_monthly'); scrollToSection('cta', true);" class="w-full py-3.5 rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-violet-500/30 transition text-center cursor-pointer">
+                        <button type="button" onclick="selectLeadTariff('pro_monthly'); scrollToSection('cta', true);" class="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-violet-600/30 transition text-center cursor-pointer">
                             Подключить RevOps Pro
                         </button>
                     </div>
 
                     <!-- Tier 4: Enterprise -->
-                    <div class="rounded-3xl bg-slate-50 border border-slate-200 p-6 sm:p-7 flex flex-col justify-between hover:shadow-md transition">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-slate-800 p-6 sm:p-7 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300">
                         <div>
-                            <span class="text-xs font-sans font-bold text-slate-500 uppercase tracking-wider">Масштаб // Корпоративный</span>
-                            <h3 class="font-display font-bold text-slate-900 text-xl sm:text-2xl mt-1 mb-2">Enterprise</h3>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Масштаб</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-[10px] font-bold">ФИЛИАЛЫ</span>
+                            </div>
+                            <h3 class="font-display font-extrabold text-slate-900 text-xl sm:text-2xl mt-1 mb-2">Enterprise</h3>
                             <div class="text-3xl sm:text-4xl font-black text-slate-900 font-mono mb-4 whitespace-nowrap">
                                 79 000 ₽ <span class="text-xs sm:text-sm font-normal text-slate-500">/ месяц</span>
                             </div>
@@ -2477,11 +2554,11 @@
                             </p>
 
                             <ul class="space-y-3 text-xs sm:text-sm text-slate-700 mb-8">
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Все возможности RevOps Pro</span></li>
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>От 10+ до 100+ менеджеров (филиальные сети)</span></li>
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Кастомные 13+ критериев под отрасль</span></li>
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Локальный сервер 152-ФЗ РФ и SLA 99.9%</span></li>
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Выделенный RevOps-инженер 24/7</span></li>
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-slate-900"></i> <span>Все возможности RevOps Pro</span></li>
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-slate-900"></i> <span>От 10+ до 100+ менеджеров (филиальные сети)</span></li>
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-slate-900"></i> <span>Кастомные 13+ критериев под отрасль</span></li>
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-slate-900"></i> <span>Локальный сервер 152-ФЗ РФ и SLA 99.9%</span></li>
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-slate-900"></i> <span>Выделенный RevOps-инженер 24/7</span></li>
                             </ul>
                         </div>
 
@@ -3109,23 +3186,27 @@
             renderDemoCrDots(t.crBits);
 
             // Update verdict badge
+            // Update verdict badge
             const badgeEl = document.getElementById('verdictBadge');
             if (badgeEl) {
                 if (key === 'variant_won') {
-                    badgeEl.className = 'px-3 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-mono font-bold text-xs border border-emerald-300 flex items-center gap-1.5';
-                    badgeEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span><span>ЭТАЛОН // ZOOM НАЗНАЧЕН</span>';
+                    badgeEl.className = 'px-3.5 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-mono font-bold text-xs border border-emerald-300 flex items-center gap-2 shadow-2xs';
+                    badgeEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span><span>ЭТАЛОН // ZOOM НАЗНАЧЕН</span>';
                 } else {
-                    badgeEl.className = 'px-3 py-1 rounded-lg bg-red-50 text-red-700 font-mono font-bold text-xs border border-red-200 flex items-center gap-1.5';
-                    badgeEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span><span>КРИТИЧЕСКИЙ СЛИВ СДЕЛКИ</span>';
+                    badgeEl.className = 'px-3.5 py-1.5 rounded-xl bg-rose-100 text-rose-800 font-mono font-bold text-xs border border-rose-300 flex items-center gap-2 shadow-2xs';
+                    badgeEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span><span>КРИТИЧЕСКИЙ СЛИВ СДЕЛКИ</span>';
                 }
             }
 
             // Tab styles
             document.querySelectorAll('#trackTabs .track-btn').forEach(btn => {
-                if (btn.getAttribute('data-track') === key) {
-                    btn.className = 'track-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-sm transition';
+                const track = btn.getAttribute('data-track');
+                if (track === key) {
+                    btn.className = 'track-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-md shadow-violet-600/30 ring-2 ring-violet-500/30 transition';
+                } else if (track === 'variant_won') {
+                    btn.className = 'track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-2 border-emerald-300 transition shadow-xs';
                 } else {
-                    btn.className = 'track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition shadow-2xs';
+                    btn.className = 'track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-800 hover:bg-slate-50 border-2 border-slate-200 hover:border-violet-300 transition shadow-xs';
                 }
             });
 
