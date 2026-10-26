@@ -32,7 +32,7 @@
     <link rel="stylesheet" href="css/fontawesome.min.css">
     <link rel="stylesheet" href="css/tailwind.min.css?v=20261015-violet">
     <link rel="stylesheet" href="css/violet-palette.css?v=20261015-violet">
-    <link rel="stylesheet" href="css/dark-theme.css?v=20261017-full-theme">
+    <link rel="stylesheet" href="css/dark-theme.css?v=20261026-white-v20">
 
     <!-- Подключение Inter Tight для 100% единства типографики с ЛК -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,21 +42,20 @@
     <!-- Единая синхронизация темы с Личным Кабинетом (Default: Чистая белая FinTech тема) -->
     <script>
         (function () {
-            var t = 'light'; // Основная тема по умолчанию — белая
+            // Принудительный сброс устаревшего кэша старой тёмной темы для всех посетителей
             try {
-                var store = localStorage.getItem('revops-store');
-                if (store) {
-                    var parsed = JSON.parse(store);
-                    if (parsed && parsed.state && parsed.state.theme) {
-                        if (parsed.state.theme === 'dark' || parsed.state.theme === 'light') {
-                            t = parsed.state.theme;
-                        }
-                    }
-                } else {
-                    var savedMode = localStorage.getItem('revops_theme_mode') || localStorage.getItem('revops-theme');
-                    if (savedMode === 'light' || savedMode === 'dark') {
-                        t = savedMode;
-                    }
+                if (localStorage.getItem('revops_theme_reset_v20') !== 'done') {
+                    localStorage.removeItem('revops_theme_mode');
+                    localStorage.removeItem('revops-theme');
+                    localStorage.setItem('revops_theme_reset_v20', 'done');
+                }
+            } catch (e) {}
+
+            var t = 'light'; // Основная тема по умолчанию строго белая
+            try {
+                var explicit = localStorage.getItem('revops_theme_v20') || localStorage.getItem('revops_theme_mode');
+                if (explicit === 'dark' || explicit === 'light') {
+                    t = explicit;
                 }
             } catch (e) {
                 t = 'light';
@@ -3713,6 +3712,7 @@
                     document.documentElement.classList.remove('dark');
                 }
                 try {
+                    localStorage.setItem('revops_theme_v20', t);
                     localStorage.setItem('revops_theme_mode', t);
                     localStorage.setItem('revops-theme', t);
                     var existingStore = localStorage.getItem('revops-store');
