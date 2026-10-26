@@ -166,6 +166,7 @@ export interface Call {
   client_phone?: string;
   overall_score?: number | null;
   ai_summary?: string;
+  zoom_scheduled?: boolean | number | null;
 }
 
 export interface CallsResponse {
@@ -272,6 +273,7 @@ export interface KpiSummary {
   synthesis?: string;
   recommendations?: RecommendationItem[];
   revenue?: number;
+  revenue_trend?: number;
   calls_total?: number;
   sla_risk_count?: number;
   win_rate?: number;

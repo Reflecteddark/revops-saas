@@ -152,38 +152,32 @@ export function DailyPulseMatrix({
 
   const last7Days = React.useMemo(() => getLast7Days(), []);
 
-  // Compute managers and day metrics
+  // Compute managers and day metrics strictly from factual calls (Zero Mock)
   const managerRows: ManagerRowData[] = React.useMemo(() => {
-    // Unique managers from calls, with fallback defaults if calls list is empty
     const managerNames = Array.from(
       new Set(calls.map((c) => c.manager).filter(Boolean))
     ) as string[];
 
-    const effectiveManagers =
-      managerNames.length > 0
-        ? managerNames
-        : ['Алексей Смирнов', 'Михаил Ковалёв', 'Екатерина Морозова', 'Иван Петров'];
+    if (managerNames.length === 0) {
+      return [];
+    }
 
-    return effectiveManagers.map((mgrName, mgrIdx) => {
+    return managerNames.map((mgrName, mgrIdx) => {
       const mgrCalls = calls.filter((c) => c.manager === mgrName);
 
-      const days: DayMetric[] = last7Days.map((d, dIdx) => {
+      const days: DayMetric[] = last7Days.map((d) => {
         const callsOnDay = mgrCalls.filter((c) => {
           const callDate = c.date || c.created_at || '';
           return callDate.includes(d.isoDate);
         });
 
-        // Seed realistic values if mock dataset has no timestamps on exact day
-        const count =
-          callsOnDay.length > 0
-            ? callsOnDay.length
-            : (mgrIdx * 3 + dIdx * 2 + 4) % 11;
+        const count = callsOnDay.length;
         const totalScore = callsOnDay.reduce((acc, c) => acc + (c.score || 0), 0);
-        const avg =
-          callsOnDay.length > 0
-            ? Math.round((totalScore / callsOnDay.length) * 10) / 10
-            : Math.round(((8 + ((mgrIdx + dIdx) % 5)) + 0.2) * 10) / 10;
-        const nextStepPct = count > 0 ? Math.min(100, Math.round(75 + ((dIdx * 7) % 25))) : 0;
+        const avg = count > 0 ? Math.round((totalScore / count) * 10) / 10 : 0;
+        const nextStepCount = callsOnDay.filter(
+          (c) => c.zoom_scheduled || (c.cr && c.cr[6] === 1) || c.status === 'won'
+        ).length;
+        const nextStepPct = count > 0 ? Math.round((nextStepCount / count) * 100) : 0;
 
         return {
           dateStr: d.dateStr,
@@ -197,15 +191,18 @@ export function DailyPulseMatrix({
       const totalCalls = days.reduce((acc, d) => acc + d.callsCount, 0);
       const totalScoreSum = days.reduce((acc, d) => acc + d.avgScore * d.callsCount, 0);
       const avgScore =
-        totalCalls > 0 ? Math.round((totalScoreSum / totalCalls) * 10) / 10 : 8.5;
-      const nextStepPct = Math.round(
-        days.reduce((acc, d) => acc + d.nextStepPct, 0) / days.length
+        totalCalls > 0 ? Math.round((totalScoreSum / totalCalls) * 10) / 10 : 0;
+      const totalNextStepCount = days.reduce(
+        (acc, d) => acc + Math.round((d.nextStepPct * d.callsCount) / 100),
+        0
       );
+      const nextStepPct =
+        totalCalls > 0 ? Math.round((totalNextStepCount / totalCalls) * 100) : 0;
 
       return {
         id: `mgr-${mgrIdx}`,
         name: mgrName,
-        role: mgrIdx === 0 ? 'Senior B2B Closer' : 'Account Executive',
+        role: 'Менеджер ОП',
         days,
         totalCalls,
         avgScore,
@@ -352,7 +349,8 @@ export function DailyPulseMatrix({
                 </tr>
 
                 {groupExpanded &&
-                  filteredManagers.map((mgr) => (
+                  (filteredManagers.length > 0 ? (
+                    filteredManagers.map((mgr) => (
                     <tr
                       key={mgr.id}
                       className="border-b border-subtle/60 hover:bg-hover/30 transition-colors duration-150"
@@ -448,7 +446,16 @@ export function DailyPulseMatrix({
                         );
                       })}
                     </tr>
-                  ))}
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={10} className="py-8 text-center text-xs text-secondary">
+                      {managerRows.length === 0
+                        ? 'За последние 7 дней звонков менеджеров не зафиксировано'
+                        : 'Менеджеры по заданному фильтру не найдены'}
+                    </td>
+                  </tr>
+                ))}
               </>
             )}
           </tbody>

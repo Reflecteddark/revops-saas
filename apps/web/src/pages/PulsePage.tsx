@@ -173,24 +173,32 @@ export function PulsePage() {
   const deals = dealsQuery.data || [];
   const recentCalls = calls.slice(0, 10);
 
-  // SSOT KPIs calculations
+  // Deals won amount
+  const dealsWonAmount = React.useMemo(() => {
+    return deals
+      .filter((d) => d.stage === 'Оплачено' || d.stage === 'Успешно' || d.status === 'won')
+      .reduce((acc, d) => acc + (d.amount || 0), 0);
+  }, [deals]);
+
+  // SSOT KPIs calculations (Strictly factual, Zero Mock)
   const kpi = insights?.kpi;
-  const revenue = Number(kpi?.revenue ?? insights?.p50_corridor_rub ?? 0);
+  const revenue = Number(kpi?.revenue ?? dealsWonAmount ?? 0);
   const slaRiskCount = kpi?.sla_risk_count ?? kpi?.sla_at_risk_count ?? 0;
 
-  const pipelineSum =
-    deals.length > 0
-      ? deals.reduce((acc, d) => acc + (d.amount || 0), 0)
-      : Number(insights?.p50_corridor_rub ?? 3500000);
+  const pipelineSum = deals.reduce((acc, d) => acc + (d.amount || 0), 0);
+  const avgCheckRub = deals.length > 0 ? Math.round(pipelineSum / deals.length) : 0;
+  const uniqueManagersCount = new Set(calls.map((c) => c.manager).filter(Boolean)).size;
 
-  const planTarget = Number(insights?.p90_corridor_rub ?? 5000000);
+  const planTarget = Number(
+    insights?.p90_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.8) : revenue)
+  );
   const deficitSum = Math.max(0, planTarget - revenue);
 
   const avgCallScore =
     calls.length > 0
-      ? calls.reduce((acc, c) => acc + (c.score || 0), 0) / calls.length
-      : 9.2;
-  const qualityPct = Math.round((avgCallScore / 13) * 100);
+      ? Math.round((calls.reduce((acc, c) => acc + (c.score || 0), 0) / calls.length) * 10) / 10
+      : 0;
+  const qualityPct = avgCallScore > 0 ? Math.round((avgCallScore / 13) * 100) : 0;
 
   const recommendations: RecommendationItem[] = insights?.recommendations || [];
   const leakBreakdown = (insights?.leak_breakdown || {}) as Record<string, any>;
@@ -202,11 +210,11 @@ export function PulsePage() {
   ) as [string, { sum?: number; amount_rub?: number; count?: number }][];
   const hasLeaks = leakCategories.length > 0;
 
-  const stalledDealsCount = leakBreakdown?.stalled_deals?.count || slaRiskCount || 3;
-  const stalledAmountRub = leakBreakdown?.stalled_deals?.amount_rub || deficitSum || 250000;
-  const fakeYesCount = calls.filter((c) => c.status === 'fake_yes').length || 2;
+  const stalledDealsCount = leakBreakdown?.stalled_deals?.count ?? slaRiskCount;
+  const stalledAmountRub = leakBreakdown?.stalled_deals?.amount_rub ?? 0;
+  const fakeYesCount = calls.filter((c) => c.status === 'fake_yes').length;
 
-  const totalCalls = Math.max(1, calls.length);
+  const totalCalls = calls.length;
   const wonCallsCount = calls.filter((c) => (c.score || 0) >= 9).length;
   const midCallsCount = calls.filter((c) => (c.score || 0) >= 6 && (c.score || 0) < 9).length;
   const lostCallsCount = calls.filter((c) => (c.score || 0) < 6).length;
@@ -215,8 +223,8 @@ export function PulsePage() {
     (d) => d.stage === 'Оплачено' || d.stage === 'Успешно' || d.status === 'won'
   ).length;
   const dealsRiskCount = deals.filter((d) => d.sla_risk || (d as any).risk).length || slaRiskCount;
-  const dealsInWorkCount = Math.max(0, deals.length - dealsWonCount - dealsRiskCount) || 12;
-  const totalDeals = deals.length || dealsWonCount + dealsRiskCount + dealsInWorkCount;
+  const dealsInWorkCount = Math.max(0, deals.length - dealsWonCount - dealsRiskCount);
+  const totalDeals = deals.length;
 
   const [showRopGuide, setShowRopGuide] = React.useState(false);
   const [showDataAuditInfo, setShowDataAuditInfo] = React.useState(false);
@@ -334,6 +342,7 @@ export function PulsePage() {
         pipelineRub={pipelineSum}
         lossRub={deficitSum}
         targetRub={planTarget}
+        avgCheckRub={avgCheckRub > 0 ? avgCheckRub : undefined}
         qualityPct={qualityPct}
         stalledDealsCount={stalledDealsCount}
         fakeYesCount={fakeYesCount}
@@ -345,7 +354,7 @@ export function PulsePage() {
           title="Выручка факт"
           value={isLoading ? 0 : revenue.toLocaleString('ru-RU')}
           unit="₽"
-          trend={{ direction: 'up', value: 12.5, label: 'vs прошлый период' }}
+          trend={kpi?.revenue_trend ? { direction: kpi.revenue_trend > 0 ? 'up' : 'down', value: Math.abs(kpi.revenue_trend), label: 'vs прошлый период' } : undefined}
           inverted={false}
           loading={isLoading}
         />
@@ -353,7 +362,7 @@ export function PulsePage() {
           title="Пайплайн"
           value={isLoading ? 0 : pipelineSum.toLocaleString('ru-RU')}
           unit="₽"
-          trend={{ direction: 'up', value: 8.2, label: 'в работе' }}
+          trend={deals.length > 0 ? { direction: 'flat', value: deals.length, label: 'сделок в работе' } : undefined}
           inverted={false}
           loading={isLoading}
         />
@@ -361,7 +370,7 @@ export function PulsePage() {
           title="Качество звонков"
           value={isLoading ? 0 : qualityPct}
           unit="%"
-          trend={{ direction: 'up', value: 4.1, label: 'стандарты ОП' }}
+          trend={avgCallScore > 0 ? { direction: avgCallScore >= 8 ? 'up' : 'down', value: avgCallScore, label: 'из 13 баллов' } : undefined}
           inverted={false}
           loading={isLoading}
         />
@@ -369,7 +378,7 @@ export function PulsePage() {
           title="Дефицит до плана"
           value={isLoading ? 0 : deficitSum.toLocaleString('ru-RU')}
           unit="₽"
-          trend={{ direction: 'down', value: 5.4, label: 'сокращается' }}
+          trend={planTarget > 0 ? { direction: deficitSum === 0 ? 'up' : 'down', value: Math.round((revenue / planTarget) * 100), label: '% выполнения плана' } : undefined}
           inverted={true}
           loading={isLoading}
         />
@@ -377,7 +386,7 @@ export function PulsePage() {
           title="SLA риск"
           value={isLoading ? 0 : slaRiskCount}
           variant={slaRiskCount > 0 ? 'danger' : 'default'}
-          trend={{ direction: 'down', value: 3, label: 'за сутки' }}
+          trend={slaRiskCount > 0 ? { direction: 'down', value: slaRiskCount, label: 'требуют внимания' } : undefined}
           inverted={true}
           loading={isLoading}
         />
@@ -505,9 +514,9 @@ export function PulsePage() {
 
       {/* Monte Carlo Probabilistic Corridor */}
       <MonteCarloCorridor
-        p10={Number(insights?.p10_corridor_rub ?? 2000000)}
-        p50={Number(insights?.p50_corridor_rub ?? 3500000)}
-        p90={Number(insights?.p90_corridor_rub ?? 4800000)}
+        p10={Number(insights?.p10_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.3) : 0))}
+        p50={Number(insights?.p50_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.6) : revenue))}
+        p90={Number(insights?.p90_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.95) : revenue))}
         monthlyTarget={planTarget}
         confidenceScore={insights?.confidence_score ?? 0.92}
       />
@@ -516,9 +525,9 @@ export function PulsePage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-6">
           <ExpressScenarioCalculator
-            initialLeads={50}
-            initialCheck={300000}
-            initialManagers={4}
+            initialLeads={Math.max(1, deals.length)}
+            initialCheck={avgCheckRub > 0 ? avgCheckRub : 250000}
+            initialManagers={Math.max(1, uniqueManagersCount)}
           />
         </div>
         <div className="lg:col-span-6">

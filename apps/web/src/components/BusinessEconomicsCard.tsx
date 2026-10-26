@@ -30,12 +30,12 @@ export interface BusinessEconomicsProps {
 
 export function BusinessEconomicsCard({
   revenueRub,
-  revenueTrendPct = 12.5,
+  revenueTrendPct,
   pipelineRub,
-  avgCheckRub = 250000,
+  avgCheckRub = 0,
 
   lossRub,
-  lossTrendPct = -5.4,
+  lossTrendPct,
   stalledDealsCount,
   fakeYesCount,
 
@@ -77,10 +77,12 @@ export function BusinessEconomicsCard({
             <span className="text-xs font-semibold text-secondary uppercase tracking-wider">
               Выручка факт
             </span>
-            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-500 font-mono">
-              <TrendingUp className="h-3.5 w-3.5" />
-              <span>+{revenueTrendPct}%</span>
-            </div>
+            {typeof revenueTrendPct === 'number' && (
+              <div className="flex items-center gap-1 text-xs font-semibold text-emerald-500 font-mono">
+                <TrendingUp className="h-3.5 w-3.5" />
+                <span>+{revenueTrendPct}%</span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -88,7 +90,7 @@ export function BusinessEconomicsCard({
               {revenueRub.toLocaleString('ru-RU')} ₽
             </div>
             <div className="text-[11px] text-tertiary">
-              vs прошлый расчётный период
+              фактическая сумма закрытых сделок
             </div>
           </div>
 
@@ -102,7 +104,7 @@ export function BusinessEconomicsCard({
             <div className="flex items-center justify-between text-secondary">
               <span>Средний чек сделки</span>
               <span className="font-mono font-medium text-foreground">
-                {avgCheckRub.toLocaleString('ru-RU')} ₽
+                {avgCheckRub > 0 ? `${avgCheckRub.toLocaleString('ru-RU')} ₽` : '—'}
               </span>
             </div>
           </div>
@@ -114,10 +116,12 @@ export function BusinessEconomicsCard({
             <span className="text-xs font-semibold text-secondary uppercase tracking-wider">
               Потери и риски
             </span>
-            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-500 font-mono">
-              <TrendingDown className="h-3.5 w-3.5" />
-              <span>{lossTrendPct}%</span>
-            </div>
+            {typeof lossTrendPct === 'number' && (
+              <div className="flex items-center gap-1 text-xs font-semibold text-emerald-500 font-mono">
+                <TrendingDown className="h-3.5 w-3.5" />
+                <span>{lossTrendPct}%</span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">

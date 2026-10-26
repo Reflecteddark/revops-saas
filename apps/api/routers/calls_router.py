@@ -549,9 +549,9 @@ def get_dashboard_calls_data(
                     else:
                         call_status_label = "НЕТ ДАННЫХ"
 
-                amount_str = f"{int(deal_budget):,} ₽".replace(",", " ") if deal_budget is not None else (sc.get("amount_str") or "350 000 ₽")
-                amount_num = deal_budget if deal_budget is not None else (sc.get("amount") or 350000.0)  # TODO: review — is 350000 reasonable for audio audit?
-                risk_amt_str = f"{int(deal_budget):,} ₽".replace(",", " ") if (deal_budget is not None and call_status == "risk") else "0 ₽"
+                amount_num = float(deal_budget) if deal_budget is not None else float(sc.get("amount") or 0.0)
+                amount_str = f"{int(amount_num):,} ₽".replace(",", " ") if amount_num > 0 else (sc.get("amount_str") or "0 ₽")
+                risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and call_status == "risk") else "0 ₽"
 
                 formatted_calls.append({
                     "id": c.id,

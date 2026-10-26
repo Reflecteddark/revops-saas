@@ -60,4 +60,11 @@ describe('DailyPulseMatrix', () => {
 
     expect(scorePill).toHaveClass('font-semibold');
   });
+
+  it('renders honest empty state when calls list is empty', () => {
+    render(<DailyPulseMatrix calls={[]} />);
+    expect(
+      screen.getByText('За последние 7 дней звонков менеджеров не зафиксировано')
+    ).toBeInTheDocument();
+  });
 });
