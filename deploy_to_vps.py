@@ -1014,6 +1014,7 @@ def main():
             commit_h = hashes.get(t, "unknown")
             
             if deploy_mode == "docker":
+                stream_to_vps(proj["local_path"], proj["vps_path"], commit_h)
                 success = deploy_via_docker_compose(proj["local_path"], proj["vps_path"], commit_h, full_hashes.get(t))
             else:
                 success = stream_to_vps(proj["local_path"], proj["vps_path"], commit_h)
