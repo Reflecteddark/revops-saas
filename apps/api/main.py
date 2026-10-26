@@ -13,7 +13,7 @@ from typing import Literal
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from packages.database.session import init_db
@@ -305,10 +305,17 @@ NO_CACHE_HEADERS = {
 }
 
 if INDEX_HTML.exists():
-    @app.get("/", response_class=HTMLResponse)
-    @app.get("/app", response_class=HTMLResponse)
-    @app.get("/app/", response_class=HTMLResponse)
+    @app.get("/")
+    @app.get("/app")
+    @app.get("/app/")
     def serve_dashboard(request: Request):
+        host = request.headers.get("host", "").lower()
+        if "report.ai-rop.ru" in host or (host and "ai-rop.ru" in host and not host.startswith("app.")):
+            target_url = "https://app.ai-rop.ru/"
+            if request.query_params:
+                target_url += f"?{request.query_params}"
+            return RedirectResponse(url=target_url, status_code=307)
+
         with open(INDEX_HTML, "r", encoding="utf-8") as f:
             content = f.read()
 
@@ -330,7 +337,6 @@ if INDEX_HTML.exists():
         response = HTMLResponse(content=content, headers=NO_CACHE_HEADERS)
         if is_admin_valid:
             is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https" or bool(request.headers.get("cf-connecting-ip"))
-            host = request.headers.get("host", "").lower()
             cookie_domain = ".ai-rop.ru" if (is_https and ("ai-rop.ru" in host or bool(request.headers.get("cf-connecting-ip")))) else None
             cookie_samesite: Literal["lax", "strict", "none"] = "none" if (is_https and cookie_domain) else "lax"
             new_token = generate_admin_cookie_token()
@@ -346,9 +352,16 @@ if INDEX_HTML.exists():
             )
         return response
 
-    @app.get("/admin", response_class=HTMLResponse)
-    @app.get("/app/admin", response_class=HTMLResponse)
+    @app.get("/admin")
+    @app.get("/app/admin")
     def serve_admin(request: Request):
+        host = request.headers.get("host", "").lower()
+        if "report.ai-rop.ru" in host or (host and "ai-rop.ru" in host and not host.startswith("app.")):
+            target_url = "https://app.ai-rop.ru/admin"
+            if request.query_params:
+                target_url += f"?{request.query_params}"
+            return RedirectResponse(url=target_url, status_code=307)
+
         with open(INDEX_HTML, "r", encoding="utf-8") as f:
             content = f.read()
 
