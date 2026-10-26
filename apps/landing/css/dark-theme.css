@@ -1,36 +1,35 @@
 /* ==========================================================================
-   REVOPS DARK LUXE BENTO DESIGN SYSTEM (ai-rop.ru) — ПОЛНОЦЕННАЯ ТЕМА
-   Тёмная тема (глубокий чёрный + фиолетовый глубокий) — по умолчанию.
-   Светлая тема включается атрибутом html[data-theme="light"]
-   (переключатель в шапке, выбор сохраняется в localStorage).
+   REVOPS BENTO DESIGN SYSTEM (ai-rop.ru) — ДВУСТОРОННЯЯ СИСТЕМА ТЕМ
+   Светлая тема (чистый FinTech Slate #f8fafc / #ffffff) — по умолчанию.
+   Тёмная тема (глубокий обсидиановый #09090b) включается через data-theme="dark"
+   (переключатель в шапке, синхронизируется с ЛК через revops-store).
    ========================================================================== */
 
 :root {
-  --bg-void: #06070a;
-  --bg-canvas: #090c14;
-  --bg-card: #0d111d;
-  --bg-card-hover: #141a2a;
-  --bg-card-featured: rgba(28, 20, 56, 0.88);
-  --bg-glass: rgba(255, 255, 255, 0.04);
+  --bg-void: #09090b;
+  --bg-canvas: #09090b;
+  --bg-card: #0e0e11;
+  --bg-card-hover: #141418;
+  --bg-card-featured: rgba(20, 16, 36, 0.92);
+  --bg-glass: rgba(255, 255, 255, 0.03);
   
-  --border-subtle: rgba(255, 255, 255, 0.12);
-  --border-subtle-hover: rgba(124, 58, 237, 0.45);
-  --border-glow-p50: linear-gradient(135deg, rgba(89, 50, 196, 0.6), rgba(155, 123, 255, 0.35), rgba(89, 50, 196, 0.6));
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-subtle-hover: rgba(139, 92, 246, 0.45);
+  --border-glow-p50: linear-gradient(135deg, rgba(124, 58, 237, 0.6), rgba(167, 139, 250, 0.35), rgba(124, 58, 237, 0.6));
   
-  /* Фиолетовый глубокий — основной акцент (в тон css/tabler-theme.css) */
-  --accent-purple: #5932c4;
-  --accent-purple-deep: #4a1d96;
-  --accent-purple-glow: rgba(89, 50, 196, 0.4);
-  /* Cyan-акцент убран: палитра ограничена глубоким чёрным и фиолетовым */
-  --accent-cyan: #9b7bff;
-  --accent-cyan-glow: rgba(155, 123, 255, 0.3);
+  /* Фиолетовый акцент (в тон ЛК #8b5cf6 / #7c3aed) */
+  --accent-purple: #8b5cf6;
+  --accent-purple-deep: #7c3aed;
+  --accent-purple-glow: rgba(139, 92, 246, 0.35);
+  --accent-cyan: #38bdf8;
+  --accent-cyan-glow: rgba(56, 189, 248, 0.25);
   --accent-emerald: #10b981;
   --accent-rose: #f43f5e;
   --accent-amber: #f59e0b;
   
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
 
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);

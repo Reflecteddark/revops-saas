@@ -277,7 +277,7 @@ export function PulsePage() {
           <CheckCircle2 className="h-4 w-4 text-violet-400" />
           <AlertDescription className="text-foreground text-pretty">
             Данные рассчитаны по формулам Single Source of Truth (SSOT). Звонки верифицированы
-            нейросетью Google Gemini по 13 критериям, сделки синхронизированы в реальном времени из
+            речевым ИИ-ядром по 13 критериям, сделки синхронизированы в реальном времени из
             CRM.
           </AlertDescription>
         </Alert>

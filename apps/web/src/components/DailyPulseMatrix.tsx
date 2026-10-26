@@ -481,7 +481,7 @@ export function DailyPulseMatrix({
         </div>
 
         <div className="font-mono text-[10px]">
-          Синхронизировано с amoCRM API & Gemini Voice Audit
+          Синхронизировано с amoCRM API & RevOps Voice Audit (13 критериев)
         </div>
       </div>
     </div>

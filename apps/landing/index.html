@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" class="scroll-smooth">
+<html lang="ru" class="scroll-smooth light" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="mailru-domain" content="vKMK4RN96xwPgv6u">
@@ -39,32 +39,69 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Единая синхронизация темы с Личным Кабинетом (Default: Obsidian Dark Tier-1 SaaS) -->
+    <!-- Единая синхронизация темы с Личным Кабинетом (Default: Чистая белая FinTech тема) -->
     <script>
         (function () {
-            var t = 'dark';
+            var t = 'light'; // Основная тема по умолчанию — белая
             try {
-                var savedMode = localStorage.getItem('revops_theme_mode') || localStorage.getItem('revops-theme');
-                if (!localStorage.getItem('revops_saas_dark_init_v20')) {
-                    localStorage.setItem('revops_saas_dark_init_v20', '1');
-                    localStorage.setItem('revops_theme_mode', 'dark');
-                    localStorage.setItem('revops-theme', 'dark');
-                    t = 'dark';
-                } else if (savedMode === 'light' || savedMode === 'dark') {
-                    t = savedMode;
+                var store = localStorage.getItem('revops-store');
+                if (store) {
+                    var parsed = JSON.parse(store);
+                    if (parsed && parsed.state && parsed.state.theme) {
+                        if (parsed.state.theme === 'dark' || parsed.state.theme === 'light') {
+                            t = parsed.state.theme;
+                        }
+                    }
+                } else {
+                    var savedMode = localStorage.getItem('revops_theme_mode') || localStorage.getItem('revops-theme');
+                    if (savedMode === 'light' || savedMode === 'dark') {
+                        t = savedMode;
+                    }
                 }
             } catch (e) {
-                t = 'dark';
+                t = 'light';
             }
             document.documentElement.setAttribute('data-theme', t);
             document.documentElement.setAttribute('data-bs-theme', t);
+            if (t === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
+            } else {
+                document.documentElement.classList.add('light');
+                document.documentElement.classList.remove('dark');
+            }
         })();
 
         window.addEventListener('storage', function (e) {
-            if ((e.key === 'revops_theme_mode' || e.key === 'revops-theme') && (e.newValue === 'light' || e.newValue === 'dark')) {
-                document.documentElement.setAttribute('data-theme', e.newValue);
-                document.documentElement.setAttribute('data-bs-theme', e.newValue);
-            }
+            try {
+                if (e.key === 'revops-store' && e.newValue) {
+                    var parsed = JSON.parse(e.newValue);
+                    if (parsed && parsed.state && parsed.state.theme) {
+                        var newTheme = parsed.state.theme;
+                        if (newTheme === 'dark' || newTheme === 'light') {
+                            document.documentElement.setAttribute('data-theme', newTheme);
+                            document.documentElement.setAttribute('data-bs-theme', newTheme);
+                            if (newTheme === 'dark') {
+                                document.documentElement.classList.add('dark');
+                                document.documentElement.classList.remove('light');
+                            } else {
+                                document.documentElement.classList.add('light');
+                                document.documentElement.classList.remove('dark');
+                            }
+                        }
+                    }
+                } else if ((e.key === 'revops_theme_mode' || e.key === 'revops-theme') && (e.newValue === 'light' || e.newValue === 'dark')) {
+                    document.documentElement.setAttribute('data-theme', e.newValue);
+                    document.documentElement.setAttribute('data-bs-theme', e.newValue);
+                    if (e.newValue === 'dark') {
+                        document.documentElement.classList.add('dark');
+                        document.documentElement.classList.remove('light');
+                    } else {
+                        document.documentElement.classList.add('light');
+                        document.documentElement.classList.remove('dark');
+                    }
+                }
+            } catch (err) {}
         });
     </script>
 
@@ -99,29 +136,48 @@
         /* Scoped Polish & Modern High-Contrast SaaS Styling */
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #ffffff;
-            color: #1e293b;
+            background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-feature-settings: 'rlig' 1, 'calt' 1;
         }
-        .font-display { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .font-display { 
+            font-family: 'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            letter-spacing: -0.025em;
+            text-wrap: balance;
+        }
+        .font-mono { 
+            font-family: 'JetBrains Mono', monospace; 
+            font-variant-numeric: tabular-nums;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            text-wrap: balance;
+        }
+        p, li {
+            text-wrap: pretty;
+        }
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
 
         /* Light Theme Background Pattern */
         .bg-dot-pattern {
-            background-image: radial-gradient(rgba(148, 163, 184, 0.22) 1px, transparent 1px);
-            background-size: 20px 20px;
+            background-image: radial-gradient(rgba(148, 163, 184, 0.25) 1.2px, transparent 1.2px);
+            background-size: 24px 24px;
         }
 
         /* Modern Bento Cards & Panels (Attio / Clay style) */
         .bento-card {
             background: #ffffff;
-            border: 1px solid rgba(226, 232, 240, 0.9);
-            border-radius: 1.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 1.25rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 8px 24px -4px rgba(15, 23, 42, 0.04);
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .bento-card:hover {
             border-color: #cbd5e1;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 16px 32px -6px rgba(15, 23, 42, 0.07);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 16px 32px -6px rgba(15, 23, 42, 0.06);
             transform: translateY(-2px);
         }
 
@@ -570,7 +626,7 @@
                     <i class="fas fa-robot text-purple-500 text-xs"></i>
                     <span>MAX-бот</span>
                 </a>
-                <!-- Переключатель темы: тёмная (по умолчанию) / светлая -->
+                <!-- Переключатель темы: светлая (по умолчанию) / тёмная -->
                 <button type="button" id="theme-toggle" class="theme-toggle inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-violet-50 text-slate-600 hover:text-violet-700 border border-slate-200 transition" aria-label="Переключить тему" title="Переключить тему">
                     <i class="fas fa-moon icon-moon text-sm"></i>
                     <i class="fas fa-sun icon-sun text-sm"></i>
@@ -659,12 +715,12 @@
 
                     <!-- Hero CTA Buttons -->
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <a href="#cta" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-bold text-base shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition transform hover:-translate-y-0.5 text-center">
+                        <a href="#cta" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-base shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40 transition transform hover:-translate-y-0.5 text-center">
                             Получить экспресс-аудит 50 звонков (0 ₽)
                         </a>
-                        <a href="https://app.ai-rop.ru/" class="w-full sm:w-auto px-6 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 text-base font-semibold transition text-center inline-flex items-center justify-center gap-2.5 shadow-md">
+                        <a href="https://app.ai-rop.ru/pulse" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-6 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 text-base font-semibold transition text-center inline-flex items-center justify-center gap-2.5 shadow-md">
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <span>Live Демо-кабинет</span>
+                            <span>Live Демо-кабинет (Пульс)</span>
                             <i class="fas fa-arrow-up-right-from-square text-xs text-slate-400"></i>
                         </a>
                         <a href="#audio-demo" class="w-full sm:w-auto px-6 py-4 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-base font-semibold transition text-center inline-flex items-center justify-center gap-2 shadow-xs">
@@ -674,8 +730,8 @@
                     </div>
                 </div>
 
-                <!-- Bento Grid Showcase: RevOps Enterprise OS Dashboard Preview -->
-                <div class="max-w-6xl mx-auto mt-14 sm:mt-20 rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden bg-slate-950">
+                <!-- Bento Grid Showcase: RevOps Enterprise OS Dashboard Preview (Synced with app.ai-rop.ru/pulse) -->
+                <div class="max-w-6xl mx-auto mt-14 sm:mt-20 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden bg-slate-950">
                     <!-- Browser Window Chrome Top Bar -->
                     <div class="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-4">
                         <div class="flex items-center gap-2 shrink-0">
@@ -685,14 +741,14 @@
                         </div>
                         <div class="flex-1 max-w-md mx-auto hidden sm:flex items-center justify-center gap-2 px-3 py-1 bg-slate-950/80 border border-slate-800 rounded-lg text-xs font-mono text-slate-400">
                             <i class="fas fa-lock text-violet-400 text-[10px]"></i>
-                            <span>revops-os.enterprise/live-radar/feed</span>
+                            <span>app.ai-rop.ru/pulse</span>
                         </div>
                         <div class="flex items-center gap-3 shrink-0">
                             <div class="flex items-center gap-2 text-xs font-mono font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-1 rounded-md">
                                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                <span>Live WebSockets: &lt;15 мс</span>
+                                <span>Live amoCRM & Битрикс24 &bull; &lt;15 мс</span>
                             </div>
-                            <a href="https://app.ai-rop.ru/" class="hidden md:inline-flex items-center gap-1.5 text-xs font-mono text-violet-300 hover:text-white bg-violet-900/40 hover:bg-violet-900/70 border border-violet-700/60 px-2.5 py-1 rounded-md transition">
+                            <a href="https://app.ai-rop.ru/pulse" target="_blank" rel="noopener noreferrer" class="hidden md:inline-flex items-center gap-1.5 text-xs font-mono text-violet-300 hover:text-white bg-violet-900/40 hover:bg-violet-900/70 border border-violet-700/60 px-2.5 py-1 rounded-md transition">
                                 <span>В боевой ЛК</span>
                                 <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
                             </a>
@@ -701,33 +757,58 @@
 
                     <!-- Bento Grid Body -->
                     <div class="p-4 sm:p-6 bg-slate-950 text-slate-100">
-                        <!-- Top Live KPI Summary Strip -->
-                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
-                                <div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Оцифровано звонков</div>
-                                <div class="text-xl sm:text-2xl font-mono font-bold text-white mt-1">142 <span class="text-xs text-emerald-400 font-sans font-medium">(100%)</span></div>
-                                <div class="text-[11px] text-slate-400 mt-0.5">0 пропущенных диалогов</div>
+                        <!-- Top Live KPI Summary Strip (5 Canonical KPIs from PulsePage) -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 mb-4">
+                            <!-- KPI 1 -->
+                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between">
+                                <div class="text-[10px] sm:text-[11px] font-mono text-slate-400 uppercase tracking-wider">Выручка в риске</div>
+                                <div class="text-lg sm:text-2xl font-mono font-bold text-rose-400 mt-1 tabular-nums">−480 000 ₽</div>
+                                <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 mt-1">
+                                    <span>3 срыва без Next Step</span>
+                                    <span class="text-rose-400 font-mono font-semibold">−12%</span>
+                                </div>
                             </div>
-                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
-                                <div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Выявлено сливов</div>
-                                <div class="text-xl sm:text-2xl font-mono font-bold text-rose-400 mt-1">−480 000 ₽</div>
-                                <div class="text-[11px] text-slate-400 mt-0.5">3 критических срыва</div>
+                            <!-- KPI 2 -->
+                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between">
+                                <div class="text-[10px] sm:text-[11px] font-mono text-slate-400 uppercase tracking-wider">Балл стандартов</div>
+                                <div class="text-lg sm:text-2xl font-mono font-bold text-emerald-400 mt-1 tabular-nums">9.1 <span class="text-xs text-slate-400 font-sans font-medium">/ 13</span></div>
+                                <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 mt-1">
+                                    <span>78% эталон РОПа</span>
+                                    <span class="text-emerald-400 font-mono font-semibold">+1.4 б.</span>
+                                </div>
                             </div>
-                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
-                                <div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Монте-Карло P50</div>
-                                <div class="text-xl sm:text-2xl font-mono font-bold text-violet-400 mt-1">18.5M ₽</div>
-                                <div class="text-[11px] text-emerald-400 mt-0.5">&uarr; 82.4% вер-ть плана</div>
+                            <!-- KPI 3 -->
+                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between">
+                                <div class="text-[10px] sm:text-[11px] font-mono text-slate-400 uppercase tracking-wider">Ложное согласие</div>
+                                <div class="text-lg sm:text-2xl font-mono font-bold text-amber-400 mt-1 tabular-nums">18.5%</div>
+                                <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 mt-1">
+                                    <span>Fake Yes («на почту»)</span>
+                                    <span class="text-amber-400 font-mono font-semibold">4 сделки</span>
+                                </div>
                             </div>
-                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
-                                <div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Алерты РОПу</div>
-                                <div class="text-xl sm:text-2xl font-mono font-bold text-cyan-400 mt-1">&lt; 15 сек</div>
-                                <div class="text-[11px] text-slate-400 mt-0.5">Telegram & MAX боты</div>
+                            <!-- KPI 4 -->
+                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between">
+                                <div class="text-[10px] sm:text-[11px] font-mono text-slate-400 uppercase tracking-wider">Спасенная выручка</div>
+                                <div class="text-lg sm:text-2xl font-mono font-bold text-white mt-1 tabular-nums">1 240 000 ₽</div>
+                                <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 mt-1">
+                                    <span>Дожато по алертам</span>
+                                    <span class="text-emerald-400 font-mono font-semibold">ROI 8.4x</span>
+                                </div>
+                            </div>
+                            <!-- KPI 5 -->
+                            <div class="col-span-2 md:col-span-1 lg:col-span-1 bg-slate-900/90 border border-slate-800 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between">
+                                <div class="text-[10px] sm:text-[11px] font-mono text-slate-400 uppercase tracking-wider">Монте-Карло P50</div>
+                                <div class="text-lg sm:text-2xl font-mono font-bold text-violet-400 mt-1 tabular-nums">18.5M ₽</div>
+                                <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 mt-1">
+                                    <span>План: 16.0M ₽</span>
+                                    <span class="text-emerald-400 font-mono font-semibold">82.4% вер-ть</span>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Asymmetric Bento Grid -->
                         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                            <!-- Tile 1 (Large 7-col): Live Call Radar with 13 CR Dots -->
+                            <!-- Tile 1 (Large 7-col): Live Call Radar with 13 CR Dots & Audio Spectrogram -->
                             <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
                                 <div>
                                     <div class="flex items-center justify-between gap-2 mb-3">
@@ -770,6 +851,40 @@
                                         </div>
                                     </div>
 
+                                    <!-- Audio Waveform & Speech Dynamics -->
+                                    <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-mono space-y-2 mb-3">
+                                        <div class="flex items-center justify-between text-[11px] text-slate-400">
+                                            <span>Спектрограмма: <strong class="text-white">1:57 мин</strong> &bull; Talk/Listen: <span class="text-violet-300 font-semibold">45% Менеджер</span> / <span class="text-cyan-300 font-semibold">55% Клиент</span></span>
+                                            <span class="text-emerald-400 font-bold">Оптимальный темп</span>
+                                        </div>
+                                        <div class="flex items-center gap-1 h-5 pt-1">
+                                            <span class="w-1 bg-violet-500 rounded-full h-2 animate-pulse"></span>
+                                            <span class="w-1 bg-violet-400 rounded-full h-4 animate-pulse"></span>
+                                            <span class="w-1 bg-violet-500 rounded-full h-3 animate-pulse"></span>
+                                            <span class="w-1 bg-cyan-400 rounded-full h-5 animate-pulse"></span>
+                                            <span class="w-1 bg-cyan-300 rounded-full h-3"></span>
+                                            <span class="w-1 bg-cyan-400 rounded-full h-4 animate-pulse"></span>
+                                            <span class="w-1 bg-violet-500 rounded-full h-5"></span>
+                                            <span class="w-1 bg-violet-400 rounded-full h-2 animate-pulse"></span>
+                                            <span class="w-1 bg-cyan-400 rounded-full h-4"></span>
+                                            <span class="w-1 bg-cyan-500 rounded-full h-5 animate-pulse"></span>
+                                            <span class="w-1 bg-violet-400 rounded-full h-3"></span>
+                                            <span class="w-1 bg-violet-500 rounded-full h-4 animate-pulse"></span>
+                                            <span class="w-1 bg-cyan-400 rounded-full h-2"></span>
+                                            <span class="w-1 bg-cyan-300 rounded-full h-5 animate-pulse"></span>
+                                            <span class="w-1 bg-violet-500 rounded-full h-3"></span>
+                                            <span class="w-1 bg-violet-400 rounded-full h-4"></span>
+                                            <span class="w-1 bg-cyan-400 rounded-full h-5 animate-pulse"></span>
+                                            <span class="w-1 bg-cyan-500 rounded-full h-3"></span>
+                                            <span class="w-1 bg-violet-400 rounded-full h-4 animate-pulse"></span>
+                                            <span class="w-1 bg-violet-500 rounded-full h-2"></span>
+                                            <span class="w-1 bg-cyan-400 rounded-full h-4 animate-pulse"></span>
+                                            <span class="w-1 bg-cyan-300 rounded-full h-5"></span>
+                                            <span class="w-1 bg-violet-500 rounded-full h-3 animate-pulse"></span>
+                                            <span class="w-1 bg-violet-400 rounded-full h-4"></span>
+                                        </div>
+                                    </div>
+
                                     <!-- Transcript Snippet -->
                                     <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs font-mono text-slate-300 space-y-1.5">
                                         <div class="text-violet-400 font-semibold">&bull; Ключевая реплика аудиозаписи:</div>
@@ -778,149 +893,74 @@
                                 </div>
 
                                 <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
-                                    <span class="text-emerald-400 font-semibold"><i class="fas fa-check-circle mr-1"></i> Next Step зафиксирован в CRM</span>
-                                    <a href="https://app.ai-rop.ru/" class="text-violet-400 hover:text-violet-300 font-bold flex items-center gap-1 transition">
+                                    <span class="text-emerald-400 font-semibold"><i class="fas fa-check-circle mr-1"></i> Next Step зафиксирован в CRM на 28.10 14:00</span>
+                                    <a href="https://app.ai-rop.ru/pulse" target="_blank" rel="noopener noreferrer" class="text-violet-400 hover:text-violet-300 font-bold flex items-center gap-1 transition">
                                         Смотреть в ЛК <i class="fas fa-arrow-right text-[10px]"></i>
                                     </a>
                                 </div>
                             </div>
 
-                            <!-- Tile 2 (5-col): Детектор «Ложного согласия» -->
-                            <div class="lg:col-span-5 bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-slate-900/90 border border-rose-500/30 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
-                                <div>
-                                    <div class="flex items-center justify-between gap-2 mb-3">
-                                        <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono font-bold text-[11px]">
-                                            <i class="fas fa-triangle-exclamation mr-1"></i> FAKE YES DETECTOR
-                                        </span>
-                                        <span class="text-[11px] font-mono text-rose-400 font-bold">Слив: −240 000 ₽</span>
-                                    </div>
-                                    <h4 class="font-bold text-white text-sm sm:text-base mb-1.5">Скрытый слив: «Скиньте на почту»</h4>
-                                    <p class="text-xs text-slate-300 font-sans leading-relaxed mb-3">
-                                        Клиент имитировал интерес («отправьте КП»), менеджер согласился и не квалифицировал ЛПР. Сделка зависла.
-                                    </p>
-                                    <div class="p-2.5 rounded-xl bg-slate-950/80 border border-rose-500/20 text-[11px] font-mono space-y-1 text-slate-300">
-                                        <div class="text-rose-400"><i class="fas fa-xmark mr-1"></i> cr1 (Контакт с ЛПР): 0</div>
-                                        <div class="text-rose-400"><i class="fas fa-xmark mr-1"></i> cr11 (Фиксация Next Step): 0</div>
-                                        <div class="text-emerald-400"><i class="fas fa-shield mr-1"></i> Рекомендация РОПу: Перезвонить через 15 мин</div>
-                                    </div>
-                                </div>
-                                <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
-                                    <span class="text-cyan-400 font-mono"><i class="fab fa-telegram mr-1"></i> Алерт в TG РОПа отправлен</span>
-                                    <span class="font-mono text-slate-400">4/13 балл</span>
-                                </div>
-                            </div>
-
-                            <!-- Tile 3 (5-col): Стохастический симулятор Монте-Карло 3.0 -->
-                            <div class="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
-                                <div>
-                                    <div class="flex items-center justify-between gap-2 mb-3">
-                                        <span class="px-2.5 py-1 rounded-lg bg-violet-500/20 text-violet-300 border border-violet-500/40 font-mono font-bold text-[11px]">
-                                            <i class="fas fa-chart-line mr-1"></i> МОНТЕ-КАРЛО 3.0
-                                        </span>
-                                        <span class="text-[11px] font-mono text-emerald-400 font-bold">10 000 симуляций</span>
-                                    </div>
-                                    <h4 class="font-bold text-white text-sm sm:text-base mb-2">Вероятностный коридор выручки</h4>
-                                    <!-- P10 / P50 / P90 mini bars -->
-                                    <div class="space-y-2 text-xs font-mono">
-                                        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-950/70 border border-slate-800">
-                                            <span class="text-slate-400">Пессимистичный (P10)</span>
-                                            <span class="text-white font-bold">14.2M ₽</span>
+                            <!-- Right Column (5-col): Lost Deals Banner + Monte Carlo 3.0 -->
+                            <div class="lg:col-span-5 flex flex-col gap-4">
+                                <!-- Tile 2: Детектор «Ложного согласия» (Fake Yes) -->
+                                <div class="bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-slate-900/90 border border-rose-500/30 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex items-center justify-between gap-2 mb-3">
+                                            <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono font-bold text-[11px]">
+                                                <i class="fas fa-triangle-exclamation mr-1"></i> FAKE YES DETECTOR
+                                            </span>
+                                            <span class="text-[11px] font-mono text-rose-400 font-bold">Слив: −240 000 ₽</span>
                                         </div>
-                                        <div class="flex items-center justify-between p-2 rounded-lg bg-violet-950/60 border border-violet-500/40">
-                                            <span class="text-violet-300 font-semibold">Базовый прогноз (P50)</span>
-                                            <span class="text-violet-300 font-bold">18.5M ₽</span>
-                                        </div>
-                                        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-950/70 border border-slate-800">
-                                            <span class="text-slate-400">Оптимистичный (P90)</span>
-                                            <span class="text-white font-bold">22.8M ₽</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
-                                    <span class="text-emerald-400">План 16.0M ₽: вероятность 82.4%</span>
-                                    <span class="text-slate-400">Матрица 3x3</span>
-                                </div>
-                            </div>
-
-                            <!-- Tile 4 (4-col): Финансовый мост 4-х потерь -->
-                            <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
-                                <div>
-                                    <div class="flex items-center justify-between gap-2 mb-3">
-                                        <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold text-[11px]">
-                                            <i class="fas fa-layer-group mr-1"></i> ФИНАНСОВЫЙ МОСТ
-                                        </span>
-                                        <span class="text-[11px] font-mono text-slate-400">4 узких места</span>
-                                    </div>
-                                    <h4 class="font-bold text-white text-sm mb-2">Где оседает упущенная маржа:</h4>
-                                    <div class="space-y-1.5 text-xs font-mono">
-                                        <div class="flex justify-between items-center text-slate-300">
-                                            <span>1. Брак квалификации и речи</span>
-                                            <span class="text-rose-400 font-bold">28%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                            <div class="bg-rose-500 h-full w-[28%] rounded-full"></div>
-                                        </div>
-
-                                        <div class="flex justify-between items-center text-slate-300 mt-2">
-                                            <span>2. Зависание КП без дедлайна</span>
-                                            <span class="text-amber-400 font-bold">18%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                            <div class="bg-amber-500 h-full w-[18%] rounded-full"></div>
-                                        </div>
-
-                                        <div class="flex justify-between items-center text-slate-300 mt-2">
-                                            <span>3. Сливы в отказниках</span>
-                                            <span class="text-cyan-400 font-bold">12%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                            <div class="bg-cyan-500 h-full w-[12%] rounded-full"></div>
-                                        </div>
-
-                                        <div class="flex justify-between items-center text-slate-300 mt-2">
-                                            <span>4. Затягивание оплат (DSO)</span>
-                                            <span class="text-violet-400 font-bold">10%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                            <div class="bg-violet-500 h-full w-[10%] rounded-full"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mt-3 pt-2.5 border-t border-slate-800 text-right">
-                                    <span class="text-[11px] font-mono text-emerald-400 font-semibold">Возврат до +35% маржи отдела</span>
-                                </div>
-                            </div>
-
-                            <!-- Tile 5 (3-col): Telegram & MAX Alerts + Copilot -->
-                            <div class="lg:col-span-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
-                                <div>
-                                    <div class="flex items-center justify-between gap-2 mb-3">
-                                        <span class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono font-bold text-[11px]">
-                                            <i class="fas fa-bell mr-1"></i> COPILOT РОПА
-                                        </span>
-                                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                                    </div>
-                                    <h4 class="font-bold text-white text-sm mb-1.5">Директивы & Алерты</h4>
-                                    <p class="text-xs text-slate-300 font-sans leading-relaxed mb-3">
-                                        ИИ формирует готовые решения для РОПа прямо в момент разговора менеджера.
-                                    </p>
-                                    <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono space-y-1.5 text-slate-300">
-                                        <div class="flex items-center gap-1.5 text-cyan-400 font-bold">
-                                            <i class="fab fa-telegram"></i> Telegram Bot &bull; <i class="fas fa-robot ml-1"></i> MAX
-                                        </div>
-                                        <p class="text-slate-400 italic font-sans text-[11px] leading-tight">
-                                            «Подключиться к сделке #349115: клиент возражает по смете, менеджер снижает чек вместо защиты маржи».
+                                        <h4 class="font-bold text-white text-sm sm:text-base mb-1.5">Скрытый слив: «Скиньте на почту»</h4>
+                                        <p class="text-xs text-slate-300 font-sans leading-relaxed mb-3">
+                                            Клиент сымитировал интерес («отправьте КП»), менеджер согласился и не квалифицировал ЛПР. Сделка зависла.
                                         </p>
+                                        <div class="p-2.5 rounded-xl bg-slate-950/80 border border-rose-500/20 text-[11px] font-mono space-y-1 text-slate-300">
+                                            <div class="text-rose-400"><i class="fas fa-xmark mr-1"></i> cr1 (Контакт с ЛПР): 0</div>
+                                            <div class="text-rose-400"><i class="fas fa-xmark mr-1"></i> cr11 (Фиксация Next Step): 0</div>
+                                            <div class="text-emerald-400"><i class="fas fa-shield mr-1"></i> Рекомендация РОПу: Перезвонить через 15 мин</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                                        <span class="text-cyan-400 font-mono"><i class="fab fa-telegram mr-1"></i> Алерт в TG РОПа отправлен</span>
+                                        <span class="font-mono text-slate-400">4/13 балл</span>
                                     </div>
                                 </div>
-                                <div class="mt-4 pt-3 border-t border-slate-800 text-center">
-                                    <a href="https://app.ai-rop.ru/" class="w-full py-2 px-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs inline-flex items-center justify-center gap-2 transition">
-                                        <span>Демо-кабинет</span>
-                                        <i class="fas fa-arrow-right text-[10px]"></i>
-                                    </a>
+
+                                <!-- Tile 3: Стохастический симулятор Монте-Карло 3.0 -->
+                                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex items-center justify-between gap-2 mb-3">
+                                            <span class="px-2.5 py-1 rounded-lg bg-violet-500/20 text-violet-300 border border-violet-500/40 font-mono font-bold text-[11px]">
+                                                <i class="fas fa-chart-line mr-1"></i> МОНТЕ-КАРЛО 3.0
+                                            </span>
+                                            <span class="text-[11px] font-mono text-emerald-400 font-bold">10 000 симуляций</span>
+                                        </div>
+                                        <h4 class="font-bold text-white text-sm sm:text-base mb-2">Вероятностный коридор выручки</h4>
+                                        <!-- P10 / P50 / P90 mini bars -->
+                                        <div class="space-y-2 text-xs font-mono">
+                                            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-950/70 border border-slate-800">
+                                                <span class="text-slate-400">Пессимистичный (P10)</span>
+                                                <span class="text-white font-bold">14.2M ₽</span>
+                                            </div>
+                                            <div class="flex items-center justify-between p-2 rounded-lg bg-violet-950/60 border border-violet-500/40">
+                                                <span class="text-violet-300 font-semibold">Базовый прогноз (P50)</span>
+                                                <span class="text-violet-300 font-bold">18.5M ₽</span>
+                                            </div>
+                                            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-950/70 border border-slate-800">
+                                                <span class="text-slate-400">Оптимистичный (P90)</span>
+                                                <span class="text-white font-bold">22.8M ₽</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
+                                        <span class="text-emerald-400">План 16.0M ₽: вер-ть 82.4%</span>
+                                        <a href="https://app.ai-rop.ru/pulse" target="_blank" rel="noopener noreferrer" class="text-violet-400 hover:text-white font-semibold">
+                                            Открыть в ЛК &rarr;
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -1267,7 +1307,7 @@
                             </div>
                             <h3 class="font-display text-lg font-bold text-slate-900 mb-2">3. Прозрачность в CRM</h3>
                             <p class="text-slate-600 text-sm leading-relaxed">
-                                Автозаполнение полей сделки в amoCRM и Битрикс24 + реактивные таблицы Google Sheets. Данные открыты и принадлежат вам без скрытых систем.
+                                Автозаполнение полей сделки в amoCRM и Битрикс24 + интерактивный Личный кабинет и экспорт в таблицы. Данные открыты и принадлежат вам без вендор-лока.
                             </p>
                         </div>
                         <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans text-slate-500 font-semibold">
@@ -1315,7 +1355,7 @@
                             <i class="fab fa-telegram-plane mr-1.5"></i> Telegram & MAX Алерт РОПа (30 сек)
                         </button>
                         <button onclick="toggleAlertView('sheets')" id="btnViewSheets" class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer">
-                            <i class="fas fa-table mr-1.5"></i> Google Sheets & ЛК V20.0 (Радар)
+                            <i class="fas fa-chart-line mr-1.5"></i> Личный кабинет & Таблица аудита
                         </button>
                     </div>
                 </div>
@@ -1390,12 +1430,12 @@
                     </div>
                 </div>
 
-                <!-- VIEW B: GOOGLE SHEETS DASHBOARD MOCKUP -->
+                <!-- VIEW B: REVOPS PLATFORM AUDIT MATRIX MOCKUP -->
                 <div id="viewSheets" class="hidden max-w-5xl mx-auto rounded-3xl bg-white p-6 sm:p-8 shadow-xl border border-slate-200">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 mb-6">
                         <div>
-                            <span class="text-xs font-mono font-semibold text-violet-600">RevOps Platform V20.0 // Live Master</span>
-                            <h3 class="font-display font-bold text-slate-900 text-lg sm:text-xl">Лист «ИИ_Аудит»: 100% звонков оцифрованы в данные</h3>
+                            <span class="text-xs font-mono font-semibold text-violet-600">RevOps Platform V20.0 // Pulse & Live Data</span>
+                            <h3 class="font-display font-bold text-slate-900 text-lg sm:text-xl">Матрица «ИИ-Аудит»: 100% звонков оцифрованы в данные</h3>
                         </div>
                         <a href="samples/Образец_ИИ_Аудита_50_Звонков_RevOps_OS.pdf" download class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold border border-slate-300 transition">
                             <i class="fas fa-download text-violet-600"></i>
@@ -1932,7 +1972,7 @@
                         </div>
                         <h4 class="font-display font-bold text-slate-900 text-lg mb-2">Мастер-контур V20.0 (10 мин)</h4>
                         <p class="text-sm text-slate-600 leading-relaxed">
-                            Система автоматически разворачивает ваш Личный кабинет RevOps OS V20.0 + выгрузку в Google Sheets и калибрует словарь под вашу нишу.
+                            Система автоматически разворачивает ваш Личный кабинет RevOps OS V20.0, настраивает интеграцию с CRM и калибрует словарь под вашу нишу.
                         </p>
                     </div>
 
@@ -1961,7 +2001,7 @@
                             </h3>
                             <p class="text-sm text-slate-600 leading-relaxed">
                                 Не хотите прямо сейчас подключать вебхуки или согласовывать доступ с IT и службой безопасности? 
-                                Просто выгрузите 50 записей звонков (MP3 / WAV или ссылка на облачный диск) — через 24 часа мы предоставим интерактивный отчет в Личном кабинете RevOps OS V20.0 + выгрузку в Google Sheets с полной картой сливов выручки по 13 критериям.
+                                Просто выгрузите 50 записей звонков (MP3 / WAV или ссылка на облачный диск) — через 24 часа мы предоставим интерактивный отчет в Личном кабинете RevOps OS V20.0 с полной картой сливов выручки по 13 критериям и выгрузкой данных.
                             </p>
                             <div class="flex flex-wrap items-center gap-5 text-sm font-medium text-slate-700 pt-2">
                                 <span class="flex items-center gap-2"><i class="fas fa-check text-violet-600"></i> Без API-ключей</span>
@@ -2378,7 +2418,7 @@
 
                             <ul class="space-y-3 text-xs sm:text-sm text-slate-700 mb-8">
                                 <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>100% звонков всей команды за 7 дней</span></li>
-                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Личный кабинет RevOps OS V20.0 + выгрузка в Google Sheets</span></li>
+                                <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Личный кабинет RevOps OS V20.0 + экспорт отчетов (Excel / Sheets / PDF)</span></li>
                                 <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Подключение Telegram / MAX алертов РОПа</span></li>
                                 <li class="flex items-center gap-2.5"><i class="fas fa-check text-violet-600"></i> <span>Опция: пилот по 50 файлам без IT-доступа</span></li>
                                 <li class="flex items-center gap-2 font-bold text-violet-800 bg-violet-50 px-2.5 py-1.5 rounded-lg border border-violet-200 text-xs">
@@ -2493,7 +2533,7 @@
                             </span>
                         </summary>
                         <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-100 mt-4">
-                            <strong class="text-violet-700 font-bold">Да, 100%!</strong> Вы можете просто выгрузить архив с 50 записями звонков (или предоставить ссылку на Яндекс.Диск / Google Диск) и прислать нам. Через 24 часа вы получите готовый интерактивный отчёт в персональной Google Таблице по 13 критериям со всеми утечками выручки. Никаких доступов к CRM и телефонии на первом этапе не требуется.
+                            <strong class="text-violet-700 font-bold">Да, 100%!</strong> Вы можете просто выгрузить архив с 50 записями звонков (или предоставить ссылку на Яндекс.Диск / Облако) и прислать нам. Через 24 часа вы получите доступ в Личный кабинет RevOps OS и PDF-дайджест по 13 критериям со всеми утечками выручки. Никаких доступов к CRM и телефонии на первом этапе не требуется.
                         </p>
                     </details>
 
@@ -2529,7 +2569,7 @@
                             </span>
                         </summary>
                         <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-100 mt-4">
-                            Система экономит РОПу до 15 часов рутины в неделю. Руководитель больше не слушает звонки часами наугад — он получает 30-секундные сигналы по реальным срывам в Telegram/MAX и сводный рейтинг команды в Google Таблице.
+                            Система экономит РОПу до 15 часов рутины в неделю. Руководитель больше не слушает звонки часами наугад — он получает 30-секундные сигналы по реальным срывам в Telegram/MAX и сводную матрицу команды в Личном кабинете.
                         </p>
                     </details>
 
@@ -2593,7 +2633,7 @@
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <i class="fas fa-check-circle text-violet-600 text-lg"></i>
-                                    <span>Личный кабинет RevOps OS V20.0 + выгрузка в Google Sheets со срезом сливов выручки</span>
+                                    <span>Личный кабинет RevOps OS V20.0 + аудит-отчет со срезом сливов выручки</span>
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <i class="fas fa-check-circle text-violet-600 text-lg"></i>
@@ -3659,21 +3699,36 @@
         });
 
         // ----------------------------------------------------
-        // 10. ТЕМА: сквозная синхронизация Лендинга и ЛК V20.0
+        // 10. ТЕМА: сквозная синхронизация Лендинга и ЛК (Zustand + local keys)
         // ----------------------------------------------------
         (function () {
             function applyTheme(t) {
                 document.documentElement.setAttribute('data-theme', t);
                 document.documentElement.setAttribute('data-bs-theme', t);
+                if (t === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                } else {
+                    document.documentElement.classList.add('light');
+                    document.documentElement.classList.remove('dark');
+                }
                 try {
                     localStorage.setItem('revops_theme_mode', t);
                     localStorage.setItem('revops-theme', t);
+                    var existingStore = localStorage.getItem('revops-store');
+                    var storeObj = {};
+                    if (existingStore) {
+                        try { storeObj = JSON.parse(existingStore) || {}; } catch(e) {}
+                    }
+                    storeObj.state = storeObj.state || {};
+                    storeObj.state.theme = t;
+                    localStorage.setItem('revops-store', JSON.stringify(storeObj));
                 } catch (e) {}
             }
             document.addEventListener('click', function (ev) {
                 const btn = ev.target.closest('#theme-toggle');
                 if (!btn) return;
-                const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+                const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
                 const next = cur === 'light' ? 'dark' : 'light';
                 applyTheme(next);
                 if (typeof window.reachMetrikaGoal === 'function') {
