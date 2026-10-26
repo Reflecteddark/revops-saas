@@ -66,19 +66,30 @@ export function KpiCard({
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       className={cn(
-        'surface relative overflow-hidden p-5 transition-colors duration-150 hover:border-strong',
+        'surface relative overflow-hidden rounded-2xl border border-border-subtle bg-surface p-4 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-strong hover:shadow-[0_12px_25px_-4px_rgba(15,23,42,0.08)] sm:p-5',
         isDanger &&
-          'before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-rose-500 bg-rose-500/[0.04]',
+          'border-rose-200/80 bg-gradient-to-b from-rose-50/40 to-surface before:absolute before:inset-y-3 before:left-0 before:w-1 before:rounded-full before:bg-rose-500 dark:border-rose-500/20 dark:from-rose-500/[0.04] dark:to-surface',
         onClick &&
-          'cursor-pointer hover:bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50',
+          'focus-visible:ring-accent/50 cursor-pointer hover:bg-hover focus-visible:outline-none focus-visible:ring-1',
         className
       )}
     >
       <div className="flex items-center justify-between pb-2">
-        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-tertiary text-balance">
+        <span className="text-balance text-[11px] font-semibold uppercase tracking-[0.06em] text-tertiary">
           {title}
         </span>
-        {icon && <div className="text-tertiary">{icon}</div>}
+        <div className="flex items-center gap-2">
+          {isDanger && (
+            <span
+              className="relative flex h-2 w-2 shrink-0"
+              title="Требуется внимание"
+            >
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
+            </span>
+          )}
+          {icon && <div className="text-tertiary">{icon}</div>}
+        </div>
       </div>
 
       <div>
@@ -89,29 +100,91 @@ export function KpiCard({
           </div>
         ) : (
           <>
-            <div className="flex items-baseline">
-              <span className="text-4xl font-semibold tabular-nums tracking-tight text-foreground font-kpi">
-                {value}
-              </span>
-              {unit && (
-                <span className="ml-1 text-lg font-medium text-tertiary">
-                  {unit}
+            <div className="flex items-baseline justify-between">
+              <div className="flex items-baseline">
+                <span className="font-kpi text-4xl font-semibold tabular-nums tracking-tight text-foreground">
+                  {value}
                 </span>
-              )}
+                {unit && (
+                  <span className="ml-1 text-lg font-medium text-tertiary">
+                    {unit}
+                  </span>
+                )}
+              </div>
+
+              {/* Stripe Sparkline Wave */}
+              <div className="hidden opacity-80 transition-opacity hover:opacity-100 sm:block">
+                {trend?.direction === 'up' && (
+                  <svg
+                    className="h-6 w-16 overflow-visible text-emerald-500"
+                    viewBox="0 0 100 30"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path
+                      d="M0 25 Q 25 22, 40 15 T 75 12 T 100 4"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                )}
+                {trend?.direction === 'down' && (
+                  <svg
+                    className="h-6 w-16 overflow-visible text-rose-500"
+                    viewBox="0 0 100 30"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path
+                      d="M0 8 Q 30 15, 60 22 T 100 25"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                )}
+                {trend?.direction === 'flat' && (
+                  <svg
+                    className="h-6 w-16 overflow-visible text-slate-400"
+                    viewBox="0 0 100 30"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path
+                      d="M0 15 Q 30 18, 50 12 T 80 16 T 100 14"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                )}
+                {!trend && isDanger && (
+                  <svg
+                    className="h-6 w-16 overflow-visible text-rose-500"
+                    viewBox="0 0 100 30"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path
+                      d="M0 24 Q 40 20, 60 10 T 100 6"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                )}
+              </div>
             </div>
 
             {trend && (
               <div className="mt-2.5 flex items-center text-xs">
                 <span
                   className={cn(
-                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums',
+                    'inline-flex items-center gap-1 rounded-full border border-transparent px-2 py-0.5 text-xs font-semibold tabular-nums',
                     trendColorClass
                   )}
                 >
                   {trend.direction === 'up' && (
                     <>
                       <ArrowUp
-                        className="h-3 w-3 mr-0.5"
+                        className="mr-0.5 h-3 w-3"
                         data-testid="trend-up"
                       />
                       +{trend.value}%
@@ -120,7 +193,7 @@ export function KpiCard({
                   {trend.direction === 'down' && (
                     <>
                       <ArrowDown
-                        className="h-3 w-3 mr-0.5"
+                        className="mr-0.5 h-3 w-3"
                         data-testid="trend-down"
                       />
                       -{trend.value}%
@@ -129,7 +202,7 @@ export function KpiCard({
                   {trend.direction === 'flat' && (
                     <>
                       <Minus
-                        className="h-3 w-3 mr-0.5"
+                        className="mr-0.5 h-3 w-3"
                         data-testid="trend-flat"
                       />
                       {trend.value}%
