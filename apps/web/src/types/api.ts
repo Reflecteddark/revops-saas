@@ -465,6 +465,7 @@ export interface TenantLifecycleRecord {
   connected_clients?: ConnectedClient[];
   minutes_used?: number;
   minutes_quota?: number;
+  monthly_target?: number;
   spent_rub?: number;
   created_at?: string;
 }
@@ -478,6 +479,7 @@ export interface TenantUpdatePayload {
   crm_webhook_url?: string;
   niche_name?: string;
   avg_deal_check?: number;
+  monthly_target?: number;
   target_next_step?: string;
   new_password?: string;
   spreadsheet_id?: string;

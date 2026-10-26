@@ -233,7 +233,7 @@ def test_serve_admin_with_query_param_admin_key():
 
 
 def test_admin_update_tenant_and_get_webhooks():
-    """Verifies that PUT /admin/tenants/{id} updates CRM/webhook and GET returns explicit webhook URLs."""
+    """Verifies that PUT /admin/tenants/{id} updates CRM/webhook, monthly_target and GET returns explicit webhook URLs."""
     token = create_access_token({"sub": "admin", "tenant_id": "TNT-001", "role": "admin"})
     resp_put = client.put(
         "/api/v1/admin/tenants/TNT-001",
@@ -242,7 +242,8 @@ def test_admin_update_tenant_and_get_webhooks():
             "tenant_name": "Самозанятый (Master)",
             "crm_type": "bitrix24",
             "crm_webhook_url": "https://company.bitrix24.ru/rest/1/test_token/",
-            "spreadsheet_id": "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk"
+            "spreadsheet_id": "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk",
+            "monthly_target": 6000000.0
         }
     )
     assert resp_put.status_code == 200

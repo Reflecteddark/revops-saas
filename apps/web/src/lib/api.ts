@@ -30,6 +30,9 @@ import type {
   GeneralSettings,
   InsightsSummaryResponse,
   IntegrationsHealthResponse,
+  LossReason,
+  ManagerConfig,
+  ModuleFlag,
   QuarantineCallsResponse,
   Settings,
   SimulateCallPayload,
@@ -226,7 +229,10 @@ export const settingsApi = {
     tenant_id: string;
     general?: Partial<GeneralSettings>;
     stages?: StageConfig[];
+    managers?: ManagerConfig[];
+    loss_reasons?: LossReason[];
     telegram?: Partial<TelegramConfig>;
+    modules?: ModuleFlag[];
   }): Promise<Settings> => {
     const res = await api.post<
       { settings?: Settings; [key: string]: unknown } | Settings
@@ -252,11 +258,25 @@ export const settingsApi = {
     return settingsApi.update({ tenant_id: tenantId, stages });
   },
 
+  updateManagers: async (
+    tenantId: string,
+    managers: ManagerConfig[]
+  ): Promise<Settings> => {
+    return settingsApi.update({ tenant_id: tenantId, managers });
+  },
+
   updateTelegram: async (
     tenantId: string,
     telegram: Partial<TelegramConfig>
   ): Promise<Settings> => {
     return settingsApi.update({ tenant_id: tenantId, telegram });
+  },
+
+  updateModules: async (
+    tenantId: string,
+    modules: ModuleFlag[]
+  ): Promise<Settings> => {
+    return settingsApi.update({ tenant_id: tenantId, modules });
   },
 };
 

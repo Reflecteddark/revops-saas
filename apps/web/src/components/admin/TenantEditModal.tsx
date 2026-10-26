@@ -51,6 +51,7 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
   const [spreadsheetId, setSpreadsheetId] = useState('');
   const [nicheName, setNicheName] = useState('');
   const [avgDealCheck, setAvgDealCheck] = useState<number | string>(150000);
+  const [monthlyTarget, setMonthlyTarget] = useState<number | string>(5000000);
   const [minutesQuota, setMinutesQuota] = useState<number | string>(1000);
   const [clientEmail, setClientEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -75,6 +76,7 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
       setSpreadsheetId(tenant.spreadsheet_id || '');
       setNicheName(tenant.niche_name || 'Универсальный B2B');
       setAvgDealCheck(tenant.avg_deal_check ?? 150000);
+      setMonthlyTarget(tenant.monthly_target ?? 5000000);
       setMinutesQuota(tenant.minutes_quota ?? 1000);
 
       const firstClient = tenant.connected_clients?.[0];
@@ -164,6 +166,7 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
         spreadsheet_id: spreadsheetId.trim() || undefined,
         niche_name: nicheName.trim() || undefined,
         avg_deal_check: Number(avgDealCheck) || 150000,
+        monthly_target: Number(monthlyTarget) || 5000000,
         minutes_quota: Number(minutesQuota) || 1000,
         client_email: clientEmail.trim() || undefined,
         new_password: newPassword.trim() || undefined,
@@ -466,6 +469,18 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
                   value={avgDealCheck}
                   onChange={(e) => setAvgDealCheck(e.target.value)}
                   className="font-mono text-xs bg-surface border-subtle"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs text-secondary">План выручки на месяц (₽)</Label>
+                <Input
+                  type="number"
+                  step="100000"
+                  value={monthlyTarget}
+                  onChange={(e) => setMonthlyTarget(e.target.value)}
+                  className="font-mono text-xs bg-surface border-subtle text-emerald-400 font-bold"
+                  placeholder="5000000"
                 />
               </div>
 

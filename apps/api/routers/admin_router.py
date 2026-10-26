@@ -1319,6 +1319,7 @@ class TenantUpdateRequest(BaseModel):
     new_password: str | None = None
     spreadsheet_id: str | None = None
     minutes_quota: int | None = None
+    monthly_target: float | None = None
 
 
 class TenantStatusRequest(BaseModel):
@@ -1602,6 +1603,16 @@ def update_tenant_endpoint(tenant_id: str, req: TenantUpdateRequest):
         target_tenant["spreadsheet_id"] = clean_sh
     if req.minutes_quota is not None:
         target_tenant["minutes_quota"] = req.minutes_quota
+    if req.monthly_target is not None:
+        target_tenant["monthly_target"] = req.monthly_target
+        try:
+            from .settings_router import save_settings_to_sheets, SettingsPayload, GeneralSettings
+            save_settings_to_sheets(SettingsPayload(
+                tenant_id=clean_id,
+                general=GeneralSettings(monthly_target=req.monthly_target)
+            ))
+        except Exception as e:
+            logger.warning(f"Could not auto-sync monthly_target to sheet: {e}")
 
     sync_save_registry(registry)
 

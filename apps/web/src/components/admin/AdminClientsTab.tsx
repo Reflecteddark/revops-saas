@@ -512,10 +512,10 @@ export function AdminClientsTab() {
 
                           {/* Integrations & Settings */}
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => setEditingTenant(t)}
-                            className="h-7 px-2 text-[11px] gap-1 text-foreground hover:bg-hover hover:text-primary"
+                            className="h-7 px-2 text-[11px] gap-1 text-primary border-primary/30 hover:bg-primary/10 font-medium"
                             title="Интеграции & Настройки контура (замена API, вебхуков, таблицы и параметров)"
                             data-testid={`btn-edit-tenant-${t.tenant_id}`}
                           >
