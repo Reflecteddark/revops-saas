@@ -114,7 +114,7 @@ async def call_gemini_api(system_prompt: str, audio_bytes: Optional[bytes], resp
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     
-    parts = [{"text": system_prompt}]
+    parts: list[Dict[str, Any]] = [{"text": system_prompt}]
     if audio_bytes:
         b64_audio = base64.b64encode(audio_bytes).decode("utf-8")
         parts.append({
@@ -161,13 +161,13 @@ async def call_gemini_api(system_prompt: str, audio_bytes: Optional[bytes], resp
 
 async def process_call_task(task_data: Dict[str, Any], r_client: aioredis.Redis):
     """Полный пайплайн аудита одного звонка."""
-    tenant_id = task_data.get("tenant_id")
-    external_call_id = task_data.get("external_call_id")
-    audio_url = task_data.get("audio_url", "")
-    crm_source = task_data.get("crm_source", "amocrm")
-    raw_deal_id = task_data.get("deal_id")
+    tenant_id: str = str(task_data.get("tenant_id") or "TNT-001")
+    external_call_id: str = str(task_data.get("external_call_id") or "")
+    audio_url: str = str(task_data.get("audio_url") or "")
+    crm_source: str = str(task_data.get("crm_source") or "amocrm")
+    raw_deal_id: str = str(task_data.get("deal_id") or "")
     raw_manager_id = task_data.get("manager_id")
-    client_phone = task_data.get("client_phone", "")
+    client_phone = str(task_data.get("client_phone") or "")
     idempotency_key = task_data.get("idempotency_key")
 
     logger.info(f"Processing call {external_call_id} for tenant {tenant_id} (source: {crm_source})")

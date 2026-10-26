@@ -23,6 +23,7 @@ logger = logging.getLogger("revops_ingress")
 router = APIRouter(prefix="/api/v1/webhooks", tags=["webhooks-ingress"])
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://revops-redis:6379/0")
+redis_client: Optional[redis.Redis] = None
 try:
     redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True, socket_timeout=2)
 except Exception as e:

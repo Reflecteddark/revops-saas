@@ -65,10 +65,10 @@ class PIIService:
         ).first()
         if not record:
             return None
-        record.access_count += 1
-        record.last_accessed_at = datetime.now(timezone.utc)
+        record.access_count += 1  # type: ignore[assignment]
+        record.last_accessed_at = datetime.now(timezone.utc)  # type: ignore[assignment]
         db.commit()
-        return self.cipher.decrypt(record.encrypted_value).decode()
+        return self.cipher.decrypt(record.encrypted_value).decode()  # type: ignore[arg-type]
     
     # ---- BATCH TOKENIZE (для транскриптов) ----
     def tokenize_transcript(
