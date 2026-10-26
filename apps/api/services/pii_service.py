@@ -65,11 +65,10 @@ class PIIService:
         ).first()
         if not record:
             return None
-        setattr(record, "access_count", int(getattr(record, "access_count", 0) or 0) + 1)
-        setattr(record, "last_accessed_at", datetime.now(timezone.utc))
+        record.access_count += 1
+        record.last_accessed_at = datetime.now(timezone.utc)
         db.commit()
-        enc_val = bytes(getattr(record, "encrypted_value"))
-        return self.cipher.decrypt(enc_val).decode()
+        return self.cipher.decrypt(record.encrypted_value).decode()
     
     # ---- BATCH TOKENIZE (для транскриптов) ----
     def tokenize_transcript(

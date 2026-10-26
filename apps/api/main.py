@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from packages.database.session import init_db
 from packages.monitoring.metrics import telemetry
 
+from .routers import webhook_ingress, integrations_health_router
 from .routers import (
     admin_router,
     auth_router,
@@ -237,6 +238,8 @@ app.include_router(admin_router.router, prefix="/api/v1")
 app.include_router(settings_router.router, prefix="/api/v1")
 app.include_router(sheets_router.router, prefix="/api/v1")
 app.include_router(tenants_router.router, prefix="/api/v1")
+app.include_router(webhook_ingress.router)
+app.include_router(integrations_health_router.router)
 app.include_router(public_router.router, prefix="/api/v1/public")
 app.include_router(public_router.router, prefix="/api/v1")
 
