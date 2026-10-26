@@ -549,9 +549,25 @@ def get_dashboard_calls_data(
                 else:
                     call_status_label = "НЕТ ДАННЫХ"
 
-            amount_num = float(deal_budget) if deal_budget is not None else float(sc.get("amount") or 0.0)
+            if deal_budget is not None:
+                amount_num = float(deal_budget)
+            else:
+                raw_sc_amt = sc.get("amount")
+                if isinstance(raw_sc_amt, (int, float)):
+                    amount_num = float(raw_sc_amt)
+                elif raw_sc_amt:
+                    cleaned_amt = re.sub(r"[^\d.]", "", str(raw_sc_amt).replace(",", "."))
+                    try:
+                        amount_num = float(cleaned_amt) if cleaned_amt else 0.0
+                    except Exception:
+                        amount_num = 0.0
+                else:
+                    amount_num = 0.0
+
             amount_str = f"{int(amount_num):,} ₽".replace(",", " ") if amount_num > 0 else (sc.get("amount_str") or "0 ₽")
             risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and call_status == "risk") else "0 ₽"
+
+            deal_stage = call_deal.stage.value if (call_deal and hasattr(call_deal.stage, "value")) else (str(call_deal.stage) if call_deal and call_deal.stage else "Первичный контакт")
 
             formatted_calls.append({
                 "id": c.id,
@@ -559,7 +575,7 @@ def get_dashboard_calls_data(
                 "deal_title": call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}"),
                 "client": call_deal.company_name if call_deal else (sc.get("client") or "Клиент"),
                 "manager": mgr.full_name if mgr else (sc.get("manager") or "Менеджер"),
-                "stage": call_deal.stage.value if call_deal and call_deal.stage else "Первичный контакт",
+                "stage": deal_stage,
                 "duration": dur_str,
                 "amount": amount_str,
                 "amount_num": amount_num,
