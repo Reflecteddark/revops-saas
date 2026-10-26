@@ -31,8 +31,8 @@
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/fontawesome.min.css">
     <link rel="stylesheet" href="css/tailwind.min.css?v=20261015-violet">
-    <link rel="stylesheet" href="css/violet-palette.css?v=20261026-contrast-v21">
-    <link rel="stylesheet" href="css/dark-theme.css?v=20261026-contrast-v21">
+    <link rel="stylesheet" href="css/violet-palette.css?v=20261026-contrast-v23">
+    <link rel="stylesheet" href="css/dark-theme.css?v=20261026-contrast-v23">
 
     <!-- Подключение Inter Tight для 100% единства типографики с ЛК -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1000,7 +1000,7 @@
         <!-- ======================================================== -->
         <!-- SCREEN 2: EXECUTIVE RISK AUDIT (REVENUE LEAKS) - ИСПРАВЛЕНО -->
         <!-- ======================================================== -->
-        <section id="pain-points" class="py-24 sm:py-28 lg:py-32 bg-slate-50/80 border-y border-slate-200 relative">
+        <section id="pain-points" class="py-24 sm:py-28 lg:py-32 bg-slate-100/70 border-y border-slate-200/90 relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center max-w-3xl mx-auto mb-16">
                     <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 text-red-700 font-mono text-xs font-bold border border-red-200 mb-4 shadow-2xs">
@@ -1132,93 +1132,96 @@
                     </p>
                 </div>
 
-                <!-- Modern Light Audio Console -->
-                <div class="rounded-3xl bg-slate-50 border-2 border-slate-200/90 p-6 sm:p-10 shadow-xl relative overflow-hidden">
-                    
+                <!-- Executive Audio Intelligence Studio Console (Dark Hardware Deck) -->
+                <div class="rounded-3xl bg-slate-900 text-white border-2 border-slate-800 p-6 sm:p-10 shadow-2xl relative overflow-hidden ring-1 ring-violet-500/20">
+                    <!-- Ambient glows inside deck -->
+                    <div class="absolute -top-24 -right-24 w-80 h-80 bg-violet-600/15 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
                     <!-- Track Tabs -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+                    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
                         <div>
-                            <span class="text-xs font-sans text-violet-700 font-bold uppercase tracking-wide block mb-1">
+                            <span class="text-xs font-mono text-violet-400 font-bold uppercase tracking-wide block mb-1">
                                 Выберите тестовый звонок:
                             </span>
-                            <div class="text-slate-900 font-extrabold text-base sm:text-lg">Записи реальных сделок клиентов</div>
+                            <div class="text-white font-extrabold text-base sm:text-lg">Записи реальных сделок клиентов</div>
                         </div>
                         
-                        <!-- Track Selector (Standout Contrast Tabs) -->
+                        <!-- Track Selector (Standout Contrast Tabs on Dark Canvas) -->
                         <div class="flex flex-wrap items-center gap-2" id="trackTabs">
-                            <button onclick="switchTrack('variant_bitrix24')" data-track="variant_bitrix24" class="track-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-md shadow-violet-600/30 ring-2 ring-violet-500/30 transition">
+                            <button onclick="switchTrack('variant_bitrix24')" data-track="variant_bitrix24" class="track-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-lg shadow-violet-600/40 ring-2 ring-violet-400 transition cursor-pointer">
                                 <i class="fas fa-fire text-amber-300 mr-1.5"></i>Битрикс24 (240k ₽)
                             </button>
-                            <button onclick="switchTrack('variant_cable')" data-track="variant_cable" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-800 hover:bg-slate-50 border-2 border-slate-200 hover:border-violet-300 transition shadow-xs">
-                                <i class="fas fa-bolt text-yellow-500 mr-1.5"></i>Кабель (650k ₽)
+                            <button onclick="switchTrack('variant_cable')" data-track="variant_cable" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white border border-slate-700 transition shadow-xs cursor-pointer">
+                                <i class="fas fa-bolt text-yellow-400 mr-1.5"></i>Кабель (650k ₽)
                             </button>
-                            <button onclick="switchTrack('variant_equip')" data-track="variant_equip" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-800 hover:bg-slate-50 border-2 border-slate-200 hover:border-violet-300 transition shadow-xs">
-                                <i class="fas fa-industry text-slate-600 mr-1.5"></i>УЗИП (480k ₽)
+                            <button onclick="switchTrack('variant_equip')" data-track="variant_equip" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white border border-slate-700 transition shadow-xs cursor-pointer">
+                                <i class="fas fa-industry text-slate-400 mr-1.5"></i>УЗИП (480k ₽)
                             </button>
-                            <button onclick="switchTrack('variant_parts')" data-track="variant_parts" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-800 hover:bg-slate-50 border-2 border-slate-200 hover:border-violet-300 transition shadow-xs">
-                                <i class="fas fa-microscope text-cyan-600 mr-1.5"></i>Медтехника (520k ₽)
+                            <button onclick="switchTrack('variant_parts')" data-track="variant_parts" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white border border-slate-700 transition shadow-xs cursor-pointer">
+                                <i class="fas fa-microscope text-cyan-400 mr-1.5"></i>Медтехника (520k ₽)
                             </button>
-                            <button onclick="switchTrack('variant_won')" data-track="variant_won" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-2 border-emerald-300 transition shadow-xs">
-                                <i class="fas fa-circle-check text-emerald-600 mr-1.5"></i>Эталон (850k ₽)
+                            <button onclick="switchTrack('variant_won')" data-track="variant_won" class="track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-950/80 text-emerald-300 hover:bg-emerald-900 border border-emerald-500/50 transition shadow-xs cursor-pointer">
+                                <i class="fas fa-circle-check text-emerald-400 mr-1.5"></i>Эталон (850k ₽)
                             </button>
                         </div>
                     </div>
 
-                    <!-- Player Controller (High-Contrast Deck Card) -->
-                    <div class="py-6 my-2 px-5 sm:px-7 rounded-2xl bg-white border-2 border-slate-200 shadow-md flex flex-col sm:flex-row items-center gap-6">
+                    <!-- Player Controller (Dark Deck Player) -->
+                    <div class="relative z-10 py-6 my-2 px-5 sm:px-7 rounded-2xl bg-slate-950/90 border border-slate-800 shadow-xl flex flex-col sm:flex-row items-center gap-6">
                         <audio id="demoAudio" src="audio/cold-call-bitrix24.mp3" preload="metadata"></audio>
                         
-                        <button id="playBtn" onclick="togglePlay()" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-violet-600/30 hover:scale-105 active:scale-95 transition cursor-pointer" title="Воспроизвести запись">
+                        <button id="playBtn" onclick="togglePlay()" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 text-white flex items-center justify-center shrink-0 shadow-lg shadow-violet-600/50 hover:scale-105 active:scale-95 transition cursor-pointer" title="Воспроизвести запись">
                             <i id="playIcon" class="fas fa-play text-xl ml-1"></i>
                         </button>
 
                         <div class="w-full">
-                            <div class="flex items-center justify-between text-xs sm:text-sm text-slate-600 font-mono mb-2">
-                                <span id="currentTime" class="font-bold text-violet-700">00:00</span>
-                                <span class="text-slate-900 font-extrabold truncate max-w-xs sm:max-w-md" id="trackTitle">Холодный звонок: Продажа CRM Битрикс24 • Сделка на 240 000 ₽</span>
+                            <div class="flex items-center justify-between text-xs sm:text-sm text-slate-400 font-mono mb-2">
+                                <span id="currentTime" class="font-bold text-violet-400">00:00</span>
+                                <span class="text-white font-extrabold truncate max-w-xs sm:max-w-md" id="trackTitle">Холодный звонок: Продажа CRM Битрикс24 • Сделка на 240 000 ₽</span>
                                 <span id="totalDuration" class="font-bold text-slate-500">00:00</span>
                             </div>
 
                             <!-- Progress Track -->
-                            <div id="progressContainer" class="w-full h-3 bg-slate-200 rounded-full overflow-hidden cursor-pointer relative shadow-inner">
-                                <div id="progressBar" class="h-full bg-gradient-to-r from-violet-600 to-indigo-500 rounded-full w-0 transition-all duration-100"></div>
+                            <div id="progressContainer" class="w-full h-3 bg-slate-800 rounded-full overflow-hidden cursor-pointer relative shadow-inner">
+                                <div id="progressBar" class="h-full bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full w-0 transition-all duration-100"></div>
                             </div>
 
                             <!-- Animated Waveform -->
                             <div class="flex items-center gap-1.5 mt-3 h-7">
-                                <div class="wave-bar w-1.5 bg-violet-300 rounded-full h-2"></div>
+                                <div class="wave-bar w-1.5 bg-violet-400 rounded-full h-2"></div>
                                 <div class="wave-bar w-1.5 bg-violet-400 rounded-full h-3"></div>
                                 <div class="wave-bar w-1.5 bg-violet-500 rounded-full h-4"></div>
-                                <div class="wave-bar w-1.5 bg-violet-600 rounded-full h-6"></div>
-                                <div class="wave-bar w-1.5 bg-violet-500 rounded-full h-5"></div>
-                                <div class="wave-bar w-1.5 bg-violet-400 rounded-full h-3"></div>
-                                <div class="wave-bar w-1.5 bg-violet-300 rounded-full h-4"></div>
-                                <div class="wave-bar w-1.5 bg-violet-200 rounded-full h-2"></div>
-                                <span class="text-xs text-violet-900 font-semibold ml-2 font-mono">Нажмите Play для запуска аудиозаписи</span>
+                                <div class="wave-bar w-1.5 bg-violet-400 rounded-full h-6"></div>
+                                <div class="wave-bar w-1.5 bg-cyan-400 rounded-full h-5"></div>
+                                <div class="wave-bar w-1.5 bg-cyan-400 rounded-full h-3"></div>
+                                <div class="wave-bar w-1.5 bg-violet-400 rounded-full h-4"></div>
+                                <div class="wave-bar w-1.5 bg-violet-400 rounded-full h-2"></div>
+                                <span class="text-xs text-slate-400 font-medium ml-2 font-mono">Нажмите Play для запуска аудиозаписи</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Realtime AI Verdict Card (Light Semantic Architecture) -->
-                    <div class="p-6 sm:p-7 rounded-2xl bg-white border-2 border-slate-200 shadow-md mt-4 text-left">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 mb-5 border-b border-slate-200">
+                    <!-- Realtime AI Verdict Card (Dark Glass Architecture) -->
+                    <div class="relative z-10 p-6 sm:p-7 rounded-2xl bg-slate-950/70 border border-slate-800 shadow-md mt-4 text-left">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 mb-5 border-b border-slate-800">
                             <div class="flex items-center gap-2.5">
-                                <span id="verdictBadge" class="px-3.5 py-1.5 rounded-xl bg-rose-100 text-rose-800 font-mono font-bold text-xs border border-rose-300 flex items-center gap-2 shadow-2xs">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span>
+                                <span id="verdictBadge" class="px-3.5 py-1.5 rounded-xl bg-rose-950/80 text-rose-300 font-mono font-bold text-xs border border-rose-500/50 flex items-center gap-2 shadow-2xs">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
                                     <span>КРИТИЧЕСКИЙ СЛИВ СДЕЛКИ</span>
                                 </span>
-                                <span class="text-sm text-slate-800 font-medium">Оценка ИИ: <strong id="verdictScore" class="text-rose-600 font-black text-base">4/13 (Слив)</strong></span>
+                                <span class="text-sm text-slate-300 font-medium">Оценка ИИ: <strong id="verdictScore" class="text-rose-400 font-black text-base">4/13 (Слив)</strong></span>
                             </div>
-                            <div class="text-sm text-slate-700 font-mono">
-                                Потерянная выручка: <span id="verdictLoss" class="text-xl sm:text-2xl text-rose-600 font-black">240 000 ₽</span>
+                            <div class="text-sm text-slate-300 font-mono">
+                                Потерянная выручка: <span id="verdictLoss" class="text-xl sm:text-2xl text-rose-400 font-black">240 000 ₽</span>
                             </div>
                         </div>
 
                         <!-- 13 Criteria Live Audit Bar -->
-                        <div class="mb-5 p-4 rounded-xl bg-slate-50 border-2 border-slate-200">
-                            <div class="flex items-center justify-between text-xs font-mono text-slate-700 mb-2.5">
+                        <div class="mb-5 p-4 rounded-xl bg-slate-900 border border-slate-800">
+                            <div class="flex items-center justify-between text-xs font-mono text-slate-300 mb-2.5">
                                 <span class="font-bold">Оцифровка 13 B2B-критериев звонка (Нейросетевой аудит):</span>
-                                <span id="demoCrSummary" class="text-slate-900 font-extrabold bg-white px-2 py-0.5 rounded border border-slate-200">4 из 13 выполнено</span>
+                                <span id="demoCrSummary" class="text-white font-extrabold bg-slate-800 px-2 py-0.5 rounded border border-slate-700">4 из 13 выполнено</span>
                             </div>
                             <div id="demoCrDots" class="grid-cols-13 gap-1 sm:gap-1.5 text-center">
                                 <!-- Populated dynamically by switchTrack -->
@@ -1227,51 +1230,51 @@
 
                         <!-- Live Transcript Speech Bubbles (High Contrast Visual Dialogue) -->
                         <div class="space-y-3.5 text-sm font-sans mb-5">
-                            <div class="p-4 sm:p-5 rounded-2xl bg-sky-50/70 border-2 border-sky-200 text-left shadow-2xs">
+                            <div class="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-sky-500/30 text-left shadow-2xs">
                                 <div class="flex items-center gap-2 mb-1.5">
-                                    <div class="w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-[10px] font-bold">
+                                    <div class="w-6 h-6 rounded-full bg-sky-500 text-slate-950 flex items-center justify-center text-[10px] font-bold">
                                         <i class="fas fa-user"></i>
                                     </div>
-                                    <span class="text-xs font-bold text-sky-950 uppercase tracking-wide">Потенциальный клиент:</span>
+                                    <span class="text-xs font-bold text-sky-400 uppercase tracking-wide">Потенциальный клиент:</span>
                                 </div>
-                                <p id="clientText" class="text-slate-800 italic leading-relaxed pl-8">
+                                <p id="clientText" class="text-slate-200 italic leading-relaxed pl-8">
                                     «Слушайте, отправьте ваше коммерческое предложение на общую почту info@... Руководство посмотрит, если будет интересно — свяжемся».
                                 </p>
                             </div>
-                            <div class="p-4 sm:p-5 rounded-2xl bg-rose-50/70 border-2 border-rose-200 text-left shadow-2xs">
+                            <div class="p-4 sm:p-5 rounded-2xl bg-rose-950/30 border border-rose-500/40 text-left shadow-2xs">
                                 <div class="flex items-center gap-2 mb-1.5">
-                                    <div class="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-[10px] font-bold">
+                                    <div class="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold">
                                         <i class="fas fa-headset"></i>
                                     </div>
-                                    <span class="text-xs font-mono font-bold text-rose-900 uppercase tracking-wide">Менеджер отдела продаж (Ошибка):</span>
+                                    <span class="text-xs font-mono font-bold text-rose-300 uppercase tracking-wide">Менеджер отдела продаж (Ошибка):</span>
                                 </div>
-                                <p id="managerText" class="text-slate-900 font-medium italic leading-relaxed pl-8">
+                                <p id="managerText" class="text-rose-100 font-medium italic leading-relaxed pl-8">
                                     «Ну понимаете, Битрикс24 система комплексная, там и CRM, и задачи... Ну ладно, давайте я вам на почту скину базовый тариф, а вы почитайте».
                                 </p>
                             </div>
                         </div>
 
                         <!-- Mistakes & Recommendation -->
-                        <div class="pt-5 border-t border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 text-sm">
+                        <div class="pt-5 border-t border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 text-sm">
                             <div class="space-y-2.5 max-w-2xl">
-                                <div class="text-slate-700">
-                                    <strong class="text-slate-900 font-bold">Нарушены критерии B2B (cr1..cr13):</strong> 
-                                    <span id="brokenCriteria" class="text-rose-600 font-mono font-black ml-1">cr3 (ЛПР не выявлен) • cr6 (Цена без ценности) • cr10 (Слив на КП) • cr11 (Нет фиксации шага)</span>
+                                <div class="text-slate-300">
+                                    <strong class="text-white font-bold">Нарушены критерии B2B (cr1..cr13):</strong> 
+                                    <span id="brokenCriteria" class="text-rose-400 font-mono font-black ml-1">cr3 (ЛПР не выявлен) • cr6 (Цена без ценности) • cr10 (Слив на КП) • cr11 (Нет фиксации шага)</span>
                                 </div>
-                                <div class="p-4 rounded-xl bg-violet-50/90 border-2 border-violet-200/90 text-slate-800 text-xs sm:text-sm">
-                                    <div class="flex items-center gap-1.5 text-violet-900 font-bold mb-1">
-                                        <i class="fas fa-lightbulb text-amber-500"></i>
+                                <div class="p-4 rounded-xl bg-violet-950/60 border border-violet-500/40 text-slate-200 text-xs sm:text-sm">
+                                    <div class="flex items-center gap-1.5 text-violet-300 font-bold mb-1">
+                                        <i class="fas fa-lightbulb text-amber-400"></i>
                                         <span>Рекомендация РОПу для спасения сделки:</span>
                                     </div>
-                                    <span id="aiAdvice" class="text-slate-700 leading-relaxed font-medium">«Срочно перезвонить в течение 15 минут, обойти секретаря вопросом об интеграции с 1С и зафиксировать 20-минутный онлайн-показ 3 отраслевых воронок на конкретную дату».</span>
+                                    <span id="aiAdvice" class="text-slate-300 leading-relaxed font-medium">«Срочно перезвонить в течение 15 минут, обойти секретаря вопросом об интеграции с 1С и зафиксировать 20-минутный онлайн-показ 3 отраслевых воронок на конкретную дату».</span>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-2.5 shrink-0 w-full md:w-auto">
-                                <div class="flex items-center justify-center gap-2 text-xs font-mono font-bold text-cyan-800 bg-cyan-50 border border-cyan-200 px-3.5 py-2 rounded-xl whitespace-nowrap shadow-2xs">
-                                    <i class="fab fa-telegram text-cyan-600"></i>
+                                <div class="flex items-center justify-center gap-2 text-xs font-mono font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-500/50 px-3.5 py-2 rounded-xl whitespace-nowrap shadow-2xs">
+                                    <i class="fab fa-telegram text-cyan-400"></i>
                                     <span>TG/MAX алерт отправлен</span>
                                 </div>
-                                <a href="#cta" class="px-6 py-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow-md shadow-violet-600/25 transition whitespace-nowrap text-center">
+                                <a href="#cta" class="px-6 py-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow-lg shadow-violet-600/40 transition whitespace-nowrap text-center">
                                     Разобрать 50 звонков (0 ₽)
                                 </a>
                             </div>
@@ -1286,10 +1289,10 @@
         <!-- ======================================================== -->
         <!-- SCREEN 4: 4 КОНТУРА УПРАВЛЕНИЯ КАЧЕСТВОМ ПРОДАЖ -->
         <!-- ======================================================== -->
-        <section id="solution-framework" class="py-24 sm:py-28 lg:py-32 bg-white">
+        <section id="solution-framework" class="py-24 sm:py-28 lg:py-32 bg-slate-100/70 border-y border-slate-200/90 relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center max-w-4xl mx-auto mb-16">
-                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200">// MANAGEMENT_FRAMEWORK</span>
+                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-300">// MANAGEMENT_FRAMEWORK</span>
                     <h2 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 mb-4 tracking-tight leading-tight">
                         Как RevOps OS помогает управлять продажами на фактах
                     </h2>
@@ -1300,9 +1303,9 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                     <!-- Pillar 1 -->
-                    <div class="glass-card rounded-2xl p-6 sm:p-7 border border-slate-200 flex flex-col justify-between">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-violet-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
                         <div>
-                            <div class="w-12 h-12 rounded-xl bg-violet-50 border border-violet-200 flex items-center justify-center text-violet-600 text-xl mb-5">
+                            <div class="w-12 h-12 rounded-xl bg-violet-100 border border-violet-200 flex items-center justify-center text-violet-700 text-xl mb-5 shadow-2xs">
                                 <i class="fas fa-headphones"></i>
                             </div>
                             <h3 class="font-display text-lg font-bold text-slate-900 mb-2">1. 100% Аудит диалогов</h3>
@@ -1310,15 +1313,15 @@
                                 Речевой ИИ-Супервайзер слушает 100% звонков и видеовстреч по 13 критериям B2B: квалификация, бюджет, ЛПР, отработка возражений и фиксация Next Step.
                             </p>
                         </div>
-                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans text-slate-500 font-semibold">
-                            • Никаких «глухих» звонков
+                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans text-violet-700 font-bold">
+                            &bull; Никаких «глухих» звонков
                         </div>
                     </div>
 
                     <!-- Pillar 2 -->
-                    <div class="glass-card rounded-2xl p-6 sm:p-7 border border-slate-200 flex flex-col justify-between">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-rose-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
                         <div>
-                            <div class="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 text-xl mb-5">
+                            <div class="w-12 h-12 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-700 text-xl mb-5 shadow-2xs">
                                 <i class="fas fa-satellite-dish"></i>
                             </div>
                             <h3 class="font-display text-lg font-bold text-slate-900 mb-2">2. Радар Выручки</h3>
@@ -1326,15 +1329,15 @@
                                 Выявляет сделки под угрозой срыва и рассчитывает сумму риска в рублях. РОП получает алерт в Telegram за 30 секунд с планом спасения.
                             </p>
                         </div>
-                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans text-red-600 font-semibold">
-                            • Спасение сделок до отказа
+                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans text-rose-600 font-bold">
+                            &bull; Спасение сделок до отказа
                         </div>
                     </div>
 
                     <!-- Pillar 3 -->
-                    <div class="glass-card rounded-2xl p-6 sm:p-7 border border-slate-200 flex flex-col justify-between">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-sky-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
                         <div>
-                            <div class="w-12 h-12 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 text-xl mb-5">
+                            <div class="w-12 h-12 rounded-xl bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-700 text-xl mb-5 shadow-2xs">
                                 <i class="fas fa-table-cells"></i>
                             </div>
                             <h3 class="font-display text-lg font-bold text-slate-900 mb-2">3. Прозрачность в CRM</h3>
@@ -1342,15 +1345,15 @@
                                 Автозаполнение полей сделки в amoCRM и Битрикс24 + интерактивный Личный кабинет и экспорт в таблицы. Данные открыты и принадлежат вам без вендор-лока.
                             </p>
                         </div>
-                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans text-slate-500 font-semibold">
-                            • Без закрытых черных ящиков
+                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans text-sky-700 font-bold">
+                            &bull; Без закрытых черных ящиков
                         </div>
                     </div>
 
                     <!-- Pillar 4 -->
-                    <div class="glass-card rounded-2xl p-6 sm:p-7 border border-slate-200 flex flex-col justify-between">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 border-t-4 border-t-amber-500 p-6 sm:p-7 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
                         <div>
-                            <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 text-xl mb-5">
+                            <div class="w-12 h-12 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 text-xl mb-5 shadow-2xs">
                                 <i class="fas fa-graduation-cap"></i>
                             </div>
                             <h3 class="font-display text-lg font-bold text-slate-900 mb-2">4. Онбординг команды</h3>
@@ -1358,8 +1361,8 @@
                                 Формирует карту ошибок каждого менеджера и ускоряет вывод новичков на плановую конверсию в 3 раза на реальных диалогах лучших продавцов.
                             </p>
                         </div>
-                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans text-slate-500 font-semibold">
-                            • Стандарт продаж без сбоев
+                        <div class="mt-5 pt-3 border-t border-slate-100 text-xs font-sans text-amber-700 font-bold">
+                            &bull; Стандарт продаж без сбоев
                         </div>
                     </div>
                 </div>
@@ -1369,11 +1372,11 @@
         <!-- ======================================================== -->
         <!-- SCREEN 5: HOW ROP SEES LEAKS (TG/MAX ALERTS & GSHEETS) -->
         <!-- ======================================================== -->
-        <section id="alerts" class="py-24 sm:py-28 lg:py-32 bg-slate-50 border-y border-slate-200 relative">
+        <section id="alerts" class="py-24 sm:py-28 lg:py-32 bg-white relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div class="text-center max-w-3xl mx-auto mb-14">
-                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-300">// ALERTS_AND_RADAR</span>
+                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200">// ALERTS_AND_RADAR</span>
                     <h2 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 mb-4 tracking-tight">
                         Ни один слив сделки больше не спрячется
                     </h2>
@@ -1382,7 +1385,7 @@
                     </p>
 
                     <!-- View Switcher -->
-                    <div class="inline-flex p-1.5 rounded-2xl bg-white border border-slate-200 shadow-sm mt-8">
+                    <div class="inline-flex p-1.5 rounded-2xl bg-slate-100 border border-slate-300 shadow-sm mt-8">
                         <button onclick="toggleAlertView('telegram')" id="btnViewTg" class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-sm transition cursor-pointer">
                             <i class="fab fa-telegram-plane mr-1.5"></i> Telegram & MAX Алерт РОПа (30 сек)
                         </button>
@@ -1550,11 +1553,11 @@
         <!-- ======================================================== -->
         <!-- SCREEN 6: DYNAMIC NICHE SCANNER (POWERED BY NICHE_ENGINE)-->
         <!-- ======================================================== -->
-        <section id="niches" class="py-24 sm:py-28 lg:py-32 bg-white relative">
+        <section id="niches" class="py-24 sm:py-28 lg:py-32 bg-slate-100/70 border-y border-slate-200/90 relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div class="text-center max-w-3xl mx-auto mb-14">
-                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200">// NICHE_ENGINE</span>
+                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-white text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200 shadow-2xs">// NICHE_ENGINE</span>
                     <h2 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 mb-4 tracking-tight">                        ИИ говорит на языке вашей отрасли
                     </h2>
                     <p class="text-slate-600 text-base sm:text-lg leading-relaxed">
@@ -1566,23 +1569,23 @@
                         <button onclick="selectNiche('opt')" data-niche="opt" class="niche-btn active px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-sm transition cursor-pointer">
                             Оптовая торговля и дистрибуция
                         </button>
-                        <button onclick="selectNiche('auto')" data-niche="auto" class="niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 transition cursor-pointer">
+                        <button onclick="selectNiche('auto')" data-niche="auto" class="niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 shadow-2xs transition cursor-pointer">
                             Автозапчасти и спецтехника
                         </button>
-                        <button onclick="selectNiche('prod')" data-niche="prod" class="niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 transition cursor-pointer">
+                        <button onclick="selectNiche('prod')" data-niche="prod" class="niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 shadow-2xs transition cursor-pointer">
                             Производство и оборудование
                         </button>
-                        <button onclick="selectNiche('realty')" data-niche="realty" class="niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 transition cursor-pointer">
+                        <button onclick="selectNiche('realty')" data-niche="realty" class="niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 shadow-2xs transition cursor-pointer">
                             Недвижимость и стройка
                         </button>
-                        <button onclick="selectNiche('services')" data-niche="services" class="niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 transition cursor-pointer">
+                        <button onclick="selectNiche('services')" data-niche="services" class="niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 shadow-2xs transition cursor-pointer">
                             B2B-услуги и IT
                         </button>
                     </div>
                 </div>
 
                 <!-- Dynamic Niche Details Card -->
-                <div class="max-w-4xl mx-auto rounded-3xl bg-white p-6 sm:p-10 shadow-xl border border-slate-200">
+                <div class="max-w-4xl mx-auto rounded-3xl bg-white p-6 sm:p-10 shadow-2xl border-2 border-slate-200/90">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
                         <div>
                             <span class="text-xs font-mono font-bold text-violet-600 uppercase" id="nicheIdBadge">NICHE: wholesale_distribution</span>
@@ -1637,11 +1640,11 @@
         <!-- ======================================================== -->
         <!-- SCREEN 7: 13 B2B AUDIT CRITERIA MATRIX -->
         <!-- ======================================================== -->
-        <section id="criteria" class="py-24 sm:py-28 lg:py-32 bg-slate-50 border-y border-slate-200 relative">
+        <section id="criteria" class="py-24 sm:py-28 lg:py-32 bg-white relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div class="text-center max-w-3xl mx-auto mb-16">
-                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-300">// B2B_AUDIT_MATRIX</span>
+                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200">// B2B_AUDIT_MATRIX</span>
                     <h2 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 mb-4 tracking-tight">
                         13 жестких критериев B2B-аудита
                     </h2>
@@ -1806,11 +1809,11 @@
         <!-- ======================================================== -->
         <!-- SCREEN 8: REAL CASES & INTERACTIVE ROI LOSS CALCULATOR -->
         <!-- ======================================================== -->
-        <section id="cases" class="py-24 sm:py-28 lg:py-32 bg-white relative">
+        <section id="cases" class="py-24 sm:py-28 lg:py-32 bg-slate-100/70 border-y border-slate-200/90 relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div class="text-center max-w-3xl mx-auto mb-16">
-                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200">// PROVEN_CASES_AND_ROI</span>
+                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-white text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200 shadow-2xs">// PROVEN_CASES_AND_ROI</span>
                     <h2 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 mb-4 tracking-tight">
                         Оцифрованные результаты и калькулятор потерь
                     </h2>
@@ -2006,7 +2009,7 @@
         <!-- ======================================================== -->
         <!-- SCREEN 6: 15-MINUTE NO-CODE INTEGRATION PIPELINE -->
         <!-- ======================================================== -->
-        <section id="integration" class="py-24 sm:py-28 lg:py-32 bg-slate-100 border-y border-slate-200 relative">
+        <section id="integration" class="py-24 sm:py-28 lg:py-32 bg-white relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div class="text-center max-w-3xl mx-auto mb-16">
@@ -2022,8 +2025,8 @@
                 <!-- 3 Steps Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     
-                    <div class="rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm relative hover:shadow-md transition">
-                        <div class="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 font-black font-mono text-lg flex items-center justify-center mb-5 border border-violet-100">
+                    <div class="rounded-3xl bg-slate-50 border-2 border-slate-200/90 p-6 sm:p-8 shadow-sm relative hover:shadow-md transition">
+                        <div class="w-12 h-12 rounded-2xl bg-white text-violet-600 font-black font-mono text-lg flex items-center justify-center mb-5 border-2 border-violet-100 shadow-2xs">
                             01
                         </div>
                         <h4 class="font-display font-bold text-slate-900 text-lg mb-2">Вебхук в CRM (2 мин)</h4>
@@ -2032,8 +2035,8 @@
                         </p>
                     </div>
 
-                    <div class="rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm relative hover:shadow-md transition">
-                        <div class="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 font-black font-mono text-lg flex items-center justify-center mb-5 border border-violet-100">
+                    <div class="rounded-3xl bg-slate-50 border-2 border-slate-200/90 p-6 sm:p-8 shadow-sm relative hover:shadow-md transition">
+                        <div class="w-12 h-12 rounded-2xl bg-white text-violet-600 font-black font-mono text-lg flex items-center justify-center mb-5 border-2 border-violet-100 shadow-2xs">
                             02
                         </div>
                         <h4 class="font-display font-bold text-slate-900 text-lg mb-2">Мастер-контур V20.0 (10 мин)</h4>
@@ -2042,8 +2045,8 @@
                         </p>
                     </div>
 
-                    <div class="rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm relative hover:shadow-md transition">
-                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 font-black font-mono text-lg flex items-center justify-center mb-5 border border-indigo-100">
+                    <div class="rounded-3xl bg-slate-50 border-2 border-slate-200/90 p-6 sm:p-8 shadow-sm relative hover:shadow-md transition">
+                        <div class="w-12 h-12 rounded-2xl bg-white text-indigo-600 font-black font-mono text-lg flex items-center justify-center mb-5 border-2 border-indigo-100 shadow-2xs">
                             03
                         </div>
                         <h4 class="font-display font-bold text-slate-900 text-lg mb-2">Алерты в Telegram (через 30 сек)</h4>
@@ -2055,7 +2058,7 @@
                 </div>
 
                 <!-- ZERO-FRICTION PILOT CALLOUT: AUDIT WITHOUT CRM INTEGRATION -->
-                <div class="mb-12 rounded-3xl p-8 sm:p-10 bg-white text-slate-900 border border-slate-200 shadow-xl relative overflow-hidden">
+                <div class="mb-12 rounded-3xl p-8 sm:p-10 bg-slate-50/80 text-slate-900 border-2 border-slate-200/90 shadow-xl relative overflow-hidden">
                     <div class="absolute -right-12 -bottom-12 w-80 h-80 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
                     <div class="flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
                         <div class="space-y-4 max-w-2xl text-left">
@@ -2157,11 +2160,11 @@
         <!-- ======================================================== -->
         <!-- SCREEN 7: COMPETITIVE POSITIONING & MARKET COMPARISON -->
         <!-- ======================================================== -->
-        <section id="comparison" class="py-24 sm:py-28 lg:py-32 relative bg-white">
+        <section id="comparison" class="py-24 sm:py-28 lg:py-32 bg-slate-100/70 border-y border-slate-200/90 relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div class="text-center max-w-3xl mx-auto mb-16">
-                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-300">// MARKET_DIFFERENTIATION</span>
+                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-white text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200 shadow-2xs">// MARKET_DIFFERENTIATION</span>
                     <h2 class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-slate-900 mt-2 mb-4">
                         Почему не модуль в телефонии, не тяжелый Enterprise и не обычные транскрибаторы?
                     </h2>
@@ -2175,10 +2178,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12 items-stretch">
                     
                     <!-- Column 1: Telephony Modules -->
-                    <div class="rounded-3xl bg-slate-50 border border-slate-200 p-6 sm:p-7 flex flex-col justify-between hover:shadow-md transition">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 p-6 sm:p-7 flex flex-col justify-between hover:shadow-xl transition-all duration-300 shadow-md">
                         <div>
                             <div class="flex items-center justify-between mb-4">
-                                <span class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 font-mono text-xs font-bold">Телефония</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-mono text-xs font-bold border border-slate-200">Телефония</span>
                                 <i class="fas fa-phone-volume text-slate-400 text-lg"></i>
                             </div>
                             <h3 class="font-display font-bold text-slate-900 text-lg mb-1">Модули речевой аналитики</h3>
@@ -2191,11 +2194,11 @@
                                 </li>
                                 <li>
                                     <div class="text-xs uppercase font-mono font-bold text-slate-400">Стоимость внедрения</div>
-                                    <div class="font-bold text-red-600">от 80 000 до 150 000 ₽</div>
+                                    <div class="font-bold text-rose-600">от 80 000 до 150 000 ₽</div>
                                 </li>
                                 <li>
                                     <div class="text-xs uppercase font-mono font-bold text-slate-400">Сгорают ли минуты?</div>
-                                    <div class="font-bold text-red-600"><i class="fas fa-times-circle text-red-500 mr-1"></i> Да, сгорают каждый месяц</div>
+                                    <div class="font-bold text-rose-600"><i class="fas fa-times-circle text-rose-500 mr-1"></i> Да, сгорают каждый месяц</div>
                                 </li>
                                 <li>
                                     <div class="text-xs uppercase font-mono font-bold text-slate-400">Связка со сделками в CRM</div>
@@ -2208,16 +2211,16 @@
                             </ul>
                         </div>
 
-                        <div class="p-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm text-slate-600">
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-600">
                             <strong class="text-slate-900">Итог:</strong> Звонки заперты внутри ЛК оператора. РОП всё равно вынужден слушать записи руками.
                         </div>
                     </div>
 
                     <!-- Column 2: Heavy Enterprise -->
-                    <div class="rounded-3xl bg-slate-50 border border-slate-200 p-6 sm:p-7 flex flex-col justify-between hover:shadow-md transition">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 p-6 sm:p-7 flex flex-col justify-between hover:shadow-xl transition-all duration-300 shadow-md">
                         <div>
                             <div class="flex items-center justify-between mb-4">
-                                <span class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 font-mono text-xs font-bold">Heavy Enterprise</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-mono text-xs font-bold border border-slate-200">Heavy Enterprise</span>
                                 <i class="fas fa-building text-slate-400 text-lg"></i>
                             </div>
                             <h3 class="font-display font-bold text-slate-900 text-lg mb-1">Корпоративные системы</h3>
@@ -2230,7 +2233,7 @@
                                 </li>
                                 <li>
                                     <div class="text-xs uppercase font-mono font-bold text-slate-400">Стоимость внедрения</div>
-                                    <div class="font-bold text-red-600">от 800 000 до 3 000 000+ ₽</div>
+                                    <div class="font-bold text-rose-600">от 800 000 до 3 000 000+ ₽</div>
                                 </li>
                                 <li>
                                     <div class="text-xs uppercase font-mono font-bold text-slate-400">Сгорают ли минуты?</div>
@@ -2247,16 +2250,16 @@
                             </ul>
                         </div>
 
-                        <div class="p-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm text-slate-600">
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-600">
                             <strong class="text-slate-900">Итог:</strong> Недоступно и нерентабельно для малого и среднего B2B с отделами до 30 человек.
                         </div>
                     </div>
 
                     <!-- Column 3: Per-minute Transcribers -->
-                    <div class="rounded-3xl bg-slate-50 border border-slate-200 p-6 sm:p-7 flex flex-col justify-between hover:shadow-md transition">
+                    <div class="rounded-3xl bg-white border-2 border-slate-200/90 p-6 sm:p-7 flex flex-col justify-between hover:shadow-xl transition-all duration-300 shadow-md">
                         <div>
                             <div class="flex items-center justify-between mb-4">
-                                <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 font-mono text-xs font-bold">Обычные SaaS</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 font-mono text-xs font-bold border border-amber-200">Обычные SaaS</span>
                                 <i class="fas fa-receipt text-amber-500 text-lg"></i>
                             </div>
                             <h3 class="font-display font-bold text-slate-900 text-lg mb-1">Сервисы транскрибации</h3>
@@ -2269,7 +2272,7 @@
                                 </li>
                                 <li>
                                     <div class="text-xs uppercase font-mono font-bold text-slate-400">Стоимость владения</div>
-                                    <div class="font-bold text-red-600">5 – 10 ₽ / мин (до 165 000 ₽/мес)</div>
+                                    <div class="font-bold text-rose-600">5 – 10 ₽ / мин (до 165 000 ₽/мес)</div>
                                 </li>
                                 <li>
                                     <div class="text-xs uppercase font-mono font-bold text-slate-400">Сгорают ли минуты?</div>
@@ -2277,7 +2280,7 @@
                                 </li>
                                 <li>
                                     <div class="text-xs uppercase font-mono font-bold text-slate-400">Связка со сделками в CRM</div>
-                                    <div class="font-bold text-red-600"><i class="fas fa-times-circle text-red-500 mr-1"></i> «CRM не нужна» — звонки в вакууме</div>
+                                    <div class="font-bold text-rose-600"><i class="fas fa-times-circle text-rose-500 mr-1"></i> «CRM не нужна» — звонки в вакууме</div>
                                 </li>
                                 <li>
                                     <div class="text-xs uppercase font-mono font-bold text-slate-400">Глубина анализа</div>
@@ -2286,14 +2289,14 @@
                             </ul>
                         </div>
 
-                        <div class="p-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm text-slate-600">
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-600">
                             <strong class="text-slate-900">Итог:</strong> Перепродажа API за бешеные деньги. Нет связи с воронкой, выручкой и дисциплиной CRM.
                         </div>
                     </div>
 
                     <!-- Column 4: RevOps Enterprise OS (Featured Winner) -->
-                    <div class="rounded-3xl bg-violet-100/50 border-2 border-violet-500 p-6 sm:p-7 flex flex-col justify-between relative shadow-xl ring-4 ring-violet-500/10 lg:-translate-y-2">
-                        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-violet-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-sm whitespace-nowrap">
+                    <div class="rounded-3xl bg-white border-2 border-violet-600 ring-4 ring-violet-500/20 p-6 sm:p-7 flex flex-col justify-between relative shadow-2xl lg:-translate-y-3">
+                        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-violet-600 text-white font-extrabold text-xs uppercase tracking-wider shadow-md whitespace-nowrap">
                             ВЫБОР РОПОВ И СОБСТВЕННИКОВ
                         </div>
 
@@ -2336,7 +2339,7 @@
                             </ul>
                         </div>
 
-                        <div class="p-3.5 rounded-xl bg-violet-100/70 border border-violet-100 text-xs sm:text-sm text-violet-950 font-medium">
+                        <div class="p-3.5 rounded-xl bg-violet-50 border border-violet-200 text-xs sm:text-sm text-violet-950 font-medium">
                             <strong>Итог:</strong> Управляемый пайплайн выручки, окупаемость с 1-й спасенной сделки, данные в вашей собственности (152-ФЗ РФ).
                         </div>
                     </div>
@@ -2344,7 +2347,7 @@
                 </div>
 
                 <!-- Strategic Summary Callout -->
-                <div class="max-w-4xl mx-auto p-6 sm:p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center shadow-sm">
+                <div class="max-w-4xl mx-auto p-6 sm:p-8 rounded-2xl bg-white border-2 border-slate-200/90 text-center shadow-xl">
                     <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
                         <strong class="text-slate-900">Главный вывод для собственника и РОПа:</strong> Обычные сервисы продают вам расшифровку аудио в текст с наценкой в 20 раз и оставляют вас один на один со страницами диалогов. 
                         <strong class="text-violet-700">RevOps Enterprise OS</strong> — это готовый боевой контур управления коммерческим блоком: 
@@ -2358,7 +2361,7 @@
         <!-- ======================================================== -->
         <!-- SCREEN 8: LEGAL SHIELD & 152-FZ COMPLIANCE -->
         <!-- ======================================================== -->
-        <section id="security" class="py-24 sm:py-28 lg:py-32 relative bg-slate-50 border-y border-slate-200">
+        <section id="security" class="py-24 sm:py-28 lg:py-32 relative bg-white">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div class="text-center max-w-3xl mx-auto mb-16">
@@ -2374,8 +2377,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                     
                     <!-- Feature 1 -->
-                    <div class="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition">
-                        <div class="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center text-xl mb-5 border border-violet-100">
+                    <div class="p-6 sm:p-7 rounded-3xl bg-slate-50/80 border-2 border-slate-200/90 shadow-sm hover:shadow-md transition">
+                        <div class="w-12 h-12 rounded-2xl bg-white text-violet-600 flex items-center justify-center text-xl mb-5 border border-violet-200 shadow-2xs">
                             <i class="fas fa-fingerprint"></i>
                         </div>
                         <h4 class="font-display font-bold text-slate-900 text-lg mb-2">НЕ является биометрией</h4>
@@ -2385,8 +2388,8 @@
                     </div>
 
                     <!-- Feature 2 -->
-                    <div class="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition">
-                        <div class="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center text-xl mb-5 border border-violet-100">
+                    <div class="p-6 sm:p-7 rounded-3xl bg-slate-50/80 border-2 border-slate-200/90 shadow-sm hover:shadow-md transition">
+                        <div class="w-12 h-12 rounded-2xl bg-white text-violet-600 flex items-center justify-center text-xl mb-5 border border-violet-200 shadow-2xs">
                             <i class="fas fa-server"></i>
                         </div>
                         <h4 class="font-display font-bold text-slate-900 text-lg mb-2">100% серверов в РФ</h4>
@@ -2396,8 +2399,8 @@
                     </div>
 
                     <!-- Feature 3 -->
-                    <div class="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition">
-                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-5 border border-indigo-100">
+                    <div class="p-6 sm:p-7 rounded-3xl bg-slate-50/80 border-2 border-slate-200/90 shadow-sm hover:shadow-md transition">
+                        <div class="w-12 h-12 rounded-2xl bg-white text-indigo-600 flex items-center justify-center text-xl mb-5 border border-indigo-200 shadow-2xs">
                             <i class="fas fa-file-contract"></i>
                         </div>
                         <h4 class="font-display font-bold text-slate-900 text-lg mb-2">Договор поручения (DPA)</h4>
@@ -2407,8 +2410,8 @@
                     </div>
 
                     <!-- Feature 4 -->
-                    <div class="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition">
-                        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-5 border border-amber-100">
+                    <div class="p-6 sm:p-7 rounded-3xl bg-slate-50/80 border-2 border-slate-200/90 shadow-sm hover:shadow-md transition">
+                        <div class="w-12 h-12 rounded-2xl bg-white text-amber-600 flex items-center justify-center text-xl mb-5 border border-amber-200 shadow-2xs">
                             <i class="fas fa-receipt"></i>
                         </div>
                         <h4 class="font-display font-bold text-slate-900 text-lg mb-2">Чеки ФНС и безнал</h4>
@@ -2425,11 +2428,11 @@
         <!-- ======================================================== -->
         <!-- SCREEN 9: PRICING & GUARANTEED ROI -->
         <!-- ======================================================== -->
-        <section id="pricing" class="py-24 sm:py-28 lg:py-32 bg-white relative">
+        <section id="pricing" class="py-24 sm:py-28 lg:py-32 bg-slate-100/70 border-y border-slate-200/90 relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div class="text-center max-w-3xl mx-auto mb-16">
-                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-300">// TRANSPARENT_PRICING</span>
+                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-white text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200 shadow-2xs">// TRANSPARENT_PRICING</span>
                     <h2 class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-slate-900 mt-2 mb-4">
                         Инвестиции, которые окупаются с 1-й спасённой сделки
                     </h2>
@@ -2583,11 +2586,11 @@
         <!-- ======================================================== -->
         <!-- SCREEN 10: FAQ (CENTERED & SPACIOUS - NO LAYOUT COLLAPSE) -->
         <!-- ======================================================== -->
-        <section id="faq" class="py-24 sm:py-28 lg:py-32 relative bg-slate-50 border-t border-slate-200">
+        <section id="faq" class="py-24 sm:py-28 lg:py-32 relative bg-white">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div class="text-center mb-12 sm:mb-16">
-                    <span class="text-xs font-sans font-bold text-violet-600 uppercase tracking-wider">FAQ // Поддержка & Ответы</span>
+                    <span class="inline-block px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-semibold mb-3 border border-slate-200">// FAQ_AND_SUPPORT</span>
                     <h2 class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-slate-900 mt-2 mb-4">
                         Часто задаваемые вопросы
                     </h2>
@@ -2599,62 +2602,62 @@
                 <!-- Robust Full-Width Accordion List -->
                 <div class="space-y-4">
                     
-                    <details class="group rounded-2xl bg-white p-6 sm:p-7 border border-slate-200 hover:border-slate-300 shadow-sm transition" open>
+                    <details class="group rounded-2xl bg-slate-50/80 p-6 sm:p-7 border-2 border-slate-200/90 hover:border-violet-300 shadow-sm transition" open>
                         <summary class="flex items-center justify-between font-bold text-slate-900 text-base sm:text-lg cursor-pointer list-none select-none gap-4">
                             <span>У нас сложная телефония или строгая СБ: можно протестировать без интеграции?</span>
-                            <span class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0">
+                            <span class="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-slate-600 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0 border border-slate-200">
                                 <i class="fas fa-plus text-xs"></i>
                             </span>
                         </summary>
-                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-100 mt-4">
+                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-200 mt-4">
                             <strong class="text-violet-700 font-bold">Да, 100%!</strong> Вы можете просто выгрузить архив с 50 записями звонков (или предоставить ссылку на Яндекс.Диск / Облако) и прислать нам. Через 24 часа вы получите доступ в Личный кабинет RevOps OS и PDF-дайджест по 13 критериям со всеми утечками выручки. Никаких доступов к CRM и телефонии на первом этапе не требуется.
                         </p>
                     </details>
 
-                    <details class="group rounded-2xl bg-white p-6 sm:p-7 border border-slate-200 hover:border-slate-300 shadow-sm transition">
+                    <details class="group rounded-2xl bg-slate-50/80 p-6 sm:p-7 border-2 border-slate-200/90 hover:border-violet-300 shadow-sm transition">
                         <summary class="flex items-center justify-between font-bold text-slate-900 text-base sm:text-lg cursor-pointer list-none select-none gap-4">
                             <span>Не взбунтуются ли менеджеры против контроля ИИ?</span>
-                            <span class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0">
+                            <span class="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-slate-600 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0 border border-slate-200">
                                 <i class="fas fa-plus text-xs"></i>
                             </span>
                         </summary>
-                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-100 mt-4">
+                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-200 mt-4">
                             Напротив, ИИ защищает сильных менеджеров от субъективных претензий РОПа, объективно доказывая, что они вели диалог строго по регламенту. Для новичков система выступает виртуальным наставником, подсказывая конкретные фразы для спасения сделок и роста личных бонусов.
                         </p>
                     </details>
 
-                    <details class="group rounded-2xl bg-white p-6 sm:p-7 border border-slate-200 hover:border-slate-300 shadow-sm transition">
+                    <details class="group rounded-2xl bg-slate-50/80 p-6 sm:p-7 border-2 border-slate-200/90 hover:border-violet-300 shadow-sm transition">
                         <summary class="flex items-center justify-between font-bold text-slate-900 text-base sm:text-lg cursor-pointer list-none select-none gap-4">
                             <span>Насколько точно ИИ распознает сложные термины нашей ниши?</span>
-                            <span class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0">
+                            <span class="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-slate-600 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0 border border-slate-200">
                                 <i class="fas fa-plus text-xs"></i>
                             </span>
                         </summary>
-                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-100 mt-4">
+                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-200 mt-4">
                             Точность распознавания превышает 97%. Встроенный отраслевой движок Niche Engine калибруется под номенклатуру, ГОСТы, артикулы и специфический сленг вашей сферы бизнеса перед запуском аудита.
                         </p>
                     </details>
 
-                    <details class="group rounded-2xl bg-white p-6 sm:p-7 border border-slate-200 hover:border-slate-300 shadow-sm transition">
+                    <details class="group rounded-2xl bg-slate-50/80 p-6 sm:p-7 border-2 border-slate-200/90 hover:border-violet-300 shadow-sm transition">
                         <summary class="flex items-center justify-between font-bold text-slate-900 text-base sm:text-lg cursor-pointer list-none select-none gap-4">
                             <span>Сколько времени это отнимет у РОПа?</span>
-                            <span class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0">
+                            <span class="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-slate-600 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0 border border-slate-200">
                                 <i class="fas fa-plus text-xs"></i>
                             </span>
                         </summary>
-                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-100 mt-4">
+                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-200 mt-4">
                             Система экономит РОПу до 15 часов рутины в неделю. Руководитель больше не слушает звонки часами наугад — он получает 30-секундные сигналы по реальным срывам в Telegram/MAX и сводную матрицу команды в Личном кабинете.
                         </p>
                     </details>
 
-                    <details class="group rounded-2xl bg-white p-6 sm:p-7 border border-slate-200 hover:border-slate-300 shadow-sm transition">
+                    <details class="group rounded-2xl bg-slate-50/80 p-6 sm:p-7 border-2 border-slate-200/90 hover:border-violet-300 shadow-sm transition">
                         <summary class="flex items-center justify-between font-bold text-slate-900 text-base sm:text-lg cursor-pointer list-none select-none gap-4">
                             <span>Что нужно для бесплатного экспресс-аудита?</span>
-                            <span class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0">
+                            <span class="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-slate-600 group-open:rotate-45 group-open:bg-violet-50 group-open:text-violet-600 transition-all shrink-0 border border-slate-200">
                                 <i class="fas fa-plus text-xs"></i>
                             </span>
                         </summary>
-                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-100 mt-4">
+                        <p class="text-sm sm:text-base text-slate-600 leading-relaxed pt-4 border-t border-slate-200 mt-4">
                             Достаточно заполнить форму ниже или отправить файлы напрямую в наш Telegram или MAX бот. Вы получите наглядный аудит по 13 критериям со всеми утечками выручки.
                         </p>
                     </details>
@@ -2674,56 +2677,59 @@
         </section>
 
         <!-- ======================================================== -->
-        <!-- SCREEN 11: FINAL HIGH-CONVERTING CTA SPLIT BANNER (LIGHT SAAS) -->
+        <!-- SCREEN 11: FINAL HIGH-CONVERTING CTA EXECUTIVE PORTAL -->
         <!-- ======================================================== -->
-        <section id="cta" class="py-24 sm:py-32 relative overflow-hidden bg-gradient-to-b from-white via-slate-50 to-violet-100/40 border-t border-slate-200">
+        <section id="cta" class="py-24 sm:py-32 relative overflow-hidden bg-white border-t border-slate-200">
             <!-- Glow Accent Blob -->
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-violet-500/10 blur-[130px] rounded-full pointer-events-none"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-violet-500/15 blur-[130px] rounded-full pointer-events-none"></div>
 
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div class="rounded-3xl bg-white p-8 sm:p-12 lg:p-16 border border-slate-200 shadow-2xl">
+                <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 p-8 sm:p-12 lg:p-16 border-2 border-slate-800 text-white shadow-2xl relative overflow-hidden ring-1 ring-violet-500/20">
                     
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+                    <!-- Ambient Inner Glow -->
+                    <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-violet-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center relative z-10">
                         
                         <!-- Left Column: Value Offer & Instant Messengers -->
                         <div class="lg:col-span-7 space-y-6 text-left">
-                            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-50 text-violet-800 text-xs font-mono font-bold border border-violet-200 shadow-2xs">
-                                <i class="fas fa-bolt text-violet-600"></i> БЕСПЛАТНЫЙ ЭКСПРЕСС-СТАРТ // 0 ₽
+                            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-500/20 text-violet-300 text-xs font-mono font-bold border border-violet-500/30 shadow-2xs">
+                                <i class="fas fa-bolt text-violet-400"></i> БЕСПЛАТНЫЙ ЭКСПРЕСС-СТАРТ // 0 ₽
                             </div>
 
-                            <h2 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 tracking-tight leading-[1.15]">
+                            <h2 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-[1.15]">
                                 Запустите разбор звонков вашего отдела продаж
                             </h2>
 
-                            <p class="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
+                            <p class="text-base sm:text-lg text-slate-300 leading-relaxed max-w-xl">
                                 Оставьте контакты — мы свяжемся с вами и бесплатно проведём аудит 50 звонков без подключения телефонии.
                             </p>
 
                             <!-- 3 Value Bullets -->
-                            <div class="space-y-3.5 pt-2 text-sm sm:text-base text-slate-700">
+                            <div class="space-y-3.5 pt-2 text-sm sm:text-base text-slate-200">
                                 <div class="flex items-center gap-3">
-                                    <i class="fas fa-check-circle text-violet-600 text-lg"></i>
+                                    <i class="fas fa-check-circle text-emerald-400 text-lg"></i>
                                     <span>Без установки ПО и нагрузки на ваших IT-специалистов</span>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <i class="fas fa-check-circle text-violet-600 text-lg"></i>
+                                    <i class="fas fa-check-circle text-emerald-400 text-lg"></i>
                                     <span>Личный кабинет RevOps OS V20.0 + аудит-отчет со срезом сливов выручки</span>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <i class="fas fa-check-circle text-violet-600 text-lg"></i>
+                                    <i class="fas fa-check-circle text-emerald-400 text-lg"></i>
                                     <span>100% защита данных по 152-ФЗ РФ и серверы в России</span>
                                 </div>
                             </div>
 
                             <!-- Fast Messenger Entry -->
-                            <div class="pt-4 border-t border-slate-100">
-                                <div class="text-xs text-slate-500 mb-3 font-mono font-bold">Или отправьте звонки напрямую в мессенджер:</div>
+                            <div class="pt-4 border-t border-slate-800">
+                                <div class="text-xs text-slate-400 mb-3 font-mono font-bold">Или отправьте звонки напрямую в мессенджер:</div>
                                 <div class="flex flex-wrap items-center gap-3">
-                                    <a href="https://t.me/RevOps_Super_Audit_Bot" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 text-sm font-bold transition flex items-center gap-2 shadow-2xs">
-                                        <i class="fab fa-telegram text-base text-violet-500"></i> Telegram Бот
+                                    <a href="https://t.me/RevOps_Super_Audit_Bot" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-violet-300 border border-violet-500/30 text-sm font-bold transition flex items-center gap-2 shadow-sm">
+                                        <i class="fab fa-telegram text-base text-violet-400"></i> Telegram Бот
                                     </a>
-                                    <a href="https://max.ru/se14526668_bot" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-sm font-bold transition flex items-center gap-2 shadow-2xs">
-                                        <i class="fas fa-robot text-base text-purple-500"></i> MAX Бот
+                                    <a href="https://max.ru/se14526668_bot" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-purple-300 border border-purple-500/30 text-sm font-bold transition flex items-center gap-2 shadow-sm">
+                                        <i class="fas fa-robot text-base text-purple-400"></i> MAX Бот
                                     </a>
                                 </div>
                             </div>
@@ -2731,7 +2737,7 @@
 
                         <!-- Right Column: Interactive Lead Form Card with Tariff Selector -->
                         <div class="lg:col-span-5">
-                            <div class="p-8 sm:p-9 rounded-2xl bg-slate-50/80 border border-slate-200 shadow-sm text-left">
+                            <div class="p-8 sm:p-9 rounded-2xl bg-white text-slate-900 border-2 border-slate-200 shadow-2xl text-left">
                                 <h3 class="font-display font-extrabold text-2xl text-slate-900 mb-1.5">
                                     Заявка на аудит
                                 </h3>
@@ -2763,22 +2769,22 @@
 
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Ваше имя</label>
-                                        <input type="text" id="leadName" required placeholder="Дмитрий (РОП или Собственник)" class="w-full px-4 py-3.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
+                                        <input type="text" id="leadName" required placeholder="Дмитрий (РОП или Собственник)" class="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Рабочий Email (для доступа в личный кабинет) <span class="text-rose-500">*</span></label>
-                                        <input type="email" id="leadEmail" required placeholder="alex@company.ru" class="w-full px-4 py-3.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
+                                        <input type="email" id="leadEmail" required placeholder="alex@company.ru" class="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Телефон (WhatsApp или Telegram)</label>
-                                        <input type="tel" id="leadPhone" required placeholder="+7 (999) 000-00-00" class="w-full px-4 py-3.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
+                                        <input type="tel" id="leadPhone" required placeholder="+7 (999) 000-00-00" class="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Ниша бизнеса / CRM</label>
-                                        <input type="text" id="leadCompany" placeholder="Оптовые поставки / amoCRM" class="w-full px-4 py-3.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
+                                        <input type="text" id="leadCompany" placeholder="Оптовые поставки / amoCRM" class="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition">
                                     </div>
 
                                     <!-- 152-FZ Consent Checkbox -->
@@ -2789,7 +2795,7 @@
                                         </label>
                                     </div>
 
-                                    <button type="submit" id="submitBtn" class="w-full py-4 px-6 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-extrabold text-base uppercase tracking-wider shadow-lg shadow-violet-600/30 transition transform active:scale-95 cursor-pointer">
+                                    <button type="submit" id="submitBtn" class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-extrabold text-base uppercase tracking-wider shadow-lg shadow-violet-600/30 transition transform active:scale-95 cursor-pointer">
                                         Получить разбор 50 звонков (0 ₽)
                                     </button>
                                 </form>
@@ -3158,7 +3164,7 @@
             }
             container.innerHTML = bits.map((val, idx) => {
                 const isPass = val === 1;
-                const bg = isPass ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/40' : 'bg-rose-500/15 text-rose-600 border-rose-500/30';
+                const bg = isPass ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50' : 'bg-rose-500/20 text-rose-300 border-rose-500/50';
                 return '<div class="p-1 rounded border ' + bg + ' text-[10px] font-mono font-bold" title="cr' + (idx+1) + ': ' + CR_NAMES[idx] + '">' + (idx+1) + '</div>';
             }).join('');
         }
@@ -3186,15 +3192,14 @@
             renderDemoCrDots(t.crBits);
 
             // Update verdict badge
-            // Update verdict badge
             const badgeEl = document.getElementById('verdictBadge');
             if (badgeEl) {
                 if (key === 'variant_won') {
-                    badgeEl.className = 'px-3.5 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-mono font-bold text-xs border border-emerald-300 flex items-center gap-2 shadow-2xs';
-                    badgeEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span><span>ЭТАЛОН // ZOOM НАЗНАЧЕН</span>';
+                    badgeEl.className = 'px-3.5 py-1.5 rounded-xl bg-emerald-950/80 text-emerald-300 font-mono font-bold text-xs border border-emerald-500/50 flex items-center gap-2 shadow-2xs';
+                    badgeEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span><span>ЭТАЛОН // ZOOM НАЗНАЧЕН</span>';
                 } else {
-                    badgeEl.className = 'px-3.5 py-1.5 rounded-xl bg-rose-100 text-rose-800 font-mono font-bold text-xs border border-rose-300 flex items-center gap-2 shadow-2xs';
-                    badgeEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span><span>КРИТИЧЕСКИЙ СЛИВ СДЕЛКИ</span>';
+                    badgeEl.className = 'px-3.5 py-1.5 rounded-xl bg-rose-950/80 text-rose-300 font-mono font-bold text-xs border border-rose-500/50 flex items-center gap-2 shadow-2xs';
+                    badgeEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span><span>КРИТИЧЕСКИЙ СЛИВ СДЕЛКИ</span>';
                 }
             }
 
@@ -3202,11 +3207,11 @@
             document.querySelectorAll('#trackTabs .track-btn').forEach(btn => {
                 const track = btn.getAttribute('data-track');
                 if (track === key) {
-                    btn.className = 'track-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-md shadow-violet-600/30 ring-2 ring-violet-500/30 transition';
+                    btn.className = 'track-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-lg shadow-violet-600/40 ring-2 ring-violet-400 transition cursor-pointer';
                 } else if (track === 'variant_won') {
-                    btn.className = 'track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-2 border-emerald-300 transition shadow-xs';
+                    btn.className = 'track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-950/80 text-emerald-300 hover:bg-emerald-900 border border-emerald-500/50 transition shadow-xs cursor-pointer';
                 } else {
-                    btn.className = 'track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-800 hover:bg-slate-50 border-2 border-slate-200 hover:border-violet-300 transition shadow-xs';
+                    btn.className = 'track-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white border border-slate-700 transition shadow-xs cursor-pointer';
                 }
             });
 
@@ -3416,7 +3421,7 @@
                 if (btn.getAttribute('data-niche') === nicheKey) {
                     btn.className = 'niche-btn active px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 text-white shadow-sm transition cursor-pointer';
                 } else {
-                    btn.className = 'niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 transition cursor-pointer';
+                    btn.className = 'niche-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 shadow-2xs transition cursor-pointer';
                 }
             });
 
