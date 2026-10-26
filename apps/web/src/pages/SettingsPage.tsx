@@ -5,13 +5,15 @@
  * Guarantees zero secret leakage (bot_token always masked with ••••••••, chat IDs masked).
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { CheckCircle2, Sliders, XCircle } from 'lucide-react';
+import { CheckCircle2, Save, Sliders, XCircle } from 'lucide-react';
 import { DataTable } from '@/components/DataTable';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -92,6 +94,40 @@ export function SettingsPage() {
     queryFn: () => settingsApi.get(tenantId!),
     enabled: Boolean(tenantId),
   });
+
+  const queryClient = useQueryClient();
+  const [editTarget, setEditTarget] = useState<string>('5000000');
+  const [saveStatus, setSaveStatus] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    if (settings?.general?.monthly_target) {
+      setEditTarget(String(settings.general.monthly_target));
+    }
+  }, [settings?.general?.monthly_target]);
+
+  const saveTargetMutation = useMutation({
+    mutationFn: (targetVal: number) =>
+      settingsApi.updateGeneral(tenantId!, { monthly_target: targetVal }),
+    onSuccess: () => {
+      setSaveStatus({ text: '✓ План успешно сохранён и синхронизирован с Google Таблицей!', type: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['insights', tenantId] });
+      setTimeout(() => setSaveStatus(null), 4000);
+    },
+    onError: (err: Error) => {
+      setSaveStatus({ text: `Ошибка сохранения: ${err.message}`, type: 'error' });
+    },
+  });
+
+  const handleSaveTarget = () => {
+    const val = parseFloat(editTarget);
+    if (isNaN(val) || val <= 0) {
+      setSaveStatus({ text: 'Введите корректную сумму плана в рублях', type: 'error' });
+      return;
+    }
+    setSaveStatus(null);
+    saveTargetMutation.mutate(val);
+  };
 
   if (!tenantId) {
     return (
@@ -174,12 +210,77 @@ export function SettingsPage() {
         {/* 1. General Tab */}
         <TabsContent value="general" className="mt-4 space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Параметры компании</CardTitle>
-              <CardDescription>Основные бизнес-настройки и целевые показатели выручки.</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <span>Параметры компании & План продаж</span>
+                <span className="text-xs font-mono font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                  Утвержденный план: {general?.monthly_target ? `${general.monthly_target.toLocaleString('ru-RU')} ₽` : '5 000 000 ₽'}
+                </span>
+              </CardTitle>
+              <CardDescription>
+                Укажите целевой план выручки на месяц для расчета дефицита, процента выполнения и выявления сливов воронки.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+            <CardContent className="space-y-5">
+              {/* Plan Editor Box */}
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <label htmlFor="inputMonthlyTarget" className="text-xs font-bold text-foreground block mb-1">
+                      🎯 ПЛАН ВЫРУЧКИ НА МЕСЯЦ (₽):
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Автоматически записывается в ячейку B9 Google Таблицы (лист «⚙️ Настройки»).
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="inputMonthlyTarget"
+                      type="number"
+                      step="100000"
+                      value={editTarget}
+                      onChange={(e) => setEditTarget(e.target.value)}
+                      placeholder="5000000"
+                      className="w-40 font-mono text-sm font-bold text-emerald-500 bg-background"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleSaveTarget}
+                      disabled={saveTargetMutation.isPending}
+                      className="h-9 gap-1.5 text-xs font-semibold"
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                      <span>{saveTargetMutation.isPending ? 'Сохранение...' : 'Сохранить план'}</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <span className="text-[11px] text-muted-foreground">Быстрые суммы:</span>
+                  {[3000000, 5000000, 10000000, 15000000, 20000000].map((preset) => (
+                    <Button
+                      key={preset}
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      className="h-6 text-[11px] px-2.5 font-medium"
+                      onClick={() => setEditTarget(String(preset))}
+                    >
+                      {(preset / 1000000).toFixed(0)} млн ₽
+                    </Button>
+                  ))}
+                </div>
+
+                {saveStatus && (
+                  <p className={`text-xs font-medium ${saveStatus.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {saveStatus.text}
+                  </p>
+                )}
+              </div>
+
+              {/* General Parameters Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs pt-1">
                 <div className="p-3 rounded-md border border-subtle bg-hover/50">
                   <span className="text-muted-foreground block mb-1">Компания</span>
                   <span className="font-semibold text-sm text-foreground">

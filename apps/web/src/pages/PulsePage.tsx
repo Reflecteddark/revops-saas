@@ -34,7 +34,7 @@ import { BusinessEconomicsCard } from '@/components/BusinessEconomicsCard';
 import { StatusSegmentedBar } from '@/components/StatusSegmentedBar';
 import { DailyPulseMatrix } from '@/components/DailyPulseMatrix';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
-import { callsApi, dealsApi, insightsApi } from '@/lib/api';
+import { callsApi, dealsApi, insightsApi, settingsApi } from '@/lib/api';
 import type { Call, RecommendationItem } from '@/types/api';
 
 const callColumns: ColumnDef<Call, unknown>[] = [
@@ -142,6 +142,12 @@ export function PulsePage() {
     enabled: Boolean(tenantId),
   });
 
+  const settingsQuery = useQuery({
+    queryKey: ['settings', tenantId],
+    queryFn: () => settingsApi.get(tenantId!),
+    enabled: Boolean(tenantId),
+  });
+
   if (!tenantId) {
     return (
       <div
@@ -166,6 +172,7 @@ export function PulsePage() {
     insightsQuery.refetch();
     callsQuery.refetch();
     dealsQuery.refetch();
+    settingsQuery.refetch();
   };
 
   const insights = insightsQuery.data;
@@ -189,8 +196,11 @@ export function PulsePage() {
   const avgCheckRub = deals.length > 0 ? Math.round(pipelineSum / deals.length) : 0;
   const uniqueManagersCount = new Set(calls.map((c) => c.manager).filter(Boolean)).size;
 
+  const monthlyTarget = settingsQuery.data?.general?.monthly_target;
   const planTarget = Number(
-    insights?.p90_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.8) : revenue)
+    monthlyTarget && monthlyTarget > 0
+      ? monthlyTarget
+      : (insights?.p90_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.8) : revenue))
   );
   const deficitSum = Math.max(0, planTarget - revenue);
 
@@ -378,7 +388,15 @@ export function PulsePage() {
           title="Дефицит до плана"
           value={isLoading ? 0 : deficitSum.toLocaleString('ru-RU')}
           unit="₽"
-          trend={planTarget > 0 ? { direction: deficitSum === 0 ? 'up' : 'down', value: Math.round((revenue / planTarget) * 100), label: '% выполнения плана' } : undefined}
+          trend={
+            planTarget > 0
+              ? {
+                  direction: deficitSum === 0 ? 'up' : 'down',
+                  value: Math.round((revenue / planTarget) * 100),
+                  label: `% вып. (план ${(planTarget / 1000000).toFixed(1)}M ₽)`,
+                }
+              : undefined
+          }
           inverted={true}
           loading={isLoading}
         />
