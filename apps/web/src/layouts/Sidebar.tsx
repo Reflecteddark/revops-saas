@@ -9,6 +9,7 @@ import { NavLink } from 'react-router-dom';
 import {
   Activity,
   ClipboardCheck,
+  Radio,
   Settings,
   ShieldCheck,
   Users,
@@ -29,6 +30,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { title: 'Пульс', href: '/pulse', icon: Activity },
   { title: 'Аудит', href: '/audit', icon: ClipboardCheck },
+  { title: 'Интеграции', href: '/integrations', icon: Radio },
   { title: 'Настройки', href: '/settings', icon: Settings },
   { title: 'Флот', href: '/fleet', icon: Users },
   { title: 'Админ-панель', href: '/admin', icon: ShieldCheck },

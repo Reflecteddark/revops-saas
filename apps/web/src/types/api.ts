@@ -381,7 +381,8 @@ export interface AdminGeminiStatus {
 
 export interface AdminSystemStatus {
   timestamp: string;
-  fleet_status: 'ALL_SYSTEMS_NOMINAL' | 'DEGRADED_LOCAL' | 'ACTION_REQUIRED' | string;
+  fleet_status:
+    'ALL_SYSTEMS_NOMINAL' | 'DEGRADED_LOCAL' | 'ACTION_REQUIRED' | string;
   fleet_label: string;
   fastapi: AdminServiceStatus;
   n8n: AdminServiceStatus;
@@ -411,7 +412,14 @@ export interface AdminLogsResponse {
 }
 
 export interface FleetActionRequest {
-  action: 'start_all' | 'stop_all' | 'restart_n8n' | 'restart_tunnel' | 'start_n8n' | 'start_tunnel' | string;
+  action:
+    | 'start_all'
+    | 'stop_all'
+    | 'restart_n8n'
+    | 'restart_tunnel'
+    | 'start_n8n'
+    | 'start_tunnel'
+    | string;
   service?: string;
 }
 
@@ -567,4 +575,67 @@ export interface QuarantineCallsResponse {
   calls: QuarantineCallItem[];
 }
 
+// ============================================================================
+// 11. Integrations Health, Reconciliation & DLQ Management
+// ============================================================================
 
+export interface ServiceHealthItem {
+  status:
+    'healthy' | 'degraded' | 'error' | 'clean' | 'action_required' | string;
+  label: string;
+  queue_length?: number;
+  calls_count?: number;
+  deals_count?: number;
+  synced_count?: number;
+  pending_count?: number;
+  active_failures?: number;
+  total_failures?: number;
+}
+
+export interface ReconciliationMetrics {
+  dwh_total_calls: number;
+  sheets_synced_calls: number;
+  pending_queue_calls: number;
+  dwh_total_deals: number;
+  dlq_failures: number;
+  is_balanced: boolean;
+  balance_percentage: number;
+}
+
+export interface DlqItem {
+  id: string;
+  crm_source: string;
+  external_call_id: string;
+  audio_url?: string;
+  error_message?: string;
+  retry_count: number;
+  created_at: string;
+  is_resolved: boolean;
+}
+
+export interface IntegrationsHealthResponse {
+  status: 'healthy' | 'warning' | 'error' | string;
+  timestamp: string;
+  tenant_id: string;
+  services: {
+    redis_queue: ServiceHealthItem;
+    postgres_dwh: ServiceHealthItem;
+    google_sheets_syncer: ServiceHealthItem;
+    dead_letter_queue: ServiceHealthItem;
+    [key: string]: ServiceHealthItem | undefined;
+  };
+  reconciliation: ReconciliationMetrics;
+  dlq_items: DlqItem[];
+}
+
+export interface DlqRetryResponse {
+  status: 'success' | 'ok' | 'error' | string;
+  re_enqueued_count: number;
+  message: string;
+}
+
+export interface TelegramReportResponse {
+  status: 'sent' | 'sent_via_proxy' | string;
+  chat_id: string;
+  timestamp?: string;
+}

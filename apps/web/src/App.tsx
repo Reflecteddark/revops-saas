@@ -15,14 +15,29 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
-const PulsePage = lazy(() => import('@/pages/PulsePage').then((m) => ({ default: m.PulsePage })));
-const AuditPage = lazy(() => import('@/pages/AuditPage').then((m) => ({ default: m.AuditPage })));
+const LoginPage = lazy(() =>
+  import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage }))
+);
+const PulsePage = lazy(() =>
+  import('@/pages/PulsePage').then((m) => ({ default: m.PulsePage }))
+);
+const AuditPage = lazy(() =>
+  import('@/pages/AuditPage').then((m) => ({ default: m.AuditPage }))
+);
 const SettingsPage = lazy(() =>
   import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 );
-const FleetPage = lazy(() => import('@/pages/FleetPage').then((m) => ({ default: m.FleetPage })));
-const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const FleetPage = lazy(() =>
+  import('@/pages/FleetPage').then((m) => ({ default: m.FleetPage }))
+);
+const IntegrationsPage = lazy(() =>
+  import('@/pages/IntegrationsPage').then((m) => ({
+    default: m.IntegrationsPage,
+  }))
+);
+const AdminPage = lazy(() =>
+  import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage }))
+);
 
 function PageFallback() {
   return (
@@ -41,68 +56,76 @@ export function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ErrorBoundary>
         <Routes>
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Suspense fallback={<PageFallback />}>
-                <LoginPage />
-              </Suspense>
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/pulse" replace />} />
           <Route
-            path="pulse"
+            path="/login"
             element={
-              <Suspense fallback={<PageFallback />}>
-                <PulsePage />
-              </Suspense>
+              <PublicRoute>
+                <Suspense fallback={<PageFallback />}>
+                  <LoginPage />
+                </Suspense>
+              </PublicRoute>
             }
           />
           <Route
-            path="audit"
+            path="/"
             element={
-              <Suspense fallback={<PageFallback />}>
-                <AuditPage />
-              </Suspense>
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
             }
-          />
-          <Route
-            path="settings"
-            element={
-              <Suspense fallback={<PageFallback />}>
-                <SettingsPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="fleet"
-            element={
-              <Suspense fallback={<PageFallback />}>
-                <FleetPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="admin"
-            element={
-              <Suspense fallback={<PageFallback />}>
-                <AdminPage />
-              </Suspense>
-            }
-          />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
+          >
+            <Route index element={<Navigate to="/pulse" replace />} />
+            <Route
+              path="pulse"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <PulsePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="audit"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <AuditPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="integrations"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <IntegrationsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <SettingsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="fleet"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <FleetPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="admin"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <AdminPage />
+                </Suspense>
+              }
+            />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
       </ErrorBoundary>
     </BrowserRouter>
   );

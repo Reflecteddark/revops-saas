@@ -24,15 +24,18 @@ import type {
   CrmActionPayload,
   CrmStatusResponse,
   Deal,
+  DlqRetryResponse,
   FleetActionRequest,
   FleetActionResponse,
   GeneralSettings,
   InsightsSummaryResponse,
+  IntegrationsHealthResponse,
   QuarantineCallsResponse,
   Settings,
   SimulateCallPayload,
   StageConfig,
   TelegramConfig,
+  TelegramReportResponse,
   Tenant,
   TenantHealthDiagnostic,
   TenantProvisionPayload,
@@ -262,12 +265,20 @@ export const adminApi = {
     return res.data;
   },
 
-  fleetAction: async (payload: FleetActionRequest): Promise<FleetActionResponse> => {
-    const res = await api.post<FleetActionResponse>('/admin/fleet/action', payload);
+  fleetAction: async (
+    payload: FleetActionRequest
+  ): Promise<FleetActionResponse> => {
+    const res = await api.post<FleetActionResponse>(
+      '/admin/fleet/action',
+      payload
+    );
     return res.data;
   },
 
-  getLogs: async (logType = 'console', filterLevel = 'all'): Promise<AdminLogsResponse> => {
+  getLogs: async (
+    logType = 'console',
+    filterLevel = 'all'
+  ): Promise<AdminLogsResponse> => {
     const res = await api.get<AdminLogsResponse>('/admin/logs', {
       params: { log_type: logType, filter_level: filterLevel },
     });
@@ -279,25 +290,44 @@ export const adminApi = {
     return res.data;
   },
 
-  testGemini: async (): Promise<{ success: boolean; latency_ms?: number; response?: string; error?: string }> => {
-    const res = await api.post<{ success: boolean; latency_ms?: number; response?: string; error?: string }>(
-      '/admin/ai/test-gemini'
+  testGemini: async (): Promise<{
+    success: boolean;
+    latency_ms?: number;
+    response?: string;
+    error?: string;
+  }> => {
+    const res = await api.post<{
+      success: boolean;
+      latency_ms?: number;
+      response?: string;
+      error?: string;
+    }>('/admin/ai/test-gemini');
+    return res.data;
+  },
+
+  sheetsAction: async (
+    action: string,
+    target?: string
+  ): Promise<{ success: boolean; output?: string }> => {
+    const res = await api.post<{ success: boolean; output?: string }>(
+      '/admin/sheets/action',
+      {
+        action,
+        target,
+      }
     );
     return res.data;
   },
 
-  sheetsAction: async (action: string, target?: string): Promise<{ success: boolean; output?: string }> => {
-    const res = await api.post<{ success: boolean; output?: string }>('/admin/sheets/action', {
-      action,
-      target,
-    });
-    return res.data;
-  },
-
-  triggerHealer: async (action = 'status'): Promise<{ success: boolean; output?: string }> => {
-    const res = await api.post<{ success: boolean; output?: string }>('/admin/healer/action', {
-      action,
-    });
+  triggerHealer: async (
+    action = 'status'
+  ): Promise<{ success: boolean; output?: string }> => {
+    const res = await api.post<{ success: boolean; output?: string }>(
+      '/admin/healer/action',
+      {
+        action,
+      }
+    );
     return res.data;
   },
 
@@ -330,8 +360,13 @@ export const adminApi = {
     return res.data;
   },
 
-  provisionTenant: async (payload: TenantProvisionPayload): Promise<TenantProvisionResponse> => {
-    const res = await api.post<TenantProvisionResponse>('/admin/tenants/provision', payload);
+  provisionTenant: async (
+    payload: TenantProvisionPayload
+  ): Promise<TenantProvisionResponse> => {
+    const res = await api.post<TenantProvisionResponse>(
+      '/admin/tenants/provision',
+      payload
+    );
     return res.data;
   },
 
@@ -346,16 +381,25 @@ export const adminApi = {
     return res.data;
   },
 
-  checkTenantHealth: async (tenantId: string): Promise<TenantHealthDiagnostic> => {
-    const res = await api.get<TenantHealthDiagnostic>(`/admin/tenants/${tenantId}/health`);
+  checkTenantHealth: async (
+    tenantId: string
+  ): Promise<TenantHealthDiagnostic> => {
+    const res = await api.get<TenantHealthDiagnostic>(
+      `/admin/tenants/${tenantId}/health`
+    );
     return res.data;
   },
 
-  repairTenantSheet: async (sheetId: string): Promise<{ success: boolean; output?: string }> => {
-    const res = await api.post<{ success: boolean; output?: string }>('/admin/sheets/action', {
-      action: 'target',
-      spreadsheet_id: sheetId,
-    });
+  repairTenantSheet: async (
+    sheetId: string
+  ): Promise<{ success: boolean; output?: string }> => {
+    const res = await api.post<{ success: boolean; output?: string }>(
+      '/admin/sheets/action',
+      {
+        action: 'target',
+        spreadsheet_id: sheetId,
+      }
+    );
     return res.data;
   },
 
@@ -366,31 +410,39 @@ export const adminApi = {
     return res.data;
   },
 
-  crmAction: async (payload: CrmActionPayload): Promise<{ success: boolean; output?: string; message?: string }> => {
-    const res = await api.post<{ success: boolean; output?: string; message?: string }>(
-      '/admin/crm/action',
-      payload
-    );
+  crmAction: async (
+    payload: CrmActionPayload
+  ): Promise<{ success: boolean; output?: string; message?: string }> => {
+    const res = await api.post<{
+      success: boolean;
+      output?: string;
+      message?: string;
+    }>('/admin/crm/action', payload);
     return res.data;
   },
 
   getLastIncomingWebhook: async (): Promise<Record<string, unknown>> => {
-    const res = await api.get<Record<string, unknown>>('/admin/webhooks/last-incoming');
+    const res = await api.get<Record<string, unknown>>(
+      '/admin/webhooks/last-incoming'
+    );
     return res.data;
   },
 
   simulateCall: async (
     payload: SimulateCallPayload
   ): Promise<{ success: boolean; call_id?: string; message?: string }> => {
-    const res = await api.post<{ success: boolean; call_id?: string; message?: string }>(
-      '/admin/webhooks/simulate-call',
-      payload
-    );
+    const res = await api.post<{
+      success: boolean;
+      call_id?: string;
+      message?: string;
+    }>('/admin/webhooks/simulate-call', payload);
     return res.data;
   },
 
   getQuarantineCalls: async (): Promise<QuarantineCallsResponse> => {
-    const res = await api.get<QuarantineCallsResponse>('/admin/quarantine/calls');
+    const res = await api.get<QuarantineCallsResponse>(
+      '/admin/quarantine/calls'
+    );
     return res.data;
   },
 
@@ -399,11 +451,14 @@ export const adminApi = {
     action: 'approve' | 'dismiss' | string,
     note?: string
   ): Promise<{ success: boolean; message?: string }> => {
-    const res = await api.post<{ success: boolean; message?: string }>('/admin/quarantine/resolve', {
-      call_id: callId,
-      action,
-      note,
-    });
+    const res = await api.post<{ success: boolean; message?: string }>(
+      '/admin/quarantine/resolve',
+      {
+        call_id: callId,
+        action,
+        note,
+      }
+    );
     return res.data;
   },
 };
@@ -445,6 +500,74 @@ export const insightsApi = {
   },
 };
 
+export const integrationsApi = {
+  getHealth: async (
+    tenantId = 'TNT-001'
+  ): Promise<IntegrationsHealthResponse> => {
+    const adminKey =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('revops_admin_key') ||
+          'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1'
+        : 'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1';
+
+    const res = await api.get<IntegrationsHealthResponse>(
+      '/integrations/health',
+      {
+        params: { tenant_id: tenantId },
+        headers: {
+          'X-Admin-Key': adminKey,
+        },
+      }
+    );
+    return res.data;
+  },
+
+  retryDlq: async (
+    tenantId = 'TNT-001',
+    dlqId?: string
+  ): Promise<DlqRetryResponse> => {
+    const adminKey =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('revops_admin_key') ||
+          'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1'
+        : 'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1';
+
+    const res = await api.post<DlqRetryResponse>(
+      '/integrations/dlq/retry',
+      {},
+      {
+        params: { tenant_id: tenantId, ...(dlqId ? { dlq_id: dlqId } : {}) },
+        headers: {
+          'X-Admin-Key': adminKey,
+        },
+      }
+    );
+    return res.data;
+  },
+
+  sendTelegramReport: async (
+    tenantId = 'TNT-001'
+  ): Promise<TelegramReportResponse> => {
+    const adminKey =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('revops_admin_key') ||
+          'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1'
+        : 'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1';
+
+    const res = await api.post<TelegramReportResponse>(
+      '/integrations/report/telegram',
+      {},
+      {
+        params: { tenant_id: tenantId },
+        headers: {
+          'X-Admin-Key': adminKey,
+        },
+      }
+    );
+    return res.data;
+  },
+};
+
 export const apiClient = {
   auth: authApi,
   tenants: tenantsApi,
@@ -453,6 +576,7 @@ export const apiClient = {
   settings: settingsApi,
   admin: adminApi,
   insights: insightsApi,
+  integrations: integrationsApi,
 };
 
 export default apiClient;
