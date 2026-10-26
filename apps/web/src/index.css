@@ -121,34 +121,21 @@
       background-color 150ms ease-out,
       color 150ms ease-out;
     position: relative;
-    min-height: 100vh;
+    min-height: 100dvh;
   }
 
-  /* Фоновый акцент сверху страницы */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    height: 380px;
-    background: radial-gradient(
-      60% 40% at 50% -10%,
-      rgb(124 58 237 / 0.04),
-      transparent
-    );
-    pointer-events: none;
-    z-index: 0;
+  /* Redesign Skill: балансировка строк и анти-висячие строки */
+  h1, h2, h3, h4, h5, h6, [role='heading'] {
+    text-wrap: balance;
   }
 
-  .dark body::before,
-  [data-theme='dark'] body::before {
-    background: radial-gradient(
-      60% 40% at 50% -10%,
-      rgb(139 92 246 / 0.07),
-      transparent
-    );
+  p, li {
+    text-wrap: pretty;
+  }
+
+  /* Redesign Skill: точные моноширинные цифры для табличных данных */
+  table, th, td {
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -164,7 +151,7 @@
 
   .dark .surface,
   [data-theme='dark'] .surface {
-    background: linear-gradient(180deg, var(--surface-from), var(--surface-to));
+    background: var(--surface);
     box-shadow:
       inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
       0 1px 2px rgba(0, 0, 0, 0.35),

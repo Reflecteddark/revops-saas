@@ -51,17 +51,17 @@ export function BusinessEconomicsCard({
   return (
     <div
       className={cn(
-        'surface rounded-xl border border-subtle p-5 space-y-4 shadow-sm',
+        'surface rounded-2xl border border-subtle p-5 space-y-4 shadow-sm',
         className
       )}
       data-testid="business-economics-card"
     >
       <div className="flex items-center justify-between border-b border-subtle pb-3">
         <div className="space-y-0.5">
-          <h2 className="text-base font-bold tracking-tight text-foreground">
+          <h2 className="text-base font-bold tracking-tight text-foreground text-balance">
             Экономика продаж & Финансовый контур
           </h2>
-          <p className="text-xs text-secondary">
+          <p className="text-xs text-secondary text-pretty">
             Сквозной срез выручки, сопутствующих потерь воронки и достижения плана P90
           </p>
         </div>

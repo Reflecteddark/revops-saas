@@ -33,6 +33,7 @@ import { SpeechRadarChart } from '@/components/SpeechRadarChart';
 import { SkillsHeatmap } from '@/components/SkillsHeatmap';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { callsApi } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 
 export const CR_LABELS: string[] = [
@@ -110,13 +111,14 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
       }
       return (
         <span
-          className={
+          className={cn(
+            'font-mono tabular-nums',
             score >= 9
               ? 'font-semibold text-emerald-500'
               : score >= 6
                 ? 'font-medium text-amber-500'
                 : 'font-medium text-red-500'
-          }
+          )}
         >
           {score}/13
         </span>
@@ -216,18 +218,18 @@ export function AuditPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground text-balance">
               Аудит звонков
             </h1>
             <Badge
               variant="outline"
-              className="font-mono text-xs"
+              className="font-mono text-xs tabular-nums"
               data-testid="calls-count"
             >
               {filteredCalls.length}
             </Badge>
           </div>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-sm text-muted-foreground text-pretty">
             Детализированный реестр звонков с проверкой 13 критериев B2B-продаж.
           </p>
         </div>

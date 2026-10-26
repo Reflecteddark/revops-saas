@@ -37,20 +37,20 @@ export function ExpressScenarioCalculator({
 
   return (
     <div
-      className={cn('surface rounded-xl p-5 border border-subtle space-y-5', className)}
+      className={cn('surface rounded-2xl p-4 border border-subtle space-y-4', className)}
       data-testid="express-scenario-calculator"
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-hover border border-subtle text-foreground">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-hover border border-subtle text-foreground">
             <Calculator className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-[13px] font-semibold text-foreground">
+            <h3 className="text-[13px] font-semibold text-foreground text-balance">
               Экспресс-пересчет сценариев P50 / P90
             </h3>
-            <p className="text-xs text-secondary">
+            <p className="text-xs text-secondary text-pretty">
               Моделирование влияния роста стандартов и устранения сливов на выручку
             </p>
           </div>
@@ -61,8 +61,8 @@ export function ExpressScenarioCalculator({
         </span>
       </div>
 
-      {/* Sliders Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 p-4 rounded-lg bg-background/50 border border-subtle">
+      {/* Sliders Grid — R_inner = 16 - 12 = 4px (rounded) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 rounded bg-background/50 border border-subtle">
         {/* Leads Slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
@@ -139,10 +139,10 @@ export function ExpressScenarioCalculator({
       {/* 3 Outcome Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Loss Card */}
-        <div className="surface rounded-lg p-3.5 border border-rose-500/20 bg-rose-500/[0.03] space-y-1">
+        <div className="surface rounded p-3.5 border border-rose-500/20 bg-rose-500/[0.03] space-y-1">
           <div className="flex items-center gap-1.5 text-xs text-rose-400 font-medium">
             <AlertTriangle className="h-3.5 w-3.5" />
-            <span>Сливы без контроля (28%)</span>
+            <span className="text-balance">Сливы без контроля (28%)</span>
           </div>
           <div
             className="font-mono text-lg font-bold text-rose-400 tabular-nums"
@@ -150,15 +150,15 @@ export function ExpressScenarioCalculator({
           >
             {leakAmount.toLocaleString('ru-RU')} ₽
           </div>
-          <p className="text-[11px] text-tertiary">
+          <p className="text-[11px] text-tertiary text-pretty">
             Потери пайплайна при отсутствии четкого Next Step
           </p>
         </div>
 
         {/* Base Plan Card */}
-        <div className="surface rounded-lg p-3.5 border border-subtle bg-hover/20 space-y-1">
+        <div className="surface rounded p-3.5 border border-subtle bg-hover/20 space-y-1">
           <div className="flex items-center gap-1.5 text-xs text-secondary font-medium">
-            <span>Базовый факт (конверсия 25%)</span>
+            <span className="text-balance">Базовый факт (конверсия 25%)</span>
           </div>
           <div
             className="font-mono text-lg font-bold text-foreground tabular-nums"
@@ -166,16 +166,16 @@ export function ExpressScenarioCalculator({
           >
             {basePlan.toLocaleString('ru-RU')} ₽
           </div>
-          <p className="text-[11px] text-tertiary">
+          <p className="text-[11px] text-tertiary text-pretty">
             Текущий прогноз без внедрения ИИ-ассистента
           </p>
         </div>
 
         {/* Optimized Plan Card */}
-        <div className="surface rounded-lg p-3.5 border border-emerald-500/25 bg-emerald-500/[0.04] space-y-1">
+        <div className="surface rounded p-3.5 border border-emerald-500/25 bg-emerald-500/[0.04] space-y-1">
           <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
             <TrendingUp className="h-3.5 w-3.5" />
-            <span>Сценарий с RevOps OS</span>
+            <span className="text-balance">Сценарий с RevOps OS</span>
           </div>
           <div
             className="font-mono text-lg font-bold text-emerald-400 tabular-nums"
@@ -183,7 +183,7 @@ export function ExpressScenarioCalculator({
           >
             {optPlan.toLocaleString('ru-RU')} ₽
           </div>
-          <p className="text-[11px] text-tertiary">
+          <p className="text-[11px] text-tertiary text-pretty">
             Рост выручки за счет соблюдения 13 стандартов диалога
           </p>
         </div>

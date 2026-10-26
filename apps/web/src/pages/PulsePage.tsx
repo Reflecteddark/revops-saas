@@ -235,7 +235,7 @@ export function PulsePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-subtle pb-4">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
+            <h1 className="text-xl font-bold tracking-tight text-foreground text-balance">
               Рука на пульсе: Оперативная экономика продаж
             </h1>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
@@ -243,7 +243,7 @@ export function PulsePage() {
               LIVE
             </span>
           </div>
-          <p className="text-xs text-secondary mt-1">
+          <p className="text-xs text-secondary mt-1 text-pretty">
             Подключение: <span className="text-foreground font-medium">{tenantId}</span> &bull;
             Сквозная аналитика выручки, воронки и стандартов B2B-аудита
           </p>
@@ -275,7 +275,7 @@ export function PulsePage() {
       {showDataAuditInfo && (
         <Alert className="bg-violet-500/10 border-violet-500/30 text-xs">
           <CheckCircle2 className="h-4 w-4 text-violet-400" />
-          <AlertDescription className="text-foreground">
+          <AlertDescription className="text-foreground text-pretty">
             Данные рассчитаны по формулам Single Source of Truth (SSOT). Звонки верифицированы
             нейросетью Google Gemini по 13 критериям, сделки синхронизированы в реальном времени из
             CRM.
@@ -284,9 +284,9 @@ export function PulsePage() {
       )}
 
       {showRopGuide && (
-        <div className="surface rounded-xl border border-subtle p-4 text-xs space-y-2">
+        <div className="surface rounded-2xl border border-subtle p-4 text-xs space-y-2">
           <div className="flex items-center justify-between pb-1 border-b border-subtle">
-            <h3 className="font-semibold text-foreground">
+            <h3 className="font-semibold text-foreground text-balance">
               Стандарт ежедневного 15-минутного спринта РОПа (MPSTATS Playbook)
             </h3>
             <button

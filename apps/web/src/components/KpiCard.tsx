@@ -68,14 +68,14 @@ export function KpiCard({
       className={cn(
         'surface relative overflow-hidden p-5 transition-colors duration-150 hover:border-strong',
         isDanger &&
-          'before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-rose-500 bg-gradient-to-r from-rose-500/[0.05] to-transparent',
+          'before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-rose-500 bg-rose-500/[0.04]',
         onClick &&
           'cursor-pointer hover:bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50',
         className
       )}
     >
       <div className="flex items-center justify-between pb-2">
-        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-tertiary">
+        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-tertiary text-balance">
           {title}
         </span>
         {icon && <div className="text-tertiary">{icon}</div>}
