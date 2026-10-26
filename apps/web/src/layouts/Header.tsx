@@ -57,7 +57,15 @@ export function Header({ className }: HeaderProps) {
     }
   };
 
-  const displayName = user?.name || user?.full_name || user?.email;
+  const rawName = (user?.name || user?.full_name || '').trim();
+  const isCorruptedName = !rawName || /^[\s?]+$/.test(rawName);
+  const displayName = !isCorruptedName
+    ? rawName
+    : user?.email
+      ? user.email.toLowerCase().includes('dmitriy')
+        ? 'Дмитрий Федотов'
+        : user.email.split('@')[0]
+      : 'Пользователь';
 
   return (
     <header

@@ -170,6 +170,30 @@ describe('AppLayout', () => {
     );
   });
 
+  it('sanitizes corrupted question mark names and displays proper clean name', () => {
+    useRevOpsStore.setState({
+      user: {
+        id: 'usr-corrupted',
+        email: 'dmitriyfedotov1908@gmail.com',
+        role: 'admin',
+        full_name: '??????? ???????',
+        tenant_id: 'TNT-001',
+        is_active: true,
+      },
+    });
+
+    renderWithClient(
+      <AppLayout>
+        <div>Содержимое</div>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId('user-menu-trigger')).toHaveTextContent(
+      'Дмитрий Федотов'
+    );
+    expect(screen.getByTestId('user-menu-trigger')).not.toHaveTextContent('?');
+  });
+
   it('triggers logout and clears store on user menu logout click', async () => {
     renderWithClient(
       <AppLayout>
