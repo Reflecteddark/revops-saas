@@ -20,6 +20,7 @@ import type { User } from '@/types/api';
 export function LoginPage() {
   const navigate = useNavigate();
   const setUser = useRevOpsStore((s) => s.setUser);
+  const setToken = useRevOpsStore((s) => s.setToken);
   const setActiveTenantId = useRevOpsStore((s) => s.setActiveTenantId);
 
   const [email, setEmail] = React.useState('');
@@ -38,8 +39,10 @@ export function LoginPage() {
 
     try {
       let user: User;
+      let accessToken: string | null = null;
       try {
         const clientRes = await authApi.clientLogin(email.trim(), password);
+        accessToken = clientRes.access_token || clientRes.token || (clientRes as any).session_token || null;
         const tenantMatch = clientRes.user?.tenant?.match(/TNT-[A-Za-z0-9_-]+/i);
         const tenantId = tenantMatch ? tenantMatch[0].toUpperCase() : 'TNT-001';
 
@@ -54,6 +57,7 @@ export function LoginPage() {
         };
       } catch {
         const res = await authApi.login(email.trim(), password);
+        accessToken = res.access_token || null;
         user = {
           id: res.user_id,
           email: email.trim(),
@@ -65,6 +69,9 @@ export function LoginPage() {
         };
       }
 
+      if (accessToken) {
+        setToken(accessToken);
+      }
       setUser(user);
       if (user.tenant_id) {
         setActiveTenantId(user.tenant_id);

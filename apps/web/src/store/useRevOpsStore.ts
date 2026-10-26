@@ -15,6 +15,7 @@ export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected';
 
 export interface RevOpsState {
   user: User | null;
+  token: string | null;
   activeTenantId: string | null;
   tenants: Tenant[];
   theme: ThemeMode;
@@ -23,6 +24,7 @@ export interface RevOpsState {
 
   // Actions
   setUser: (u: User | null) => void;
+  setToken: (token: string | null) => void;
   setActiveTenantId: (id: string | null) => void;
   setTenants: (t: Tenant[]) => void;
   setTheme: (t: ThemeMode) => void;
@@ -37,6 +39,7 @@ export const useRevOpsStore = create<RevOpsState>()(
   persist(
     (set, get) => ({
       user: null,
+      token: null,
       activeTenantId: null,
       tenants: [],
       theme: 'light',
@@ -44,6 +47,8 @@ export const useRevOpsStore = create<RevOpsState>()(
       isAnalystChatOpen: false,
 
       setUser: (user) => set({ user }),
+
+      setToken: (token) => set({ token }),
 
       setActiveTenantId: (activeTenantId) => set({ activeTenantId }),
 
@@ -67,6 +72,7 @@ export const useRevOpsStore = create<RevOpsState>()(
       logout: () =>
         set({
           user: null,
+          token: null,
           activeTenantId: null,
           websocketStatus: 'disconnected',
           // tenants list is preserved for fleet selector
@@ -75,8 +81,9 @@ export const useRevOpsStore = create<RevOpsState>()(
     {
       name: 'revops-store',
       storage: createJSONStorage(() => localStorage),
-      // Only persist activeTenantId, theme, and user (tenants and websocketStatus are transient)
+      // Only persist token, activeTenantId, theme, and user (tenants and websocketStatus are transient)
       partialize: (state) => ({
+        token: state.token,
         activeTenantId: state.activeTenantId,
         theme: state.theme,
         user: state.user,

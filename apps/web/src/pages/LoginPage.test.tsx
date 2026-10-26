@@ -21,7 +21,7 @@ vi.mock('@/lib/api', () => ({
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useRevOpsStore.setState({ user: null });
+    useRevOpsStore.setState({ user: null, token: null });
   });
 
   it('keeps submit button disabled when fields are empty', () => {
@@ -82,6 +82,7 @@ describe('LoginPage', () => {
 
     expect(useRevOpsStore.getState().user?.email).toBe('admin@revops.ai');
     expect(useRevOpsStore.getState().user?.id).toBe('usr-123');
+    expect(useRevOpsStore.getState().token).toBe('mock-jwt-token');
     expect(useRevOpsStore.getState().activeTenantId).toBe('TNT-001');
   });
 

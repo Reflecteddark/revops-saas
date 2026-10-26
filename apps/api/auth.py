@@ -21,7 +21,7 @@ if not _raw_secret or len(_raw_secret) < 32:
 SECRET_KEY: str = _raw_secret
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days (matches session cookie duration)
 
 security = HTTPBearer(auto_error=False)
 

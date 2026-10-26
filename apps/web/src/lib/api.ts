@@ -56,10 +56,15 @@ export const api: AxiosInstance = axios.create({
 // Interceptors
 // ============================================================================
 
-// Request: inject active X-Tenant-Id from Zustand store (read via getState to avoid React hook cycles)
+// Request: inject Bearer token and active X-Tenant-Id from Zustand store (read via getState to avoid React hook cycles)
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const activeTenantId = useRevOpsStore.getState().activeTenantId;
+    const state = useRevOpsStore.getState();
+    const token = state.token;
+    if (token && !config.headers.has('Authorization')) {
+      config.headers.set('Authorization', `Bearer ${token}`);
+    }
+    const activeTenantId = state.activeTenantId;
     if (activeTenantId && !config.headers.has('X-Tenant-Id')) {
       config.headers.set('X-Tenant-Id', activeTenantId);
     }
