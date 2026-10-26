@@ -28,7 +28,13 @@ import {
 import { adminApi } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type {
@@ -41,7 +47,10 @@ import type {
 export function AdminCrmSandboxTab() {
   const queryClient = useQueryClient();
   const [selectedTenantId, setSelectedTenantId] = React.useState('TNT-001');
-  const [actionAlert, setActionAlert] = React.useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [actionAlert, setActionAlert] = React.useState<{
+    text: string;
+    type: 'success' | 'error';
+  } | null>(null);
 
   // Simulator Form State
   const [managerName, setManagerName] = React.useState('Дмитрий Федотов');
@@ -57,25 +66,34 @@ export function AdminCrmSandboxTab() {
   });
 
   // 2. Last Incoming Webhook Query
-  const { data: lastWebhook, isLoading: isWebhookLoading, refetch: refetchWebhook } = useQuery({
+  const {
+    data: lastWebhook,
+    isLoading: isWebhookLoading,
+    refetch: refetchWebhook,
+  } = useQuery({
     queryKey: ['admin-last-webhook'],
     queryFn: adminApi.getLastIncomingWebhook,
     refetchInterval: 10000,
   });
 
   // 3. Quarantine Calls Query
-  const { data: quarantineData, refetch: refetchQuarantine } = useQuery<QuarantineCallsResponse>({
-    queryKey: ['admin-quarantine-calls'],
-    queryFn: adminApi.getQuarantineCalls,
-    refetchInterval: 15000,
-  });
+  const { data: quarantineData, refetch: refetchQuarantine } =
+    useQuery<QuarantineCallsResponse>({
+      queryKey: ['admin-quarantine-calls'],
+      queryFn: adminApi.getQuarantineCalls,
+      refetchInterval: 15000,
+    });
 
   // 4. Mutations
   const crmActionMutation = useMutation({
     mutationFn: (payload: CrmActionPayload) => adminApi.crmAction(payload),
     onSuccess: (res) => {
       setActionAlert({
-        text: res.message || (res.output ? `Команда выполнена: ${res.output.slice(0, 80)}...` : 'Действие выполнено'),
+        text:
+          res.message ||
+          (res.output
+            ? `Команда выполнена: ${res.output.slice(0, 80)}...`
+            : 'Действие выполнено'),
         type: 'success',
       });
       queryClient.invalidateQueries({ queryKey: ['admin-crm-status'] });
@@ -87,7 +105,8 @@ export function AdminCrmSandboxTab() {
   });
 
   const simulateCallMutation = useMutation({
-    mutationFn: (payload: SimulateCallPayload) => adminApi.simulateCall(payload),
+    mutationFn: (payload: SimulateCallPayload) =>
+      adminApi.simulateCall(payload),
     onSuccess: (res) => {
       setActionAlert({
         text: `Звонок успешно эмулирован! ID: ${res.call_id ?? 'sim_call'}. Запись добавлена в Google Таблицу и транслирована в WebSocket.`,
@@ -97,18 +116,28 @@ export function AdminCrmSandboxTab() {
       queryClient.invalidateQueries({ queryKey: ['admin-logs'] });
     },
     onError: (err: Error) => {
-      setActionAlert({ text: `Ошибка симуляции: ${err.message}`, type: 'error' });
+      setActionAlert({
+        text: `Ошибка симуляции: ${err.message}`,
+        type: 'error',
+      });
     },
   });
 
   const resolveQuarantineMutation = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: string }) => adminApi.resolveQuarantineCall(id, action),
+    mutationFn: ({ id, action }: { id: string; action: string }) =>
+      adminApi.resolveQuarantineCall(id, action),
     onSuccess: (res) => {
-      setActionAlert({ text: res.message || 'Звонок успешно возвращён из карантина!', type: 'success' });
+      setActionAlert({
+        text: res.message || 'Звонок успешно возвращён из карантина!',
+        type: 'success',
+      });
       queryClient.invalidateQueries({ queryKey: ['admin-quarantine-calls'] });
     },
     onError: (err: Error) => {
-      setActionAlert({ text: `Ошибка карантина: ${err.message}`, type: 'error' });
+      setActionAlert({
+        text: `Ошибка карантина: ${err.message}`,
+        type: 'error',
+      });
     },
   });
 
@@ -137,16 +166,21 @@ export function AdminCrmSandboxTab() {
               : 'border-rose-500/30 bg-rose-500/10 text-rose-300'
           }
         >
-          <div className="flex items-center justify-between w-full">
+          <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-2">
               {actionAlert.type === 'success' ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-400" />
               ) : (
                 <AlertTriangle className="h-4 w-4 text-rose-400" />
               )}
-              <AlertDescription className="text-xs font-medium">{actionAlert.text}</AlertDescription>
+              <AlertDescription className="text-xs font-medium">
+                {actionAlert.text}
+              </AlertDescription>
             </div>
-            <button onClick={() => setActionAlert(null)} className="text-xs opacity-60 hover:opacity-100">
+            <button
+              onClick={() => setActionAlert(null)}
+              className="text-xs opacity-60 hover:opacity-100"
+            >
               ✕
             </button>
           </div>
@@ -154,48 +188,66 @@ export function AdminCrmSandboxTab() {
       )}
 
       {/* 1. Header KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-subtle bg-surface p-3 space-y-1">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="space-y-1 rounded-xl border border-subtle bg-surface p-3">
           <div className="flex items-center justify-between text-tertiary">
-            <span className="text-[11px] font-medium uppercase tracking-wider">Звонков сегодня</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider">
+              Звонков сегодня
+            </span>
             <PhoneCall className="h-3.5 w-3.5 text-primary" />
           </div>
-          <div className="text-lg font-bold font-mono text-foreground">14</div>
-          <div className="text-[10px] text-emerald-400 font-medium">Аудит 13 критериев SSOT</div>
+          <div className="font-mono text-lg font-bold text-foreground">14</div>
+          <div className="text-[10px] font-medium text-emerald-400">
+            Аудит 13 критериев SSOT
+          </div>
         </div>
 
-        <div className="rounded-xl border border-subtle bg-surface p-3 space-y-1">
+        <div className="space-y-1 rounded-xl border border-subtle bg-surface p-3">
           <div className="flex items-center justify-between text-tertiary">
-            <span className="text-[11px] font-medium uppercase tracking-wider">Минут аудио</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider">
+              Минут аудио
+            </span>
             <Clock className="h-3.5 w-3.5 text-cyan-400" />
           </div>
-          <div className="text-lg font-bold font-mono text-foreground">28 мин</div>
+          <div className="font-mono text-lg font-bold text-foreground">
+            28 мин
+          </div>
           <div className="text-[10px] text-tertiary">RevOps Speech AI Core</div>
         </div>
 
-        <div className="rounded-xl border border-subtle bg-surface p-3 space-y-1">
-          <div className="flex items-center justify-between text-termp">
-            <span className="text-[11px] font-medium uppercase tracking-wider">Скорость аудита</span>
+        <div className="space-y-1 rounded-xl border border-subtle bg-surface p-3">
+          <div className="text-termp flex items-center justify-between">
+            <span className="text-[11px] font-medium uppercase tracking-wider">
+              Скорость аудита
+            </span>
             <Zap className="h-3.5 w-3.5 text-amber-400" />
           </div>
-          <div className="text-lg font-bold font-mono text-foreground">~7.4 сек</div>
+          <div className="font-mono text-lg font-bold text-foreground">
+            ~7.4 сек
+          </div>
           <div className="text-[10px] text-secondary">Среднее время звонка</div>
         </div>
 
-        <div className="rounded-xl border border-subtle bg-surface p-3 space-y-1">
+        <div className="space-y-1 rounded-xl border border-subtle bg-surface p-3">
           <div className="flex items-center justify-between text-tertiary">
-            <span className="text-[11px] font-medium uppercase tracking-wider">Расходы Gemini</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider">
+              Расходы Gemini
+            </span>
             <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
           </div>
-          <div className="text-lg font-bold font-mono text-foreground">$0.0336</div>
-          <div className="text-[10px] text-emerald-400 font-medium">~3.29 ₽ (Оптимально)</div>
+          <div className="font-mono text-lg font-bold text-foreground">
+            $0.0336
+          </div>
+          <div className="text-[10px] font-medium text-emerald-400">
+            ~3.29 ₽ (Оптимально)
+          </div>
         </div>
       </div>
 
       {/* 2. CRM Contour Switcher & Status Cards */}
       <Card className="border-subtle bg-surface">
         <CardHeader className="pb-3">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <CardTitle className="text-sm font-bold text-foreground">
@@ -205,15 +257,17 @@ export function AdminCrmSandboxTab() {
                   variant="outline"
                   className={
                     activeCrm === 'bitrix24'
-                      ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 font-mono text-xs'
-                      : 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400 font-mono text-xs'
+                      ? 'border-blue-500/30 bg-blue-500/10 font-mono text-xs text-blue-400'
+                      : 'border-cyan-500/30 bg-cyan-500/10 font-mono text-xs text-cyan-400'
                   }
                 >
-                  Активен: {activeCrm === 'bitrix24' ? 'Bitrix24 REST' : 'amoCRM API v4'}
+                  Активен:{' '}
+                  {activeCrm === 'bitrix24' ? 'Bitrix24 REST' : 'amoCRM API v4'}
                 </Badge>
               </div>
               <CardDescription className="text-xs">
-                Двухконтурный коннектор для автоматической выгрузки сделок, воронок и аудиозаписей звонков
+                Двухконтурный коннектор для автоматической выгрузки сделок,
+                воронок и аудиозаписей звонков
               </CardDescription>
             </div>
 
@@ -222,10 +276,9 @@ export function AdminCrmSandboxTab() {
               <select
                 value={selectedTenantId}
                 onChange={(e) => setSelectedTenantId(e.target.value)}
-                className="h-8 rounded-md border border-subtle bg-subtle/50 px-2.5 font-mono text-xs text-foreground focus:outline-none"
+                className="bg-subtle/50 h-8 rounded-md border border-subtle px-2.5 font-mono text-xs text-foreground focus:outline-none"
               >
                 <option value="TNT-001">TNT-001 (Самозанятый)</option>
-                <option value="TNT-TEST-002">TNT-TEST-002 (Test)</option>
               </select>
 
               <Button
@@ -239,32 +292,37 @@ export function AdminCrmSandboxTab() {
                   })
                 }
                 disabled={crmActionMutation.isPending}
-                className="h-8 gap-1.5 text-xs border-subtle bg-surface hover:bg-hover"
+                className="h-8 gap-1.5 border-subtle bg-surface text-xs hover:bg-hover"
                 data-testid="btn-switch-crm"
               >
                 <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
-                <span>Переключить на {activeCrm === 'bitrix24' ? 'amoCRM' : 'Bitrix24'}</span>
+                <span>
+                  Переключить на{' '}
+                  {activeCrm === 'bitrix24' ? 'amoCRM' : 'Bitrix24'}
+                </span>
               </Button>
             </div>
           </div>
         </CardHeader>
 
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Card 1: Bitrix24 REST API */}
             <div
               className={`rounded-xl border p-4 transition-all ${
                 activeCrm === 'bitrix24'
                   ? 'border-blue-500/40 bg-blue-500/5'
-                  : 'border-subtle bg-subtle/30 opacity-70'
+                  : 'bg-subtle/30 border-subtle opacity-70'
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-blue-400" />
-                  <span className="font-semibold text-xs text-foreground">Bitrix24 REST API</span>
+                  <span className="text-xs font-semibold text-foreground">
+                    Bitrix24 REST API
+                  </span>
                 </div>
-                <Badge variant="outline" className="text-[10px] border-subtle">
+                <Badge variant="outline" className="border-subtle text-[10px]">
                   Webhook Ingress
                 </Badge>
               </div>
@@ -277,9 +335,12 @@ export function AdminCrmSandboxTab() {
                   </span>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[11px] text-tertiary">Входящий вебхук REST:</span>
-                  <div className="font-mono text-[11px] text-secondary bg-subtle p-1.5 rounded truncate">
-                    {crmData?.bitrix24?.webhook_url || 'https://company.bitrix24.ru/rest/1/...'}
+                  <span className="text-[11px] text-tertiary">
+                    Входящий вебхук REST:
+                  </span>
+                  <div className="truncate rounded bg-subtle p-1.5 font-mono text-[11px] text-secondary">
+                    {crmData?.bitrix24?.webhook_url ||
+                      'https://company.bitrix24.ru/rest/1/...'}
                   </div>
                 </div>
 
@@ -295,7 +356,7 @@ export function AdminCrmSandboxTab() {
                       })
                     }
                     disabled={crmActionMutation.isPending}
-                    className="h-7 text-xs border-subtle"
+                    className="h-7 border-subtle text-xs"
                     data-testid="btn-test-b24"
                   >
                     Тест подключения
@@ -324,15 +385,17 @@ export function AdminCrmSandboxTab() {
               className={`rounded-xl border p-4 transition-all ${
                 activeCrm === 'amocrm'
                   ? 'border-cyan-500/40 bg-cyan-500/5'
-                  : 'border-subtle bg-subtle/30 opacity-70'
+                  : 'bg-subtle/30 border-subtle opacity-70'
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                  <span className="font-semibold text-xs text-foreground">amoCRM API v4</span>
+                  <span className="text-xs font-semibold text-foreground">
+                    amoCRM API v4
+                  </span>
                 </div>
-                <Badge variant="outline" className="text-[10px] border-subtle">
+                <Badge variant="outline" className="border-subtle text-[10px]">
                   Polling & Events
                 </Badge>
               </div>
@@ -345,8 +408,10 @@ export function AdminCrmSandboxTab() {
                   </span>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[11px] text-tertiary">Домен amoCRM:</span>
-                  <div className="font-mono text-[11px] text-secondary bg-subtle p-1.5 rounded truncate">
+                  <span className="text-[11px] text-tertiary">
+                    Домен amoCRM:
+                  </span>
+                  <div className="truncate rounded bg-subtle p-1.5 font-mono text-[11px] text-secondary">
                     {crmData?.amocrm?.domain || 'company.amocrm.ru'}
                   </div>
                 </div>
@@ -363,7 +428,7 @@ export function AdminCrmSandboxTab() {
                       })
                     }
                     disabled={crmActionMutation.isPending}
-                    className="h-7 text-xs border-subtle text-cyan-400"
+                    className="h-7 border-subtle text-xs text-cyan-400"
                     data-testid="btn-test-amocrm"
                   >
                     Проверить токен
@@ -391,7 +456,7 @@ export function AdminCrmSandboxTab() {
       </Card>
 
       {/* 3. Call Sandbox (Simulator) & Raw Webhook Inspector */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Left: Call Simulator Form */}
         <Card className="border-subtle bg-surface">
           <CardHeader className="pb-3">
@@ -402,7 +467,8 @@ export function AdminCrmSandboxTab() {
               </CardTitle>
             </div>
             <CardDescription className="text-xs">
-              Эмулирует входящий звонок из amoCRM или Битрикс24, прогоняет через Gemini и пишет в воронку.
+              Эмулирует входящий звонок из amoCRM или Битрикс24, прогоняет через
+              Gemini и пишет в воронку.
             </CardDescription>
           </CardHeader>
 
@@ -410,42 +476,54 @@ export function AdminCrmSandboxTab() {
             <form onSubmit={handleSimulateSubmit} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-secondary">Менеджер ОП</label>
+                  <label className="text-[11px] font-medium text-secondary">
+                    Менеджер ОП
+                  </label>
                   <Input
                     value={managerName}
                     onChange={(e) => setManagerName(e.target.value)}
-                    className="h-8 text-xs bg-subtle/50 border-subtle"
+                    className="bg-subtle/50 h-8 border-subtle text-xs"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-secondary">Телефон клиента</label>
+                  <label className="text-[11px] font-medium text-secondary">
+                    Телефон клиента
+                  </label>
                   <Input
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
-                    className="h-8 text-xs font-mono bg-subtle/50 border-subtle"
+                    className="bg-subtle/50 h-8 border-subtle font-mono text-xs"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-secondary">Длительность (сек)</label>
+                  <label className="text-[11px] font-medium text-secondary">
+                    Длительность (сек)
+                  </label>
                   <Input
                     type="number"
                     value={durationSec}
                     onChange={(e) => setDurationSec(e.target.value)}
-                    className="h-8 text-xs font-mono bg-subtle/50 border-subtle"
+                    className="bg-subtle/50 h-8 border-subtle font-mono text-xs"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-secondary">Сценарий разговора</label>
+                  <label className="text-[11px] font-medium text-secondary">
+                    Сценарий разговора
+                  </label>
                   <select
                     value={simulateLeak ? 'leak' : 'won'}
                     onChange={(e) => setSimulateLeak(e.target.value === 'leak')}
-                    className="h-8 w-full rounded-md border border-subtle bg-subtle/50 px-2 text-xs text-foreground focus:outline-none"
+                    className="bg-subtle/50 h-8 w-full rounded-md border border-subtle px-2 text-xs text-foreground focus:outline-none"
                   >
-                    <option value="won">🟢 Эталон (Балл 11/13, Next Step есть)</option>
-                    <option value="leak">🔴 Слив (Балл 6/13, Нет Next Step)</option>
+                    <option value="won">
+                      🟢 Эталон (Балл 11/13, Next Step есть)
+                    </option>
+                    <option value="leak">
+                      🔴 Слив (Балл 6/13, Нет Next Step)
+                    </option>
                   </select>
                 </div>
               </div>
@@ -454,12 +532,16 @@ export function AdminCrmSandboxTab() {
                 <Button
                   type="submit"
                   disabled={simulateCallMutation.isPending}
-                  className="h-8 w-full gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="hover:bg-primary/90 h-8 w-full gap-1.5 bg-primary text-xs text-primary-foreground"
                   data-testid="btn-simulate-call"
                 >
-                  <Send className={`h-3.5 w-3.5 ${simulateCallMutation.isPending ? 'animate-spin' : ''}`} />
+                  <Send
+                    className={`h-3.5 w-3.5 ${simulateCallMutation.isPending ? 'animate-spin' : ''}`}
+                  />
                   <span>
-                    {simulateCallMutation.isPending ? 'Эмуляция и аудит звонка...' : 'Отправить тестовый звонок в CRM'}
+                    {simulateCallMutation.isPending
+                      ? 'Эмуляция и аудит звонка...'
+                      : 'Отправить тестовый звонок в CRM'}
                   </span>
                 </Button>
               </div>
@@ -468,7 +550,7 @@ export function AdminCrmSandboxTab() {
         </Card>
 
         {/* Right: Raw Webhook Inspector */}
-        <Card className="border-subtle bg-surface flex flex-col justify-between">
+        <Card className="flex flex-col justify-between border-subtle bg-surface">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -483,7 +565,7 @@ export function AdminCrmSandboxTab() {
                 onClick={() => refetchWebhook()}
                 className="h-7 text-[11px] text-secondary hover:text-foreground"
               >
-                <RefreshCw className="h-3 w-3 mr-1" />
+                <RefreshCw className="mr-1 h-3 w-3" />
                 Обновить
               </Button>
             </div>
@@ -493,13 +575,15 @@ export function AdminCrmSandboxTab() {
           </CardHeader>
 
           <CardContent>
-            <div className="h-48 rounded-lg border border-subtle bg-black/90 p-3 font-mono text-[11px] text-emerald-400 overflow-y-auto">
+            <div className="h-48 overflow-y-auto rounded-lg border border-subtle bg-black/90 p-3 font-mono text-[11px] text-emerald-400">
               {isWebhookLoading ? (
                 <div className="text-zinc-500">Загрузка вебхука...</div>
               ) : lastWebhook ? (
                 <pre>{JSON.stringify(lastWebhook, null, 2)}</pre>
               ) : (
-                <div className="text-zinc-600">Входящих вебхуков пока не зафиксировано.</div>
+                <div className="text-zinc-600">
+                  Входящих вебхуков пока не зафиксировано.
+                </div>
               )}
             </div>
           </CardContent>
@@ -507,67 +591,81 @@ export function AdminCrmSandboxTab() {
       </div>
 
       {/* 4. Call Quarantine Triage */}
-      {quarantineData && quarantineData.calls && quarantineData.calls.length > 0 && (
-        <Card className="border-subtle bg-surface">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-amber-400" />
-                <CardTitle className="text-sm font-bold text-foreground">
-                  Карантин звонков (Quarantine Triage)
-                </CardTitle>
-                <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-xs font-mono">
-                  {quarantineData.in_quarantine_count} в карантине
-                </Badge>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => refetchQuarantine()}
-                className="h-7 text-xs text-secondary hover:text-foreground"
-              >
-                <RefreshCw className="h-3 w-3 mr-1" />
-                Обновить
-              </Button>
-            </div>
-            <CardDescription className="text-xs">
-              Звонки с ошибками скачивания аудио или автоответчиками, изолированные для повторной проверки
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <div className="space-y-2">
-              {quarantineData.calls.slice(0, 5).map((call) => (
-                <div
-                  key={call.id}
-                  className="flex items-center justify-between rounded-lg border border-subtle bg-subtle/50 p-2.5 text-xs"
-                >
-                  <div className="space-y-0.5">
-                    <div className="font-semibold text-foreground font-mono">
-                      {call.id} • {call.manager || 'Менеджер'}
-                    </div>
-                    <div className="text-[11px] text-secondary">
-                      Причина: {call.reason || call.quarantine_reason || 'Аудио оборвалось'}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => resolveQuarantineMutation.mutate({ id: call.id, action: 'approve' })}
-                      className="h-7 text-xs border-subtle text-emerald-400"
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      Повторить аудит
-                    </Button>
-                  </div>
+      {quarantineData &&
+        quarantineData.calls &&
+        quarantineData.calls.length > 0 && (
+          <Card className="border-subtle bg-surface">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-amber-400" />
+                  <CardTitle className="text-sm font-bold text-foreground">
+                    Карантин звонков (Quarantine Triage)
+                  </CardTitle>
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500/30 font-mono text-xs text-amber-400"
+                  >
+                    {quarantineData.in_quarantine_count} в карантине
+                  </Badge>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchQuarantine()}
+                  className="h-7 text-xs text-secondary hover:text-foreground"
+                >
+                  <RefreshCw className="mr-1 h-3 w-3" />
+                  Обновить
+                </Button>
+              </div>
+              <CardDescription className="text-xs">
+                Звонки с ошибками скачивания аудио или автоответчиками,
+                изолированные для повторной проверки
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <div className="space-y-2">
+                {quarantineData.calls.slice(0, 5).map((call) => (
+                  <div
+                    key={call.id}
+                    className="bg-subtle/50 flex items-center justify-between rounded-lg border border-subtle p-2.5 text-xs"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="font-mono font-semibold text-foreground">
+                        {call.id} • {call.manager || 'Менеджер'}
+                      </div>
+                      <div className="text-[11px] text-secondary">
+                        Причина:{' '}
+                        {call.reason ||
+                          call.quarantine_reason ||
+                          'Аудио оборвалось'}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          resolveQuarantineMutation.mutate({
+                            id: call.id,
+                            action: 'approve',
+                          })
+                        }
+                        className="h-7 border-subtle text-xs text-emerald-400"
+                      >
+                        <RotateCcw className="mr-1 h-3 w-3" />
+                        Повторить аудит
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
     </div>
   );
 }

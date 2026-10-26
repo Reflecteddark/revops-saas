@@ -2841,10 +2841,28 @@ def get_tenant_health_doctor(tenant_id: str):
 
     cfg = get_tenant_config(clean_tenant)
     if not cfg:
-        cfg = {"tenant_id": clean_tenant, "tenant_name": f"Организация {clean_tenant}", "status": "active"}
+        from packages.database.models import Tenant
+        from packages.database.session import SessionLocal
+        db = SessionLocal()
+        try:
+            db_t = db.query(Tenant).filter(Tenant.id == clean_tenant).first()
+            if db_t:
+                cfg = db_t.to_registry_dict()
+        finally:
+            db.close()
+
+    if not cfg:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Организация '{clean_tenant}' не найдена в системе"
+        )
 
     t_name = cfg.get("tenant_name", f"Организация {clean_tenant}")
-    sheet_id = get_tenant_spreadsheet_id(clean_tenant)
+    sheet_id = None
+    try:
+        sheet_id = get_tenant_spreadsheet_id(clean_tenant)
+    except Exception:
+        sheet_id = cfg.get("spreadsheet_id")
     crm_type = cfg.get("crm_type", "bitrix24")
 
     checks = []
@@ -2871,13 +2889,22 @@ def get_tenant_health_doctor(tenant_id: str):
                 "status": "ok",
                 "detail": sheet_detail
             })
-        else:
+        elif sheet_id:
             checks.append({
                 "key": "sheet",
                 "title": "Google Таблица (SSOT)",
                 "status": "warn",
-                "detail": f"ID={sheet_id[:12]}... (Сервисный аккаунт в режиме кэша)"
+                "detail": f"ID={str(sheet_id)[:12]}... (Сервисный аккаунт в режиме кэша)"
             })
+        else:
+            checks.append({
+                "key": "sheet",
+                "title": "Google Таблица (SSOT)",
+                "status": "warn" if cfg.get("status") in ("archived", "offboarded", "frozen") else "fail",
+                "detail": "Google Таблица не привязана к данной организации"
+            })
+            if overall_status == "healthy":
+                overall_status = "warning"
     except Exception as e:
         checks.append({
             "key": "sheet",
