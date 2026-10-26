@@ -158,16 +158,21 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> dict[str, Any]:
                 win = int(r[3].replace("%", "").strip()) if "%" in r[3] or r[3].isdigit() else 10
                 stages.append({"id": s_id, "name": s_name, "sla_hours": sla, "win_pct": win})
 
-        # Parse managers (Rows 21-24)
-        managers = []
-        for r_idx in range(20, min(24, len(s_rows))):
-            r = s_rows[r_idx]
-            if len(r) >= 4 and r[0]:
-                m_id = r[0]
-                m_name = r[1]
-                m_role = r[2]
-                cap = int(r[3]) if r[3].isdigit() else 40
-                managers.append({"id": m_id, "name": m_name, "role": m_role, "capacity": cap})
+        # Parse managers (supports dynamic managers from registry, with fallback to Sheet Rows 21-24)
+        from ..tenant_registry import get_tenant_config
+        cfg = get_tenant_config(clean_tenant) or {}
+        if cfg.get("managers") and isinstance(cfg.get("managers"), list) and len(cfg["managers"]) > 0:
+            managers = cfg["managers"]
+        else:
+            managers = []
+            for r_idx in range(20, min(24, len(s_rows))):
+                r = s_rows[r_idx]
+                if len(r) >= 4 and r[0]:
+                    m_id = r[0]
+                    m_name = r[1]
+                    m_role = r[2]
+                    cap = int(r[3]) if r[3].isdigit() else 40
+                    managers.append({"id": m_id, "name": m_name, "role": m_role, "capacity": cap})
 
         # Parse loss reasons (Rows 26-29)
         loss_reasons = []
@@ -361,12 +366,26 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                 if 12 <= row_num <= 18:
                     ws_settings.update(range_name=f"C{row_num}:D{row_num}", values=[[str(st.sla_hours), f"{st.win_pct}%"]])
 
-        # 3. Update managers capacity if present (Rows 21-24)
-        if payload.managers:
-            for idx, m in enumerate(payload.managers):
-                row_num = 21 + idx
-                if 21 <= row_num <= 24:
+        # 3. Update managers capacity if present (Rows 21-24 and Registry)
+        if payload.managers is not None:
+            for slot_idx in range(4):
+                row_num = 21 + slot_idx
+                if slot_idx < len(payload.managers):
+                    m = payload.managers[slot_idx]
                     ws_settings.update(range_name=f"A{row_num}:D{row_num}", values=[[m.id, m.name, m.role, str(m.capacity)]])
+                else:
+                    ws_settings.update(range_name=f"A{row_num}:D{row_num}", values=[["", "", "", ""]])
+
+            try:
+                from ..tenant_registry import load_tenants_registry, save_tenants_registry
+                reg = load_tenants_registry()
+                for t in reg.get("tenants", []):
+                    if str(t.get("tenant_id", "")).upper() == payload.tenant_id.strip().upper():
+                        t["managers"] = [m.model_dump() for m in payload.managers]
+                        save_tenants_registry(reg)
+                        break
+            except Exception as e:
+                logger.warning(f"Failed to persist managers in registry: {e}")
 
         # 4. Update loss reasons if present (Rows 26-29)
         if payload.loss_reasons:

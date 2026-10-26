@@ -24,8 +24,18 @@ import {
   Send,
   Boxes,
   RefreshCw,
+  Plus,
+  Trash2,
+  UserPlus,
+  X,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,6 +76,14 @@ export function SettingsPage() {
   const [periodEnd, setPeriodEnd] = useState<string>('');
   const [editableStages, setEditableStages] = useState<StageConfig[]>([]);
   const [editableManagers, setEditableManagers] = useState<ManagerConfig[]>([]);
+  const [isManagersInitialized, setIsManagersInitialized] =
+    useState<boolean>(false);
+  const [isAddingManager, setIsAddingManager] = useState<boolean>(false);
+  const [newManagerId, setNewManagerId] = useState<string>('');
+  const [newManagerName, setNewManagerName] = useState<string>('');
+  const [newManagerRole, setNewManagerRole] = useState<string>('Менеджер ОП');
+  const [newManagerCapacity, setNewManagerCapacity] = useState<number>(40);
+  const [addManagerError, setAddManagerError] = useState<string | null>(null);
   const [ropChatId, setRopChatId] = useState<string>('');
   const [ceoChatId, setCeoChatId] = useState<string>('');
   const [teamChatId, setTeamChatId] = useState<string>('');
@@ -73,7 +91,10 @@ export function SettingsPage() {
   const [editableModules, setEditableModules] = useState<ModuleFlag[]>([]);
 
   // Feedback banner state
-  const [saveStatus, setSaveStatus] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [saveStatus, setSaveStatus] = useState<{
+    text: string;
+    type: 'success' | 'error';
+  } | null>(null);
 
   // Sync state from query data
   useEffect(() => {
@@ -83,15 +104,19 @@ export function SettingsPage() {
         setCurrency(settings.general.currency || 'RUB (₽)');
         setPeriodStart(settings.general.period_start || '');
         setPeriodEnd(settings.general.period_end || '');
-        if (settings.general.monthly_target !== undefined && settings.general.monthly_target !== null) {
+        if (
+          settings.general.monthly_target !== undefined &&
+          settings.general.monthly_target !== null
+        ) {
           setEditTarget(String(settings.general.monthly_target));
         }
       }
       if (settings.stages && settings.stages.length > 0) {
         setEditableStages(settings.stages);
       }
-      if (settings.managers && settings.managers.length > 0) {
+      if (settings.managers) {
         setEditableManagers(settings.managers);
+        setIsManagersInitialized(true);
       }
       if (settings.telegram) {
         setRopChatId(settings.telegram.rop_chat_id || '');
@@ -107,65 +132,107 @@ export function SettingsPage() {
 
   // Mutations
   const saveGeneralMutation = useMutation({
-    mutationFn: (payload: { monthly_target?: number; company_name?: string; currency?: string; period_start?: string; period_end?: string }) =>
-      settingsApi.updateGeneral(tenantId!, payload),
+    mutationFn: (payload: {
+      monthly_target?: number;
+      company_name?: string;
+      currency?: string;
+      period_start?: string;
+      period_end?: string;
+    }) => settingsApi.updateGeneral(tenantId!, payload),
     onSuccess: () => {
-      setSaveStatus({ text: '✓ Общие параметры и план продаж сохранены и синхронизированы с Google Таблицей!', type: 'success' });
+      setSaveStatus({
+        text: '✓ Общие параметры и план продаж сохранены и синхронизированы с Google Таблицей!',
+        type: 'success',
+      });
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['insights', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
-      setSaveStatus({ text: `Ошибка сохранения параметров: ${err.message}`, type: 'error' });
+      setSaveStatus({
+        text: `Ошибка сохранения параметров: ${err.message}`,
+        type: 'error',
+      });
     },
   });
 
   const saveStagesMutation = useMutation({
-    mutationFn: (stages: StageConfig[]) => settingsApi.updateStages(tenantId!, stages),
+    mutationFn: (stages: StageConfig[]) =>
+      settingsApi.updateStages(tenantId!, stages),
     onSuccess: () => {
-      setSaveStatus({ text: '✓ Регламент этапов воронки (SLA и конверсия) успешно сохранен!', type: 'success' });
+      setSaveStatus({
+        text: '✓ Регламент этапов воронки (SLA и конверсия) успешно сохранен!',
+        type: 'success',
+      });
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
-      setSaveStatus({ text: `Ошибка сохранения регламента этапов: ${err.message}`, type: 'error' });
+      setSaveStatus({
+        text: `Ошибка сохранения регламента этапов: ${err.message}`,
+        type: 'error',
+      });
     },
   });
 
   const saveManagersMutation = useMutation({
-    mutationFn: (managers: ManagerConfig[]) => settingsApi.updateManagers(tenantId!, managers),
+    mutationFn: (managers: ManagerConfig[]) =>
+      settingsApi.updateManagers(tenantId!, managers),
     onSuccess: () => {
-      setSaveStatus({ text: '✓ Лимиты и вместимость менеджеров успешно сохранены!', type: 'success' });
+      setSaveStatus({
+        text: '✓ Лимиты и вместимость менеджеров успешно сохранены!',
+        type: 'success',
+      });
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
-      setSaveStatus({ text: `Ошибка сохранения менеджеров: ${err.message}`, type: 'error' });
+      setSaveStatus({
+        text: `Ошибка сохранения менеджеров: ${err.message}`,
+        type: 'error',
+      });
     },
   });
 
   const saveTelegramMutation = useMutation({
-    mutationFn: (telegramPayload: { rop_chat_id?: string; ceo_chat_id?: string; team_chat_id?: string; dispatcher_status?: boolean }) =>
-      settingsApi.updateTelegram(tenantId!, telegramPayload),
+    mutationFn: (telegramPayload: {
+      rop_chat_id?: string;
+      ceo_chat_id?: string;
+      team_chat_id?: string;
+      dispatcher_status?: boolean;
+    }) => settingsApi.updateTelegram(tenantId!, telegramPayload),
     onSuccess: () => {
-      setSaveStatus({ text: '✓ Конфигурация Telegram-уведомлений успешно сохранена!', type: 'success' });
+      setSaveStatus({
+        text: '✓ Конфигурация Telegram-уведомлений успешно сохранена!',
+        type: 'success',
+      });
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
-      setSaveStatus({ text: `Ошибка сохранения настроек Telegram: ${err.message}`, type: 'error' });
+      setSaveStatus({
+        text: `Ошибка сохранения настроек Telegram: ${err.message}`,
+        type: 'error',
+      });
     },
   });
 
   const saveModulesMutation = useMutation({
-    mutationFn: (modules: ModuleFlag[]) => settingsApi.updateModules(tenantId!, modules),
+    mutationFn: (modules: ModuleFlag[]) =>
+      settingsApi.updateModules(tenantId!, modules),
     onSuccess: () => {
-      setSaveStatus({ text: '✓ Настройки системных модулей обновлены в реестре и таблице!', type: 'success' });
+      setSaveStatus({
+        text: '✓ Настройки системных модулей обновлены в реестре и таблице!',
+        type: 'success',
+      });
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
-      setSaveStatus({ text: `Ошибка обновления модулей: ${err.message}`, type: 'error' });
+      setSaveStatus({
+        text: `Ошибка обновления модулей: ${err.message}`,
+        type: 'error',
+      });
     },
   });
 
@@ -173,7 +240,10 @@ export function SettingsPage() {
   const handleSaveGeneral = () => {
     const targetVal = parseFloat(editTarget);
     if (isNaN(targetVal) || targetVal <= 0) {
-      setSaveStatus({ text: 'Введите корректную сумму плана выручки в рублях', type: 'error' });
+      setSaveStatus({
+        text: 'Введите корректную сумму плана выручки в рублях',
+        type: 'error',
+      });
       return;
     }
     setSaveStatus(null);
@@ -186,16 +256,76 @@ export function SettingsPage() {
     });
   };
 
-  const handleStageChange = (id: number, field: 'sla_hours' | 'win_pct', val: number) => {
+  const handleStageChange = (
+    id: number,
+    field: 'sla_hours' | 'win_pct',
+    val: number
+  ) => {
     setEditableStages((prev) =>
       prev.map((s) => (s.id === id ? { ...s, [field]: val } : s))
     );
   };
 
+  const handleManagerFieldChange = (
+    id: string,
+    field: 'name' | 'role' | 'capacity',
+    val: string | number
+  ) => {
+    setEditableManagers((prev) => {
+      const base = isManagersInitialized ? prev : settings?.managers || [];
+      return base.map((m) => (m.id === id ? { ...m, [field]: val } : m));
+    });
+    setIsManagersInitialized(true);
+  };
+
   const handleManagerChange = (id: string, capacity: number) => {
-    setEditableManagers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, capacity } : m))
-    );
+    handleManagerFieldChange(id, 'capacity', capacity);
+  };
+
+  const handleDeleteManager = (id: string) => {
+    setEditableManagers((prev) => {
+      const base = isManagersInitialized ? prev : settings?.managers || [];
+      return base.filter((m) => m.id !== id);
+    });
+    setIsManagersInitialized(true);
+  };
+
+  const handleAddManagerSubmit = () => {
+    const cleanId = newManagerId.trim();
+    const cleanName = newManagerName.trim();
+    const cleanRole = newManagerRole.trim() || 'Менеджер ОП';
+
+    if (!cleanId) {
+      setAddManagerError('Укажите ID сотрудника (например: 104 или m5)');
+      return;
+    }
+    if (!cleanName) {
+      setAddManagerError('Укажите имя и фамилию сотрудника');
+      return;
+    }
+    const currentList = isManagersInitialized
+      ? editableManagers
+      : settings?.managers || [];
+    if (currentList.some((m) => m.id.toLowerCase() === cleanId.toLowerCase())) {
+      setAddManagerError(
+        `Сотрудник с ID '${cleanId}' уже присутствует в реестре`
+      );
+      return;
+    }
+    const newEntry: ManagerConfig = {
+      id: cleanId,
+      name: cleanName,
+      role: cleanRole,
+      capacity: newManagerCapacity > 0 ? newManagerCapacity : 40,
+    };
+    setEditableManagers([...currentList, newEntry]);
+    setIsManagersInitialized(true);
+    setIsAddingManager(false);
+    setNewManagerId('');
+    setNewManagerName('');
+    setNewManagerRole('Менеджер ОП');
+    setNewManagerCapacity(40);
+    setAddManagerError(null);
   };
 
   const handleToggleModule = (code: string) => {
@@ -207,15 +337,18 @@ export function SettingsPage() {
   if (!tenantId) {
     return (
       <div
-        className="flex min-h-[400px] flex-col items-center justify-center text-center p-8"
+        className="flex min-h-[400px] flex-col items-center justify-center p-8 text-center"
         data-testid="empty-tenant-state"
       >
-        <div className="rounded-full bg-muted p-4 mb-4">
+        <div className="mb-4 rounded-full bg-muted p-4">
           <Sliders className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h2 className="text-lg font-semibold tracking-tight">Тенант не выбран</h2>
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">
-          Выберите тенант в шапке приложения для управления настройками воронки и интеграций.
+        <h2 className="text-lg font-semibold tracking-tight">
+          Тенант не выбран
+        </h2>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+          Выберите тенант в шапке приложения для управления настройками воронки
+          и интеграций.
         </p>
       </div>
     );
@@ -233,14 +366,23 @@ export function SettingsPage() {
 
   if (isError) {
     return (
-      <Alert variant="destructive" className="flex items-center justify-between" data-testid="settings-error">
+      <Alert
+        variant="destructive"
+        className="flex items-center justify-between"
+        data-testid="settings-error"
+      >
         <div>
           <AlertTitle>Ошибка загрузки</AlertTitle>
           <AlertDescription>
             Не удалось загрузить настройки для тенанта {tenantId}.
           </AlertDescription>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-4 shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          className="ml-4 shrink-0"
+        >
           Повторить
         </Button>
       </Alert>
@@ -248,33 +390,45 @@ export function SettingsPage() {
   }
 
   const general = settings?.general;
-  const stages = editableStages.length > 0 ? editableStages : (settings?.stages || []);
-  const managers = editableManagers.length > 0 ? editableManagers : (settings?.managers || []);
+  const stages =
+    editableStages.length > 0 ? editableStages : settings?.stages || [];
+  const managers = isManagersInitialized
+    ? editableManagers
+    : settings?.managers || [];
   const telegram = settings?.telegram;
-  const modules: ModuleFlag[] = editableModules.length > 0 ? editableModules : (settings?.modules || []);
+  const modules: ModuleFlag[] =
+    editableModules.length > 0 ? editableModules : settings?.modules || [];
 
-  const formattedPlan = general?.monthly_target ? `${general.monthly_target.toLocaleString('ru-RU')} ₽` : '5 000 000 ₽';
+  const formattedPlan = general?.monthly_target
+    ? `${general.monthly_target.toLocaleString('ru-RU')} ₽`
+    : '5 000 000 ₽';
   const displayCompanyName = general?.company_name || 'RevOps Демо';
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Настройки</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Конфигурация регламентов, этапов воронки, уведомлений и системных модулей.
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Настройки
+          </h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Конфигурация регламентов, этапов воронки, уведомлений и системных
+            модулей.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary text-xs py-1 px-2.5">
+          <Badge
+            variant="outline"
+            className="border-primary/20 bg-primary/5 px-2.5 py-1 text-xs text-primary"
+          >
             Тенант: {tenantId}
           </Badge>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => refetch()}
-            className="h-8 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+            className="h-8 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
             title="Обновить настройки из Google Таблицы"
           >
             <RefreshCw className="h-3.5 w-3.5" />
@@ -298,26 +452,48 @@ export function SettingsPage() {
             ) : (
               <XCircle className="h-4 w-4 shrink-0 text-rose-400" />
             )}
-            <AlertDescription className="text-xs font-medium">{saveStatus.text}</AlertDescription>
+            <AlertDescription className="text-xs font-medium">
+              {saveStatus.text}
+            </AlertDescription>
           </div>
         </Alert>
       )}
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full sm:w-auto h-auto p-1">
-          <TabsTrigger value="general" data-testid="tab-general" className="text-xs">
+        <TabsList className="grid h-auto w-full grid-cols-2 p-1 sm:w-auto sm:grid-cols-5">
+          <TabsTrigger
+            value="general"
+            data-testid="tab-general"
+            className="text-xs"
+          >
             Общие
           </TabsTrigger>
-          <TabsTrigger value="stages" data-testid="tab-stages" className="text-xs">
+          <TabsTrigger
+            value="stages"
+            data-testid="tab-stages"
+            className="text-xs"
+          >
             Этапы воронки
           </TabsTrigger>
-          <TabsTrigger value="managers" data-testid="tab-managers" className="text-xs">
+          <TabsTrigger
+            value="managers"
+            data-testid="tab-managers"
+            className="text-xs"
+          >
             Менеджеры
           </TabsTrigger>
-          <TabsTrigger value="telegram" data-testid="tab-telegram" className="text-xs">
+          <TabsTrigger
+            value="telegram"
+            data-testid="tab-telegram"
+            className="text-xs"
+          >
             Telegram
           </TabsTrigger>
-          <TabsTrigger value="modules" data-testid="tab-modules" className="text-xs">
+          <TabsTrigger
+            value="modules"
+            data-testid="tab-modules"
+            className="text-xs"
+          >
             Модули
           </TabsTrigger>
         </TabsList>
@@ -328,34 +504,42 @@ export function SettingsPage() {
         <TabsContent value="general" className="mt-4 space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <CardTitle className="flex flex-col gap-2 text-base sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-primary" />
                   <span>Параметры компании & План продаж</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium text-muted-foreground">
-                    Организация: <span className="font-semibold text-foreground">{displayCompanyName}</span>
+                    Организация:{' '}
+                    <span className="font-semibold text-foreground">
+                      {displayCompanyName}
+                    </span>
                   </span>
-                  <span className="text-xs font-mono font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-mono text-xs font-bold text-emerald-500">
                     Утвержденный план: {formattedPlan}
                   </span>
                 </div>
               </CardTitle>
               <CardDescription>
-                Укажите целевой план выручки на месяц для расчета дефицита, процента выполнения и выявления сливов воронки.
+                Укажите целевой план выручки на месяц для расчета дефицита,
+                процента выполнения и выявления сливов воронки.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {/* Plan Editor Box */}
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="border-primary/20 bg-primary/5 space-y-3 rounded-xl border p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <label htmlFor="inputMonthlyTarget" className="text-xs font-bold text-foreground block mb-1">
+                    <label
+                      htmlFor="inputMonthlyTarget"
+                      className="mb-1 block text-xs font-bold text-foreground"
+                    >
                       🎯 ПЛАН ВЫРУЧКИ НА МЕСЯЦ (₽):
                     </label>
                     <p className="text-[11px] text-muted-foreground">
-                      Автоматически записывается в ячейку B9 Google Таблицы (лист «⚙️ Настройки»).
+                      Автоматически записывается в ячейку B9 Google Таблицы
+                      (лист «⚙️ Настройки»).
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -366,7 +550,7 @@ export function SettingsPage() {
                       value={editTarget}
                       onChange={(e) => setEditTarget(e.target.value)}
                       placeholder="5000000"
-                      className="w-40 font-mono text-sm font-bold text-emerald-500 bg-background"
+                      className="w-40 bg-background font-mono text-sm font-bold text-emerald-500"
                     />
                     <Button
                       size="sm"
@@ -375,33 +559,41 @@ export function SettingsPage() {
                       className="h-9 gap-1.5 text-xs font-semibold"
                     >
                       <Save className="h-3.5 w-3.5" />
-                      <span>{saveGeneralMutation.isPending ? 'Сохранение...' : 'Сохранить план'}</span>
+                      <span>
+                        {saveGeneralMutation.isPending
+                          ? 'Сохранение...'
+                          : 'Сохранить план'}
+                      </span>
                     </Button>
                   </div>
                 </div>
 
                 {/* Quick Presets */}
-                <div className="flex items-center gap-2 pt-1 flex-wrap">
-                  <span className="text-[11px] text-muted-foreground">Быстрые суммы:</span>
-                  {[3000000, 5000000, 10000000, 15000000, 20000000].map((preset) => (
-                    <Button
-                      key={preset}
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      className="h-6 text-[11px] px-2.5 font-medium"
-                      onClick={() => setEditTarget(String(preset))}
-                    >
-                      {(preset / 1000000).toFixed(0)} млн ₽
-                    </Button>
-                  ))}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-[11px] text-muted-foreground">
+                    Быстрые суммы:
+                  </span>
+                  {[3000000, 5000000, 10000000, 15000000, 20000000].map(
+                    (preset) => (
+                      <Button
+                        key={preset}
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        className="h-6 px-2.5 text-[11px] font-medium"
+                        onClick={() => setEditTarget(String(preset))}
+                      >
+                        {(preset / 1000000).toFixed(0)} млн ₽
+                      </Button>
+                    )
+                  )}
                 </div>
               </div>
 
               {/* General Business Form */}
               <div className="space-y-3 pt-1">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
                     Реквизиты организации и расчетный период
                   </h3>
                   <Button
@@ -409,16 +601,18 @@ export function SettingsPage() {
                     variant="outline"
                     onClick={handleSaveGeneral}
                     disabled={saveGeneralMutation.isPending}
-                    className="h-7 text-xs gap-1 text-primary border-primary/30"
+                    className="border-primary/30 h-7 gap-1 text-xs text-primary"
                   >
                     <Save className="h-3 w-3" />
                     <span>Сохранить реквизиты</span>
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="space-y-1.5 p-3 rounded-md border border-subtle bg-surface">
-                    <Label className="text-xs text-muted-foreground">Название компании</Label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                    <Label className="text-xs text-muted-foreground">
+                      Название компании
+                    </Label>
                     <Input
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
@@ -427,8 +621,10 @@ export function SettingsPage() {
                     />
                   </div>
 
-                  <div className="space-y-1.5 p-3 rounded-md border border-subtle bg-surface">
-                    <Label className="text-xs text-muted-foreground">Валюта отчетов</Label>
+                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                    <Label className="text-xs text-muted-foreground">
+                      Валюта отчетов
+                    </Label>
                     <Input
                       value={currency}
                       onChange={(e) => setCurrency(e.target.value)}
@@ -437,36 +633,44 @@ export function SettingsPage() {
                     />
                   </div>
 
-                  <div className="space-y-1.5 p-3 rounded-md border border-subtle bg-surface">
-                    <Label className="text-xs text-muted-foreground">Месячный план (активный)</Label>
-                    <div className="h-9 px-3 flex items-center rounded-md border border-subtle bg-muted/30 font-mono text-xs font-bold text-emerald-500">
+                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                    <Label className="text-xs text-muted-foreground">
+                      Месячный план (активный)
+                    </Label>
+                    <div className="bg-muted/30 flex h-9 items-center rounded-md border border-subtle px-3 font-mono text-xs font-bold text-emerald-500">
                       {formattedPlan}
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 p-3 rounded-md border border-subtle bg-surface">
-                    <Label className="text-xs text-muted-foreground">Начало расчетного периода</Label>
+                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                    <Label className="text-xs text-muted-foreground">
+                      Начало расчетного периода
+                    </Label>
                     <Input
                       type="date"
                       value={periodStart}
                       onChange={(e) => setPeriodStart(e.target.value)}
-                      className="text-xs font-mono"
+                      className="font-mono text-xs"
                     />
                   </div>
 
-                  <div className="space-y-1.5 p-3 rounded-md border border-subtle bg-surface">
-                    <Label className="text-xs text-muted-foreground">Окончание расчетного периода</Label>
+                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                    <Label className="text-xs text-muted-foreground">
+                      Окончание расчетного периода
+                    </Label>
                     <Input
                       type="date"
                       value={periodEnd}
                       onChange={(e) => setPeriodEnd(e.target.value)}
-                      className="text-xs font-mono"
+                      className="font-mono text-xs"
                     />
                   </div>
 
-                  <div className="space-y-1.5 p-3 rounded-md border border-subtle bg-surface">
-                    <Label className="text-xs text-muted-foreground">Дата запуска проекта</Label>
-                    <div className="h-9 px-3 flex items-center rounded-md border border-subtle bg-muted/30 font-mono text-xs text-foreground">
+                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                    <Label className="text-xs text-muted-foreground">
+                      Дата запуска проекта
+                    </Label>
+                    <div className="bg-muted/30 flex h-9 items-center rounded-md border border-subtle px-3 font-mono text-xs text-foreground">
                       {general?.project_start_date || '2026-10-03'}
                     </div>
                   </div>
@@ -481,14 +685,15 @@ export function SettingsPage() {
         {/* ========================================================================= */}
         <TabsContent value="stages" className="mt-4 space-y-4">
           <Card>
-            <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <CardHeader className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <Clock className="h-4 w-4 text-primary" />
                   <span>Регламент этапов воронки</span>
                 </CardTitle>
                 <CardDescription>
-                  Нормативы времени нахождения на этапе (SLA) и ожидаемая вероятность конверсии.
+                  Нормативы времени нахождения на этапе (SLA) и ожидаемая
+                  вероятность конверсии.
                 </CardDescription>
               </div>
               <Button
@@ -498,7 +703,11 @@ export function SettingsPage() {
                 className="h-8 gap-1.5 text-xs font-semibold"
               >
                 <Save className="h-3.5 w-3.5" />
-                <span>{saveStagesMutation.isPending ? 'Сохранение...' : 'Сохранить регламент этапов'}</span>
+                <span>
+                  {saveStagesMutation.isPending
+                    ? 'Сохранение...'
+                    : 'Сохранить регламент этапов'}
+                </span>
               </Button>
             </CardHeader>
             <CardContent>
@@ -506,40 +715,68 @@ export function SettingsPage() {
                 <table className="w-full text-xs">
                   <thead className="bg-subtle/50 border-b border-subtle text-muted-foreground">
                     <tr>
-                      <th className="py-2.5 px-3 text-left font-medium w-16">ID</th>
-                      <th className="py-2.5 px-3 text-left font-medium">Название этапа</th>
-                      <th className="py-2.5 px-3 text-left font-medium w-48">SLA регламент (ч)</th>
-                      <th className="py-2.5 px-3 text-left font-medium w-48">Прогноз конверсии (%)</th>
+                      <th className="w-16 px-3 py-2.5 text-left font-medium">
+                        ID
+                      </th>
+                      <th className="px-3 py-2.5 text-left font-medium">
+                        Название этапа
+                      </th>
+                      <th className="w-48 px-3 py-2.5 text-left font-medium">
+                        SLA регламент (ч)
+                      </th>
+                      <th className="w-48 px-3 py-2.5 text-left font-medium">
+                        Прогноз конверсии (%)
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-subtle">
                     {stages.map((st) => (
                       <tr key={st.id} className="hover:bg-hover/50">
-                        <td className="py-2.5 px-3 font-mono text-muted-foreground">{st.id}</td>
-                        <td className="py-2.5 px-3 font-medium text-foreground">{st.name}</td>
-                        <td className="py-2.5 px-3">
+                        <td className="px-3 py-2.5 font-mono text-muted-foreground">
+                          {st.id}
+                        </td>
+                        <td className="px-3 py-2.5 font-medium text-foreground">
+                          {st.name}
+                        </td>
+                        <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-muted-foreground w-12">{st.sla_hours} ч</span>
+                            <span className="w-12 font-mono text-xs text-muted-foreground">
+                              {st.sla_hours} ч
+                            </span>
                             <Input
                               type="number"
                               min="1"
                               max="720"
                               value={st.sla_hours}
-                              onChange={(e) => handleStageChange(st.id, 'sla_hours', parseInt(e.target.value) || 0)}
+                              onChange={(e) =>
+                                handleStageChange(
+                                  st.id,
+                                  'sla_hours',
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
                               className="h-7 w-20 font-mono text-xs"
                             />
                           </div>
                         </td>
-                        <td className="py-2.5 px-3">
+                        <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-semibold text-emerald-500 w-12">{st.win_pct}%</span>
+                            <span className="w-12 font-mono text-xs font-semibold text-emerald-500">
+                              {st.win_pct}%
+                            </span>
                             <Input
                               type="number"
                               min="0"
                               max="100"
                               value={st.win_pct}
-                              onChange={(e) => handleStageChange(st.id, 'win_pct', parseInt(e.target.value) || 0)}
-                              className="h-7 w-20 font-mono text-xs text-emerald-500 font-semibold"
+                              onChange={(e) =>
+                                handleStageChange(
+                                  st.id,
+                                  'win_pct',
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="h-7 w-20 font-mono text-xs font-semibold text-emerald-500"
                             />
                           </div>
                         </td>
@@ -557,58 +794,267 @@ export function SettingsPage() {
         {/* ========================================================================= */}
         <TabsContent value="managers" className="mt-4 space-y-4">
           <Card>
-            <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <CardHeader className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <Users className="h-4 w-4 text-primary" />
                   <span>Реестр менеджеров</span>
                 </CardTitle>
                 <CardDescription>
-                  Список ответственных сотрудников и максимальная пропускная способность воронки (вместимость сделок).
+                  Список ответственных сотрудников и максимальная пропускная
+                  способность воронки (вместимость сделок).
                 </CardDescription>
               </div>
-              <Button
-                size="sm"
-                onClick={() => saveManagersMutation.mutate(managers)}
-                disabled={saveManagersMutation.isPending}
-                className="h-8 gap-1.5 text-xs font-semibold"
-              >
-                <Save className="h-3.5 w-3.5" />
-                <span>{saveManagersMutation.isPending ? 'Сохранение...' : 'Сохранить лимиты менеджеров'}</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsAddingManager(!isAddingManager);
+                    setAddManagerError(null);
+                  }}
+                  className="h-8 gap-1.5 text-xs font-semibold"
+                  data-testid="btn-add-manager"
+                >
+                  <UserPlus className="h-3.5 w-3.5 text-primary" />
+                  <span>+ Добавить менеджера</span>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => saveManagersMutation.mutate(managers)}
+                  disabled={saveManagersMutation.isPending}
+                  className="h-8 gap-1.5 text-xs font-semibold"
+                  data-testid="btn-save-managers"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>
+                    {saveManagersMutation.isPending
+                      ? 'Сохранение...'
+                      : 'Сохранить лимиты менеджеров'}
+                  </span>
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {isAddingManager && (
+                <div
+                  className="border-primary/30 bg-primary/5 space-y-3 rounded-lg border p-4"
+                  data-testid="add-manager-form"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <UserPlus className="h-4 w-4 text-primary" />
+                      <span>Новый менеджер в команду</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setIsAddingManager(false);
+                        setAddManagerError(null);
+                      }}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {addManagerError && (
+                    <div
+                      className="text-xs font-medium text-rose-500"
+                      data-testid="add-manager-error"
+                    >
+                      {addManagerError}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        ID (CRM или код)
+                      </Label>
+                      <Input
+                        placeholder="например: 104 или m5"
+                        value={newManagerId}
+                        onChange={(e) => setNewManagerId(e.target.value)}
+                        className="mt-1 h-8 font-mono text-xs"
+                        data-testid="input-new-manager-id"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Имя сотрудника
+                      </Label>
+                      <Input
+                        placeholder="Алексей Смирнов"
+                        value={newManagerName}
+                        onChange={(e) => setNewManagerName(e.target.value)}
+                        className="mt-1 h-8 text-xs"
+                        data-testid="input-new-manager-name"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Роль / Должность
+                      </Label>
+                      <Input
+                        placeholder="Менеджер ОП"
+                        value={newManagerRole}
+                        onChange={(e) => setNewManagerRole(e.target.value)}
+                        className="mt-1 h-8 text-xs"
+                        data-testid="input-new-manager-role"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Вместимость сделок
+                      </Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="500"
+                        value={newManagerCapacity}
+                        onChange={(e) =>
+                          setNewManagerCapacity(parseInt(e.target.value) || 0)
+                        }
+                        className="mt-1 h-8 font-mono text-xs"
+                        data-testid="input-new-manager-capacity"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setIsAddingManager(false);
+                        setAddManagerError(null);
+                      }}
+                      className="h-8 text-xs"
+                    >
+                      Отмена
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleAddManagerSubmit}
+                      className="h-8 gap-1.5 text-xs"
+                      data-testid="btn-confirm-add-manager"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Добавить в реестр</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="overflow-x-auto rounded-lg border border-subtle">
                 <table className="w-full text-xs">
                   <thead className="bg-subtle/50 border-b border-subtle text-muted-foreground">
                     <tr>
-                      <th className="py-2.5 px-3 text-left font-medium w-24">ID</th>
-                      <th className="py-2.5 px-3 text-left font-medium">Имя менеджера</th>
-                      <th className="py-2.5 px-3 text-left font-medium">Роль</th>
-                      <th className="py-2.5 px-3 text-left font-medium w-56">Вместимость воронки</th>
+                      <th className="w-24 px-3 py-2.5 text-left font-medium">
+                        ID
+                      </th>
+                      <th className="px-3 py-2.5 text-left font-medium">
+                        Имя менеджера
+                      </th>
+                      <th className="w-48 px-3 py-2.5 text-left font-medium">
+                        Роль
+                      </th>
+                      <th className="w-52 px-3 py-2.5 text-left font-medium">
+                        Вместимость воронки
+                      </th>
+                      <th className="w-16 px-3 py-2.5 text-center font-medium">
+                        Действия
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-subtle">
                     {managers.map((m) => (
-                      <tr key={m.id} className="hover:bg-hover/50">
-                        <td className="py-2.5 px-3 font-mono text-muted-foreground">{m.id}</td>
-                        <td className="py-2.5 px-3 font-medium text-foreground">{m.name}</td>
-                        <td className="py-2.5 px-3 text-muted-foreground">{m.role}</td>
-                        <td className="py-2.5 px-3">
+                      <tr
+                        key={m.id}
+                        className="hover:bg-hover/50"
+                        data-testid={`manager-row-${m.id}`}
+                      >
+                        <td className="px-3 py-2.5 font-mono text-muted-foreground">
+                          {m.id}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <Input
+                            type="text"
+                            value={m.name}
+                            onChange={(e) =>
+                              handleManagerFieldChange(
+                                m.id,
+                                'name',
+                                e.target.value
+                              )
+                            }
+                            className="h-7 text-xs font-medium"
+                            data-testid={`input-manager-name-${m.id}`}
+                          />
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <Input
+                            type="text"
+                            value={m.role}
+                            onChange={(e) =>
+                              handleManagerFieldChange(
+                                m.id,
+                                'role',
+                                e.target.value
+                              )
+                            }
+                            className="h-7 text-xs text-muted-foreground"
+                            data-testid={`input-manager-role-${m.id}`}
+                          />
+                        </td>
+                        <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-muted-foreground w-20">{m.capacity} сделок</span>
                             <Input
                               type="number"
                               min="1"
                               max="500"
                               value={m.capacity}
-                              onChange={(e) => handleManagerChange(m.id, parseInt(e.target.value) || 0)}
-                              className="h-7 w-24 font-mono text-xs"
+                              onChange={(e) =>
+                                handleManagerChange(
+                                  m.id,
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="h-7 w-20 font-mono text-xs"
+                              data-testid={`input-manager-capacity-${m.id}`}
                             />
+                            <span className="font-mono text-xs text-muted-foreground">
+                              сделок
+                            </span>
                           </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteManager(m.id)}
+                            className="h-7 w-7 p-0 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500"
+                            title="Удалить сотрудника из реестра"
+                            data-testid={`btn-delete-manager-${m.id}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </td>
                       </tr>
                     ))}
+                    {managers.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="py-8 text-center text-xs text-muted-foreground"
+                        >
+                          В реестре пока нет сотрудников. Нажмите «+ Добавить
+                          менеджера», чтобы подключить сотрудника.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -621,14 +1067,15 @@ export function SettingsPage() {
         {/* ========================================================================= */}
         <TabsContent value="telegram" className="mt-4 space-y-4">
           <Card>
-            <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <CardHeader className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <Send className="h-4 w-4 text-primary" />
                   <span>Интеграция с Telegram</span>
                 </CardTitle>
                 <CardDescription>
-                  Параметры диспетчера уведомлений и каналы информирования РОПа и руководства.
+                  Параметры диспетчера уведомлений и каналы информирования РОПа
+                  и руководства.
                 </CardDescription>
               </div>
               <Button
@@ -645,17 +1092,23 @@ export function SettingsPage() {
                 className="h-8 gap-1.5 text-xs font-semibold"
               >
                 <Save className="h-3.5 w-3.5" />
-                <span>{saveTelegramMutation.isPending ? 'Сохранение...' : 'Сохранить настройки Telegram'}</span>
+                <span>
+                  {saveTelegramMutation.isPending
+                    ? 'Сохранение...'
+                    : 'Сохранить настройки Telegram'}
+                </span>
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Security & Summary Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
                 {/* Bot Token - Strictly masked */}
-                <div className="p-3.5 rounded-md border border-subtle bg-hover/50">
-                  <span className="text-muted-foreground block mb-1">Bot Token</span>
+                <div className="bg-hover/50 rounded-md border border-subtle p-3.5">
+                  <span className="mb-1 block text-muted-foreground">
+                    Bot Token
+                  </span>
                   <span
-                    className="font-mono text-sm tracking-widest text-foreground font-bold"
+                    className="font-mono text-sm font-bold tracking-widest text-foreground"
                     data-testid="bot-token-masked"
                   >
                     ••••••••
@@ -663,9 +1116,11 @@ export function SettingsPage() {
                 </div>
 
                 {/* Dispatcher Status */}
-                <div className="p-3.5 rounded-md border border-subtle bg-hover/50 flex items-center justify-between">
+                <div className="bg-hover/50 flex items-center justify-between rounded-md border border-subtle p-3.5">
                   <div>
-                    <span className="text-muted-foreground block mb-1">Статус диспетчера</span>
+                    <span className="mb-1 block text-muted-foreground">
+                      Статус диспетчера
+                    </span>
                     <span className="font-medium text-foreground">
                       {telegram?.dispatcher_schedule || '09:00 - 21:00 MSK'}
                     </span>
@@ -676,37 +1131,54 @@ export function SettingsPage() {
                 </div>
 
                 {/* Masked Chat IDs */}
-                <div className="p-3.5 rounded-md border border-subtle bg-hover/50">
-                  <span className="text-muted-foreground block mb-1">РОП Chat ID</span>
-                  <span className="font-mono text-foreground font-medium" data-testid="rop-chat-id">
+                <div className="bg-hover/50 rounded-md border border-subtle p-3.5">
+                  <span className="mb-1 block text-muted-foreground">
+                    РОП Chat ID
+                  </span>
+                  <span
+                    className="font-mono font-medium text-foreground"
+                    data-testid="rop-chat-id"
+                  >
                     {maskChatId(telegram?.rop_chat_id)}
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-md border border-subtle bg-hover/50">
-                  <span className="text-muted-foreground block mb-1">CEO Chat ID</span>
-                  <span className="font-mono text-foreground font-medium" data-testid="ceo-chat-id">
+                <div className="bg-hover/50 rounded-md border border-subtle p-3.5">
+                  <span className="mb-1 block text-muted-foreground">
+                    CEO Chat ID
+                  </span>
+                  <span
+                    className="font-mono font-medium text-foreground"
+                    data-testid="ceo-chat-id"
+                  >
                     {maskChatId(telegram?.ceo_chat_id)}
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-md border border-subtle bg-hover/50">
-                  <span className="text-muted-foreground block mb-1">Team Chat ID</span>
-                  <span className="font-mono text-foreground font-medium" data-testid="team-chat-id">
+                <div className="bg-hover/50 rounded-md border border-subtle p-3.5">
+                  <span className="mb-1 block text-muted-foreground">
+                    Team Chat ID
+                  </span>
+                  <span
+                    className="font-mono font-medium text-foreground"
+                    data-testid="team-chat-id"
+                  >
                     {maskChatId(telegram?.team_chat_id)}
                   </span>
                 </div>
               </div>
 
               {/* Telegram Form Editor */}
-              <div className="pt-2 border-t border-subtle space-y-3">
-                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+              <div className="space-y-3 border-t border-subtle pt-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
                   Редактирование каналов оповещения
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-secondary">РОП Chat ID</Label>
+                    <Label className="text-xs text-secondary">
+                      РОП Chat ID
+                    </Label>
                     <Input
                       placeholder="-1001234567890"
                       value={ropChatId}
@@ -716,7 +1188,9 @@ export function SettingsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-secondary">CEO Chat ID</Label>
+                    <Label className="text-xs text-secondary">
+                      CEO Chat ID
+                    </Label>
                     <Input
                       placeholder="-1009876543210"
                       value={ceoChatId}
@@ -726,7 +1200,9 @@ export function SettingsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-secondary">Team Chat ID</Label>
+                    <Label className="text-xs text-secondary">
+                      Team Chat ID
+                    </Label>
                     <Input
                       placeholder="-1005554443332"
                       value={teamChatId}
@@ -738,7 +1214,9 @@ export function SettingsPage() {
 
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Диспетчер утренней сводки (09:15):</span>
+                    <span className="text-xs text-muted-foreground">
+                      Диспетчер утренней сводки (09:15):
+                    </span>
                     <Button
                       type="button"
                       size="sm"
@@ -760,9 +1238,9 @@ export function SettingsPage() {
         {/* ========================================================================= */}
         <TabsContent value="modules" className="mt-4 space-y-4">
           <Card>
-            <CardHeader className="pb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <CardHeader className="flex flex-col gap-2 pb-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <Boxes className="h-4 w-4 text-primary" />
                   <span>Системные модули RevOps OS</span>
                 </CardTitle>
@@ -777,7 +1255,11 @@ export function SettingsPage() {
                 className="h-8 gap-1.5 text-xs font-semibold"
               >
                 <Save className="h-3.5 w-3.5" />
-                <span>{saveModulesMutation.isPending ? 'Сохранение...' : 'Применить конфигурацию модулей'}</span>
+                <span>
+                  {saveModulesMutation.isPending
+                    ? 'Сохранение...'
+                    : 'Применить конфигурацию модулей'}
+                </span>
               </Button>
             </CardHeader>
             <CardContent>
@@ -785,12 +1267,14 @@ export function SettingsPage() {
                 {modules.map((mod) => (
                   <div
                     key={mod.code}
-                    className="flex items-center justify-between p-3.5 rounded-md border border-subtle bg-hover/50"
+                    className="bg-hover/50 flex items-center justify-between rounded-md border border-subtle p-3.5"
                     data-testid={`module-${mod.code}`}
                   >
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-sm text-foreground">{mod.name}</span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {mod.name}
+                        </span>
                         <span className="font-mono text-[10px] uppercase text-muted-foreground">
                           [{mod.code}]
                         </span>
@@ -798,14 +1282,16 @@ export function SettingsPage() {
                           {mod.category}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">{mod.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {mod.description}
+                      </p>
                     </div>
 
-                    <div className="shrink-0 ml-4 flex items-center gap-2">
+                    <div className="ml-4 flex shrink-0 items-center gap-2">
                       {mod.status ? (
                         <Badge
                           variant="secondary"
-                          className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 flex items-center space-x-1"
+                          className="flex items-center space-x-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
                           data-testid={`module-status-${mod.code}`}
                         >
                           <CheckCircle2 className="h-3 w-3" />
@@ -814,7 +1300,7 @@ export function SettingsPage() {
                       ) : (
                         <Badge
                           variant="secondary"
-                          className="text-muted-foreground flex items-center space-x-1"
+                          className="flex items-center space-x-1 text-muted-foreground"
                           data-testid={`module-status-${mod.code}`}
                         >
                           <XCircle className="h-3 w-3" />
@@ -825,7 +1311,7 @@ export function SettingsPage() {
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs px-2"
+                        className="h-7 px-2 text-xs"
                         onClick={() => handleToggleModule(mod.code)}
                       >
                         {mod.status ? 'Отключить' : 'Включить'}

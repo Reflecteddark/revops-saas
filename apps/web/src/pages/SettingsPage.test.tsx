@@ -277,4 +277,124 @@ describe('SettingsPage', () => {
       );
     });
   });
+
+  it('allows adding a new manager via interactive form and saving to backend', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateManagers).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    const managersTab = screen.getByTestId('tab-managers');
+    fireEvent.keyDown(managersTab, { key: 'Enter' });
+
+    // Open add manager form
+    const addBtn = await screen.findByTestId('btn-add-manager');
+    fireEvent.click(addBtn);
+
+    expect(screen.getByTestId('add-manager-form')).toBeInTheDocument();
+
+    // Fill form
+    fireEvent.change(screen.getByTestId('input-new-manager-id'), {
+      target: { value: '105' },
+    });
+    fireEvent.change(screen.getByTestId('input-new-manager-name'), {
+      target: { value: 'Алексей Смирнов' },
+    });
+    fireEvent.change(screen.getByTestId('input-new-manager-role'), {
+      target: { value: 'Клоузер' },
+    });
+    fireEvent.change(screen.getByTestId('input-new-manager-capacity'), {
+      target: { value: '35' },
+    });
+
+    // Confirm add
+    fireEvent.click(screen.getByTestId('btn-confirm-add-manager'));
+
+    // Check new row appears
+    expect(await screen.findByTestId('manager-row-105')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Алексей Смирнов')).toBeInTheDocument();
+
+    // Click Save
+    const saveButton = screen.getByTestId('btn-save-managers');
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(settingsApi.updateManagers).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.arrayContaining([
+          expect.objectContaining({ id: 'm1', name: 'Сергей Иванов' }),
+          expect.objectContaining({
+            id: '105',
+            name: 'Алексей Смирнов',
+            role: 'Клоузер',
+            capacity: 35,
+          }),
+        ])
+      );
+    });
+  });
+
+  it('validates manager fields and prevents duplicate IDs', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    const managersTab = screen.getByTestId('tab-managers');
+    fireEvent.keyDown(managersTab, { key: 'Enter' });
+
+    const addBtn = await screen.findByTestId('btn-add-manager');
+    fireEvent.click(addBtn);
+
+    // Empty submit
+    fireEvent.click(screen.getByTestId('btn-confirm-add-manager'));
+    expect(screen.getByTestId('add-manager-error')).toHaveTextContent(
+      /Укажите ID сотрудника/i
+    );
+
+    // Provide existing ID m1 and a name
+    fireEvent.change(screen.getByTestId('input-new-manager-id'), {
+      target: { value: 'm1' },
+    });
+    fireEvent.change(screen.getByTestId('input-new-manager-name'), {
+      target: { value: 'Тестовый Дубль' },
+    });
+    fireEvent.click(screen.getByTestId('btn-confirm-add-manager'));
+
+    expect(screen.getByTestId('add-manager-error')).toHaveTextContent(
+      /уже присутствует в реестре/i
+    );
+  });
+
+  it('allows deleting a manager and saving updated empty/reduced list', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateManagers).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    const managersTab = screen.getByTestId('tab-managers');
+    fireEvent.keyDown(managersTab, { key: 'Enter' });
+
+    expect(await screen.findByTestId('manager-row-m1')).toBeInTheDocument();
+
+    // Click delete on m1
+    const deleteBtn = screen.getByTestId('btn-delete-manager-m1');
+    fireEvent.click(deleteBtn);
+
+    // Check row removed and empty state displayed
+    expect(screen.queryByTestId('manager-row-m1')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/В реестре пока нет сотрудников/i)
+    ).toBeInTheDocument();
+
+    // Click save and verify empty list sent
+    const saveButton = screen.getByTestId('btn-save-managers');
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(settingsApi.updateManagers).toHaveBeenCalledWith('TNT-001', []);
+    });
+  });
 });
