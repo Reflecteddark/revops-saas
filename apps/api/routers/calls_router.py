@@ -494,7 +494,7 @@ def get_dashboard_calls_data(
         if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
             raise HTTPException(status_code=403, detail="cross-tenant access denied")
 
-    calls = [] if is_demo_tenant else fetch_calls_from_sheets(tenant_id=effective_tenant, limit=limit)
+    # 1. Primary Enterprise DWH Storage: query PostgreSQL first (sub-millisecond indexed latency)
     db_calls = (
         db.query(CallRecording)
         .filter(
@@ -505,83 +505,85 @@ def get_dashboard_calls_data(
         .order_by(CallRecording.created_at.desc())
         .limit(limit)
         .all()
-    )
-    if db_calls and (not calls or len(db_calls) >= len(calls)):
-        if db_calls:
-            formatted_calls = []
-            for c in db_calls:
-                sc = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
-                call_deal = c.deal
-                mgr = c.manager
-                deal_budget = float(call_deal.budget or 0.0) if (call_deal and call_deal.budget is not None) else None
-                dur_secs = int(c.duration_seconds or 0)
-                dur_str = f"{dur_secs // 60}:{dur_secs % 60:02d}"
+    ) if not is_demo_tenant else []
 
-                if sc.get("cr") and isinstance(sc.get("cr"), list) and len(sc.get("cr", [])) == 13:
-                    cr_val = sc.get("cr")
+    if db_calls:
+        formatted_calls = []
+        for c in db_calls:
+            sc: dict[str, Any] = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
+            call_deal = c.deal
+            mgr = c.manager
+            deal_budget = float(call_deal.budget or 0.0) if (call_deal and call_deal.budget is not None) else None
+            dur_secs = int(c.duration_seconds or 0)
+            dur_str = f"{dur_secs // 60}:{dur_secs % 60:02d}"
+
+            if sc.get("cr") and isinstance(sc.get("cr"), list) and len(sc.get("cr", [])) == 13:
+                cr_val = sc.get("cr")
+            else:
+                cr_val = [None] * 13
+
+            if sc.get("score") is not None:
+                call_score = sc.get("score")
+            elif c.overall_score is not None:
+                call_score = int(round((c.overall_score / 100.0) * 13)) if c.overall_score > 13 else int(round(c.overall_score))
+            else:
+                call_score = None
+
+            call_next_step = sc.get("next_step")
+            if call_next_step is None and c.overall_score is not None:
+                call_next_step = 1 if c.overall_score >= 60 else 0
+
+            call_status = sc.get("status")
+            if not call_status:
+                if call_score is not None:
+                    call_status = "won" if call_score >= 10 else "risk"
                 else:
-                    cr_val = [None] * 13
+                    call_status = "unknown"
 
-                if sc.get("score") is not None:
-                    call_score = sc.get("score")
-                elif c.overall_score is not None:
-                    call_score = int(round((c.overall_score / 100.0) * 13)) if c.overall_score > 13 else int(round(c.overall_score))
+            call_status_label = sc.get("status_label")
+            if not call_status_label:
+                if call_status == "won":
+                    call_status_label = "ЭТАЛОН"
+                elif call_status == "risk":
+                    call_status_label = "СЛИВ"
                 else:
-                    call_score = None
+                    call_status_label = "НЕТ ДАННЫХ"
 
-                call_next_step = sc.get("next_step")
-                if call_next_step is None and c.overall_score is not None:
-                    call_next_step = 1 if c.overall_score >= 60 else 0
+            amount_num = float(deal_budget) if deal_budget is not None else float(sc.get("amount") or 0.0)
+            amount_str = f"{int(amount_num):,} ₽".replace(",", " ") if amount_num > 0 else (sc.get("amount_str") or "0 ₽")
+            risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and call_status == "risk") else "0 ₽"
 
-                call_status = sc.get("status")
-                if not call_status:
-                    if call_score is not None:
-                        call_status = "won" if call_score >= 10 else "risk"
-                    else:
-                        call_status = "unknown"
+            formatted_calls.append({
+                "id": c.id,
+                "deal_id": c.deal_id or f"D-{c.id[-4:]}",
+                "deal_title": call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}"),
+                "client": call_deal.company_name if call_deal else (sc.get("client") or "Клиент"),
+                "manager": mgr.full_name if mgr else (sc.get("manager") or "Менеджер"),
+                "stage": call_deal.stage.value if call_deal and call_deal.stage else "Первичный контакт",
+                "duration": dur_str,
+                "amount": amount_str,
+                "amount_num": amount_num,
+                "score": call_score,
+                "status": call_status,
+                "status_label": call_status_label,
+                "risk_amount": risk_amt_str,
+                "next_step": call_next_step,
+                "date": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else "",
+                "cr": cr_val,
+                "error_summary": c.ai_summary or sc.get("error_summary", "Анализ завершен ИИ"),
+                "recommendation": c.next_action_extracted or sc.get("recommendation", "Следовать регламенту фиксации Next Step"),
+                "transcript": c.transcript_text or "Транскрипт отсутствует"
+            })
+        return {
+            "status": "ok",
+            "tenant_id": raw_tenant,
+            "source": "database",
+            "count": len(formatted_calls),
+            "calls": formatted_calls
+        }
 
-                call_status_label = sc.get("status_label")
-                if not call_status_label:
-                    if call_status == "won":
-                        call_status_label = "ЭТАЛОН"
-                    elif call_status == "risk":
-                        call_status_label = "СЛИВ"
-                    else:
-                        call_status_label = "НЕТ ДАННЫХ"
-
-                amount_num = float(deal_budget) if deal_budget is not None else float(sc.get("amount") or 0.0)
-                amount_str = f"{int(amount_num):,} ₽".replace(",", " ") if amount_num > 0 else (sc.get("amount_str") or "0 ₽")
-                risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and call_status == "risk") else "0 ₽"
-
-                formatted_calls.append({
-                    "id": c.id,
-                    "deal_id": c.deal_id or f"D-{c.id[-4:]}",
-                    "deal_title": call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}"),
-                    "client": call_deal.company_name if call_deal else (sc.get("client") or "Клиент"),
-                    "manager": mgr.full_name if mgr else (sc.get("manager") or "Менеджер"),
-                    "stage": call_deal.stage.value if call_deal and call_deal.stage else "Первичный контакт",
-                    "duration": dur_str,
-                    "amount": amount_str,
-                    "amount_num": amount_num,
-                    "score": call_score,
-                    "status": call_status,
-                    "status_label": call_status_label,
-                    "risk_amount": risk_amt_str,
-                    "next_step": call_next_step,
-                    "date": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else "",
-                    "cr": cr_val,
-                    "error_summary": c.ai_summary or sc.get("error_summary", "Анализ завершен ИИ"),
-                    "recommendation": c.next_action_extracted or sc.get("recommendation", "Следовать регламенту фиксации Next Step"),
-                    "transcript": c.transcript_text or "Транскрипт отсутствует"
-                })
-            return {
-                "status": "ok",
-                "tenant_id": raw_tenant,
-                "source": "database",
-                "count": len(formatted_calls),
-                "calls": formatted_calls
-            }
-        return {"status": "ok", "tenant_id": effective_tenant, "source": "fallback", "count": 0, "calls": []}
+    # 2. Resilient Fallback: Google Sheets only if PostgreSQL is empty for tenant
+    calls = [] if is_demo_tenant else fetch_calls_from_sheets(tenant_id=effective_tenant, limit=limit)
     return {
         "status": "ok",
         "tenant_id": effective_tenant,
