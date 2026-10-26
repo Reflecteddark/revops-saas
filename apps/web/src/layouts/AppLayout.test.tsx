@@ -103,6 +103,58 @@ describe('AppLayout', () => {
     expect(pulseLink).not.toHaveClass('bg-active');
   });
 
+  it('shows Admin panel link for admin role, but never shows root Fleet link', () => {
+    useRevOpsStore.setState({
+      user: {
+        id: 'adm-1',
+        email: 'admin@revops.ai',
+        role: 'admin',
+        full_name: 'Администратор',
+        tenant_id: 'TNT-001',
+        is_active: true,
+      },
+    });
+
+    renderWithClient(
+      <AppLayout>
+        <div>Контент</div>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId('nav-link-pulse')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-audit')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-integrations')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-settings')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-admin')).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-fleet')).not.toBeInTheDocument();
+  });
+
+  it('hides Admin panel link from sidebar for regular manager role', () => {
+    useRevOpsStore.setState({
+      user: {
+        id: 'mgr-1',
+        email: 'manager@company.ru',
+        role: 'manager',
+        full_name: 'Иван Менеджер',
+        tenant_id: 'TNT-001',
+        is_active: true,
+      },
+    });
+
+    renderWithClient(
+      <AppLayout>
+        <div>Контент</div>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId('nav-link-pulse')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-audit')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-integrations')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-settings')).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-admin')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-fleet')).not.toBeInTheDocument();
+  });
+
   it('displays user profile name and websocket connection status in header', () => {
     renderWithClient(
       <AppLayout>

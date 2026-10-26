@@ -8,7 +8,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { useAuthBootstrap } from '@/lib/auth';
-import { ProtectedRoute, PublicRoute } from '@/lib/guards';
+import { ProtectedRoute, PublicRoute, AdminRoute } from '@/lib/guards';
 import { AppLayout } from '@/layouts/AppLayout';
 import { FullPageLoader } from '@/components/FullPageLoader';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -26,9 +26,6 @@ const AuditPage = lazy(() =>
 );
 const SettingsPage = lazy(() =>
   import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
-);
-const FleetPage = lazy(() =>
-  import('@/pages/FleetPage').then((m) => ({ default: m.FleetPage }))
 );
 const IntegrationsPage = lazy(() =>
   import('@/pages/IntegrationsPage').then((m) => ({
@@ -109,18 +106,16 @@ export function App() {
             />
             <Route
               path="fleet"
-              element={
-                <Suspense fallback={<PageFallback />}>
-                  <FleetPage />
-                </Suspense>
-              }
+              element={<Navigate to="/admin?tab=fleet" replace />}
             />
             <Route
               path="admin"
               element={
-                <Suspense fallback={<PageFallback />}>
-                  <AdminPage />
-                </Suspense>
+                <AdminRoute>
+                  <Suspense fallback={<PageFallback />}>
+                    <AdminPage />
+                  </Suspense>
+                </AdminRoute>
               }
             />
             <Route path="*" element={<NotFoundPage />} />

@@ -10,8 +10,10 @@
  */
 
 import * as React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
+  Building2,
   Check,
   Copy,
   Globe,
@@ -30,12 +32,14 @@ import { AdminClientsTab } from '@/components/admin/AdminClientsTab';
 import { AdminCrmSandboxTab } from '@/components/admin/AdminCrmSandboxTab';
 import { AdminServicesTab } from '@/components/admin/AdminServicesTab';
 import { AdminTerminalTab } from '@/components/admin/AdminTerminalTab';
+import { FleetPage } from './FleetPage';
 import type { AdminSystemStatus } from '@/types/api';
 
 const DEFAULT_WEBHOOK_URL = 'https://report.ai-rop.ru/api/v1/webhooks/telephony/inbound';
 
 export function AdminPage() {
-  const [activeTab, setActiveTab] = React.useState('clients');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'clients';
   const [copiedWebhook, setCopiedWebhook] = React.useState(false);
 
   // Overall system status query (polled every 10s)
@@ -126,8 +130,8 @@ export function AdminPage() {
         </Button>
       </div>
 
-      {/* 2. Four-Tab Navigation Center */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      {/* 2. Five-Tab Navigation Center */}
+      <Tabs value={activeTab} onValueChange={(val) => setSearchParams({ tab: val })} className="space-y-6">
         <TabsList className="bg-subtle/60 p-1 border border-subtle rounded-xl w-full justify-start overflow-x-auto gap-1">
           <TabsTrigger
             value="clients"
@@ -136,6 +140,15 @@ export function AdminPage() {
           >
             <Users className="h-3.5 w-3.5 text-primary" />
             <span>Клиенты & Доступы</span>
+          </TabsTrigger>
+
+          <TabsTrigger
+            value="fleet"
+            className="gap-2 text-xs py-2 px-3 data-[state=active]:bg-surface data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            data-testid="tab-fleet"
+          >
+            <Building2 className="h-3.5 w-3.5 text-indigo-400" />
+            <span>Реестр Флота</span>
           </TabsTrigger>
 
           <TabsTrigger
@@ -169,6 +182,11 @@ export function AdminPage() {
         {/* Tab 1: Clients & Access */}
         <TabsContent value="clients" className="mt-0">
           <AdminClientsTab />
+        </TabsContent>
+
+        {/* Tab 2: Fleet Registry */}
+        <TabsContent value="fleet" className="mt-0" data-testid="admin-fleet-tab">
+          <FleetPage />
         </TabsContent>
 
         {/* Tab 2: CRM & Webhook Sandbox */}

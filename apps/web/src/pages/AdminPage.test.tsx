@@ -17,6 +17,20 @@ import { AdminPage } from './AdminPage';
 import { adminApi } from '@/lib/api';
 
 vi.mock('@/lib/api', () => ({
+  tenantsApi: {
+    list: vi.fn().mockResolvedValue([
+      {
+        tenant_id: 'TNT-001',
+        tenant_name: 'Демо Компания',
+        crm_type: 'amocrm',
+        spreadsheet_id: 'sheet_001',
+        status: 'active',
+        niche_name: 'Недвижимость',
+        avg_deal_check: 250000,
+        is_template: false,
+      },
+    ]),
+  },
   adminApi: {
     getStatus: vi.fn(),
     fleetAction: vi.fn(),
@@ -170,7 +184,7 @@ describe('AdminPage', () => {
     vi.mocked(adminApi.getQuarantineCalls).mockResolvedValue({ total: 0, in_quarantine_count: 0, calls: [] } as any);
   });
 
-  it('renders mission control header, status badge, and 4 tab triggers', async () => {
+  it('renders mission control header, status badge, and 5 tab triggers including fleet registry', async () => {
     renderWithClient(<AdminPage />);
 
     expect(screen.getByTestId('admin-page')).toBeInTheDocument();
@@ -179,9 +193,22 @@ describe('AdminPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('fleet-status-badge')).toHaveTextContent('🟢 ВСЕ СЛУЖБЫ РАБОТАЮТ ШТАТНО');
       expect(screen.getByTestId('tab-clients')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-fleet')).toBeInTheDocument();
       expect(screen.getByTestId('tab-crm')).toBeInTheDocument();
       expect(screen.getByTestId('tab-services')).toBeInTheDocument();
       expect(screen.getByTestId('tab-terminal')).toBeInTheDocument();
+    });
+  });
+
+  it('switches to "Реестр Флота" tab and displays multi-tenant fleet table inside admin', async () => {
+    renderWithClient(<AdminPage />);
+
+    const fleetTab = screen.getByTestId('tab-fleet');
+    fireEvent.keyDown(fleetTab, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('admin-fleet-tab')).toBeInTheDocument();
+      expect(screen.getByText('Реестр клиентских воронко-инстансов и подключенных рабочих пространств.')).toBeInTheDocument();
     });
   });
 

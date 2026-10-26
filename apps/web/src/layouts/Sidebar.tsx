@@ -12,10 +12,11 @@ import {
   Radio,
   Settings,
   ShieldCheck,
-  Users,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useRevOpsStore } from '@/store/useRevOpsStore';
+import { isUserAdmin } from '@/lib/guards';
 
 export interface SidebarProps {
   className?: string;
@@ -25,6 +26,7 @@ interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -32,11 +34,15 @@ const navItems: NavItem[] = [
   { title: 'Аудит', href: '/audit', icon: ClipboardCheck },
   { title: 'Интеграции', href: '/integrations', icon: Radio },
   { title: 'Настройки', href: '/settings', icon: Settings },
-  { title: 'Флот', href: '/fleet', icon: Users },
-  { title: 'Админ-панель', href: '/admin', icon: ShieldCheck },
+  { title: 'Админ-панель', href: '/admin', icon: ShieldCheck, adminOnly: true },
 ];
 
 export function Sidebar({ className }: SidebarProps = {}) {
+  const user = useRevOpsStore((s) => s.user);
+  const isAdmin = isUserAdmin(user);
+
+  const visibleNavItems = navItems.filter((item) => !item.adminOnly || isAdmin);
+
   return (
     <aside
       className={cn(
@@ -58,7 +64,7 @@ export function Sidebar({ className }: SidebarProps = {}) {
 
         {/* Navigation items */}
         <nav className="space-y-0.5" aria-label="Основная навигация">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
 
             return (
