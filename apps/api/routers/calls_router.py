@@ -215,7 +215,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
         ws = ss.worksheet("raw_calls")
         rows = ws.get_all_values()
         if len(rows) < 2:
-            empty_calls: list[dict[str, Any]] = []
+            empty_calls = []
             _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": empty_calls}
             set_cached_json_sync(cache_key, empty_calls, ex=60)
             return empty_calls

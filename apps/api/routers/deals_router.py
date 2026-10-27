@@ -171,7 +171,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
         ws = ss.worksheet("raw_deals")
         rows = ws.get_all_values()
         if len(rows) < 2:
-            empty_res: list[dict[str, Any]] = []
+            empty_res = []
             _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
             set_cached_json_sync(cache_key, empty_res, ex=60)
             return empty_res
