@@ -240,7 +240,11 @@ def ingest_to_revops_api(tenant_id: str, lead_id: int, file_name: str, audit_dat
         "tenant_id": tenant_id,
         "deal_id": f"AMO-{lead_id}",
         "deal_title": f"Сделка #{lead_id}",
-        "client": audit_data.get("client_name") or "Клиент",
+        "client": (
+            audit_data.get("client_name")
+            if audit_data.get("client_name") and not any(w in audit_data.get("client_name", "").lower() for w in ("оптовая", "электроник"))
+            else "Клиент"
+        ),
         "manager": audit_data.get("manager_name") or "Дмитрий",
         "stage": "Входящий лид",
         "duration": dur_str,
@@ -275,7 +279,7 @@ def ingest_to_revops_api(tenant_id: str, lead_id: int, file_name: str, audit_dat
     return False
 
 
-def run_pipeline(tenant_id: str = "TNT-002", lead_id: int = 4870417, limit: int | None = None):
+def run_pipeline(tenant_id: str = "TNT-002", lead_id: int = 4870417, limit: int | None = None, post_notes: bool = True):
     logger.info(f"=== Starting Batch Audio Audit Pipeline for {tenant_id} (Lead {lead_id}) ===")
     domain, token = get_tenant_amo_credentials(tenant_id)
     
@@ -325,8 +329,11 @@ def run_pipeline(tenant_id: str = "TNT-002", lead_id: int = 4870417, limit: int 
         # 4. Ingest into RevOps OS
         ingest_to_revops_api(tenant_id, lead_id, file_name, audit_res, dur_seconds=len(audio_bytes) // 4000)
         
-        # 5. Post note to amoCRM
-        post_audit_note_to_amocrm(domain, token, lead_id, file_name, audit_res, cr_sum)
+        # 5. Post note to amoCRM (optional)
+        if post_notes:
+            post_audit_note_to_amocrm(domain, token, lead_id, file_name, audit_res, cr_sum)
+        else:
+            logger.info("Skipping note posting to amoCRM (--no-notes active)")
         
         processed += 1
         time.sleep(1.0)  # Rate-limit safety
@@ -335,5 +342,9 @@ def run_pipeline(tenant_id: str = "TNT-002", lead_id: int = 4870417, limit: int 
 
 
 if __name__ == "__main__":
-    limit_arg = int(sys.argv[1]) if len(sys.argv) > 1 else None
-    run_pipeline(limit=limit_arg)
+    post_notes_flag = "--no-notes" not in sys.argv
+    limit_val = None
+    for a in sys.argv[1:]:
+        if a.isdigit():
+            limit_val = int(a)
+    run_pipeline(limit=limit_val, post_notes=post_notes_flag)

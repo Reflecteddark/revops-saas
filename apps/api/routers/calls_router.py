@@ -728,7 +728,16 @@ async def ingest_call_from_n8n(
             CallRecording.tenant_id == target_tenant,
             (CallRecording.id == call_id) | (CallRecording.external_call_id == call_id)
         ).first()
-        if not db_call:
+        if db_call:
+            setattr(db_call, "transcript_text", payload.transcript or getattr(db_call, "transcript_text", ""))
+            setattr(db_call, "ai_summary", payload.error_summary or getattr(db_call, "ai_summary", ""))
+            setattr(db_call, "next_action_extracted", payload.recommendation or getattr(db_call, "next_action_extracted", ""))
+            if score is not None:
+                setattr(db_call, "overall_score", float(score))
+            setattr(db_call, "scorecard_criteria", formatted_call)
+            setattr(db_call, "duration_seconds", dur_sec)
+            db.commit()
+        else:
             deal = db.query(Deal).filter(
                 Deal.tenant_id == target_tenant,
                 (Deal.id == payload.deal_id) | (Deal.external_crm_id == payload.deal_id)
