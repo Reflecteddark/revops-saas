@@ -199,3 +199,54 @@ def test_patch_manager_kpis_validation():
     resp5 = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json={"next_step_target_pct": 105})
     assert resp5.status_code == 422
 
+    # Dials > 500
+    resp6 = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json={"daily_dials_target": 600})
+    assert resp6.status_code == 422
+
+
+def test_manager_dials_and_meetings_toggle():
+    """Verifies patching daily_dials_target and meetings_enabled toggle."""
+    payload = {
+        "daily_dials_target": 45,
+        "daily_calls_target": 25,
+        "meetings_enabled": False,
+    }
+    resp = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["kpis"]["daily_dials_target"] == 45
+    assert data["kpis"]["meetings_enabled"] is False
+
+
+def test_settings_persistence_survives_refetch():
+    """Verifies that saving managers via POST persists and is returned on subsequent GET."""
+    payload = {
+        "tenant_id": "TNT-001",
+        "managers": [
+            {
+                "id": "11422686",
+                "name": "Дмитрий Федотов",
+                "role": "РОП / Клоузер",
+                "capacity": 50,
+                "revenue_target": 1.0,
+                "daily_calls_target": 20,
+                "daily_dials_target": 40,
+                "monthly_meetings_target": 15,
+                "meetings_enabled": False,
+                "next_step_target_pct": 80
+            }
+        ]
+    }
+    resp_post = client.post("/api/v1/settings", json=payload)
+    assert resp_post.status_code == 200
+
+    resp_get = client.get("/api/v1/settings?tenant_id=TNT-001")
+    assert resp_get.status_code == 200
+    mgrs = resp_get.json().get("managers", [])
+    fedotov = next((m for m in mgrs if m["id"] == "11422686"), None)
+    assert fedotov is not None
+    assert fedotov["revenue_target"] == 1.0
+    assert fedotov["meetings_enabled"] is False
+    assert fedotov["daily_dials_target"] == 40
+
+

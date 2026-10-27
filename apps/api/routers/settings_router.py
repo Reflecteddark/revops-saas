@@ -62,8 +62,10 @@ class ManagerCapacity(BaseModel):
     role: str
     capacity: int = 40
     revenue_target: float | None = None          # ₽ / месяц
-    daily_calls_target: int | None = None      # целевых звонков / день
+    daily_calls_target: int | None = None      # целевых звонков (>= 60 сек) / день
+    daily_dials_target: int | None = None      # всего наборов / день
     monthly_meetings_target: int | None = None # встреч / месяц
+    meetings_enabled: bool = True              # учитывать ли встречи в нормативах и алертах
     next_step_target_pct: int | None = None    # % разговоров с зафиксированным Next Step
     updated_at: str | None = None
 
@@ -71,7 +73,9 @@ class ManagerCapacity(BaseModel):
 class ManagerKpiPatch(BaseModel):
     revenue_target: float | None = None
     daily_calls_target: int | None = None
+    daily_dials_target: int | None = None
     monthly_meetings_target: int | None = None
+    meetings_enabled: bool | None = None
     capacity: int | None = None
     next_step_target_pct: int | None = None
 
@@ -109,17 +113,22 @@ class SettingsPayload(BaseModel):
     modules: list[ModuleToggle] | None = None
 
 
-def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> dict[str, Any]:
+def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool = False) -> dict[str, Any]:
     clean_tenant = (tenant_id or "TNT-001").strip().upper()
     now = time.time()
     cached = _SETTINGS_CACHE.get(clean_tenant)
-    if cached and (now - cached.get("timestamp", 0) < 15):
-        return cached.get("data", get_fallback_settings())
+    if not force_refresh and cached and (now - cached.get("timestamp", 0) < 15):
+        return cached.get("data", get_tenant_settings_or_fallback(clean_tenant))
 
     sa_path = get_service_account_path()
     if not sa_path:
-        logger.warning(f"service_account.json not found for settings fetch (tenant: {clean_tenant})")
-        return get_fallback_settings()
+        logger.info(f"service_account.json not configured for settings fetch (tenant: {clean_tenant}); reading from registry")
+        fb = get_tenant_settings_or_fallback(clean_tenant)
+        _SETTINGS_CACHE[clean_tenant] = {
+            "data": fb,
+            "timestamp": now
+        }
+        return fb
 
     try:
         import gspread
@@ -194,13 +203,15 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> dict[str, Any]:
             m_id = str(m_dict.get("id", ""))
             kpi = kpis_map.get(m_id, {})
             # Merge KPI fields if not set on manager
-            for k in ("revenue_target", "daily_calls_target", "monthly_meetings_target", "next_step_target_pct"):
+            for k in ("revenue_target", "daily_calls_target", "daily_dials_target", "monthly_meetings_target", "meetings_enabled", "next_step_target_pct"):
                 if m_dict.get(k) is None and k in kpi:
                     m_dict[k] = kpi[k]
             if "capacity" in kpi and kpi["capacity"] is not None:
                 m_dict["capacity"] = kpi["capacity"]
             if "updated_at" in kpi and kpi["updated_at"] is not None:
                 m_dict["updated_at"] = kpi["updated_at"]
+            if "meetings_enabled" not in m_dict or m_dict["meetings_enabled"] is None:
+                m_dict["meetings_enabled"] = True
             managers.append(m_dict)
 
         # Parse loss reasons (Rows 26-29)
@@ -262,10 +273,11 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> dict[str, Any]:
         except Exception as e:
             logger.warning(f"Failed to read ⚙️ Модули_Интеграции: {e}")
 
+        fallback_data = get_tenant_settings_or_fallback(clean_tenant)
         result = {
             "status": "ok",
             "source": "google_sheets",
-            "tenant_id": "TNT-001",
+            "tenant_id": clean_tenant,
             "general": {
                 "company_name": company_name,
                 "currency": currency,
@@ -274,11 +286,11 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> dict[str, Any]:
                 "monthly_target": monthly_target,
                 "project_start_date": project_start_date
             },
-            "stages": stages or get_fallback_settings()["stages"],
-            "managers": managers or get_fallback_settings()["managers"],
-            "loss_reasons": loss_reasons or get_fallback_settings()["loss_reasons"],
+            "stages": stages or fallback_data["stages"],
+            "managers": managers or fallback_data["managers"],
+            "loss_reasons": loss_reasons or fallback_data["loss_reasons"],
             "telegram": telegram,
-            "modules": modules or get_fallback_settings()["modules"]
+            "modules": modules or fallback_data["modules"]
         }
 
         _SETTINGS_CACHE[clean_tenant] = {
@@ -289,7 +301,7 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error reading settings from Google Sheets: {e}")
-        return get_fallback_settings()
+        return get_tenant_settings_or_fallback(clean_tenant)
 
 
 def get_fallback_settings() -> dict[str, Any]:
@@ -322,7 +334,9 @@ def get_fallback_settings() -> dict[str, Any]:
                 "capacity": 40,
                 "revenue_target": 1200000.0,
                 "daily_calls_target": 25,
+                "daily_dials_target": 40,
                 "monthly_meetings_target": 15,
+                "meetings_enabled": True,
                 "next_step_target_pct": 80
             },
             {
@@ -332,7 +346,9 @@ def get_fallback_settings() -> dict[str, Any]:
                 "capacity": 40,
                 "revenue_target": 1200000.0,
                 "daily_calls_target": 25,
+                "daily_dials_target": 40,
                 "monthly_meetings_target": 20,
+                "meetings_enabled": True,
                 "next_step_target_pct": 80
             },
             {
@@ -342,7 +358,9 @@ def get_fallback_settings() -> dict[str, Any]:
                 "capacity": 40,
                 "revenue_target": 1100000.0,
                 "daily_calls_target": 20,
+                "daily_dials_target": 35,
                 "monthly_meetings_target": 15,
+                "meetings_enabled": True,
                 "next_step_target_pct": 80
             },
             {
@@ -352,7 +370,9 @@ def get_fallback_settings() -> dict[str, Any]:
                 "capacity": 50,
                 "revenue_target": 1500000.0,
                 "daily_calls_target": 20,
+                "daily_dials_target": 35,
                 "monthly_meetings_target": 15,
+                "meetings_enabled": True,
                 "next_step_target_pct": 80
             }
         ],
@@ -394,16 +414,136 @@ def get_fallback_settings() -> dict[str, Any]:
     }
 
 
+def get_tenant_settings_or_fallback(tenant_id: str = "TNT-001") -> dict[str, Any]:
+    clean_tenant = (tenant_id or "TNT-001").strip().upper()
+    from ..tenant_registry import get_tenant_config
+    cfg = get_tenant_config(clean_tenant) or {}
+    kpis_map = cfg.get("manager_kpis", {}) or {}
+    gen = cfg.get("general_settings") or {}
+    fb = get_fallback_settings()
+
+    company_name = gen.get("company_name", cfg.get("name", fb["general"]["company_name"]))
+    currency = gen.get("currency", fb["general"]["currency"])
+    period_start = gen.get("period_start", fb["general"]["period_start"])
+    period_end = gen.get("period_end", fb["general"]["period_end"])
+    monthly_target = gen.get("monthly_target", fb["general"]["monthly_target"])
+    project_start_date = gen.get("project_start_date", fb["general"]["project_start_date"])
+
+    raw_managers = cfg.get("managers")
+    if not raw_managers or not isinstance(raw_managers, list) or len(raw_managers) == 0:
+        raw_managers = fb["managers"]
+
+    managers = []
+    for m in raw_managers:
+        m_dict = dict(m)
+        m_id = str(m_dict.get("id", ""))
+        kpi = kpis_map.get(m_id, {})
+        for k in ("revenue_target", "daily_calls_target", "daily_dials_target", "monthly_meetings_target", "meetings_enabled", "next_step_target_pct"):
+            if m_dict.get(k) is None and k in kpi:
+                m_dict[k] = kpi[k]
+        if "capacity" in kpi and kpi["capacity"] is not None:
+            m_dict["capacity"] = kpi["capacity"]
+        if "updated_at" in kpi and kpi["updated_at"] is not None:
+            m_dict["updated_at"] = kpi["updated_at"]
+        if "meetings_enabled" not in m_dict or m_dict["meetings_enabled"] is None:
+            m_dict["meetings_enabled"] = True
+        managers.append(m_dict)
+
+    stages = cfg.get("stages") or fb["stages"]
+    loss_reasons = cfg.get("loss_reasons") or fb["loss_reasons"]
+    telegram = cfg.get("telegram_settings") or fb["telegram"]
+    modules = cfg.get("modules") or fb["modules"]
+
+    return {
+        "status": "ok",
+        "source": "registry" if cfg.get("managers") else "fallback",
+        "tenant_id": clean_tenant,
+        "general": {
+            "company_name": company_name,
+            "currency": currency,
+            "period_start": period_start,
+            "period_end": period_end,
+            "monthly_target": monthly_target,
+            "project_start_date": project_start_date
+        },
+        "stages": stages,
+        "managers": managers,
+        "loss_reasons": loss_reasons,
+        "telegram": telegram,
+        "modules": modules
+    }
+
+
 def save_settings_to_sheets(payload: SettingsPayload) -> bool:
+    clean_tenant = payload.tenant_id.strip().upper()
+    now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    # 1. UNCONDITIONAL LOCAL PERSISTENCE FIRST (registry + DB)
+    try:
+        from ..tenant_registry import load_tenants_registry, save_tenants_registry
+        reg = load_tenants_registry()
+        for t in reg.get("tenants", []):
+            if str(t.get("tenant_id", "")).upper() == clean_tenant:
+                if payload.general:
+                    if "general_settings" not in t:
+                        t["general_settings"] = {}
+                    g_dict = payload.general.model_dump(exclude_unset=True)
+                    t["general_settings"].update(g_dict)
+                    if payload.general.company_name:
+                        t["name"] = payload.general.company_name
+
+                if payload.stages is not None:
+                    t["stages"] = [s.model_dump() for s in payload.stages]
+
+                if payload.managers is not None:
+                    t["managers"] = [m.model_dump() for m in payload.managers]
+                    if "manager_kpis" not in t:
+                        t["manager_kpis"] = {}
+                    for m in payload.managers:
+                        t["manager_kpis"][m.id] = {
+                            "revenue_target": m.revenue_target,
+                            "daily_calls_target": m.daily_calls_target,
+                            "daily_dials_target": m.daily_dials_target,
+                            "monthly_meetings_target": m.monthly_meetings_target,
+                            "meetings_enabled": m.meetings_enabled,
+                            "capacity": m.capacity,
+                            "next_step_target_pct": m.next_step_target_pct,
+                            "updated_at": m.updated_at or now_iso,
+                        }
+
+                if payload.loss_reasons is not None:
+                    t["loss_reasons"] = [lr.model_dump() for lr in payload.loss_reasons]
+
+                if payload.telegram is not None:
+                    if "telegram_settings" not in t:
+                        t["telegram_settings"] = {}
+                    t["telegram_settings"].update(payload.telegram.model_dump(exclude_unset=True))
+
+                if payload.modules is not None:
+                    t["modules"] = [mod.model_dump() for mod in payload.modules]
+
+                save_tenants_registry(reg)
+                break
+    except Exception as e:
+        logger.warning(f"Failed to persist settings in local registry: {e}")
+
+    # Immediately refresh cache for this tenant
+    fresh_data = fetch_settings_from_sheets(tenant_id=clean_tenant, force_refresh=True)
+    _SETTINGS_CACHE[clean_tenant] = {
+        "data": fresh_data,
+        "timestamp": time.time()
+    }
+
+    # 2. GOOGLE SHEETS MIRROR (SAFE NON-BLOCKING)
     sa_path = get_service_account_path()
     if not sa_path:
-        logger.warning("service_account.json not found for settings save")
-        return False
+        logger.info(f"service_account.json not found for settings save (tenant: {clean_tenant}); saved locally")
+        return True
 
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
-        sheet_id = get_tenant_spreadsheet_id(payload.tenant_id)
+        sheet_id = get_tenant_spreadsheet_id(clean_tenant)
         ss = gc.open_by_key(sheet_id)
 
         ws_settings = ss.worksheet("⚙️ Настройки")
@@ -426,12 +566,11 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
         # 2. Update stages SLA and Win % if present (Rows 12-18)
         if payload.stages:
             for st in payload.stages:
-                # row index = st.id + 11 (id 1 = row 12)
                 row_num = st.id + 11
                 if 12 <= row_num <= 18:
                     ws_settings.update(range_name=f"C{row_num}:D{row_num}", values=[[str(st.sla_hours), f"{st.win_pct}%"]])
 
-        # 3. Update managers capacity if present (Rows 21-24 and Registry)
+        # 3. Update managers capacity if present (Rows 21-24)
         if payload.managers is not None:
             for slot_idx in range(4):
                 row_num = 21 + slot_idx
@@ -440,29 +579,6 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                     ws_settings.update(range_name=f"A{row_num}:D{row_num}", values=[[m.id, m.name, m.role, str(m.capacity)]])
                 else:
                     ws_settings.update(range_name=f"A{row_num}:D{row_num}", values=[["", "", "", ""]])
-
-            try:
-                from ..tenant_registry import load_tenants_registry, save_tenants_registry
-                reg = load_tenants_registry()
-                for t in reg.get("tenants", []):
-                    if str(t.get("tenant_id", "")).upper() == payload.tenant_id.strip().upper():
-                        t["managers"] = [m.model_dump() for m in payload.managers]
-                        if "manager_kpis" not in t:
-                            t["manager_kpis"] = {}
-                        now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-                        for m in payload.managers:
-                            t["manager_kpis"][m.id] = {
-                                "revenue_target": m.revenue_target,
-                                "daily_calls_target": m.daily_calls_target,
-                                "monthly_meetings_target": m.monthly_meetings_target,
-                                "capacity": m.capacity,
-                                "next_step_target_pct": m.next_step_target_pct,
-                                "updated_at": m.updated_at or now_iso,
-                            }
-                        save_tenants_registry(reg)
-                        break
-            except Exception as e:
-                logger.warning(f"Failed to persist managers in registry: {e}")
 
         # 4. Update loss reasons if present (Rows 26-29)
         if payload.loss_reasons:
@@ -501,15 +617,11 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
             except Exception as e:
                 logger.error(f"Failed to batch update modules: {e}")
 
-        # Invalidate in-memory cache for this tenant
-        clean_tenant = payload.tenant_id.strip().upper()
-        if clean_tenant in _SETTINGS_CACHE:
-            _SETTINGS_CACHE[clean_tenant]["timestamp"] = 0
         return True
 
     except Exception as e:
-        logger.error(f"Error saving settings to Google Sheets for tenant {payload.tenant_id}: {e}")
-        return False
+        logger.warning(f"Google Sheets sync failed for {clean_tenant}, but local settings saved: {e}")
+        return True
 
 
 # ============================================================================
@@ -560,8 +672,10 @@ async def patch_manager_kpis(
     """
     Granular update of manager personal KPI targets:
     - revenue_target (>= 0 or null)
-    - daily_calls_target (0..200 or null)
+    - daily_calls_target (0..200 or null) - целевых от 60 сек
+    - daily_dials_target (0..500 or null) - наборов всего
     - monthly_meetings_target (0..500 or null)
+    - meetings_enabled (bool or null)
     - capacity (0..500 or null)
     - next_step_target_pct (0..100 or null)
     Preserves nulls as 'норматив не задан' (unrated).
@@ -570,7 +684,9 @@ async def patch_manager_kpis(
     if payload.revenue_target is not None and payload.revenue_target < 0:
         raise HTTPException(status_code=422, detail="План выручки должен быть не меньше 0 ₽")
     if payload.daily_calls_target is not None and not (0 <= payload.daily_calls_target <= 200):
-        raise HTTPException(status_code=422, detail="Норма звонков должна быть в диапазоне 0..200")
+        raise HTTPException(status_code=422, detail="Норма звонков (от 60с) должна быть в диапазоне 0..200")
+    if payload.daily_dials_target is not None and not (0 <= payload.daily_dials_target <= 500):
+        raise HTTPException(status_code=422, detail="Норма наборов (всего) должна быть в диапазоне 0..500")
     if payload.monthly_meetings_target is not None and not (0 <= payload.monthly_meetings_target <= 500):
         raise HTTPException(status_code=422, detail="План встреч должен быть в диапазоне 0..500")
     if payload.capacity is not None and not (0 <= payload.capacity <= 500):

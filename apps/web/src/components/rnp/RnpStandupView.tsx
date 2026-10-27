@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { DailyHourlyHeatmap } from './DailyHourlyHeatmap';
 import type { Call, Deal, ManagerConfig } from '@/types/api';
 
 export interface RnpStandupViewProps {
@@ -230,8 +231,8 @@ export function RnpStandupView({
         primaryRiskMetric = `Звонки: ${yesterdayCallsCount} из ${dailyCallsTarget} в день ${isRed ? '🔴' : '🟡'} (выполнение ${callsCompPct}%)`;
         actionRecommendation = `Вывести менеджера на линию в первый час: закрыть дневную норму ${dailyCallsTarget} целевых звонков до 16:00.`;
       }
-      // 3. Meetings / Zoom conversion
-      else if (meetingsTarget > 0 && zoomCount < Math.round(meetingsTarget * 0.7)) {
+      // 3. Meetings / Zoom conversion (only evaluated if meetings_enabled !== false)
+      else if (m.meetings_enabled !== false && meetingsTarget > 0 && zoomCount < Math.round(meetingsTarget * 0.7)) {
         primaryRiskCategory = 'meetings';
         primaryRiskTitle = 'Недобор назначенных встреч (КЭВ)';
         const isRed = zoomCount < Math.round(meetingsTarget * 0.4);
@@ -492,7 +493,9 @@ export function RnpStandupView({
                       Zoom (факт/план)
                     </span>
                     <span className="font-mono font-semibold text-emerald-400">
-                      {mgr.zoomCount} / {mgr.meetingsTarget}
+                      {mgr.meetings_enabled !== false
+                        ? `${mgr.zoomCount} / ${mgr.meetingsTarget}`
+                        : '— (Откл.)'}
                     </span>
                   </div>
                 </div>
@@ -556,7 +559,10 @@ export function RnpStandupView({
         </div>
       </div>
 
-      {/* 3. Top High-Risk Deals Requiring Immediate Action Today */}
+      {/* 3. Почасовая температурная карта звонков отдела (8:00 – 20:00) */}
+      <DailyHourlyHeatmap calls={calls} managers={managers} />
+
+      {/* 4. Top High-Risk Deals Requiring Immediate Action Today */}
       {highRiskDeals.length > 0 && (
         <div className="surface rounded-2xl border border-rose-500/20 p-5 space-y-3 bg-rose-500/5">
           <div className="flex items-center justify-between">

@@ -579,5 +579,50 @@ describe('SettingsPage', () => {
     expect(screen.getByDisplayValue('Ольга Николаева')).toBeInTheDocument();
     expect(screen.getByDisplayValue('1300000')).toBeInTheDocument();
   });
+
+  it('allows toggling meetings_enabled checkbox and entering daily dials', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateManagers).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    const managersTab = screen.getByTestId('tab-managers');
+    fireEvent.keyDown(managersTab, { key: 'Enter' });
+
+    // Find dials input for m1
+    const dialsInput = (await screen.findByTestId(
+      'input-manager-dials-m1'
+    )) as HTMLInputElement;
+    fireEvent.change(dialsInput, { target: { value: '45' } });
+
+    // Toggle meetings_enabled checkbox for m1
+    const meetingsCheckbox = screen.getByTestId(
+      'checkbox-manager-meetings-enabled-m1'
+    ) as HTMLInputElement;
+    expect(meetingsCheckbox.checked).toBe(true);
+    fireEvent.click(meetingsCheckbox);
+    expect(meetingsCheckbox.checked).toBe(false);
+
+    // Meetings input should now show "— (Откл.)"
+    expect(screen.getByText('— (Откл.)')).toBeInTheDocument();
+
+    // Click save
+    const saveButton = screen.getByTestId('btn-save-managers');
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(settingsApi.updateManagers).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'm1',
+            daily_dials_target: 45,
+            meetings_enabled: false,
+          }),
+        ])
+      );
+    });
+  });
 });
+
 

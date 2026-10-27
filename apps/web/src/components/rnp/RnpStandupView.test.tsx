@@ -157,7 +157,9 @@ describe('RnpStandupView', () => {
     expect(screen.getByTestId('manager-card-m1')).toBeInTheDocument();
     expect(screen.getByTestId('manager-card-m2')).toBeInTheDocument();
     expect(screen.getAllByText('Иван Петров').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Ольга Сидорова')).toBeInTheDocument();
+    expect(screen.getAllByText('Ольга Сидорова').length).toBeGreaterThanOrEqual(1);
+    // Hourly Heatmap integration
+    expect(screen.getByText(/Температурная карта звонков/i)).toBeInTheDocument();
   });
 
   it('displays critical SLA risk deals section', () => {
@@ -222,6 +224,36 @@ describe('RnpStandupView', () => {
     expect(screen.getAllByText(/Zoom \(факт\/план\)/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Вместимость воронки/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Выручка \(факт \/ план\)/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('respects meetings_enabled: false and does not trigger meeting alarms', () => {
+    const disabledMeetingsManagers: ManagerConfig[] = [
+      {
+        id: 'm1',
+        name: 'Иван Петров',
+        role: 'Клоузер',
+        capacity: 40,
+        revenue_target: 1500000,
+        daily_calls_target: 20,
+        monthly_meetings_target: 15,
+        meetings_enabled: false,
+        next_step_target_pct: 80,
+      },
+    ];
+
+    render(
+      <RnpStandupView
+        calls={mockCalls}
+        deals={mockDeals}
+        managers={disabledMeetingsManagers}
+        planTarget={1500000}
+      />
+    );
+
+    // Meeting chip displays disabled marker
+    expect(screen.getByText(/— \(Откл\.\)/i)).toBeInTheDocument();
+    // No priority 3 meeting risk alarm triggered
+    expect(screen.queryByText(/Отставание по назначенным встречам/i)).not.toBeInTheDocument();
   });
 });
 

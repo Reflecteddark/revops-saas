@@ -84,7 +84,9 @@ export function SettingsPage() {
   const [newManagerRole, setNewManagerRole] = useState<string>('Менеджер ОП');
   const [newManagerRevenueTarget, setNewManagerRevenueTarget] = useState<string>('');
   const [newManagerDailyCalls, setNewManagerDailyCalls] = useState<number>(20);
+  const [newManagerDailyDials, setNewManagerDailyDials] = useState<number>(40);
   const [newManagerMeetings, setNewManagerMeetings] = useState<number>(15);
+  const [newManagerMeetingsEnabled, setNewManagerMeetingsEnabled] = useState<boolean>(true);
   const [newManagerCapacity, setNewManagerCapacity] = useState<number>(40);
   const [newManagerNextStepPct, setNewManagerNextStepPct] = useState<number>(80);
   const [addManagerError, setAddManagerError] = useState<string | null>(null);
@@ -273,7 +275,7 @@ export function SettingsPage() {
   const handleManagerFieldChange = (
     id: string,
     field: keyof ManagerConfig,
-    val: string | number | null
+    val: string | number | boolean | null
   ) => {
     setEditableManagers((prev) => {
       const base = isManagersInitialized ? prev : settings?.managers || [];
@@ -328,8 +330,10 @@ export function SettingsPage() {
       revenue_target:
         revTargetNum !== null && !isNaN(revTargetNum) ? revTargetNum : null,
       daily_calls_target: newManagerDailyCalls > 0 ? newManagerDailyCalls : 20,
+      daily_dials_target: newManagerDailyDials > 0 ? newManagerDailyDials : 40,
       monthly_meetings_target:
         newManagerMeetings > 0 ? newManagerMeetings : 15,
+      meetings_enabled: newManagerMeetingsEnabled,
       next_step_target_pct:
         newManagerNextStepPct >= 0 && newManagerNextStepPct <= 100
           ? newManagerNextStepPct
@@ -343,7 +347,9 @@ export function SettingsPage() {
     setNewManagerRole('Менеджер ОП');
     setNewManagerRevenueTarget('');
     setNewManagerDailyCalls(20);
+    setNewManagerDailyDials(40);
     setNewManagerMeetings(15);
+    setNewManagerMeetingsEnabled(true);
     setNewManagerCapacity(40);
     setNewManagerNextStepPct(80);
     setAddManagerError(null);
@@ -1057,7 +1063,7 @@ export function SettingsPage() {
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">
-                        Звонки / день (норма)
+                        Звонки ≥60с / день
                       </Label>
                       <Input
                         type="number"
@@ -1075,19 +1081,51 @@ export function SettingsPage() {
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">
-                        Встречи / мес (норма)
+                        Наборы всего / день
                       </Label>
                       <Input
                         type="number"
                         min="0"
                         max="500"
-                        value={newManagerMeetings}
+                        value={newManagerDailyDials}
+                        onChange={(e) =>
+                          setNewManagerDailyDials(
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        className="mt-1 h-8 font-mono text-xs"
+                        data-testid="input-new-manager-dials"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">
+                          Встречи / мес
+                        </Label>
+                        <label className="flex items-center gap-1 cursor-pointer text-[10px] text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={newManagerMeetingsEnabled}
+                            onChange={(e) => setNewManagerMeetingsEnabled(e.target.checked)}
+                            className="h-3 w-3 rounded border-subtle text-primary"
+                            data-testid="checkbox-new-manager-meetings-enabled"
+                          />
+                          <span>учитывать</span>
+                        </label>
+                      </div>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="500"
+                        disabled={!newManagerMeetingsEnabled}
+                        value={newManagerMeetingsEnabled ? newManagerMeetings : ''}
+                        placeholder={newManagerMeetingsEnabled ? '15' : '— (Откл.)'}
                         onChange={(e) =>
                           setNewManagerMeetings(
                             parseInt(e.target.value) || 0
                           )
                         }
-                        className="mt-1 h-8 font-mono text-xs"
+                        className={`mt-1 h-8 font-mono text-xs ${!newManagerMeetingsEnabled ? 'bg-muted/40 cursor-not-allowed opacity-60' : ''}`}
                         data-testid="input-new-manager-meetings"
                       />
                     </div>
@@ -1164,11 +1202,21 @@ export function SettingsPage() {
                       <th className="w-36 px-3 py-2.5 text-left font-medium">
                         План выручки
                       </th>
-                      <th className="w-24 px-3 py-2.5 text-left font-medium">
-                        Звонки/день
+                      <th className="w-40 px-3 py-2.5 text-left font-medium">
+                        <div className="leading-tight">
+                          <span>Звонки / день</span>
+                          <div className="text-[10px] font-normal text-muted-foreground">
+                            ≥60с / наборы
+                          </div>
+                        </div>
                       </th>
-                      <th className="w-24 px-3 py-2.5 text-left font-medium">
-                        Встречи/мес
+                      <th className="w-32 px-3 py-2.5 text-left font-medium">
+                        <div className="leading-tight">
+                          <span>Встречи / мес</span>
+                          <div className="text-[10px] font-normal text-muted-foreground">
+                            учитывать в KPI
+                          </div>
+                        </div>
                       </th>
                       <th className="w-28 px-3 py-2.5 text-left font-medium">
                         Вместимость
@@ -1258,62 +1306,118 @@ export function SettingsPage() {
                           </div>
                         </td>
 
-                        {/* 3. Звонки / день */}
+                        {/* 3. Звонки / день: целевые (>=60с) / наборы */}
                         <td className="px-3 py-2.5">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="200"
-                            placeholder="20"
-                            value={
-                              m.daily_calls_target !== null &&
-                              m.daily_calls_target !== undefined
-                                ? m.daily_calls_target
-                                : ''
-                            }
-                            onChange={(e) => {
-                              const val =
-                                e.target.value.trim() === ''
-                                  ? null
-                                  : parseInt(e.target.value);
-                              handleManagerFieldChange(
-                                m.id,
-                                'daily_calls_target',
-                                val !== null && !isNaN(val) ? val : null
-                              );
-                            }}
-                            className="h-7 w-16 font-mono text-xs"
-                            data-testid={`input-manager-calls-${m.id}`}
-                          />
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="200"
+                              placeholder="20"
+                              title="Целевых разговоров (>= 60 сек) в день"
+                              value={
+                                m.daily_calls_target !== null &&
+                                m.daily_calls_target !== undefined
+                                  ? m.daily_calls_target
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                const val =
+                                  e.target.value.trim() === ''
+                                    ? null
+                                    : parseInt(e.target.value);
+                                handleManagerFieldChange(
+                                  m.id,
+                                  'daily_calls_target',
+                                  val !== null && !isNaN(val) ? val : null
+                                );
+                              }}
+                              className="h-7 w-14 font-mono text-xs"
+                              data-testid={`input-manager-calls-${m.id}`}
+                            />
+                            <span className="text-muted-foreground font-mono text-xs">/</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="500"
+                              placeholder="40"
+                              title="Всего наборов звонков в день"
+                              value={
+                                m.daily_dials_target !== null &&
+                                m.daily_dials_target !== undefined
+                                  ? m.daily_dials_target
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                const val =
+                                  e.target.value.trim() === ''
+                                    ? null
+                                    : parseInt(e.target.value);
+                                handleManagerFieldChange(
+                                  m.id,
+                                  'daily_dials_target',
+                                  val !== null && !isNaN(val) ? val : null
+                                );
+                              }}
+                              className="h-7 w-14 font-mono text-xs"
+                              data-testid={`input-manager-dials-${m.id}`}
+                            />
+                          </div>
                         </td>
 
-                        {/* 4. Встречи / мес */}
+                        {/* 4. Встречи / мес + чекбокс учёта */}
                         <td className="px-3 py-2.5">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="500"
-                            placeholder="15"
-                            value={
-                              m.monthly_meetings_target !== null &&
-                              m.monthly_meetings_target !== undefined
-                                ? m.monthly_meetings_target
-                                : ''
-                            }
-                            onChange={(e) => {
-                              const val =
-                                e.target.value.trim() === ''
-                                  ? null
-                                  : parseInt(e.target.value);
-                              handleManagerFieldChange(
-                                m.id,
-                                'monthly_meetings_target',
-                                val !== null && !isNaN(val) ? val : null
-                              );
-                            }}
-                            className="h-7 w-16 font-mono text-xs"
-                            data-testid={`input-manager-meetings-${m.id}`}
-                          />
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="checkbox"
+                              checked={m.meetings_enabled !== false}
+                              onChange={(e) =>
+                                handleManagerFieldChange(
+                                  m.id,
+                                  'meetings_enabled',
+                                  e.target.checked
+                                )
+                              }
+                              className="h-4 w-4 rounded border-subtle text-primary focus:ring-primary cursor-pointer"
+                              title={
+                                m.meetings_enabled !== false
+                                  ? 'Встречи учитываются в KPI и РНП'
+                                  : 'Встречи отключены (не учитываются)'
+                              }
+                              data-testid={`checkbox-manager-meetings-enabled-${m.id}`}
+                            />
+                            {m.meetings_enabled !== false ? (
+                              <Input
+                                type="number"
+                                min="0"
+                                max="500"
+                                placeholder="15"
+                                value={
+                                  m.monthly_meetings_target !== null &&
+                                  m.monthly_meetings_target !== undefined
+                                    ? m.monthly_meetings_target
+                                    : ''
+                                }
+                                onChange={(e) => {
+                                  const val =
+                                    e.target.value.trim() === ''
+                                      ? null
+                                      : parseInt(e.target.value);
+                                  handleManagerFieldChange(
+                                    m.id,
+                                    'monthly_meetings_target',
+                                    val !== null && !isNaN(val) ? val : null
+                                  );
+                                }}
+                                className="h-7 w-16 font-mono text-xs"
+                                data-testid={`input-manager-meetings-${m.id}`}
+                              />
+                            ) : (
+                              <span className="font-mono text-xs text-muted-foreground italic">
+                                — (Откл.)
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* 5. Вместимость */}

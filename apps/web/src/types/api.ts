@@ -204,7 +204,9 @@ export interface ManagerConfig {
   capacity: number;
   revenue_target?: number | null;
   daily_calls_target?: number | null;
+  daily_dials_target?: number | null;
   monthly_meetings_target?: number | null;
+  meetings_enabled?: boolean;
   next_step_target_pct?: number | null;
   updated_at?: string;
 }
@@ -212,7 +214,9 @@ export interface ManagerConfig {
 export interface ManagerKpiPatchPayload {
   revenue_target?: number | null;
   daily_calls_target?: number | null;
+  daily_dials_target?: number | null;
   monthly_meetings_target?: number | null;
+  meetings_enabled?: boolean;
   capacity?: number | null;
   next_step_target_pct?: number | null;
 }

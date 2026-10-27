@@ -38,6 +38,7 @@ import { PulseSmartAlert } from '@/components/PulseSmartAlert';
 import { BusinessEconomicsCard } from '@/components/BusinessEconomicsCard';
 import { StatusSegmentedBar } from '@/components/StatusSegmentedBar';
 import { DailyPulseMatrix } from '@/components/DailyPulseMatrix';
+import { DailyHourlyHeatmap } from '@/components/rnp/DailyHourlyHeatmap';
 import { RnpStandupView } from '@/components/rnp/RnpStandupView';
 import { RnpMarketingView } from '@/components/rnp/RnpMarketingView';
 import { RnpFinanceView } from '@/components/rnp/RnpFinanceView';
@@ -651,6 +652,9 @@ export function PulsePage() {
 
       {/* MPSTATS-style Daily Heatmap Matrix with Sparklines */}
       <DailyPulseMatrix calls={calls} loading={isLoading} />
+
+      {/* 8:00 – 20:00 Hourly Call & Dial Intensity Heatmap (наборы / от 1 мин) */}
+      <DailyHourlyHeatmap calls={calls} managers={settings?.managers || []} />
 
       {/* Recent Calls */}
       <div className="space-y-3">
