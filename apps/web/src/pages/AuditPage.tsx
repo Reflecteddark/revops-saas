@@ -68,9 +68,12 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
     cell: ({ row }) => (
       <div className="font-medium text-foreground">
         <div>{row.original.client}</div>
-        <div className="text-[11px] font-normal text-muted-foreground">
-          {row.original.deal_title}
-        </div>
+        {row.original.deal_title &&
+          row.original.deal_title !== row.original.client && (
+            <div className="text-[11px] font-normal text-muted-foreground">
+              {row.original.deal_title}
+            </div>
+          )}
       </div>
     ),
   },
@@ -218,7 +221,7 @@ export function AuditPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground text-balance">
+            <h1 className="text-balance text-2xl font-bold tracking-tight text-foreground">
               Аудит звонков
             </h1>
             <Badge
@@ -229,7 +232,7 @@ export function AuditPage() {
               {filteredCalls.length}
             </Badge>
           </div>
-          <p className="mt-0.5 text-sm text-muted-foreground text-pretty">
+          <p className="mt-0.5 text-pretty text-sm text-muted-foreground">
             Детализированный реестр звонков с проверкой 13 критериев B2B-продаж.
           </p>
         </div>

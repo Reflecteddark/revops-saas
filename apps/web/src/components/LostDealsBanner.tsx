@@ -55,12 +55,21 @@ export function LostDealsBanner({
     if (!calls || calls.length === 0) return [];
 
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const startOfYesterday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - 1
+    );
 
     return calls.filter((c) => {
       if (!c) return false;
-      const isLost = c.status === 'lost' || c.status === 'risk' || c.next_step === 0;
+      const isLost =
+        c.status === 'lost' || c.status === 'risk' || c.next_step === 0;
       if (!isLost || c.status === 'won') return false;
 
       if (!filterYesterdayOnly) return true;
@@ -86,12 +95,12 @@ export function LostDealsBanner({
     return (
       <div
         className={cn(
-          'surface rounded-xl p-5 border border-emerald-500/20 bg-emerald-500/[0.03]',
+          'surface rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] p-5',
           className
         )}
         data-testid="lost-deals-banner"
       >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3.5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
               <CheckCircle2 className="h-5 w-5" />
@@ -102,12 +111,13 @@ export function LostDealsBanner({
                   Вчера сливов не было. Отличная работа!
                 </h3>
               </div>
-              <p className="text-xs text-secondary mt-0.5">
-                Все звонки зафиксировали договоренность о следующем шаге (Next Step 100%).
+              <p className="mt-0.5 text-xs text-secondary">
+                Все звонки зафиксировали договоренность о следующем шаге (Next
+                Step 100%).
               </p>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-400 ring-1 ring-inset ring-emerald-500/20 shrink-0">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
             ✓ 0 сливов
           </span>
         </div>
@@ -120,19 +130,23 @@ export function LostDealsBanner({
     totalSum >= 1_000_000
       ? `${(totalSum / 1_000_000).toFixed(1).replace('.0', '')}M ₽`
       : totalSum >= 1_000
-      ? `${Math.round(totalSum / 1_000)}K ₽`
-      : `${totalSum} ₽`;
+        ? `${Math.round(totalSum / 1_000)}K ₽`
+        : `${totalSum} ₽`;
 
   const dealsWord =
     leaks.length % 10 === 1 && leaks.length % 100 !== 11
       ? 'сделка'
-      : [2, 3, 4].includes(leaks.length % 10) && ![12, 13, 14].includes(leaks.length % 100)
-      ? 'сделки'
-      : 'сделок';
+      : [2, 3, 4].includes(leaks.length % 10) &&
+          ![12, 13, 14].includes(leaks.length % 100)
+        ? 'сделки'
+        : 'сделок';
 
   return (
     <div
-      className={cn('surface rounded-xl p-5 border border-rose-500/20 space-y-4', className)}
+      className={cn(
+        'surface space-y-4 rounded-xl border border-rose-500/20 p-5',
+        className
+      )}
       data-testid="lost-deals-banner"
     >
       {/* Header */}
@@ -142,51 +156,60 @@ export function LostDealsBanner({
             <AlertTriangle className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-[13px] font-semibold text-foreground">{title}</h3>
+            <h3 className="text-[13px] font-semibold text-foreground">
+              {title}
+            </h3>
             <p className="text-xs text-secondary">
-              Сделки с риском потери клиента без зафиксированного следующего шага
+              Сделки с риском потери клиента без зафиксированного следующего
+              шага
             </p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold bg-rose-500/10 text-rose-400 ring-1 ring-inset ring-rose-500/20 shrink-0 tabular-nums">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-rose-400 ring-1 ring-inset ring-rose-500/20">
           {leaks.length} {dealsWord} · {sumFormatted}
         </span>
       </div>
 
       {/* Leaks List */}
-      <div className="divide-y divide-subtle rounded-lg border border-subtle overflow-hidden bg-background/50">
+      <div className="bg-background/50 divide-y divide-subtle overflow-hidden rounded-lg border border-subtle">
         {sortedLeaks.map((call) => {
           const initials = getInitials(call.manager);
-          const reason = call.error_summary || 'Нет точной даты/времени следующего шага';
+          const reason =
+            call.error_summary || 'Нет точной даты/времени следующего шага';
           const amountStr = formatLeakAmount(call);
 
           return (
             <div
               key={call.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 transition-colors duration-150 hover:bg-hover"
+              className="flex flex-col justify-between gap-3 p-3.5 transition-colors duration-150 hover:bg-hover sm:flex-row sm:items-center"
             >
-              <div className="flex items-start sm:items-center gap-3 min-w-0">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/10 border border-rose-500/30 text-xs font-bold text-rose-300">
+              <div className="flex min-w-0 items-start gap-3 sm:items-center">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10 text-xs font-bold text-rose-300">
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[13px] font-semibold text-foreground">
                       {call.manager || 'Менеджер'}
                     </span>
-                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                    <span className="inline-flex items-center rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-400">
                       СЛИВ (НЕТ NEXT STEP)
                     </span>
                   </div>
-                  <div className="text-xs text-secondary mt-0.5 truncate">
-                    Клиент: <strong className="text-foreground font-medium">{call.client || 'Клиент'}</strong>
-                    {call.deal_title ? ` · ${call.deal_title}` : ''}
-                    <span className="text-tertiary ml-1.5">· {reason}</span>
+                  <div className="mt-0.5 truncate text-xs text-secondary">
+                    Клиент:{' '}
+                    <strong className="font-medium text-foreground">
+                      {call.client || 'Клиент'}
+                    </strong>
+                    {call.deal_title && call.deal_title !== call.client
+                      ? ` · ${call.deal_title}`
+                      : ''}
+                    <span className="ml-1.5 text-tertiary">· {reason}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pl-11 sm:pl-0">
+              <div className="flex shrink-0 items-center justify-between gap-3 pl-11 sm:justify-end sm:pl-0">
                 <span className="font-mono text-sm font-semibold tabular-nums text-rose-400">
                   {amountStr}
                 </span>
@@ -195,10 +218,10 @@ export function LostDealsBanner({
                     variant="outline"
                     size="sm"
                     onClick={() => onInspectCall(call)}
-                    className="h-7 text-xs border-rose-500/30 text-rose-300 hover:text-rose-200 hover:bg-rose-500/10"
+                    className="h-7 border-rose-500/30 text-xs text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
                   >
                     Разбор
-                    <ArrowRight className="h-3 w-3 ml-1" />
+                    <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                 )}
               </div>

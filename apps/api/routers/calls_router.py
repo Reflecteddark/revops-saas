@@ -585,13 +585,30 @@ def get_dashboard_calls_data(
             amount_str = f"{int(amount_num):,} ₽".replace(",", " ") if amount_num > 0 else (sc.get("amount_str") or "0 ₽")
             risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and call_status == "risk") else "0 ₽"
 
+            # Prioritize specific client/contact extracted from the call
+            sc_client = sc.get("client")
+            if sc_client and sc_client not in ("Клиент", "Клиент B2B", "Неизвестно"):
+                client_name = sc_client
+            elif call_deal and call_deal.company_name and call_deal.company_name != call_deal.title:
+                client_name = call_deal.company_name
+            elif sc_client:
+                client_name = sc_client
+            elif call_deal:
+                client_name = call_deal.company_name or call_deal.title
+            else:
+                client_name = "Клиент"
+
+            raw_deal_title = call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}")
+            if "?" in raw_deal_title:
+                raw_deal_title = call_deal.title if call_deal else f"Сделка {c.deal_id}"
+
             deal_stage = call_deal.stage.value if (call_deal and hasattr(call_deal.stage, "value")) else (str(call_deal.stage) if call_deal and call_deal.stage else "Первичный контакт")
 
             formatted_calls.append({
                 "id": c.id,
                 "deal_id": c.deal_id or f"D-{c.id[-4:]}",
-                "deal_title": call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}"),
-                "client": call_deal.company_name if call_deal else (sc.get("client") or "Клиент"),
+                "deal_title": raw_deal_title,
+                "client": client_name,
                 "manager": mgr.full_name if mgr else (sc.get("manager") or "Менеджер"),
                 "stage": deal_stage,
                 "duration": dur_str,
