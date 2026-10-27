@@ -249,12 +249,22 @@ export interface Settings {
   status: string;
   source: string;
   tenant_id: string;
+  crm_type?: string;
   general: GeneralSettings;
   stages: StageConfig[];
   managers: ManagerConfig[];
   loss_reasons: LossReason[];
   telegram: TelegramConfig;
   modules: ModuleFlag[];
+}
+
+export interface CrmSyncManagersResponse {
+  status: string;
+  message: string;
+  crm_type: string;
+  added_count: number;
+  total_count: number;
+  managers: ManagerConfig[];
 }
 
 export type SettingsResponse = Settings;

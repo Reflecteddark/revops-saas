@@ -290,6 +290,7 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
             "status": "ok",
             "source": "google_sheets",
             "tenant_id": clean_tenant,
+            "crm_type": cfg.get("crm_type") or "amocrm",
             "general": {
                 "company_name": company_name,
                 "currency": currency,
@@ -321,6 +322,7 @@ def get_fallback_settings() -> dict[str, Any]:
         "status": "ok",
         "source": "fallback",
         "tenant_id": "TNT-001",
+        "crm_type": "amocrm",
         "general": {
             "company_name": "Самозанятый",
             "currency": "RUB (₽)",
@@ -478,6 +480,7 @@ def get_tenant_settings_or_fallback(tenant_id: str = "TNT-001") -> dict[str, Any
         "status": "ok",
         "source": "registry" if cfg.get("managers") else "fallback",
         "tenant_id": clean_tenant,
+        "crm_type": cfg.get("crm_type") or "amocrm",
         "general": {
             "company_name": company_name,
             "currency": currency,
@@ -652,15 +655,58 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
 # ============================================================================
 
 @router.get("")
-def get_settings(
+async def get_settings(
     tenant_id: str | None = None,
     tenant: str | None = None,
+    auto_sync: bool = False,
 ):
     """
     Returns 28 business configuration parameters from Google Sheets (⚙️ Настройки) for given tenant.
+    Optionally triggers auto-sync from CRM if auto_sync=True.
     """
     clean_tenant = (tenant_id or tenant or "TNT-001").strip().upper()
+    if auto_sync:
+        try:
+            from ..services.crm_users_sync import sync_tenant_crm_managers
+            await sync_tenant_crm_managers(clean_tenant)
+        except Exception as e:
+            logger.warning(f"CRM auto-sync failed during get_settings for {clean_tenant}: {e}")
+
     return fetch_settings_from_sheets(tenant_id=clean_tenant)
+
+
+@router.post("/managers/sync")
+async def sync_managers(
+    tenant_id: str | None = Query(None),
+    tenant: str | None = Query(None),
+):
+    """
+    Auto-discovers and imports managers from connected CRM (amoCRM / Bitrix24).
+    Safe non-destructive sync: preserves existing manager targets and plans,
+    adds new team members with standard RevOps presets.
+    """
+    clean_tenant = (tenant_id or tenant or "TNT-001").strip().upper()
+    from ..services.crm_users_sync import sync_tenant_crm_managers
+    res = await sync_tenant_crm_managers(clean_tenant)
+
+    # Invalidate cache if managers were added
+    if clean_tenant in _SETTINGS_CACHE:
+        _SETTINGS_CACHE[clean_tenant]["timestamp"] = 0
+
+    if res.get("added_count", 0) > 0:
+        fresh_settings = fetch_settings_from_sheets(tenant_id=clean_tenant, force_refresh=True)
+        await manager.broadcast(clean_tenant, {
+            "event": "settings_updated",
+            "timestamp": time.time(),
+            "settings": fresh_settings,
+        })
+
+    return res
+
+
+@router.post("/tenants/{tenant_id}/managers/sync")
+async def sync_tenant_managers_route(tenant_id: str):
+    return await sync_managers(tenant_id=tenant_id)
 
 
 @router.post("")

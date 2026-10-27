@@ -23,6 +23,7 @@ import type {
   ClientProfile,
   CrmActionPayload,
   CrmStatusResponse,
+  CrmSyncManagersResponse,
   Deal,
   DlqRetryResponse,
   FleetActionRequest,
@@ -288,6 +289,17 @@ export const settingsApi = {
     const res = await api.patch(
       `/settings/managers/${encodeURIComponent(managerId)}/kpis`,
       payload,
+      { params: { tenant_id: tenantId } }
+    );
+    return res.data;
+  },
+
+  syncCrmManagers: async (
+    tenantId: string
+  ): Promise<CrmSyncManagersResponse> => {
+    const res = await api.post<CrmSyncManagersResponse>(
+      '/settings/managers/sync',
+      null,
       { params: { tenant_id: tenantId } }
     );
     return res.data;

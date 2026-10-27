@@ -95,6 +95,7 @@ export function SettingsPage() {
   const [teamChatId, setTeamChatId] = useState<string>('');
   const [dispatcherStatus, setDispatcherStatus] = useState<boolean>(true);
   const [editableModules, setEditableModules] = useState<ModuleFlag[]>([]);
+  const [hasAutoSynced, setHasAutoSynced] = useState<boolean>(false);
 
   // Feedback banner state
   const [saveStatus, setSaveStatus] = useState<{
@@ -199,6 +200,48 @@ export function SettingsPage() {
       });
     },
   });
+
+  const syncCrmManagersMutation = useMutation({
+    mutationFn: (_silent: boolean = false) =>
+      settingsApi.syncCrmManagers(tenantId!),
+    onSuccess: (data, silent) => {
+      queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['managers', tenantId] });
+      if (data.managers && Array.isArray(data.managers)) {
+        setEditableManagers(data.managers);
+        setIsManagersInitialized(true);
+      }
+      if (data.added_count > 0) {
+        setSaveStatus({
+          text: `✓ ${data.message || `Импортировано новых сотрудников: ${data.added_count}`}`,
+          type: 'success',
+        });
+        setTimeout(() => setSaveStatus(null), 5000);
+      } else if (!silent) {
+        setSaveStatus({
+          text: data.message || 'Все сотрудники из CRM уже синхронизированы в реестре.',
+          type: 'success',
+        });
+        setTimeout(() => setSaveStatus(null), 4000);
+      }
+    },
+    onError: (err: Error, silent) => {
+      if (!silent) {
+        setSaveStatus({
+          text: `Ошибка синхронизации с CRM: ${err.message}`,
+          type: 'error',
+        });
+      }
+    },
+  });
+
+  // Auto-sync managers from CRM once on page load
+  useEffect(() => {
+    if (tenantId && !hasAutoSynced) {
+      setHasAutoSynced(true);
+      syncCrmManagersMutation.mutate(true);
+    }
+  }, [tenantId, hasAutoSynced]);
 
   const saveTelegramMutation = useMutation({
     mutationFn: (telegramPayload: {
@@ -425,6 +468,14 @@ export function SettingsPage() {
   const telegram = settings?.telegram;
   const modules: ModuleFlag[] =
     editableModules.length > 0 ? editableModules : settings?.modules || [];
+
+  const crmType = (settings?.crm_type || '').toLowerCase();
+  const crmLabel =
+    crmType === 'amocrm' || crmType === 'amo'
+      ? 'Импортировать из amoCRM'
+      : crmType === 'bitrix24' || crmType === 'b24'
+        ? 'Импортировать из Битрикс24'
+        : 'Импортировать из amoCRM / Битрикс24';
 
   const formattedPlan = general?.monthly_target
     ? `${general.monthly_target.toLocaleString('ru-RU')} ₽`
@@ -844,7 +895,28 @@ export function SettingsPage() {
                   Персональные планы выручки, нормативы звонков и встреч, вместимость сделок и качество Next Step.
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => syncCrmManagersMutation.mutate(false)}
+                  disabled={syncCrmManagersMutation.isPending}
+                  className="h-8 gap-1.5 text-xs font-semibold"
+                  data-testid="btn-sync-crm-managers"
+                  title="Импортировать сотрудников из подключенной CRM"
+                >
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 text-primary ${
+                      syncCrmManagersMutation.isPending ? 'animate-spin' : ''
+                    }`}
+                  />
+                  <span>
+                    {syncCrmManagersMutation.isPending
+                      ? 'Синхронизация...'
+                      : `🔄 ${crmLabel}`}
+                  </span>
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -1230,6 +1302,25 @@ export function SettingsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-subtle">
+                    {managers.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="py-8 text-center text-xs text-muted-foreground"
+                          data-testid="managers-empty-row"
+                        >
+                          В команде пока нет добавленных сотрудников. Нажмите{' '}
+                          <button
+                            type="button"
+                            onClick={() => syncCrmManagersMutation.mutate(false)}
+                            className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+                          >
+                            «🔄 {crmLabel}»
+                          </button>{' '}
+                          для автоматического импорта из CRM или добавьте вручную через «+ Добавить менеджера».
+                        </td>
+                      </tr>
+                    )}
                     {managers.map((m) => (
                       <tr
                         key={m.id}
