@@ -259,4 +259,50 @@ describe('PulsePage', () => {
     // Should display plan 8.0M in trend label
     expect(await screen.findByText(/план 8\.0M ₽/i)).toBeInTheDocument();
   });
+
+  it('renders pacing indicator and allows switching between department tabs', async () => {
+    vi.mocked(insightsApi.summary).mockResolvedValue(mockInsights);
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    vi.mocked(dealsApi.list).mockResolvedValue([]);
+    vi.mocked(settingsApi.get).mockResolvedValue({
+      status: 'ok',
+      source: 'test',
+      tenant_id: 'TNT-001',
+      general: {
+        company_name: 'ООО Прогресс',
+        currency: 'RUB (₽)',
+        period_start: '2026-10-01',
+        period_end: '2026-10-31',
+        monthly_target: 5000000,
+        project_start_date: '2026-10-01',
+      },
+      stages: [],
+      managers: [],
+      loss_reasons: [],
+      telegram: {} as any,
+      modules: [],
+    });
+
+    renderWithClient(<PulsePage />);
+
+    // Check Pacing Badge
+    expect(await screen.findByTestId('pacing-badge')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-content-sales')).toBeInTheDocument();
+
+    // Switch to Standup tab
+    const standupTab = screen.getByTestId('tab-dept-standup');
+    fireEvent.keyDown(standupTab, { key: 'Enter' });
+    expect(await screen.findByTestId('rnp-standup-view')).toBeInTheDocument();
+
+    // Switch to Marketing tab
+    const marketingTab = screen.getByTestId('tab-dept-marketing');
+    fireEvent.keyDown(marketingTab, { key: 'Enter' });
+    expect(await screen.findByTestId('rnp-marketing-view')).toBeInTheDocument();
+
+    // Switch to Finance tab
+    const financeTab = screen.getByTestId('tab-dept-finance');
+    fireEvent.keyDown(financeTab, { key: 'Enter' });
+    expect(await screen.findByTestId('rnp-finance-view')).toBeInTheDocument();
+  });
 });
+

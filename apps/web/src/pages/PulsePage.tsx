@@ -17,12 +17,17 @@ import {
   HelpCircle,
   PhoneCall,
   Sparkles,
+  Users,
+  Zap,
+  Target,
+  CircleDollarSign,
 } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { DataTable } from '@/components/DataTable';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LostDealsBanner } from '@/components/LostDealsBanner';
 import { PipelineFunnel } from '@/components/PipelineFunnel';
 import { CallDetailsDrawer } from '@/components/CallDetailsDrawer';
@@ -33,6 +38,9 @@ import { PulseSmartAlert } from '@/components/PulseSmartAlert';
 import { BusinessEconomicsCard } from '@/components/BusinessEconomicsCard';
 import { StatusSegmentedBar } from '@/components/StatusSegmentedBar';
 import { DailyPulseMatrix } from '@/components/DailyPulseMatrix';
+import { RnpStandupView } from '@/components/rnp/RnpStandupView';
+import { RnpMarketingView } from '@/components/rnp/RnpMarketingView';
+import { RnpFinanceView } from '@/components/rnp/RnpFinanceView';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { callsApi, dealsApi, insightsApi, settingsApi } from '@/lib/api';
 import type { Call, RecommendationItem } from '@/types/api';
@@ -178,6 +186,7 @@ export function PulsePage() {
   const insights = insightsQuery.data;
   const calls = callsQuery.data || [];
   const deals = dealsQuery.data || [];
+  const settings = settingsQuery.data;
   const recentCalls = calls.slice(0, 10);
 
   // Deals won amount
@@ -238,6 +247,17 @@ export function PulsePage() {
 
   const [showRopGuide, setShowRopGuide] = React.useState(false);
   const [showDataAuditInfo, setShowDataAuditInfo] = React.useState(false);
+  const [activeDept, setActiveDept] = React.useState<'sales' | 'standup' | 'marketing' | 'finance'>('sales');
+
+  // Month progress and pacing calculations (Pulsar7 & Salesforce style)
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const monthProgressPct = Math.round((dayOfMonth / daysInMonth) * 100);
+  const targetToDate = planTarget > 0 ? Math.round((planTarget / daysInMonth) * dayOfMonth) : 0;
+  const pacingPct = targetToDate > 0 ? Math.round((revenue / targetToDate) * 100) : 100;
+  const isPacingGood = pacingPct >= 100;
+  const isPacingMid = pacingPct >= 85;
 
   return (
     <div className="space-y-6">
@@ -335,6 +355,82 @@ export function PulsePage() {
           </Button>
         </Alert>
       )}
+
+      {/* Department Tabs & Rhythm Pacing Strip */}
+      <Tabs
+        value={activeDept}
+        onValueChange={(val) => setActiveDept(val as any)}
+        className="w-full space-y-4"
+        data-testid="rnp-dept-tabs"
+      >
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-subtle pb-3">
+          <TabsList className="bg-subtle/40 p-1 rounded-xl h-9" data-testid="dept-tabs-list">
+            <TabsTrigger
+              value="sales"
+              className="gap-2 text-xs h-7 data-[state=active]:bg-background data-[state=active]:text-foreground font-medium"
+              data-testid="tab-dept-sales"
+            >
+              <Users className="h-3.5 w-3.5 text-primary" />
+              <span>Отдел продаж (ОП)</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="standup"
+              className="gap-2 text-xs h-7 data-[state=active]:bg-background data-[state=active]:text-foreground font-medium"
+              data-testid="tab-dept-standup"
+            >
+              <Zap className="h-3.5 w-3.5 text-amber-500" />
+              <span>⚡ Планёрка РОПа (5 мин)</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="marketing"
+              className="gap-2 text-xs h-7 data-[state=active]:bg-background data-[state=active]:text-foreground font-medium"
+              data-testid="tab-dept-marketing"
+            >
+              <Target className="h-3.5 w-3.5 text-sky-500" />
+              <span>Трафик & Лиды</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="finance"
+              className="gap-2 text-xs h-7 data-[state=active]:bg-background data-[state=active]:text-foreground font-medium"
+              data-testid="tab-dept-finance"
+            >
+              <CircleDollarSign className="h-3.5 w-3.5 text-emerald-500" />
+              <span>Финансы & Маржа (P&L)</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Quick Pacing & Rhythm Pill */}
+          <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-subtle bg-subtle/30 text-tertiary">
+              <span>День:</span>
+              <strong className="font-mono text-foreground font-semibold">
+                {dayOfMonth}/{daysInMonth}
+              </strong>
+              <span className="text-[10px]">({monthProgressPct}%)</span>
+            </div>
+
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border font-mono text-xs font-semibold ${
+                isPacingGood
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                  : isPacingMid
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                  : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
+              }`}
+              data-testid="pacing-badge"
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isPacingGood ? 'bg-emerald-400' : isPacingMid ? 'bg-amber-400' : 'bg-rose-400 animate-pulse'
+                }`}
+              />
+              <span>Темп: {pacingPct}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab 1: Sales Department (Default) */}
+        <TabsContent value="sales" className="mt-4 space-y-6" data-testid="tab-content-sales">
 
       {/* MPSTATS Smart Alert Banner */}
       <PulseSmartAlert
@@ -615,6 +711,38 @@ export function PulsePage() {
           </div>
         </div>
       )}
+        </TabsContent>
+
+        {/* Tab 2: Standup Mode (5-min Morning Standup) */}
+        <TabsContent value="standup" className="mt-4" data-testid="tab-content-standup">
+          <RnpStandupView
+            calls={calls}
+            deals={deals}
+            managers={settings?.managers || []}
+            planTarget={planTarget}
+            onInspectCall={(call) => setSelectedCall(call)}
+          />
+        </TabsContent>
+
+        {/* Tab 3: Marketing & Leads Traffic View */}
+        <TabsContent value="marketing" className="mt-4" data-testid="tab-content-marketing">
+          <RnpMarketingView
+            deals={deals}
+            managers={settings?.managers || []}
+          />
+        </TabsContent>
+
+        {/* Tab 4: Financial Margin & P&L View */}
+        <TabsContent value="finance" className="mt-4" data-testid="tab-content-finance">
+          <RnpFinanceView
+            deals={deals}
+            managers={settings?.managers || []}
+            stages={settings?.stages || []}
+            planTarget={planTarget}
+            revenue={revenue}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Deep Inspection Slide-Over Drawer */}
       <CallDetailsDrawer
