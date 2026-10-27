@@ -2575,7 +2575,7 @@ def get_admin_crm_status(tenant_id: str = Query("TNT-001")):
     b24_script = _find_crm_connector_script("bitrix24")
     amo_script = _find_crm_connector_script("amocrm")
 
-    b24_webhook = config.get("b24_webhook_url") or config.get("crm_webhook_url") or ""
+    b24_webhook = config.get("bitrix_webhook_url") or config.get("b24_webhook_url") or config.get("crm_webhook_url") or ""
     amo_domain = (config.get("amo_domain") or "").replace("https://", "").replace("/", "")
     amo_token = config.get("amo_token") or ""
 
