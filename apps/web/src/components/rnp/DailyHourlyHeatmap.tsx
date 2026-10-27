@@ -1,6 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Call, ManagerConfig } from '@/types/api';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Flame, Clock, PhoneOutgoing, Calendar, Sparkles } from 'lucide-react';
 
@@ -13,7 +19,10 @@ export interface DailyHourlyHeatmapProps {
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
-export function extractCallHourAndDate(c: Call): { dateStr: string; hour: number | null } {
+export function extractCallHourAndDate(c: Call): {
+  dateStr: string;
+  hour: number | null;
+} {
   const raw = c.date || c.created_at || '';
   if (!raw) return { dateStr: '', hour: null };
 
@@ -32,7 +41,10 @@ export function extractCallHourAndDate(c: Call): { dateStr: string; hour: number
 
   const parsed = new Date(raw);
   if (!isNaN(parsed.getTime())) {
-    return { dateStr: parsed.toISOString().slice(0, 10), hour: parsed.getHours() };
+    return {
+      dateStr: parsed.toISOString().slice(0, 10),
+      hour: parsed.getHours(),
+    };
   }
 
   return { dateStr: '', hour: null };
@@ -83,7 +95,9 @@ export const DailyHourlyHeatmap: React.FC<DailyHourlyHeatmapProps> = ({
   // 3. Resolve manager list
   const managerList = useMemo(() => {
     if (managers.length > 0) return managers;
-    const names = Array.from(new Set(calls.map((c) => c.manager).filter(Boolean)));
+    const names = Array.from(
+      new Set(calls.map((c) => c.manager).filter(Boolean))
+    );
     return names.map((name, idx) => ({
       id: `m-${idx + 1}`,
       name,
@@ -96,7 +110,10 @@ export const DailyHourlyHeatmap: React.FC<DailyHourlyHeatmapProps> = ({
 
   // 4. Group data: manager -> hour -> { dials, calls60s }
   const matrix = useMemo(() => {
-    const data: Record<string, Record<number, { dials: number; calls60s: number }>> = {};
+    const data: Record<
+      string,
+      Record<number, { dials: number; calls60s: number }>
+    > = {};
 
     managerList.forEach((m) => {
       data[m.name] = {};
@@ -181,42 +198,59 @@ export const DailyHourlyHeatmap: React.FC<DailyHourlyHeatmapProps> = ({
   };
 
   return (
-    <Card className={`overflow-hidden border border-subtle bg-surface ${className}`} data-testid="daily-hourly-heatmap">
-      <CardHeader className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between border-b border-subtle">
+    <Card
+      className={`overflow-hidden border border-subtle bg-surface ${className}`}
+      data-testid="daily-hourly-heatmap"
+    >
+      <CardHeader className="flex flex-col gap-2 border-b border-subtle pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-amber-400 animate-pulse" />
+            <Flame className="h-4 w-4 animate-pulse text-amber-400" />
             <CardTitle className="text-sm font-bold text-foreground">
               Температурная карта звонков отдела (8:00 – 20:00)
             </CardTitle>
-            <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-400 font-mono text-[11px]">
+            <Badge
+              variant="outline"
+              className="border-amber-500/30 bg-amber-500/10 font-mono text-[11px] text-amber-400"
+            >
               наборы / от 1 мин
             </Badge>
           </div>
           <CardDescription className="text-xs text-muted-foreground">
-            Почасовая интенсивность вызовов менеджеров: наборы звонков всего через слэш целевые разговоры от 60 секунд.
+            Почасовая интенсивность вызовов менеджеров: наборы звонков всего
+            через слэш целевые разговоры от 60 секунд.
           </CardDescription>
         </div>
 
         {/* Date Selector & Peak Badge */}
         <div className="flex flex-wrap items-center gap-2">
           {primeHour !== null && (
-            <Badge variant="outline" className="gap-1 border-primary/40 bg-primary/10 text-primary font-mono text-[11px]">
+            <Badge
+              variant="outline"
+              className="border-primary/40 bg-primary/10 gap-1 font-mono text-[11px] text-primary"
+            >
               <Sparkles className="h-3 w-3" />
-              <span>Prime Time: {primeHour}:00 ({hourlyTotals[primeHour].dials} наб.)</span>
+              <span>
+                Prime Time: {primeHour}:00 ({hourlyTotals[primeHour].dials}{' '}
+                наб.)
+              </span>
             </Badge>
           )}
 
-          <div className="flex items-center gap-1.5 rounded-lg border border-subtle bg-subtle/30 px-2 py-1 text-xs">
+          <div className="bg-subtle/30 flex items-center gap-1.5 rounded-lg border border-subtle px-2 py-1 text-xs">
             <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
             <select
               value={activeDate}
               onChange={(e) => setActiveDate(e.target.value)}
-              className="bg-transparent font-mono text-xs font-semibold text-foreground outline-none cursor-pointer"
+              className="cursor-pointer bg-transparent font-mono text-xs font-semibold text-foreground outline-none"
               data-testid="heatmap-date-selector"
             >
               {availableDates.map((d) => (
-                <option key={d} value={d} className="bg-surface text-foreground">
+                <option
+                  key={d}
+                  value={d}
+                  className="bg-surface text-foreground"
+                >
                   {d}
                 </option>
               ))}
@@ -225,11 +259,11 @@ export const DailyHourlyHeatmap: React.FC<DailyHourlyHeatmapProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="space-y-3 p-4">
         {/* Heatmap Matrix Table */}
         <div className="overflow-x-auto rounded-lg border border-subtle">
           <table className="w-full text-xs">
-            <thead className="bg-subtle/60 border-b border-subtle text-muted-foreground font-mono">
+            <thead className="bg-subtle/60 border-b border-subtle font-mono text-muted-foreground">
               <tr>
                 <th className="min-w-[170px] px-3 py-2.5 text-left font-semibold">
                   Менеджер
@@ -238,178 +272,232 @@ export const DailyHourlyHeatmap: React.FC<DailyHourlyHeatmapProps> = ({
                   <th
                     key={h}
                     className={`min-w-[58px] px-1.5 py-2 text-center font-medium ${
-                      h === primeHour ? 'text-primary font-bold bg-primary/5' : ''
+                      h === primeHour
+                        ? 'bg-primary/5 font-bold text-primary'
+                        : ''
                     }`}
                   >
-                    <div className="text-[11px]">{h.toString().padStart(2, '0')}:00</div>
+                    <div className="text-[11px]">
+                      {h.toString().padStart(2, '0')}:00
+                    </div>
                   </th>
                 ))}
-                <th className="min-w-[100px] px-3 py-2 text-center font-semibold bg-subtle/80 text-foreground">
+                <th className="bg-subtle/80 min-w-[100px] px-3 py-2 text-center font-semibold text-foreground">
                   Итого день
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-subtle font-mono">
-              {Object.keys(matrix).map((mgrName) => {
-                const mgrData = matrix[mgrName];
-                const mgrConfig = managerList.find((m) => m.name === mgrName);
-                const dialsTarget = mgrConfig?.daily_dials_target ?? 40;
-                const callsTarget = mgrConfig?.daily_calls_target ?? 20;
-
-                // Day totals for this manager
-                let mgrTotalDials = 0;
-                let mgrTotal60s = 0;
-                HOURS.forEach((h) => {
-                  mgrTotalDials += mgrData[h]?.dials || 0;
-                  mgrTotal60s += mgrData[h]?.calls60s || 0;
-                });
-
-                const isTargetAchieved = mgrTotal60s >= callsTarget && mgrTotalDials >= dialsTarget;
-
-                return (
-                  <tr
-                    key={mgrName}
-                    className="hover:bg-hover/40 transition-colors"
-                    data-testid={`heatmap-row-${mgrName}`}
+              {Object.keys(matrix).length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={HOURS.length + 2}
+                    className="px-4 py-8 text-center font-sans text-xs text-muted-foreground"
+                    data-testid="heatmap-empty-state"
                   >
-                    {/* Manager Name + Target hint */}
-                    <td className="px-3 py-2 font-sans font-medium text-foreground">
-                      <div className="leading-tight">
-                        <div className="font-semibold text-xs">{mgrName}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono">
-                          план: {callsTarget} целевых / {dialsTarget} наборов
-                        </div>
-                      </div>
-                    </td>
+                    <div className="flex flex-col items-center justify-center gap-1.5">
+                      <span className="font-semibold text-foreground">
+                        Сотрудники отдела продаж ещё не добавлены
+                      </span>
+                      <span>
+                        Задайте штатное расписание и нормативы звонков во
+                        вкладке{' '}
+                        <strong className="font-medium text-primary">
+                          «Настройки → Менеджеры»
+                        </strong>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                Object.keys(matrix).map((mgrName) => {
+                  const mgrData = matrix[mgrName];
+                  const mgrConfig = managerList.find((m) => m.name === mgrName);
+                  const dialsTarget = mgrConfig?.daily_dials_target ?? 40;
+                  const callsTarget = mgrConfig?.daily_calls_target ?? 20;
 
-                    {/* Hourly Cells */}
-                    {HOURS.map((h) => {
-                      const cell = mgrData[h] || { dials: 0, calls60s: 0 };
-                      const intensityClass = getCellIntensityClass(cell.dials, cell.calls60s);
-                      const isWorkingHour = h >= 10 && h <= 18;
-                      const isActivityGap = isWorkingHour && cell.dials === 0;
+                  // Day totals for this manager
+                  let mgrTotalDials = 0;
+                  let mgrTotal60s = 0;
+                  HOURS.forEach((h) => {
+                    mgrTotalDials += mgrData[h]?.dials || 0;
+                    mgrTotal60s += mgrData[h]?.calls60s || 0;
+                  });
 
-                      return (
-                        <td
-                          key={h}
-                          className={`p-1 text-center align-middle ${
-                            h === primeHour ? 'bg-primary/5' : ''
-                          }`}
-                        >
-                          <div
-                            className={`rounded-md border py-1 px-1 transition-all text-[11px] ${intensityClass} ${
-                              isActivityGap ? 'hover:border-amber-400/50' : ''
-                            }`}
-                            title={`${mgrName} в ${h}:00: ${cell.dials} наборов всего, ${cell.calls60s} разговоров от 60 сек`}
-                            data-testid={`cell-${mgrName}-${h}`}
-                          >
-                            {cell.dials > 0 ? (
-                              <span>
-                                {cell.dials} <span className="text-[10px] opacity-60">/</span> {cell.calls60s}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground/30">—</span>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
-
-                    {/* Manager Day Total */}
-                    <td className="px-3 py-2 text-center bg-subtle/40 font-bold">
-                      <div className="leading-tight">
-                        <span
-                          className={
-                            isTargetAchieved
-                              ? 'text-emerald-400'
-                              : mgrTotal60s > 0
-                              ? 'text-foreground'
-                              : 'text-muted-foreground'
-                          }
-                        >
-                          {mgrTotalDials} / {mgrTotal60s}
-                        </span>
-                        <div className="text-[10px] font-normal text-muted-foreground">
-                          {callsTarget > 0 ? `${Math.round((mgrTotal60s / callsTarget) * 100)}% нормы` : '—'}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {/* Team Hourly Summary Row */}
-              <tr className="bg-subtle/80 font-bold border-t-2 border-subtle" data-testid="heatmap-team-totals-row">
-                <td className="px-3 py-2.5 font-sans text-xs text-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <PhoneOutgoing className="h-3.5 w-3.5 text-primary" />
-                    <span>Всего отдел:</span>
-                  </div>
-                </td>
-
-                {HOURS.map((h) => {
-                  const t = hourlyTotals[h];
-                  const intensityClass = getCellIntensityClass(t.dials, t.calls60s);
+                  const isTargetAchieved =
+                    mgrTotal60s >= callsTarget && mgrTotalDials >= dialsTarget;
 
                   return (
-                    <td key={h} className="p-1 text-center">
-                      <div
-                        className={`rounded-md border py-1 px-1 text-[11px] ${intensityClass}`}
-                        title={`Весь отдел в ${h}:00: ${t.dials} наборов / ${t.calls60s} разговоров от 60с`}
-                      >
-                        {t.dials > 0 ? (
-                          <span>
-                            {t.dials} <span className="text-[10px] opacity-60">/</span> {t.calls60s}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground/40">—</span>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
+                    <tr
+                      key={mgrName}
+                      className="hover:bg-hover/40 transition-colors"
+                      data-testid={`heatmap-row-${mgrName}`}
+                    >
+                      {/* Manager Name + Target hint */}
+                      <td className="px-3 py-2 font-sans font-medium text-foreground">
+                        <div className="leading-tight">
+                          <div className="text-xs font-semibold">{mgrName}</div>
+                          <div className="font-mono text-[10px] text-muted-foreground">
+                            план: {callsTarget} целевых / {dialsTarget} наборов
+                          </div>
+                        </div>
+                      </td>
 
-                {/* Team Grand Total */}
-                <td className="px-3 py-2 text-center bg-subtle text-foreground text-xs font-extrabold font-mono">
-                  <div className="leading-tight">
-                    <span className="text-emerald-400">
-                      {teamDailyTotal.dials} / {teamDailyTotal.calls60s}
-                    </span>
-                    <div className="text-[10px] font-normal text-muted-foreground font-sans">
-                      всего за день
+                      {/* Hourly Cells */}
+                      {HOURS.map((h) => {
+                        const cell = mgrData[h] || { dials: 0, calls60s: 0 };
+                        const intensityClass = getCellIntensityClass(
+                          cell.dials,
+                          cell.calls60s
+                        );
+                        const isWorkingHour = h >= 10 && h <= 18;
+                        const isActivityGap = isWorkingHour && cell.dials === 0;
+
+                        return (
+                          <td
+                            key={h}
+                            className={`p-1 text-center align-middle ${
+                              h === primeHour ? 'bg-primary/5' : ''
+                            }`}
+                          >
+                            <div
+                              className={`rounded-md border px-1 py-1 text-[11px] transition-all ${intensityClass} ${
+                                isActivityGap ? 'hover:border-amber-400/50' : ''
+                              }`}
+                              title={`${mgrName} в ${h}:00: ${cell.dials} наборов всего, ${cell.calls60s} разговоров от 60 сек`}
+                              data-testid={`cell-${mgrName}-${h}`}
+                            >
+                              {cell.dials > 0 ? (
+                                <span>
+                                  {cell.dials}{' '}
+                                  <span className="text-[10px] opacity-60">
+                                    /
+                                  </span>{' '}
+                                  {cell.calls60s}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground/30">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+
+                      {/* Manager Day Total */}
+                      <td className="bg-subtle/40 px-3 py-2 text-center font-bold">
+                        <div className="leading-tight">
+                          <span
+                            className={
+                              isTargetAchieved
+                                ? 'text-emerald-400'
+                                : mgrTotal60s > 0
+                                  ? 'text-foreground'
+                                  : 'text-muted-foreground'
+                            }
+                          >
+                            {mgrTotalDials} / {mgrTotal60s}
+                          </span>
+                          <div className="text-[10px] font-normal text-muted-foreground">
+                            {callsTarget > 0
+                              ? `${Math.round((mgrTotal60s / callsTarget) * 100)}% нормы`
+                              : '—'}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+
+              {/* Team Hourly Summary Row */}
+              {Object.keys(matrix).length > 0 && (
+                <tr
+                  className="bg-subtle/80 border-t-2 border-subtle font-bold"
+                  data-testid="heatmap-team-totals-row"
+                >
+                  <td className="px-3 py-2.5 font-sans text-xs text-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <PhoneOutgoing className="h-3.5 w-3.5 text-primary" />
+                      <span>Всего отдел:</span>
                     </div>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+
+                  {HOURS.map((h) => {
+                    const t = hourlyTotals[h];
+                    const intensityClass = getCellIntensityClass(
+                      t.dials,
+                      t.calls60s
+                    );
+
+                    return (
+                      <td key={h} className="p-1 text-center">
+                        <div
+                          className={`rounded-md border px-1 py-1 text-[11px] ${intensityClass}`}
+                          title={`Весь отдел в ${h}:00: ${t.dials} наборов / ${t.calls60s} разговоров от 60с`}
+                        >
+                          {t.dials > 0 ? (
+                            <span>
+                              {t.dials}{' '}
+                              <span className="text-[10px] opacity-60">/</span>{' '}
+                              {t.calls60s}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/40">—</span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+
+                  {/* Team Grand Total */}
+                  <td className="bg-subtle px-3 py-2 text-center font-mono text-xs font-extrabold text-foreground">
+                    <div className="leading-tight">
+                      <span className="text-emerald-400">
+                        {teamDailyTotal.dials} / {teamDailyTotal.calls60s}
+                      </span>
+                      <div className="font-sans text-[10px] font-normal text-muted-foreground">
+                        всего за день
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Legend Ribbon */}
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground pt-1">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs text-muted-foreground">
           <div className="flex items-center gap-3">
-            <span className="text-[11px] font-medium text-foreground">Интенсивность:</span>
+            <span className="text-[11px] font-medium text-foreground">
+              Интенсивность:
+            </span>
             <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-sm bg-subtle/40 border border-subtle" />
+              <span className="bg-subtle/40 h-2.5 w-2.5 rounded-sm border border-subtle" />
               <span className="text-[11px]">0</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-sm bg-sky-500/20 border border-sky-500/40" />
+              <span className="h-2.5 w-2.5 rounded-sm border border-sky-500/40 bg-sky-500/20" />
               <span className="text-[11px]">1–3 наб.</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500/20 border border-emerald-500/40" />
+              <span className="h-2.5 w-2.5 rounded-sm border border-emerald-500/40 bg-emerald-500/20" />
               <span className="text-[11px]">4–7 наб.</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500/40 border border-emerald-400 font-bold" />
+              <span className="h-2.5 w-2.5 rounded-sm border border-emerald-400 bg-emerald-500/40 font-bold" />
               <span className="text-[11px]">8+ наб. (Prime)</span>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 text-[11px]">
             <Clock className="h-3.5 w-3.5 text-primary" />
-            <span>Формат ячейки: <strong>{'{наборы всего} / {звонки ≥60 сек}'}</strong></span>
+            <span>
+              Формат ячейки:{' '}
+              <strong>{'{наборы всего} / {звонки ≥60 сек}'}</strong>
+            </span>
           </div>
         </div>
       </CardContent>

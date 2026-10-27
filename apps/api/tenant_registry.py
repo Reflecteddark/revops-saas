@@ -325,11 +325,15 @@ def get_tenant_config(tenant_id: str) -> dict[str, Any] | None:
 
 
 
-def get_tenant_spreadsheet_id(tenant_id: str = "TNT-001") -> str:
-    config = get_tenant_config(tenant_id)
+def get_tenant_spreadsheet_id(tenant_id: str = "TNT-001") -> str | None:
+    clean_id = (tenant_id or "TNT-001").strip().upper()
+    config = get_tenant_config(clean_id)
     if config and config.get("spreadsheet_id"):
         return str(config["spreadsheet_id"]).strip()
-    return DEFAULT_SPREADSHEET_ID
+    # ONLY fallback to DEFAULT_SPREADSHEET_ID for primary master tenant TNT-001 / TNT-MASTER-001
+    if clean_id in ("TNT-001", "TNT-MASTER-001"):
+        return DEFAULT_SPREADSHEET_ID
+    return None
 
 
 def get_all_tenants_summary() -> list[dict[str, Any]]:
@@ -342,7 +346,7 @@ def get_all_tenants_summary() -> list[dict[str, Any]]:
             "tenant_id": t.get("tenant_id", "TNT-001"),
             "tenant_name": t.get("tenant_name", "Клиент"),
             "crm_type": t.get("crm_type", "bitrix24"),
-            "spreadsheet_id": t.get("spreadsheet_id", DEFAULT_SPREADSHEET_ID),
+            "spreadsheet_id": t.get("spreadsheet_id"),
             "status": t.get("status", "active"),
             "niche_name": t.get("niche_name", "Универсальный B2B"),
             "avg_deal_check": t.get("avg_deal_check", 150000),

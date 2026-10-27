@@ -131,20 +131,29 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
         return fb
 
     try:
+        sheet_id = get_tenant_spreadsheet_id(clean_tenant)
+        if not sheet_id:
+            logger.info(f"Tenant {clean_tenant} has no connected spreadsheet, returning local tenant settings")
+            return get_tenant_settings_or_fallback(clean_tenant)
         import gspread
         gc = gspread.service_account(str(sa_path))
-        sheet_id = get_tenant_spreadsheet_id(clean_tenant)
         ss = gc.open_by_key(sheet_id)
 
         ws_settings = ss.worksheet("⚙️ Настройки")
         s_rows = ws_settings.get_all_values()
 
+        is_master_or_template = clean_tenant in ("TNT-001", "TNT-MASTER-001") or "TEMPLATE" in clean_tenant
+
+        from ..tenant_registry import get_tenant_config
+        cfg = get_tenant_config(clean_tenant) or {}
+        kpis_map = cfg.get("manager_kpis", {}) or {}
+
         # Parse general settings
-        company_name = "Самозанятый"
+        company_name = "Самозанятый" if is_master_or_template else (cfg.get("tenant_name") or f"Клиент {clean_tenant}")
         currency = "RUB (₽)"
         period_start = "2026-10-01"
         period_end = "2026-10-31"
-        monthly_target = 5000000.0
+        monthly_target = 5000000.0 if is_master_or_template else 0.0
         project_start_date = "2026-10-03"
 
         for r in s_rows:
@@ -153,7 +162,8 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
             col0 = r[0].strip() if len(r) > 0 else ""
             col1 = r[1].strip() if len(r) > 1 else ""
             if "Организация" in col0:
-                company_name = col1 or company_name
+                if col1 and col1 not in ("[Название компании / Клиента]", "—", "-", ""):
+                    company_name = col1
             elif "Валюта" in col0:
                 currency = col1 or currency
             elif "Период: начало" in col0:
@@ -181,9 +191,6 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
                 stages.append({"id": s_id, "name": s_name, "sla_hours": sla, "win_pct": win})
 
         # Parse managers (supports dynamic managers from registry, with fallback to Sheet Rows 21-24)
-        from ..tenant_registry import get_tenant_config
-        cfg = get_tenant_config(clean_tenant) or {}
-        kpis_map = cfg.get("manager_kpis", {}) or {}
         if cfg.get("managers") and isinstance(cfg.get("managers"), list) and len(cfg["managers"]) > 0:
             raw_managers = cfg["managers"]
         else:
@@ -191,10 +198,15 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
             for r_idx in range(20, min(24, len(s_rows))):
                 r = s_rows[r_idx]
                 if len(r) >= 4 and r[0]:
-                    m_id = r[0]
-                    m_name = r[1]
-                    m_role = r[2]
-                    cap = int(r[3]) if r[3].isdigit() else 40
+                    m_id = str(r[0]).strip()
+                    m_name = str(r[1]).strip()
+                    m_role = str(r[2]).strip()
+                    cap = int(r[3]) if str(r[3]).strip().isdigit() else 40
+                    # Ignore placeholder / template blank manager rows
+                    if not m_name or m_name in ("—", "-", "[Имя менеджера]", "None", "name"):
+                        continue
+                    if not m_id or m_id in ("—", "-", "[ID]", "None", "id"):
+                        continue
                     raw_managers.append({"id": m_id, "name": m_name, "role": m_role, "capacity": cap})
 
         managers = []
@@ -287,7 +299,7 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
                 "project_start_date": project_start_date
             },
             "stages": stages or fallback_data["stages"],
-            "managers": managers or fallback_data["managers"],
+            "managers": managers if (managers or not is_master_or_template) else fallback_data["managers"],
             "loss_reasons": loss_reasons or fallback_data["loss_reasons"],
             "telegram": telegram,
             "modules": modules or fallback_data["modules"]
@@ -422,16 +434,24 @@ def get_tenant_settings_or_fallback(tenant_id: str = "TNT-001") -> dict[str, Any
     gen = cfg.get("general_settings") or {}
     fb = get_fallback_settings()
 
-    company_name = gen.get("company_name", cfg.get("name", fb["general"]["company_name"]))
+    is_master_or_template = clean_tenant in ("TNT-001", "TNT-MASTER-001") or "TEMPLATE" in clean_tenant
+
+    company_name = gen.get(
+        "company_name",
+        cfg.get("tenant_name") or cfg.get("name") or (fb["general"]["company_name"] if is_master_or_template else f"Клиент {clean_tenant}")
+    )
     currency = gen.get("currency", fb["general"]["currency"])
     period_start = gen.get("period_start", fb["general"]["period_start"])
     period_end = gen.get("period_end", fb["general"]["period_end"])
-    monthly_target = gen.get("monthly_target", fb["general"]["monthly_target"])
+    monthly_target = gen.get("monthly_target", fb["general"]["monthly_target"] if is_master_or_template else 0.0)
     project_start_date = gen.get("project_start_date", fb["general"]["project_start_date"])
 
     raw_managers = cfg.get("managers")
     if not raw_managers or not isinstance(raw_managers, list) or len(raw_managers) == 0:
-        raw_managers = fb["managers"]
+        if is_master_or_template:
+            raw_managers = fb["managers"]
+        else:
+            raw_managers = []
 
     managers = []
     for m in raw_managers:
@@ -544,6 +564,9 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
         import gspread
         gc = gspread.service_account(str(sa_path))
         sheet_id = get_tenant_spreadsheet_id(clean_tenant)
+        if not sheet_id:
+            logger.info(f"Tenant {clean_tenant} has no connected spreadsheet, skipping Google Sheets sync (saved locally)")
+            return True
         ss = gc.open_by_key(sheet_id)
 
         ws_settings = ss.worksheet("⚙️ Настройки")
@@ -630,12 +653,14 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
 
 @router.get("")
 def get_settings(
-    tenant_id: str = Query("TNT-001")
+    tenant_id: str | None = None,
+    tenant: str | None = None,
 ):
     """
     Returns 28 business configuration parameters from Google Sheets (⚙️ Настройки) for given tenant.
     """
-    return fetch_settings_from_sheets(tenant_id=tenant_id)
+    clean_tenant = (tenant_id or tenant or "TNT-001").strip().upper()
+    return fetch_settings_from_sheets(tenant_id=clean_tenant)
 
 
 @router.post("")

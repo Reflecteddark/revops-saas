@@ -189,4 +189,25 @@ describe('IntegrationsPage', () => {
       screen.getByText('Очередь Dead Letter Queue чиста')
     ).toBeInTheDocument();
   });
+
+  it('renders CRM endpoints hub with amoCRM Redirect URI https://app.ai-rop.ru and Google Sheet link', async () => {
+    vi.mocked(integrationsApi.getHealth).mockResolvedValue(mockHealthData);
+
+    renderWithClient(<IntegrationsPage />);
+
+    expect(await screen.findByTestId('crm-endpoints-hub')).toBeInTheDocument();
+    const amoInput = screen.getByTestId(
+      'input-amocrm-redirect-uri'
+    ) as HTMLInputElement;
+    expect(amoInput.value).toBe('https://app.ai-rop.ru');
+
+    const b24Input = screen.getByTestId(
+      'input-b24-webhook-url'
+    ) as HTMLInputElement;
+    expect(b24Input.value).toContain(
+      'https://report.ai-rop.ru/webhook/bitrix24-call?tenant='
+    );
+
+    expect(screen.getByTestId('btn-open-client-sheet')).toBeInTheDocument();
+  });
 });

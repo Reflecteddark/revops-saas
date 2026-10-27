@@ -201,10 +201,16 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
         logger.warning(f"service_account.json not found, skipping Google Sheets fetch (tenant: {clean_tenant})")
         return cached.get("calls", []) if isinstance(cached, dict) else []
 
+    sheet_id = get_tenant_spreadsheet_id(clean_tenant)
+    if not sheet_id:
+        empty_calls: list[dict[str, Any]] = []
+        _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": empty_calls}
+        set_cached_json_sync(cache_key, empty_calls, ex=60)
+        return empty_calls
+
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
-        sheet_id = get_tenant_spreadsheet_id(clean_tenant)
         ss = gc.open_by_key(sheet_id)
         ws = ss.worksheet("raw_calls")
         rows = ws.get_all_values()
@@ -349,6 +355,9 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
         gc = gspread.service_account(str(sa_path))
         tenant_id = (payload.tenant_id or "TNT-001").strip().upper()
         sheet_id = get_tenant_spreadsheet_id(tenant_id)
+        if not sheet_id:
+            logger.warning(f"Tenant {tenant_id} has no spreadsheet configured, skipping Google Sheets sync")
+            return False
         ss = gc.open_by_key(sheet_id)
         ws = ss.worksheet("raw_calls")
 

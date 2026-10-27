@@ -14,7 +14,12 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
+  Check,
   CheckCircle2,
+  Copy,
+  ExternalLink,
+  FileSpreadsheet,
+  Link2,
   Radio,
   RefreshCw,
   Send,
@@ -23,10 +28,12 @@ import {
 } from 'lucide-react';
 import { integrationsApi } from '@/lib/api';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
+import { useRevOpsStore } from '@/store/useRevOpsStore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -41,10 +48,27 @@ import type { IntegrationsHealthResponse } from '@/types/api';
 export function IntegrationsPage() {
   const activeTenantId = useActiveTenantSafe() || 'TNT-001';
   const { toast } = useToast();
+  const tenants = useRevOpsStore((s) => s.tenants);
+  const activeTenant = tenants.find(
+    (t) =>
+      t.tenant_id === activeTenantId ||
+      (t as unknown as { id: string }).id === activeTenantId
+  );
 
+  const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
   const [retryingAll, setRetryingAll] = React.useState(false);
   const [retryingId, setRetryingId] = React.useState<string | null>(null);
   const [sendingTelegram, setSendingTelegram] = React.useState(false);
+
+  const handleCopy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+    toast({
+      title: 'Скопировано',
+      description: 'Значение скопировано в буфер обмена',
+    });
+  };
 
   const { data, isLoading, refetch } = useQuery<IntegrationsHealthResponse>({
     queryKey: ['integrations-health', activeTenantId],
@@ -208,7 +232,188 @@ export function IntegrationsPage() {
         </div>
       </div>
 
-      {/* 2. Four Service Traffic Lights */}
+      {/* 2. Direct Connection Endpoints for Active Tenant */}
+      <div
+        className="bg-surface/50 space-y-4 rounded-2xl border border-subtle p-5 shadow-sm"
+        data-testid="crm-endpoints-hub"
+      >
+        <div className="flex flex-col gap-2 border-b border-subtle pb-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-bold text-foreground">
+              Точки подключения контура:{' '}
+              <span className="font-mono text-primary">{activeTenantId}</span>
+            </h2>
+            {activeTenant?.tenant_name && (
+              <Badge
+                variant="outline"
+                className="border-subtle text-xs font-normal"
+              >
+                {activeTenant.tenant_name}
+              </Badge>
+            )}
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Персональный Redirect URI для amoCRM, Webhook телефонии Битрикс24 и
+            Google Таблица
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {/* Box 1: amoCRM Redirect URI */}
+          <div className="bg-subtle/30 space-y-2 rounded-xl border border-subtle p-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <span className="h-2 w-2 rounded-full bg-blue-500" />
+                <span>amoCRM: Redirect URI</span>
+              </div>
+              <Badge
+                variant="outline"
+                className="border-blue-500/30 font-mono text-[10px] text-blue-400"
+              >
+                OAuth 2.0
+              </Badge>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              В кабинете amoCRM ➔ Настройки интеграции ➔ Ссылка для
+              перенаправления:
+            </p>
+            <div className="flex items-center gap-1.5">
+              <Input
+                readOnly
+                value="https://app.ai-rop.ru"
+                className="h-8 select-all border-subtle bg-surface font-mono text-xs"
+                data-testid="input-amocrm-redirect-uri"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 shrink-0 px-2.5 text-xs"
+                onClick={() =>
+                  handleCopy('https://app.ai-rop.ru', 'amocrm-redirect')
+                }
+                title="Скопировать Redirect URI amoCRM"
+                data-testid="btn-copy-amocrm-redirect"
+              >
+                {copiedKey === 'amocrm-redirect' ? (
+                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Box 2: Bitrix24 Inbound Webhook */}
+          <div className="bg-subtle/30 space-y-2 rounded-xl border border-subtle p-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <span className="h-2 w-2 rounded-full bg-sky-500" />
+                <span>Битрикс24: Webhook звонков</span>
+              </div>
+              <Badge
+                variant="outline"
+                className="border-sky-500/30 font-mono text-[10px] text-sky-400"
+              >
+                REST API
+              </Badge>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Исходящий вебхук в Битрикс24 (Разработчикам ➔ событие
+              ONVOXIMPLANTCALLEND):
+            </p>
+            <div className="flex items-center gap-1.5">
+              <Input
+                readOnly
+                value={`https://report.ai-rop.ru/webhook/bitrix24-call?tenant=${activeTenantId}`}
+                className="h-8 select-all border-subtle bg-surface font-mono text-xs"
+                data-testid="input-b24-webhook-url"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 shrink-0 px-2.5 text-xs"
+                onClick={() =>
+                  handleCopy(
+                    `https://report.ai-rop.ru/webhook/bitrix24-call?tenant=${activeTenantId}`,
+                    'b24-webhook'
+                  )
+                }
+                title="Скопировать Webhook Битрикс24"
+                data-testid="btn-copy-b24-webhook"
+              >
+                {copiedKey === 'b24-webhook' ? (
+                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Box 3: Client Google Sheet */}
+          <div className="bg-subtle/30 space-y-2 rounded-xl border border-subtle p-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
+                <span>Google Таблица клиента</span>
+              </div>
+              <Badge
+                variant="outline"
+                className={`font-mono text-[10px] ${
+                  activeTenant?.spreadsheet_id
+                    ? 'border-emerald-500/30 text-emerald-400'
+                    : 'border-amber-500/30 text-amber-400'
+                }`}
+              >
+                {activeTenant?.spreadsheet_id ? 'Подключена' : 'Шаблон Clean'}
+              </Badge>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {activeTenant?.spreadsheet_id
+                ? 'Персональная таблица с расчетами и журналом звонков:'
+                : 'Шаблон Clean Starter для создания независимой копии:'}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <Input
+                readOnly
+                value={
+                  activeTenant?.spreadsheet_id
+                    ? `https://docs.google.com/spreadsheets/d/${activeTenant.spreadsheet_id}/edit`
+                    : 'https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy'
+                }
+                className="h-8 select-all border-subtle bg-surface font-mono text-xs"
+                data-testid="input-client-sheet-url"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 shrink-0 gap-1 px-2.5 text-xs"
+                asChild
+              >
+                <a
+                  href={
+                    activeTenant?.spreadsheet_id
+                      ? `https://docs.google.com/spreadsheets/d/${activeTenant.spreadsheet_id}/edit`
+                      : 'https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy'
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="btn-open-client-sheet"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  <span>Открыть</span>
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Four Service Traffic Lights */}
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (

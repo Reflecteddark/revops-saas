@@ -1495,8 +1495,14 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         save_registered_clients(clients)
 
     # Build Ready Onboarding Brief Text
-    sh_url = tenant_record.get("spreadsheet_url", "")
-    wh_url = tenant_record.get("inbound_webhook_b24_url") or tenant_record.get("inbound_webhook_url", "")
+    sh_id = tenant_record.get("spreadsheet_id")
+    sh_url = (
+        tenant_record.get("spreadsheet_url")
+        or (f"https://docs.google.com/spreadsheets/d/{sh_id}/edit" if sh_id else "https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy")
+    )
+    b24_wh_url = f"https://report.ai-rop.ru/webhook/bitrix24-call?tenant={tenant_id}"
+    wh_url = b24_wh_url
+    amocrm_redirect_uri = "https://app.ai-rop.ru"
     
     brief_lines = [
         f"Здравствуйте, {company_name}!",
@@ -1511,13 +1517,13 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         "",
         "📊 ВАШ ПЕРСОНАЛЬНЫЙ ДАШБОРД (GOOGLE ТАБЛИЦА):",
         f"• Ссылка:    {sh_url}",
-        f"• Доступ:    Редактор для {clean_email or 'вашего аккаунта'}",
+        f"• Доступ:    {'Редактор для ' + clean_email if clean_email else 'Создайте независимую копию на свой Google Диск'}",
         "",
     ]
     if crm_type == "bitrix24":
         brief_lines.extend([
             "🔌 ПОДКЛЮЧЕНИЕ ТЕЛЕФОНИИ БИТРИКС24:",
-            f"• Входящий Webhook: {wh_url}",
+            f"• Входящий Webhook: {b24_wh_url}",
             "• Инструкция: Битрикс24 -> Разработчикам -> Исходящий вебхук -> событие ONVOXIMPLANTCALLEND",
             "• Каждый звонок будет автоматически транскрибироваться и оцениваться ИИ по 13 критериям!",
         ])
@@ -1525,6 +1531,8 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         brief_lines.extend([
             "🔌 ПОДКЛЮЧЕНИЕ AMOCRM:",
             f"• Домен: {req.amo_domain or 'Укажите домен amoCRM в настройках'}",
+            f"• Ссылка для перенаправления (Redirect URI): {amocrm_redirect_uri}",
+            f"• Инструкция: В кабинете разработчика amoCRM укажите Redirect URI: {amocrm_redirect_uri}",
             "• Интеграция: Прямой API v4 (Polling & Events) активен",
             "• Звонки и сделки синхронизируются автоматически!",
         ])
@@ -1544,6 +1552,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         "invite_message": brief_text,
         "spreadsheet_url": sh_url,
         "webhook_url": wh_url,
+        "amocrm_redirect_uri": amocrm_redirect_uri,
     }
 
 

@@ -162,3 +162,72 @@ def test_cross_tenant_update_crm_forbidden_403(client, tnt1_token):
     assert res.status_code == 403, (
         f"Cross-tenant modification allowed! Expected 403 Forbidden, got {res.status_code}: {res.text}"
     )
+
+
+def test_tnt002_zero_managers_and_deals_isolation(client, admin_headers):
+    """
+    6. Тенант TNT-002 (подключен чистый шаблон Google Sheets):
+       - Сделки изолированы: 0 сделок (нет утечки 41 сделки из TNT-001)
+       - Настройки изолированы: 0 менеджеров (строки-плейсхолдеры '—' отфильтрованы, нет 4 фантомных демо-менеджеров)
+       - Для нового тенанта без таблицы (TNT-003) target == 0.0 ₽
+    """
+    # 1. Deals isolation check for TNT-002
+    deals_res = client.get("/api/v1/deals?tenant=TNT-002")
+    assert deals_res.status_code == 200
+    deals_data = deals_res.json()
+    assert len(deals_data.get("deals", [])) == 0, (
+        f"Data leak! TNT-002 received deals from another tenant: {deals_data}"
+    )
+
+    # 2. Settings zero-state check for TNT-002 (placeholder managers filtered out)
+    settings_res = client.get("/api/v1/settings?tenant=TNT-002")
+    assert settings_res.status_code == 200
+    settings_data = settings_res.json()
+    assert len(settings_data.get("managers", [])) == 0, (
+        f"Phantom managers leak in TNT-002! Expected 0 managers, got: {settings_data.get('managers')}"
+    )
+
+    # 3. New tenant without connected spreadsheet: target is 0.0 and managers is []
+    res_new = client.get("/api/v1/settings?tenant=TNT-003")
+    assert res_new.status_code == 200
+    data_new = res_new.json()
+    assert data_new.get("general", {}).get("monthly_target") == 0.0
+    assert len(data_new.get("managers", [])) == 0
+
+
+def test_provision_tenant_returns_amocrm_redirect_uri(client, admin_headers):
+    """
+    7. Эндпоинт POST /api/v1/admin/tenants/provision:
+       - Возвращает amocrm_redirect_uri == 'https://app.ai-rop.ru'
+       - В брифе онбординга явно указан Redirect URI https://app.ai-rop.ru
+       - Возвращает ссылку на персональную или шаблонную Google Таблицу
+    """
+    import sys
+    from unittest.mock import MagicMock, patch
+    payload = {
+        "name": "Тестовый Ритейл",
+        "email": "retail_test@example.com",
+        "crm_type": "amocrm",
+        "amo_domain": "retailtest.amocrm.ru"
+    }
+    mock_tenant = {
+        "tenant_id": "TNT-003",
+        "tenant_name": "Тестовый Ритейл",
+        "spreadsheet_id": "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A",
+        "spreadsheet_url": "https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/edit",
+        "crm_type": "amocrm",
+        "status": "active",
+    }
+    mock_module = MagicMock()
+    mock_module.provision_tenant.return_value = mock_tenant
+    mock_module.load_registry.return_value = {"tenants": [mock_tenant]}
+
+    with patch.dict(sys.modules, {"tenant_provisioner": mock_module}):
+        res = client.post("/api/v1/admin/tenants/provision", json=payload, headers=admin_headers)
+        assert res.status_code == 200, f"Provision failed: {res.text}"
+        data = res.json()
+        assert data["success"] is True
+        assert data.get("amocrm_redirect_uri") == "https://app.ai-rop.ru"
+        assert "https://app.ai-rop.ru" in data.get("invite_message", "")
+        assert "https://docs.google.com/spreadsheets/d/" in data.get("spreadsheet_url", "")
+

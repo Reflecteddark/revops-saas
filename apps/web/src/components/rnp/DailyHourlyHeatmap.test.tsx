@@ -122,10 +122,18 @@ describe('DailyHourlyHeatmap Helpers', () => {
     expect(isCallOverMinute(mockCalls[0])).toBe(true); // 95s
     expect(isCallOverMinute(mockCalls[1])).toBe(false); // 30s
     expect(
-      isCallOverMinute({ ...mockCalls[0], duration_seconds: undefined, duration: '01:15' })
+      isCallOverMinute({
+        ...mockCalls[0],
+        duration_seconds: undefined,
+        duration: '01:15',
+      })
     ).toBe(true);
     expect(
-      isCallOverMinute({ ...mockCalls[0], duration_seconds: undefined, duration: '00:45' })
+      isCallOverMinute({
+        ...mockCalls[0],
+        duration_seconds: undefined,
+        duration: '00:45',
+      })
     ).toBe(false);
   });
 });
@@ -141,7 +149,9 @@ describe('DailyHourlyHeatmap Component', () => {
     );
 
     // Title and badge
-    expect(screen.getByText(/Температурная карта звонков отдела/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Температурная карта звонков отдела/i)
+    ).toBeInTheDocument();
     expect(screen.getByText(/наборы \/ от 1 мин/i)).toBeInTheDocument();
 
     // Hours columns
@@ -185,11 +195,26 @@ describe('DailyHourlyHeatmap Component', () => {
       />
     );
 
-    const selector = screen.getByTestId('heatmap-date-selector') as HTMLSelectElement;
+    const selector = screen.getByTestId(
+      'heatmap-date-selector'
+    ) as HTMLSelectElement;
     expect(selector.value).toBe('2026-10-26');
 
     // Switch to 2026-10-25
     fireEvent.change(selector, { target: { value: '2026-10-25' } });
     expect(selector.value).toBe('2026-10-25');
+  });
+
+  it('renders clean zero-state message when 0 managers exist', () => {
+    render(
+      <DailyHourlyHeatmap calls={[]} managers={[]} selectedDate="2026-10-26" />
+    );
+    expect(screen.getByTestId('heatmap-empty-state')).toBeInTheDocument();
+    expect(
+      screen.getByText('Сотрудники отдела продаж ещё не добавлены')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('heatmap-team-totals-row')
+    ).not.toBeInTheDocument();
   });
 });

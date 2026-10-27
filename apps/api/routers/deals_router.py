@@ -157,10 +157,16 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
         set_cached_json_sync(cache_key, fallback_deals, ex=60)
         return fallback_deals
 
+    sheet_id = get_tenant_spreadsheet_id(clean_tenant)
+    if not sheet_id:
+        empty_res: list[dict[str, Any]] = []
+        _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
+        set_cached_json_sync(cache_key, empty_res, ex=60)
+        return empty_res
+
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
-        sheet_id = get_tenant_spreadsheet_id(clean_tenant)
         ss = gc.open_by_key(sheet_id)
         ws = ss.worksheet("raw_deals")
         rows = ws.get_all_values()
@@ -313,10 +319,11 @@ def list_deals(
     sla_risk_only: bool = False,
     org_id: str | None = None,
     tenant_id: str | None = None,
+    tenant: str | None = None,
     db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """Returns active CRM deals directly from raw_deals Google Sheets or local DB for given tenant."""
-    requested = tenant_id or org_id
+    requested = tenant_id or tenant or org_id
     effective_tenant = get_authenticated_tenant_or_verify_admin(request, requested)
     db_deals = (
         db.query(Deal)
