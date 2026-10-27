@@ -10,8 +10,8 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from ..tenant_registry import get_tenant_spreadsheet_id
 from ..websocket_manager import manager
@@ -60,7 +60,20 @@ class ManagerCapacity(BaseModel):
     id: str
     name: str
     role: str
-    capacity: int
+    capacity: int = 40
+    revenue_target: float | None = None          # ₽ / месяц
+    daily_calls_target: int | None = None      # целевых звонков / день
+    monthly_meetings_target: int | None = None # встреч / месяц
+    next_step_target_pct: int | None = None    # % разговоров с зафиксированным Next Step
+    updated_at: str | None = None
+
+
+class ManagerKpiPatch(BaseModel):
+    revenue_target: float | None = None
+    daily_calls_target: int | None = None
+    monthly_meetings_target: int | None = None
+    capacity: int | None = None
+    next_step_target_pct: int | None = None
 
 
 class LossReason(BaseModel):
@@ -161,10 +174,11 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> dict[str, Any]:
         # Parse managers (supports dynamic managers from registry, with fallback to Sheet Rows 21-24)
         from ..tenant_registry import get_tenant_config
         cfg = get_tenant_config(clean_tenant) or {}
+        kpis_map = cfg.get("manager_kpis", {}) or {}
         if cfg.get("managers") and isinstance(cfg.get("managers"), list) and len(cfg["managers"]) > 0:
-            managers = cfg["managers"]
+            raw_managers = cfg["managers"]
         else:
-            managers = []
+            raw_managers = []
             for r_idx in range(20, min(24, len(s_rows))):
                 r = s_rows[r_idx]
                 if len(r) >= 4 and r[0]:
@@ -172,7 +186,22 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001") -> dict[str, Any]:
                     m_name = r[1]
                     m_role = r[2]
                     cap = int(r[3]) if r[3].isdigit() else 40
-                    managers.append({"id": m_id, "name": m_name, "role": m_role, "capacity": cap})
+                    raw_managers.append({"id": m_id, "name": m_name, "role": m_role, "capacity": cap})
+
+        managers = []
+        for m in raw_managers:
+            m_dict = dict(m)
+            m_id = str(m_dict.get("id", ""))
+            kpi = kpis_map.get(m_id, {})
+            # Merge KPI fields if not set on manager
+            for k in ("revenue_target", "daily_calls_target", "monthly_meetings_target", "next_step_target_pct"):
+                if m_dict.get(k) is None and k in kpi:
+                    m_dict[k] = kpi[k]
+            if "capacity" in kpi and kpi["capacity"] is not None:
+                m_dict["capacity"] = kpi["capacity"]
+            if "updated_at" in kpi and kpi["updated_at"] is not None:
+                m_dict["updated_at"] = kpi["updated_at"]
+            managers.append(m_dict)
 
         # Parse loss reasons (Rows 26-29)
         loss_reasons = []
@@ -286,10 +315,46 @@ def get_fallback_settings() -> dict[str, Any]:
             {"id": 7, "name": "7. Закрыто и не реализовано", "sla_hours": 0, "win_pct": 0}
         ],
         "managers": [
-            {"id": "101", "name": "Заряна", "role": "Менеджер ОП", "capacity": 40},
-            {"id": "102", "name": "Надежда", "role": "Менеджер ОП", "capacity": 40},
-            {"id": "103", "name": "Виктория", "role": "Менеджер ОП", "capacity": 40},
-            {"id": "11422686", "name": "Дмитрий Федотов", "role": "РОП", "capacity": 50}
+            {
+                "id": "101",
+                "name": "Заряна",
+                "role": "Менеджер ОП",
+                "capacity": 40,
+                "revenue_target": 1200000.0,
+                "daily_calls_target": 25,
+                "monthly_meetings_target": 15,
+                "next_step_target_pct": 80
+            },
+            {
+                "id": "102",
+                "name": "Надежда",
+                "role": "Менеджер ОП",
+                "capacity": 40,
+                "revenue_target": 1200000.0,
+                "daily_calls_target": 25,
+                "monthly_meetings_target": 20,
+                "next_step_target_pct": 80
+            },
+            {
+                "id": "103",
+                "name": "Виктория",
+                "role": "Менеджер ОП",
+                "capacity": 40,
+                "revenue_target": 1100000.0,
+                "daily_calls_target": 20,
+                "monthly_meetings_target": 15,
+                "next_step_target_pct": 80
+            },
+            {
+                "id": "11422686",
+                "name": "Дмитрий Федотов",
+                "role": "РОП / Клоузер",
+                "capacity": 50,
+                "revenue_target": 1500000.0,
+                "daily_calls_target": 20,
+                "monthly_meetings_target": 15,
+                "next_step_target_pct": 80
+            }
         ],
         "loss_reasons": [
             {"code": "L1", "reason": "Дорого / нет бюджета", "reactivation_prob": 50},
@@ -382,6 +447,18 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                 for t in reg.get("tenants", []):
                     if str(t.get("tenant_id", "")).upper() == payload.tenant_id.strip().upper():
                         t["managers"] = [m.model_dump() for m in payload.managers]
+                        if "manager_kpis" not in t:
+                            t["manager_kpis"] = {}
+                        now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                        for m in payload.managers:
+                            t["manager_kpis"][m.id] = {
+                                "revenue_target": m.revenue_target,
+                                "daily_calls_target": m.daily_calls_target,
+                                "monthly_meetings_target": m.monthly_meetings_target,
+                                "capacity": m.capacity,
+                                "next_step_target_pct": m.next_step_target_pct,
+                                "updated_at": m.updated_at or now_iso,
+                            }
                         save_tenants_registry(reg)
                         break
             except Exception as e:
@@ -472,3 +549,97 @@ async def save_settings(
         "message": "Настройки успешно сохранены в Google Таблицу и транслированы в систему",
         "settings": fresh_settings
     }
+
+
+@router.patch("/managers/{manager_id}/kpis")
+async def patch_manager_kpis(
+    manager_id: str,
+    payload: ManagerKpiPatch,
+    tenant_id: str = Query("TNT-001"),
+):
+    """
+    Granular update of manager personal KPI targets:
+    - revenue_target (>= 0 or null)
+    - daily_calls_target (0..200 or null)
+    - monthly_meetings_target (0..500 or null)
+    - capacity (0..500 or null)
+    - next_step_target_pct (0..100 or null)
+    Preserves nulls as 'норматив не задан' (unrated).
+    """
+    # 1. Validation
+    if payload.revenue_target is not None and payload.revenue_target < 0:
+        raise HTTPException(status_code=422, detail="План выручки должен быть не меньше 0 ₽")
+    if payload.daily_calls_target is not None and not (0 <= payload.daily_calls_target <= 200):
+        raise HTTPException(status_code=422, detail="Норма звонков должна быть в диапазоне 0..200")
+    if payload.monthly_meetings_target is not None and not (0 <= payload.monthly_meetings_target <= 500):
+        raise HTTPException(status_code=422, detail="План встреч должен быть в диапазоне 0..500")
+    if payload.capacity is not None and not (0 <= payload.capacity <= 500):
+        raise HTTPException(status_code=422, detail="Вместимость воронки должна быть в диапазоне 0..500")
+    if payload.next_step_target_pct is not None and not (0 <= payload.next_step_target_pct <= 100):
+        raise HTTPException(status_code=422, detail="Next Step % должен быть в диапазоне 0..100%")
+
+    clean_tenant = tenant_id.strip().upper()
+    from ..tenant_registry import load_tenants_registry, save_tenants_registry
+    reg = load_tenants_registry()
+    target_tenant = None
+    for t in reg.get("tenants", []):
+        if str(t.get("tenant_id", "")).upper() == clean_tenant:
+            target_tenant = t
+            break
+
+    if not target_tenant:
+        raise HTTPException(status_code=404, detail=f"Тенант '{tenant_id}' не найден в реестре")
+
+    if "manager_kpis" not in target_tenant:
+        target_tenant["manager_kpis"] = {}
+
+    mgr_kpis = target_tenant["manager_kpis"].setdefault(manager_id, {})
+    now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    # Exclude unset fields so we only update explicitly passed values, allowing nulls
+    update_data = payload.model_dump(exclude_unset=True)
+    for k, v in update_data.items():
+        mgr_kpis[k] = v
+    mgr_kpis["updated_at"] = now_iso
+
+    # Also sync into managers list in tenant if manager is present there
+    updated_mgr = None
+    if "managers" in target_tenant and isinstance(target_tenant["managers"], list):
+        for m in target_tenant["managers"]:
+            if str(m.get("id", "")).lower() == manager_id.lower():
+                for k, v in update_data.items():
+                    m[k] = v
+                m["updated_at"] = now_iso
+                updated_mgr = m
+                break
+
+    save_tenants_registry(reg)
+
+    # Invalidate settings cache
+    if clean_tenant in _SETTINGS_CACHE:
+        _SETTINGS_CACHE[clean_tenant]["timestamp"] = 0
+
+    # Broadcast via WebSocket
+    await manager.broadcast(clean_tenant, {
+        "event": "manager_kpi_updated",
+        "manager_id": manager_id,
+        "timestamp": time.time(),
+        "kpis": mgr_kpis
+    })
+
+    return {
+        "status": "ok",
+        "manager_id": manager_id,
+        "kpis": mgr_kpis,
+        "manager": updated_mgr
+    }
+
+
+@router.patch("/tenants/{tenant_id}/managers/{manager_id}/kpis")
+async def patch_tenant_manager_kpis(
+    tenant_id: str,
+    manager_id: str,
+    payload: ManagerKpiPatch,
+):
+    return await patch_manager_kpis(manager_id=manager_id, payload=payload, tenant_id=tenant_id)
+

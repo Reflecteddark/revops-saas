@@ -397,4 +397,187 @@ describe('SettingsPage', () => {
       expect(settingsApi.updateManagers).toHaveBeenCalledWith('TNT-001', []);
     });
   });
+
+  it('renders company plan distribution banner and evaluates status pill', async () => {
+    const customSettings: Settings = {
+      ...mockSettings,
+      general: {
+        ...mockSettings.general,
+        monthly_target: 5000000,
+      },
+      managers: [
+        {
+          id: 'm1',
+          name: 'Дмитрий Федотов',
+          role: 'РОП / Клоузер',
+          capacity: 50,
+          revenue_target: 1500000,
+          daily_calls_target: 20,
+          monthly_meetings_target: 15,
+          next_step_target_pct: 80,
+        },
+        {
+          id: 'm2',
+          name: 'Надежда',
+          role: 'Менеджер ОП',
+          capacity: 40,
+          revenue_target: 1200000,
+          daily_calls_target: 25,
+          monthly_meetings_target: 20,
+          next_step_target_pct: 80,
+        },
+      ],
+    };
+    vi.mocked(settingsApi.get).mockResolvedValue(customSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    const managersTab = screen.getByTestId('tab-managers');
+    fireEvent.keyDown(managersTab, { key: 'Enter' });
+
+    // Verify company plan banner
+    expect(
+      await screen.findByTestId('company-plan-distribution-banner')
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Распределение плана компании/i)).toBeInTheDocument();
+
+    // 2 700 000 ₽ out of 5 000 000 ₽ is 54% (under 70% -> red alert)
+    expect(screen.getByText(/2 700 000 ₽/i)).toBeInTheDocument();
+    expect(screen.getByText(/54%/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/🔴 Не весь план распределён по сотрудникам/i)
+    ).toBeInTheDocument();
+  });
+
+  it('renders 8-column layout with personal KPI inputs and preserves nulls', async () => {
+    const kpiSettings: Settings = {
+      ...mockSettings,
+      managers: [
+        {
+          id: 'm1',
+          name: 'Дмитрий Федотов',
+          role: 'РОП',
+          capacity: 50,
+          revenue_target: 1500000,
+          daily_calls_target: 20,
+          monthly_meetings_target: 15,
+          next_step_target_pct: 80,
+        },
+        {
+          id: 'm2',
+          name: 'Стажёр',
+          role: 'Менеджер',
+          capacity: 30,
+          revenue_target: null, // Unrated
+          daily_calls_target: null,
+          monthly_meetings_target: null,
+          next_step_target_pct: null,
+        },
+      ],
+    };
+    vi.mocked(settingsApi.get).mockResolvedValue(kpiSettings);
+    vi.mocked(settingsApi.updateManagers).mockResolvedValue(kpiSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    const managersTab = screen.getByTestId('tab-managers');
+    fireEvent.keyDown(managersTab, { key: 'Enter' });
+
+    // Check manager m1 inputs
+    const revInput1 = (await screen.findByTestId(
+      'input-manager-revenue-m1'
+    )) as HTMLInputElement;
+    expect(revInput1.value).toBe('1500000');
+
+    const callsInput1 = screen.getByTestId(
+      'input-manager-calls-m1'
+    ) as HTMLInputElement;
+    expect(callsInput1.value).toBe('20');
+
+    const meetingsInput1 = screen.getByTestId(
+      'input-manager-meetings-m1'
+    ) as HTMLInputElement;
+    expect(meetingsInput1.value).toBe('15');
+
+    const nextStepInput1 = screen.getByTestId(
+      'input-manager-next-step-m1'
+    ) as HTMLInputElement;
+    expect(nextStepInput1.value).toBe('80');
+
+    // Check manager m2 with null fields (displays empty placeholder, not 0)
+    const revInput2 = screen.getByTestId(
+      'input-manager-revenue-m2'
+    ) as HTMLInputElement;
+    expect(revInput2.value).toBe('');
+
+    // Update m2 revenue target to 1 000 000 and save
+    fireEvent.change(revInput2, { target: { value: '1000000' } });
+    const saveButton = screen.getByTestId('btn-save-managers');
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(settingsApi.updateManagers).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'm2',
+            revenue_target: 1000000,
+          }),
+        ])
+      );
+    });
+  });
+
+  it('populates preset values when opening add manager form', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateManagers).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    const managersTab = screen.getByTestId('tab-managers');
+    fireEvent.keyDown(managersTab, { key: 'Enter' });
+
+    const addBtn = await screen.findByTestId('btn-add-manager');
+    fireEvent.click(addBtn);
+
+    // Verify default presets in form inputs
+    const callsInput = screen.getByTestId(
+      'input-new-manager-calls'
+    ) as HTMLInputElement;
+    expect(callsInput.value).toBe('20');
+
+    const meetingsInput = screen.getByTestId(
+      'input-new-manager-meetings'
+    ) as HTMLInputElement;
+    expect(meetingsInput.value).toBe('15');
+
+    const capacityInput = screen.getByTestId(
+      'input-new-manager-capacity'
+    ) as HTMLInputElement;
+    expect(capacityInput.value).toBe('40');
+
+    const nextStepInput = screen.getByTestId(
+      'input-new-manager-next-step'
+    ) as HTMLInputElement;
+    expect(nextStepInput.value).toBe('80');
+
+    // Fill new manager credentials
+    fireEvent.change(screen.getByTestId('input-new-manager-id'), {
+      target: { value: 'm-new' },
+    });
+    fireEvent.change(screen.getByTestId('input-new-manager-name'), {
+      target: { value: 'Ольга Николаева' },
+    });
+    fireEvent.change(screen.getByTestId('input-new-manager-revenue'), {
+      target: { value: '1300000' },
+    });
+
+    fireEvent.click(screen.getByTestId('btn-confirm-add-manager'));
+
+    // Check newly added row
+    expect(await screen.findByTestId('manager-row-m-new')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Ольга Николаева')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('1300000')).toBeInTheDocument();
+  });
 });
+

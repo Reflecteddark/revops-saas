@@ -132,3 +132,70 @@ def test_save_settings_module_toggles():
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] in ("ok", "partial_ok")
+
+
+def test_fallback_settings_manager_kpi_presets():
+    """Verifies that managers have KPI target presets in fallback settings."""
+    fb = get_fallback_settings()
+    managers = fb.get("managers", [])
+    assert len(managers) >= 4
+
+    fedotov = next((m for m in managers if "Федотов" in m["name"]), None)
+    assert fedotov is not None
+    assert fedotov["revenue_target"] == 1500000.0
+    assert fedotov["daily_calls_target"] == 20
+    assert fedotov["monthly_meetings_target"] == 15
+    assert fedotov["capacity"] == 50
+    assert fedotov["next_step_target_pct"] == 80
+
+
+def test_patch_manager_kpis_endpoint_and_null_preservation():
+    """Verifies PATCH /api/v1/settings/managers/{manager_id}/kpis saves targets and preserves null."""
+    payload = {
+        "revenue_target": 1800000.0,
+        "daily_calls_target": 22,
+        "monthly_meetings_target": 18,
+        "capacity": 45,
+        "next_step_target_pct": 85
+    }
+    resp = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ok"
+    assert data["manager_id"] == "m1"
+    assert data["kpis"]["revenue_target"] == 1800000.0
+    assert data["kpis"]["daily_calls_target"] == 22
+    assert data["kpis"]["monthly_meetings_target"] == 18
+    assert data["kpis"]["capacity"] == 45
+    assert data["kpis"]["next_step_target_pct"] == 85
+
+    # Test null preservation (null explicitly means unrated, not 0)
+    null_patch = {"revenue_target": None}
+    resp_null = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json=null_patch)
+    assert resp_null.status_code == 200
+    data_null = resp_null.json()
+    assert data_null["kpis"]["revenue_target"] is None
+
+
+def test_patch_manager_kpis_validation():
+    """Verifies 422 Unprocessable Entity when KPI values violate bounds."""
+    # Negative revenue
+    resp1 = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json={"revenue_target": -500})
+    assert resp1.status_code == 422
+
+    # Calls > 200
+    resp2 = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json={"daily_calls_target": 250})
+    assert resp2.status_code == 422
+
+    # Meetings > 500
+    resp3 = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json={"monthly_meetings_target": 550})
+    assert resp3.status_code == 422
+
+    # Capacity > 500
+    resp4 = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json={"capacity": 600})
+    assert resp4.status_code == 422
+
+    # Next step > 100
+    resp5 = client.patch("/api/v1/settings/managers/m1/kpis?tenant_id=TNT-001", json={"next_step_target_pct": 105})
+    assert resp5.status_code == 422
+

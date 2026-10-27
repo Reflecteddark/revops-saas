@@ -174,4 +174,54 @@ describe('RnpStandupView', () => {
     expect(screen.getByText('Крупная поставка')).toBeInTheDocument();
     expect(screen.getByText(/500 000 ₽/i)).toBeInTheDocument();
   });
+
+  it('evaluates personal KPIs and selects prioritized primary risk with tailored action directive', () => {
+    const kpiManagers: ManagerConfig[] = [
+      {
+        id: 'm1',
+        name: 'Иван Петров',
+        role: 'РОП / Клоузер',
+        capacity: 40,
+        revenue_target: 1500000,
+        daily_calls_target: 20,
+        monthly_meetings_target: 15,
+        next_step_target_pct: 80,
+      },
+      {
+        id: 'm2',
+        name: 'Ольга Сидорова',
+        role: 'Менеджер ОП',
+        capacity: 30,
+        revenue_target: 1200000,
+        daily_calls_target: 25,
+        monthly_meetings_target: 15,
+        next_step_target_pct: 80,
+      },
+    ];
+
+    render(
+      <RnpStandupView
+        calls={mockCalls}
+        deals={mockDeals}
+        managers={kpiManagers}
+        planTarget={5000000}
+      />
+    );
+
+    // Olga has audited call with next_step: 0 (0% vs 80% target)
+    // Priority 1 triggers: Quality of Next Step
+    expect(
+      screen.getByText(/Качество фиксации договорённостей \(Next Step\)/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Next Step: 0% при нормативе 80%/i)).toBeInTheDocument();
+    expect(screen.getByText(/РОПу прослушать/i)).toBeInTheDocument();
+
+    // Verify 5-KPI chips are rendered
+    expect(screen.getAllByText(/Звонки \(факт\/план\)/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Next Step \(ИИ\)/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Zoom \(факт\/план\)/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Вместимость воронки/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Выручка \(факт \/ план\)/i).length).toBeGreaterThanOrEqual(1);
+  });
 });
+

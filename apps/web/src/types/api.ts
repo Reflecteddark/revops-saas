@@ -202,6 +202,19 @@ export interface ManagerConfig {
   name: string;
   role: string;
   capacity: number;
+  revenue_target?: number | null;
+  daily_calls_target?: number | null;
+  monthly_meetings_target?: number | null;
+  next_step_target_pct?: number | null;
+  updated_at?: string;
+}
+
+export interface ManagerKpiPatchPayload {
+  revenue_target?: number | null;
+  daily_calls_target?: number | null;
+  monthly_meetings_target?: number | null;
+  capacity?: number | null;
+  next_step_target_pct?: number | null;
 }
 
 export interface LossReason {

@@ -82,7 +82,11 @@ export function SettingsPage() {
   const [newManagerId, setNewManagerId] = useState<string>('');
   const [newManagerName, setNewManagerName] = useState<string>('');
   const [newManagerRole, setNewManagerRole] = useState<string>('Менеджер ОП');
+  const [newManagerRevenueTarget, setNewManagerRevenueTarget] = useState<string>('');
+  const [newManagerDailyCalls, setNewManagerDailyCalls] = useState<number>(20);
+  const [newManagerMeetings, setNewManagerMeetings] = useState<number>(15);
   const [newManagerCapacity, setNewManagerCapacity] = useState<number>(40);
+  const [newManagerNextStepPct, setNewManagerNextStepPct] = useState<number>(80);
   const [addManagerError, setAddManagerError] = useState<string | null>(null);
   const [ropChatId, setRopChatId] = useState<string>('');
   const [ceoChatId, setCeoChatId] = useState<string>('');
@@ -268,8 +272,8 @@ export function SettingsPage() {
 
   const handleManagerFieldChange = (
     id: string,
-    field: 'name' | 'role' | 'capacity',
-    val: string | number
+    field: keyof ManagerConfig,
+    val: string | number | null
   ) => {
     setEditableManagers((prev) => {
       const base = isManagersInitialized ? prev : settings?.managers || [];
@@ -312,11 +316,24 @@ export function SettingsPage() {
       );
       return;
     }
+    const revTargetNum = newManagerRevenueTarget.trim()
+      ? parseFloat(newManagerRevenueTarget.replace(/\s+/g, ''))
+      : null;
+
     const newEntry: ManagerConfig = {
       id: cleanId,
       name: cleanName,
       role: cleanRole,
       capacity: newManagerCapacity > 0 ? newManagerCapacity : 40,
+      revenue_target:
+        revTargetNum !== null && !isNaN(revTargetNum) ? revTargetNum : null,
+      daily_calls_target: newManagerDailyCalls > 0 ? newManagerDailyCalls : 20,
+      monthly_meetings_target:
+        newManagerMeetings > 0 ? newManagerMeetings : 15,
+      next_step_target_pct:
+        newManagerNextStepPct >= 0 && newManagerNextStepPct <= 100
+          ? newManagerNextStepPct
+          : 80,
     };
     setEditableManagers([...currentList, newEntry]);
     setIsManagersInitialized(true);
@@ -324,7 +341,11 @@ export function SettingsPage() {
     setNewManagerId('');
     setNewManagerName('');
     setNewManagerRole('Менеджер ОП');
+    setNewManagerRevenueTarget('');
+    setNewManagerDailyCalls(20);
+    setNewManagerMeetings(15);
     setNewManagerCapacity(40);
+    setNewManagerNextStepPct(80);
     setAddManagerError(null);
   };
 
@@ -403,6 +424,19 @@ export function SettingsPage() {
     ? `${general.monthly_target.toLocaleString('ru-RU')} ₽`
     : '5 000 000 ₽';
   const displayCompanyName = general?.company_name || 'RevOps Демо';
+
+  const companyPlan = general?.monthly_target || 5000000;
+  const totalPersonalPlans = managers.reduce(
+    (sum, m) =>
+      sum +
+      (m.revenue_target && m.revenue_target > 0 ? m.revenue_target : 0),
+    0
+  );
+  const distributionPct =
+    companyPlan > 0
+      ? Math.round((totalPersonalPlans / companyPlan) * 100)
+      : 0;
+  const remainingPlan = companyPlan - totalPersonalPlans;
 
   return (
     <div className="space-y-6">
@@ -798,11 +832,10 @@ export function SettingsPage() {
               <div>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Users className="h-4 w-4 text-primary" />
-                  <span>Реестр менеджеров</span>
+                  <span>Реестр менеджеров и нормативы KPI</span>
                 </CardTitle>
                 <CardDescription>
-                  Список ответственных сотрудников и максимальная пропускная
-                  способность воронки (вместимость сделок).
+                  Персональные планы выручки, нормативы звонков и встреч, вместимость сделок и качество Next Step.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -836,6 +869,108 @@ export function SettingsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Плашка распределения плана компании */}
+              <div
+                className={`rounded-xl border p-4 transition-all duration-150 ${
+                  distributionPct >= 95 && distributionPct <= 105
+                    ? 'border-emerald-500/30 bg-emerald-500/10'
+                    : (distributionPct >= 70 && distributionPct < 95) ||
+                      (distributionPct > 105 && distributionPct <= 120)
+                    ? 'border-amber-500/30 bg-amber-500/10'
+                    : 'border-rose-500/30 bg-rose-500/10'
+                }`}
+                data-testid="company-plan-distribution-banner"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-foreground" />
+                      <h4 className="text-sm font-bold text-foreground">
+                        Распределение плана компании
+                      </h4>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs font-mono font-semibold ${
+                          distributionPct >= 95 && distributionPct <= 105
+                            ? 'border-emerald-500 text-emerald-400'
+                            : (distributionPct >= 70 && distributionPct < 95) ||
+                              (distributionPct > 105 && distributionPct <= 120)
+                            ? 'border-amber-500 text-amber-400'
+                            : 'border-rose-500 text-rose-400'
+                        }`}
+                        data-testid="distribution-status-badge"
+                      >
+                        {distributionPct >= 95 && distributionPct <= 105
+                          ? '🟢 План сбалансирован'
+                          : (distributionPct >= 70 && distributionPct < 95) ||
+                            (distributionPct > 105 && distributionPct <= 120)
+                          ? '🟡 Частично распределён'
+                          : distributionPct < 70
+                          ? '🔴 Не весь план распределён по сотрудникам'
+                          : '🔴 Критическое превышение плана'}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span>
+                        Личные планы:{' '}
+                        <strong className="font-mono text-foreground">
+                          {totalPersonalPlans.toLocaleString('ru-RU')} ₽
+                        </strong>{' '}
+                        из{' '}
+                        <strong className="font-mono text-foreground">
+                          {companyPlan.toLocaleString('ru-RU')} ₽
+                        </strong>
+                      </span>
+                      <span>&bull;</span>
+                      <span>
+                        Распределено:{' '}
+                        <strong
+                          className={`font-mono font-bold ${
+                            distributionPct >= 95 && distributionPct <= 105
+                              ? 'text-emerald-400'
+                              : (distributionPct >= 70 && distributionPct < 95) ||
+                                (distributionPct > 105 && distributionPct <= 120)
+                              ? 'text-amber-400'
+                              : 'text-rose-400'
+                          }`}
+                        >
+                          {distributionPct}%
+                        </strong>
+                      </span>
+                      <span>&bull;</span>
+                      <span>
+                        Остаток:{' '}
+                        <strong className="font-mono text-foreground">
+                          {remainingPlan > 0
+                            ? `${remainingPlan.toLocaleString('ru-RU')} ₽`
+                            : '0 ₽'}
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+                  {/* Прогресс-бар распределения */}
+                  <div className="w-full space-y-1 sm:w-48">
+                    <div className="bg-subtle h-2 w-full overflow-hidden rounded-full">
+                      <div
+                        className={`h-full transition-all duration-300 ${
+                          distributionPct >= 95 && distributionPct <= 105
+                            ? 'bg-emerald-500'
+                            : (distributionPct >= 70 && distributionPct < 95) ||
+                              (distributionPct > 105 && distributionPct <= 120)
+                            ? 'bg-amber-500'
+                            : 'bg-rose-500'
+                        }`}
+                        style={{ width: `${Math.min(100, distributionPct)}%` }}
+                      />
+                    </div>
+                    <div className="text-tertiary text-right font-mono text-[10px]">
+                      {totalPersonalPlans.toLocaleString('ru-RU')} /{' '}
+                      {companyPlan.toLocaleString('ru-RU')} ₽
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {isAddingManager && (
                 <div
                   className="border-primary/30 bg-primary/5 space-y-3 rounded-lg border p-4"
@@ -844,7 +979,7 @@ export function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       <UserPlus className="h-4 w-4 text-primary" />
-                      <span>Новый менеджер в команду</span>
+                      <span>Новый менеджер в команду (с пресетами нормативов)</span>
                     </div>
                     <Button
                       variant="ghost"
@@ -868,7 +1003,7 @@ export function SettingsPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
                     <div>
                       <Label className="text-xs text-muted-foreground">
                         ID (CRM или код)
@@ -898,11 +1033,62 @@ export function SettingsPage() {
                         Роль / Должность
                       </Label>
                       <Input
-                        placeholder="Менеджер ОП"
+                        placeholder="Менеджер ОП / РОП"
                         value={newManagerRole}
                         onChange={(e) => setNewManagerRole(e.target.value)}
                         className="mt-1 h-8 text-xs"
                         data-testid="input-new-manager-role"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        План выручки (₽/мес)
+                      </Label>
+                      <Input
+                        type="number"
+                        placeholder="— (задаётся РОПом)"
+                        value={newManagerRevenueTarget}
+                        onChange={(e) =>
+                          setNewManagerRevenueTarget(e.target.value)
+                        }
+                        className="mt-1 h-8 font-mono text-xs"
+                        data-testid="input-new-manager-revenue"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Звонки / день (норма)
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="200"
+                        value={newManagerDailyCalls}
+                        onChange={(e) =>
+                          setNewManagerDailyCalls(
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        className="mt-1 h-8 font-mono text-xs"
+                        data-testid="input-new-manager-calls"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Встречи / мес (норма)
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="500"
+                        value={newManagerMeetings}
+                        onChange={(e) =>
+                          setNewManagerMeetings(
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        className="mt-1 h-8 font-mono text-xs"
+                        data-testid="input-new-manager-meetings"
                       />
                     </div>
                     <div>
@@ -915,10 +1101,30 @@ export function SettingsPage() {
                         max="500"
                         value={newManagerCapacity}
                         onChange={(e) =>
-                          setNewManagerCapacity(parseInt(e.target.value) || 0)
+                          setNewManagerCapacity(
+                            parseInt(e.target.value) || 0
+                          )
                         }
                         className="mt-1 h-8 font-mono text-xs"
                         data-testid="input-new-manager-capacity"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Next Step, %
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={newManagerNextStepPct}
+                        onChange={(e) =>
+                          setNewManagerNextStepPct(
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        className="mt-1 h-8 font-mono text-xs"
+                        data-testid="input-new-manager-next-step"
                       />
                     </div>
                   </div>
@@ -952,17 +1158,23 @@ export function SettingsPage() {
                 <table className="w-full text-xs">
                   <thead className="bg-subtle/50 border-b border-subtle text-muted-foreground">
                     <tr>
+                      <th className="min-w-[200px] px-3 py-2.5 text-left font-medium">
+                        Менеджер
+                      </th>
+                      <th className="w-36 px-3 py-2.5 text-left font-medium">
+                        План выручки
+                      </th>
                       <th className="w-24 px-3 py-2.5 text-left font-medium">
-                        ID
+                        Звонки/день
                       </th>
-                      <th className="px-3 py-2.5 text-left font-medium">
-                        Имя менеджера
+                      <th className="w-24 px-3 py-2.5 text-left font-medium">
+                        Встречи/мес
                       </th>
-                      <th className="w-48 px-3 py-2.5 text-left font-medium">
-                        Роль
+                      <th className="w-28 px-3 py-2.5 text-left font-medium">
+                        Вместимость
                       </th>
-                      <th className="w-52 px-3 py-2.5 text-left font-medium">
-                        Вместимость воронки
+                      <th className="w-24 px-3 py-2.5 text-left font-medium">
+                        Next Step, %
                       </th>
                       <th className="w-16 px-3 py-2.5 text-center font-medium">
                         Действия
@@ -976,41 +1188,137 @@ export function SettingsPage() {
                         className="hover:bg-hover/50"
                         data-testid={`manager-row-${m.id}`}
                       >
-                        <td className="px-3 py-2.5 font-mono text-muted-foreground">
-                          {m.id}
+                        {/* 1. Менеджер: Имя + ID/Роль */}
+                        <td className="px-3 py-2.5">
+                          <div className="space-y-1">
+                            <Input
+                              type="text"
+                              value={m.name}
+                              onChange={(e) =>
+                                handleManagerFieldChange(
+                                  m.id,
+                                  'name',
+                                  e.target.value
+                                )
+                              }
+                              className="h-7 text-xs font-medium"
+                              data-testid={`input-manager-name-${m.id}`}
+                            />
+                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                              <span className="font-mono text-[10px]">
+                                ID: {m.id}
+                              </span>
+                              <span>&bull;</span>
+                              <Input
+                                type="text"
+                                value={m.role}
+                                onChange={(e) =>
+                                  handleManagerFieldChange(
+                                    m.id,
+                                    'role',
+                                    e.target.value
+                                  )
+                                }
+                                className="h-5 w-32 border-transparent bg-transparent px-1 text-[11px] text-muted-foreground hover:border-subtle focus:border-primary"
+                                data-testid={`input-manager-role-${m.id}`}
+                              />
+                            </div>
+                          </div>
                         </td>
+
+                        {/* 2. План выручки (₽) */}
+                        <td className="px-3 py-2.5">
+                          <div className="relative flex items-center">
+                            <Input
+                              type="number"
+                              placeholder="—"
+                              value={
+                                m.revenue_target !== null &&
+                                m.revenue_target !== undefined
+                                  ? m.revenue_target
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                const val =
+                                  e.target.value.trim() === ''
+                                    ? null
+                                    : parseFloat(e.target.value);
+                                handleManagerFieldChange(
+                                  m.id,
+                                  'revenue_target',
+                                  val !== null && !isNaN(val) ? val : null
+                                );
+                              }}
+                              className="h-7 w-28 pr-6 font-mono text-xs"
+                              data-testid={`input-manager-revenue-${m.id}`}
+                            />
+                            <span className="pointer-events-none absolute right-2 text-xs text-muted-foreground">
+                              ₽
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 3. Звонки / день */}
                         <td className="px-3 py-2.5">
                           <Input
-                            type="text"
-                            value={m.name}
-                            onChange={(e) =>
+                            type="number"
+                            min="0"
+                            max="200"
+                            placeholder="20"
+                            value={
+                              m.daily_calls_target !== null &&
+                              m.daily_calls_target !== undefined
+                                ? m.daily_calls_target
+                                : ''
+                            }
+                            onChange={(e) => {
+                              const val =
+                                e.target.value.trim() === ''
+                                  ? null
+                                  : parseInt(e.target.value);
                               handleManagerFieldChange(
                                 m.id,
-                                'name',
-                                e.target.value
-                              )
-                            }
-                            className="h-7 text-xs font-medium"
-                            data-testid={`input-manager-name-${m.id}`}
+                                'daily_calls_target',
+                                val !== null && !isNaN(val) ? val : null
+                              );
+                            }}
+                            className="h-7 w-16 font-mono text-xs"
+                            data-testid={`input-manager-calls-${m.id}`}
                           />
                         </td>
+
+                        {/* 4. Встречи / мес */}
                         <td className="px-3 py-2.5">
                           <Input
-                            type="text"
-                            value={m.role}
-                            onChange={(e) =>
+                            type="number"
+                            min="0"
+                            max="500"
+                            placeholder="15"
+                            value={
+                              m.monthly_meetings_target !== null &&
+                              m.monthly_meetings_target !== undefined
+                                ? m.monthly_meetings_target
+                                : ''
+                            }
+                            onChange={(e) => {
+                              const val =
+                                e.target.value.trim() === ''
+                                  ? null
+                                  : parseInt(e.target.value);
                               handleManagerFieldChange(
                                 m.id,
-                                'role',
-                                e.target.value
-                              )
-                            }
-                            className="h-7 text-xs text-muted-foreground"
-                            data-testid={`input-manager-role-${m.id}`}
+                                'monthly_meetings_target',
+                                val !== null && !isNaN(val) ? val : null
+                              );
+                            }}
+                            className="h-7 w-16 font-mono text-xs"
+                            data-testid={`input-manager-meetings-${m.id}`}
                           />
                         </td>
+
+                        {/* 5. Вместимость */}
                         <td className="px-3 py-2.5">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <Input
                               type="number"
                               min="1"
@@ -1022,14 +1330,50 @@ export function SettingsPage() {
                                   parseInt(e.target.value) || 0
                                 )
                               }
-                              className="h-7 w-20 font-mono text-xs"
+                              className="h-7 w-16 font-mono text-xs"
                               data-testid={`input-manager-capacity-${m.id}`}
                             />
-                            <span className="font-mono text-xs text-muted-foreground">
+                            <span className="text-[11px] text-muted-foreground">
                               сделок
                             </span>
                           </div>
                         </td>
+
+                        {/* 6. Next Step, % */}
+                        <td className="px-3 py-2.5">
+                          <div className="relative flex items-center">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              placeholder="80"
+                              value={
+                                m.next_step_target_pct !== null &&
+                                m.next_step_target_pct !== undefined
+                                  ? m.next_step_target_pct
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                const val =
+                                  e.target.value.trim() === ''
+                                    ? null
+                                    : parseInt(e.target.value);
+                                handleManagerFieldChange(
+                                  m.id,
+                                  'next_step_target_pct',
+                                  val !== null && !isNaN(val) ? val : null
+                                );
+                              }}
+                              className="h-7 w-16 pr-5 font-mono text-xs"
+                              data-testid={`input-manager-next-step-${m.id}`}
+                            />
+                            <span className="pointer-events-none absolute right-2 text-xs text-muted-foreground">
+                              %
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 7. Действия */}
                         <td className="px-3 py-2.5 text-center">
                           <Button
                             variant="ghost"
@@ -1047,7 +1391,7 @@ export function SettingsPage() {
                     {managers.length === 0 && (
                       <tr>
                         <td
-                          colSpan={5}
+                          colSpan={7}
                           className="py-8 text-center text-xs text-muted-foreground"
                         >
                           В реестре пока нет сотрудников. Нажмите «+ Добавить

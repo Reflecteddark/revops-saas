@@ -108,14 +108,21 @@ export function RnpStandupView({
 
   // Manager performance synthesis for Standup
   const managerAnalysis = React.useMemo(() => {
-    const mgrList = managers.length > 0
-      ? managers
-      : Array.from(new Set(calls.map((c) => c.manager).filter(Boolean))).map((name, i) => ({
-          id: `m-${i + 1}`,
-          name,
-          role: 'Менеджер ОП',
-          capacity: 40,
-        }));
+    const mgrList: ManagerConfig[] =
+      managers.length > 0
+        ? managers
+        : Array.from(new Set(calls.map((c) => c.manager).filter(Boolean))).map(
+            (name, i) => ({
+              id: `m-${i + 1}`,
+              name,
+              role: 'Менеджер ОП',
+              capacity: 40,
+              revenue_target: null,
+              daily_calls_target: 20,
+              monthly_meetings_target: 15,
+              next_step_target_pct: 80,
+            })
+          );
 
     return mgrList.map((m) => {
       const mgrCalls = calls.filter((c) => c.manager === m.name);
@@ -124,37 +131,153 @@ export function RnpStandupView({
       const mgrRevenue = mgrWonDeals.reduce((sum, d) => sum + (d.amount || 0), 0);
 
       const totalCalls = mgrCalls.length;
-      const scores = mgrCalls.map((c) => c.score).filter((s): s is number => s !== null);
-      const avgScore = scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : 0;
-      const zoomCount = mgrCalls.filter((c) => c.zoom_scheduled || (c.cr && c.cr[6] === 1)).length;
-      const riskDealsCount = mgrDeals.filter((d) => d.sla_risk).length;
+      const scores = mgrCalls
+        .map((c) => c.score)
+        .filter((s): s is number => s !== null);
+      const avgScore =
+        scores.length > 0
+          ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+          : 0;
 
-      // Traffic-light status calculation:
-      // Red: 0 won deals or risk deals > 3 or avgScore < 6
-      // Yellow: avgScore < 8 or capacity exceeded
-      // Green: avgScore >= 8 and active won deals
+      // Filter yesterday's calls for this manager
+      const now = new Date();
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = yesterday.toISOString().slice(0, 10);
+      const mgrYesterdayCalls = mgrCalls.filter((c) => {
+        const dt = c.date || c.created_at || '';
+        return dt.includes(yStr);
+      });
+      const yesterdayCallsCount =
+        mgrYesterdayCalls.length > 0
+          ? mgrYesterdayCalls.length
+          : Math.min(totalCalls, 8); // fallback for demo/weekends
+
+      // Next Step strictly from Gemini AI Speech Audit
+      const auditedCalls = mgrCalls.filter(
+        (c) => c.score !== null || c.next_step !== null || Boolean(c.zoom_scheduled)
+      );
+      const nextStepCalls = auditedCalls.filter(
+        (c) =>
+          c.next_step === 1 ||
+          Boolean(c.zoom_scheduled) ||
+          (c.cr && (c.cr[6] === 1 || c.cr[13] === 1))
+      );
+      const nextStepPct =
+        auditedCalls.length > 0
+          ? Math.round((nextStepCalls.length / auditedCalls.length) * 100)
+          : null;
+
+      const zoomCount = mgrCalls.filter(
+        (c) => Boolean(c.zoom_scheduled) || (c.cr && c.cr[6] === 1)
+      ).length;
+
+      const activeDeals = mgrDeals.filter(
+        (d) => d.status !== 'won' && d.status !== 'lost'
+      );
+      const riskDeals = mgrDeals.filter(
+        (d) => d.sla_risk || d.status === 'risk'
+      );
+      const riskDealsCount = riskDeals.length;
+      const riskDealsSum = riskDeals.reduce((sum, d) => sum + (d.amount || 0), 0);
+
+      // KPI Norms & Targets
+      const revTarget = m.revenue_target;
+      const revCompPct =
+        revTarget && revTarget > 0
+          ? Math.round((mgrRevenue / revTarget) * 100)
+          : null;
+
+      const dailyCallsTarget = m.daily_calls_target ?? 20;
+      const callsCompPct =
+        dailyCallsTarget > 0
+          ? Math.round((yesterdayCallsCount / dailyCallsTarget) * 100)
+          : 100;
+
+      const meetingsTarget = m.monthly_meetings_target ?? 15;
+      const capacityTarget = m.capacity ?? 40;
+      const nextStepTarget = m.next_step_target_pct ?? 80;
+
+      // =====================================================================
+      // Single Primary Risk Hierarchy (Priority: Next Step -> Calls -> Meetings -> Capacity -> Revenue)
+      // Only ONE primary risk is presented to prevent alert fatigue!
+      // =====================================================================
+      let primaryRiskCategory: 'next_step' | 'calls' | 'meetings' | 'capacity' | 'revenue' | 'none' = 'none';
+      let primaryRiskTitle = 'В нормативе';
+      let primaryRiskMetric = 'Все ключевые нормативы выполняются';
+      let actionRecommendation =
+        'В нормативном графике. Удерживать конверсию и передавать целевые лиды.';
       let status: 'green' | 'yellow' | 'red' = 'green';
-      let actionRecommendation = 'В нормативном графике. Удерживать конверсию и передавать целевые лиды.';
 
-      if (riskDealsCount > 2 || (totalCalls > 0 && avgScore < 6)) {
+      // 1. Next Step below target (quality and future revenue)
+      if (auditedCalls.length > 0 && nextStepPct !== null && nextStepPct < nextStepTarget) {
+        primaryRiskCategory = 'next_step';
+        primaryRiskTitle = 'Качество фиксации договорённостей (Next Step)';
+        const missingNextStep = auditedCalls.length - nextStepCalls.length;
+        const isRed = nextStepPct < 70;
+        status = isRed ? 'red' : 'yellow';
+        primaryRiskMetric = `Next Step: ${nextStepPct}% при нормативе ${nextStepTarget}% ${isRed ? '🔴' : '🟡'} (${auditedCalls.length} оценённых звонков, ${missingNextStep} без шага)`;
+        actionRecommendation = `До 12:00 закрыть Next Step по ${Math.max(1, riskDealsCount)} открытым сделкам${
+          riskDealsSum > 0 ? ` (под риском ${riskDealsSum.toLocaleString('ru-RU')} ₽)` : ''
+        }; РОПу прослушать ${Math.min(3, Math.max(1, missingNextStep))} диалога без договоренности.`;
+      }
+      // 2. Activity / Calls below daily target
+      else if (dailyCallsTarget > 0 && callsCompPct < 100) {
+        primaryRiskCategory = 'calls';
+        primaryRiskTitle = 'Отставание по активности звонков';
+        const isRed = callsCompPct < 75;
+        status = isRed ? 'red' : 'yellow';
+        primaryRiskMetric = `Звонки: ${yesterdayCallsCount} из ${dailyCallsTarget} в день ${isRed ? '🔴' : '🟡'} (выполнение ${callsCompPct}%)`;
+        actionRecommendation = `Вывести менеджера на линию в первый час: закрыть дневную норму ${dailyCallsTarget} целевых звонков до 16:00.`;
+      }
+      // 3. Meetings / Zoom conversion
+      else if (meetingsTarget > 0 && zoomCount < Math.round(meetingsTarget * 0.7)) {
+        primaryRiskCategory = 'meetings';
+        primaryRiskTitle = 'Недобор назначенных встреч (КЭВ)';
+        const isRed = zoomCount < Math.round(meetingsTarget * 0.4);
+        status = isRed ? 'red' : 'yellow';
+        primaryRiskMetric = `Встречи: ${zoomCount} из ${meetingsTarget} в месяц ${isRed ? '🔴' : '🟡'}`;
+        actionRecommendation = 'Усилить квалификационный скрипт на выявление болей и назначить 2 встречи до конца недели.';
+      }
+      // 4. Funnel Capacity overload
+      else if (activeDeals.length > capacityTarget) {
+        primaryRiskCategory = 'capacity';
+        primaryRiskTitle = 'Перегруз воронки менеджера';
+        status = 'yellow';
+        primaryRiskMetric = `Загрузка: ${activeDeals.length} сделок при ёмкости ${capacityTarget} сделок 🟡`;
+        actionRecommendation = `Перераспределить ${activeDeals.length - capacityTarget} зависших сделок без активности на свободных сотрудников.`;
+      }
+      // 5. Revenue Target behind pace (only if target is configured, null is NOT penalized)
+      else if (typeof revTarget === 'number' && revTarget > 0 && revCompPct !== null && revCompPct < 70) {
+        primaryRiskCategory = 'revenue';
+        primaryRiskTitle = 'Отставание по выручке от темпа плана';
         status = 'red';
-        actionRecommendation = `Требуется немедленный разбор: ${riskDealsCount} сделок с просроченным SLA и низкий балл диалога (${avgScore}/13).`;
-      } else if (mgrDeals.length > m.capacity) {
-        status = 'yellow';
-        actionRecommendation = `Перегруз воронки: ${mgrDeals.length} сделок при вместимости ${m.capacity}. Перераспределить зависшие сделки.`;
-      } else if (zoomCount === 0 && totalCalls > 5) {
-        status = 'yellow';
-        actionRecommendation = 'Низкая конверсия в следующий шаг: 0 назначенных встреч. Проверить фиксацию договоренностей.';
+        primaryRiskMetric = `Выручка: ${mgrRevenue.toLocaleString('ru-RU')} ₽ из плана ${revTarget.toLocaleString('ru-RU')} ₽ (${revCompPct}%) 🔴`;
+        actionRecommendation = 'Сфокусироваться на дожиме 2 ключевых сделок на этапах согласования договора и выставления счета.';
       }
 
       return {
         ...m,
         totalCalls,
+        yesterdayCallsCount,
         avgScore,
         zoomCount,
         dealsCount: mgrDeals.length,
+        activeDealsCount: activeDeals.length,
         riskDealsCount,
+        riskDealsSum,
         revenue: mgrRevenue,
+        revTarget,
+        revCompPct,
+        dailyCallsTarget,
+        callsCompPct,
+        meetingsTarget,
+        nextStepPct,
+        nextStepTarget,
+        auditedCallsCount: auditedCalls.length,
+        primaryRiskCategory,
+        primaryRiskTitle,
+        primaryRiskMetric,
         status,
         actionRecommendation,
       };
@@ -337,30 +460,93 @@ export function RnpStandupView({
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-3 text-xs">
-                {/* Metric metrics chips */}
-                <div className="grid grid-cols-3 gap-2 py-1 bg-subtle/30 rounded-lg p-2 text-center">
+                {/* Metric KPI chips */}
+                <div className="grid grid-cols-3 gap-2 rounded-lg bg-subtle/30 p-2 text-center">
                   <div>
-                    <span className="text-[10px] text-tertiary block">Звонки</span>
-                    <span className="font-mono font-semibold text-foreground">{mgr.totalCalls}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-tertiary block">Балл ИИ</span>
+                    <span className="text-tertiary block text-[10px]">
+                      Звонки (факт/план)
+                    </span>
                     <span className="font-mono font-semibold text-foreground">
-                      {mgr.avgScore > 0 ? `${mgr.avgScore}/13` : '—'}
+                      {mgr.yesterdayCallsCount} / {mgr.dailyCallsTarget}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-tertiary block">Zoom</span>
-                    <span className="font-mono font-semibold text-emerald-400">{mgr.zoomCount}</span>
+                    <span className="text-tertiary block text-[10px]">
+                      Next Step (ИИ)
+                    </span>
+                    <span
+                      className={`font-mono font-semibold ${
+                        mgr.nextStepPct !== null && mgr.nextStepPct >= mgr.nextStepTarget
+                          ? 'text-emerald-400'
+                          : mgr.nextStepPct !== null && mgr.nextStepPct < 70
+                          ? 'text-rose-400'
+                          : 'text-amber-400'
+                      }`}
+                    >
+                      {mgr.nextStepPct !== null ? `${mgr.nextStepPct}%` : '—'} /{' '}
+                      {mgr.nextStepTarget}%
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-tertiary block text-[10px]">
+                      Zoom (факт/план)
+                    </span>
+                    <span className="font-mono font-semibold text-emerald-400">
+                      {mgr.zoomCount} / {mgr.meetingsTarget}
+                    </span>
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-2 rounded-lg bg-subtle/20 p-2 text-center text-[11px]">
+                  <div>
+                    <span className="text-tertiary block text-[10px]">
+                      Вместимость воронки
+                    </span>
+                    <span className="font-mono text-foreground">
+                      {mgr.activeDealsCount} / {mgr.capacity} сделок
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-tertiary block text-[10px]">
+                      Выручка (факт / план)
+                    </span>
+                    <span className="font-mono text-foreground">
+                      {mgr.revenue > 0
+                        ? `${(mgr.revenue / 1000).toFixed(0)}k ₽`
+                        : '0 ₽'}{' '}
+                      /{' '}
+                      {mgr.revTarget
+                        ? `${(mgr.revTarget / 1000).toFixed(0)}k ₽`
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Single Primary Risk Alert Box */}
+                {mgr.primaryRiskCategory !== 'none' && (
+                  <div
+                    className={`rounded-lg border p-2.5 text-xs ${
+                      mgr.status === 'red'
+                        ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+                        : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                      <span>{mgr.primaryRiskTitle}</span>
+                    </div>
+                    <div className="mt-1 font-mono text-[11px] opacity-90">
+                      {mgr.primaryRiskMetric}
+                    </div>
+                  </div>
+                )}
+
                 {/* РОП Action Directive */}
-                <div className="p-2.5 rounded-lg bg-subtle/50 border border-subtle">
-                  <span className="text-[10px] uppercase font-semibold text-tertiary block mb-0.5">
+                <div className="rounded-lg border border-subtle bg-subtle/50 p-2.5">
+                  <span className="text-tertiary mb-0.5 block text-[10px] font-semibold uppercase">
                     Фокус дня для РОПа:
                   </span>
-                  <p className="text-xs text-foreground font-medium leading-relaxed">
+                  <p className="text-xs font-medium leading-relaxed text-foreground">
                     {mgr.actionRecommendation}
                   </p>
                 </div>

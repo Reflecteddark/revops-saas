@@ -32,6 +32,7 @@ import type {
   IntegrationsHealthResponse,
   LossReason,
   ManagerConfig,
+  ManagerKpiPatchPayload,
   ModuleFlag,
   QuarantineCallsResponse,
   Settings,
@@ -277,6 +278,19 @@ export const settingsApi = {
     modules: ModuleFlag[]
   ): Promise<Settings> => {
     return settingsApi.update({ tenant_id: tenantId, modules });
+  },
+
+  patchManagerKpi: async (
+    tenantId: string,
+    managerId: string,
+    payload: ManagerKpiPatchPayload
+  ): Promise<{ status: string; manager_id: string; kpis: Record<string, unknown>; manager?: ManagerConfig }> => {
+    const res = await api.patch(
+      `/settings/managers/${encodeURIComponent(managerId)}/kpis`,
+      payload,
+      { params: { tenant_id: tenantId } }
+    );
+    return res.data;
   },
 };
 

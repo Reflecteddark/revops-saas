@@ -98,7 +98,7 @@ class Tenant(Base):
 
     def to_registry_dict(self) -> dict:
         st: dict = self.settings if isinstance(self.settings, dict) else {}
-        return {
+        res = {
             "tenant_id": self.id,
             "tenant_name": self.name,
             "spreadsheet_id": st.get("spreadsheet_id"),
@@ -112,6 +112,11 @@ class Tenant(Base):
             "custom_features": st.get("custom_features", {}),
             "is_template": bool(st.get("is_template", False))
         }
+        if "managers" in st:
+            res["managers"] = st["managers"]
+        if "manager_kpis" in st:
+            res["manager_kpis"] = st["manager_kpis"]
+        return res
 
 
 class User(Base):
