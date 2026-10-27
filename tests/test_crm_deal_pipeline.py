@@ -18,6 +18,8 @@ from fastapi.testclient import TestClient
 
 from apps.api.main import app
 from apps.api.routers.deals_router import fetch_deals_from_sheets, parse_amount
+from packages.database.session import SessionLocal
+from packages.database.models import Deal
 from apps.api.services.crm_deal_normalizer import (
     MAX_SHEET_CELL_CHARS,
     map_stage_amocrm,
@@ -255,20 +257,25 @@ def test_bitrix24_nested_fields_webhook():
             }
         }
     }
-    with patch("apps.api.routers.webhooks_router.manager.broadcast", new_callable=AsyncMock) as mock_broadcast:
-        resp = client.post("/api/v1/webhooks/bitrix24", json=payload)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "ok"
-        assert data["processed_deal"] == "B24-304050"
-        assert data["amount"] == 450000.0
+    try:
+        with patch("apps.api.routers.webhooks_router.manager.broadcast", new_callable=AsyncMock) as mock_broadcast:
+            resp = client.post("/api/v1/webhooks/bitrix24", json=payload)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["status"] == "ok"
+            assert data["processed_deal"] == "B24-304050"
+            assert data["amount"] == 450000.0
 
-        # Verify broadcast deal
-        mock_broadcast.assert_called_once()
-        broadcast_args = mock_broadcast.call_args[0]
-        event_dict = broadcast_args[1]
-        assert event_dict["type"] == "deal_updated"
-        assert event_dict["crm_deal_id"] == "B24-304050"
+            # Verify broadcast deal
+            mock_broadcast.assert_called_once()
+            broadcast_args = mock_broadcast.call_args[0]
+            event_dict = broadcast_args[1]
+            assert event_dict["type"] == "deal_updated"
+            assert event_dict["crm_deal_id"] == "B24-304050"
+    finally:
+        with SessionLocal() as db_clean:
+            db_clean.query(Deal).filter(Deal.id == "B24-304050").delete()
+            db_clean.commit()
 
 
 def test_bitrix24_deal_delete_webhook():
