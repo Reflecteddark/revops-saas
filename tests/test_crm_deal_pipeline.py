@@ -384,7 +384,7 @@ def test_deals_sheets_parsing_multi_source():
 
         # Bitrix tenant: gets B24 deals, excludes AMO deal
         _DEALS_CACHE.clear()
-        with patch("apps.api.routers.deals_router.get_tenant_config", return_value={"tenant_id": "TNT-B24", "crm_type": "bitrix24"}):
+        with patch("apps.api.routers.deals_router.get_tenant_config", return_value={"tenant_id": "TNT-B24", "crm_type": "bitrix24", "spreadsheet_id": "fake_sheet_b24"}):
             deals = fetch_deals_from_sheets("TNT-B24")
             assert len(deals) == 2
             assert all(d["deal_id"].startswith("B24-") for d in deals)
@@ -394,14 +394,14 @@ def test_deals_sheets_parsing_multi_source():
 
         # amoCRM tenant: gets AMO deal, excludes B24 deals
         _DEALS_CACHE.clear()
-        with patch("apps.api.routers.deals_router.get_tenant_config", return_value={"tenant_id": "TNT-AMO", "crm_type": "amocrm"}):
+        with patch("apps.api.routers.deals_router.get_tenant_config", return_value={"tenant_id": "TNT-AMO", "crm_type": "amocrm", "spreadsheet_id": "fake_sheet_amo"}):
             deals = fetch_deals_from_sheets("TNT-AMO")
             assert len(deals) == 1
             assert deals[0]["deal_id"] == "AMO-202"
 
         # both tenant: gets all 3 deals
         _DEALS_CACHE.clear()
-        with patch("apps.api.routers.deals_router.get_tenant_config", return_value={"tenant_id": "TNT-BOTH", "crm_type": "both"}):
+        with patch("apps.api.routers.deals_router.get_tenant_config", return_value={"tenant_id": "TNT-BOTH", "crm_type": "both", "spreadsheet_id": "fake_sheet_both"}):
             deals = fetch_deals_from_sheets("TNT-BOTH")
             assert len(deals) == 3
 

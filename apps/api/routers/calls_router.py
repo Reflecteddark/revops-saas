@@ -28,7 +28,7 @@ from ..cache_client import (
     set_cached_json_sync,
 )
 from ..schemas import SpeechEvaluationRequest
-from ..tenant_registry import get_tenant_spreadsheet_id
+from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
 from .admin_router import ALLOWED_ADMIN_KEYS
 from .deals_router import get_deals_lookup
@@ -201,7 +201,8 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
         logger.warning(f"service_account.json not found, skipping Google Sheets fetch (tenant: {clean_tenant})")
         return cached.get("calls", []) if isinstance(cached, dict) else []
 
-    sheet_id = get_tenant_spreadsheet_id(clean_tenant)
+    cfg = get_tenant_config(clean_tenant) or {}
+    sheet_id = cfg.get("spreadsheet_id") or get_tenant_spreadsheet_id(clean_tenant)
     if not sheet_id:
         empty_calls: list[dict[str, Any]] = []
         _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": empty_calls}

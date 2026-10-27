@@ -157,7 +157,8 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
         set_cached_json_sync(cache_key, fallback_deals, ex=60)
         return fallback_deals
 
-    sheet_id = get_tenant_spreadsheet_id(clean_tenant)
+    cfg = get_tenant_config(clean_tenant) or {}
+    sheet_id = cfg.get("spreadsheet_id") or get_tenant_spreadsheet_id(clean_tenant)
     if not sheet_id:
         empty_res: list[dict[str, Any]] = []
         _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
