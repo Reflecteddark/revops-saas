@@ -228,3 +228,72 @@ def test_get_settings_contains_crm_type():
     data = resp.json()
     assert "crm_type" in data
     assert data["crm_type"] in ("amocrm", "bitrix24", "hybrid")
+
+
+def test_sync_tenant_crm_managers_auto_removes_inactive_and_orphaned():
+    async def _test():
+        mock_tenant_cfg = {
+            "tenant_id": "TNT-TEST",
+            "crm_type": "amocrm",
+            "amo_domain": "reflecteddark.amocrm.ru",
+            "amo_token": "mock-token",
+            "managers": [
+                {
+                    "id": "11422686",
+                    "name": "Дмитрий Федотов",
+                    "role": "РОП / Клоузер",
+                    "capacity": 50,
+                    "revenue_target": 1500000.0,
+                },
+                {
+                    "id": "14384026",
+                    "name": "Дмитрий",
+                    "role": "РОП / Клоузер",
+                    "capacity": 50,
+                    "revenue_target": 0.0,
+                },
+                {
+                    "id": "14388098",
+                    "name": "Кристина",
+                    "role": "Менеджер ОП",
+                    "capacity": 40,
+                    "revenue_target": 0.0,
+                },
+            ],
+            "manager_kpis": {
+                "11422686": {"revenue_target": 1500000.0},
+                "14384026": {"revenue_target": 0.0},
+                "14388098": {"revenue_target": 0.0},
+            },
+        }
+
+        # Real amoCRM only has active user Dmitry (14384026)
+        mock_crm_fetched = [
+            {"id": "14384026", "name": "Дмитрий", "role": "РОП / Клоузер", "email": "d@test.com"},
+        ]
+
+        with patch("apps.api.tenant_registry.get_tenant_config", return_value=mock_tenant_cfg), \
+             patch("apps.api.services.crm_users_sync.fetch_amocrm_users", AsyncMock(return_value=mock_crm_fetched)), \
+             patch("apps.api.tenant_registry.load_tenants_registry", return_value={"tenants": [mock_tenant_cfg]}), \
+             patch("apps.api.tenant_registry.save_tenants_registry", return_value=True):
+
+            res = await sync_tenant_crm_managers("TNT-TEST")
+
+            assert res["status"] == "ok"
+            assert res["removed_count"] == 2
+            assert res["total_count"] == 1
+            assert len(res["managers"]) == 1
+
+            dmitry = res["managers"][0]
+            assert dmitry["id"] == "14384026"
+            assert dmitry["name"] == "Дмитрий"
+            # Dmitry inherited the 1.5M revenue target from the old seed ROP entry
+            assert dmitry["revenue_target"] == 1500000.0
+
+            # Inactive Kristina (14388098) and phantom Dmitry Fedotov (11422686) are gone
+            assert not any(m["id"] == "14388098" for m in res["managers"])
+            assert not any(m["id"] == "11422686" for m in res["managers"])
+
+    import asyncio
+    asyncio.run(_test())
+
