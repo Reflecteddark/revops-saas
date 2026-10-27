@@ -305,20 +305,28 @@ def test_amocrm_leads_array_and_delete_webhook():
             ]
         }
     }
-    with patch("apps.api.routers.webhooks_router.manager.broadcast", new_callable=AsyncMock) as mock_broadcast:
-        resp = client.post("/api/v1/webhooks/TNT-002/amocrm", json=payload)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["processed_count"] == 2
+    try:
+        with patch("apps.api.routers.webhooks_router.manager.broadcast", new_callable=AsyncMock) as mock_broadcast:
+            resp = client.post("/api/v1/webhooks/TNT-002/amocrm", json=payload)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["processed_count"] == 2
 
-        # 2 events broadcasted: deal_deleted for 40102, deal_updated for 40101
-        assert mock_broadcast.call_count == 2
-        calls = [c[0][1] for c in mock_broadcast.call_args_list]
-        del_call = next(c for c in calls if c["type"] == "deal_deleted")
-        upd_call = next(c for c in calls if c["type"] == "deal_updated")
+            # 2 events broadcasted: deal_deleted for 40102, deal_updated for 40101
+            assert mock_broadcast.call_count == 2
+            calls = [c[0][1] for c in mock_broadcast.call_args_list]
+            del_call = next(c for c in calls if c["type"] == "deal_deleted")
+            upd_call = next(c for c in calls if c["type"] == "deal_updated")
 
-        assert del_call["crm_deal_id"] == "AMO-40102"
-        assert upd_call["crm_deal_id"] == "AMO-40101"
+            assert del_call["crm_deal_id"] == "AMO-40102"
+            assert upd_call["crm_deal_id"] == "AMO-40101"
+    finally:
+        from packages.database.session import SessionLocal
+        from packages.database.models import Deal
+        db = SessionLocal()
+        db.query(Deal).filter(Deal.id == "AMO-40101").delete(synchronize_session=False)
+        db.commit()
+        db.close()
 
 
 # ==============================================================================

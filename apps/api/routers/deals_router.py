@@ -322,7 +322,7 @@ def get_authenticated_tenant_or_verify_admin(request: Request, requested_tenant:
 
 @router.get("")
 @router.get("/")
-def list_deals(
+async def list_deals(
     request: Request,
     stage: str | None = None,
     sla_risk_only: bool = False,
@@ -341,8 +341,29 @@ def list_deals(
             | (Deal.tenant_id == effective_tenant.lower())
             | (Deal.tenant_id == effective_tenant.upper())
         )
+        .filter(Deal.is_deleted == False)
         .all()
     )
+    if not db_deals:
+        cfg = get_tenant_config(effective_tenant) or {}
+        has_crm = bool(cfg.get("amo_token") or cfg.get("bitrix_webhook_url"))
+        if has_crm:
+            try:
+                from ..services.crm_deals_sync import sync_deals_for_tenant
+                await sync_deals_for_tenant(effective_tenant, db=db)
+                db_deals = (
+                    db.query(Deal)
+                    .filter(
+                        (Deal.tenant_id == effective_tenant)
+                        | (Deal.tenant_id == effective_tenant.lower())
+                        | (Deal.tenant_id == effective_tenant.upper())
+                    )
+                    .filter(Deal.is_deleted == False)
+                    .all()
+                )
+            except Exception as e_sync:
+                logger.warning(f"Auto deal sync on query failed for {effective_tenant}: {e_sync}")
+
     if db_deals:
         source = "database"
         all_deals = [
@@ -355,11 +376,11 @@ def list_deals(
                 "title": d.title,
                 "amount": float(d.budget),
                 "amount_str": f"{int(d.budget):,} ₽".replace(",", " "),
-                "stage_id": "1",
+                "stage_id": "6" if (d.stage and "успешно" in d.stage.value.lower()) else ("7" if (d.stage and "закрыто" in d.stage.value.lower()) else "1"),
                 "stage": d.stage.value if d.stage else "Первичный контакт",
                 "status": "won" if (d.stage and "успешно" in d.stage.value.lower()) else ("lost" if (d.stage and "закрыто" in d.stage.value.lower()) else "active"),
                 "sla_risk": d.is_at_risk,
-                "responsible_user": d.assigned_user.full_name if d.assigned_user else "Менеджер",
+                "responsible_user": d.assigned_user.full_name if d.assigned_user else ((d.custom_payload.get("manager_name") if isinstance(d.custom_payload, dict) else None) or "Менеджер"),
                 "segment": "General B2B",
                 "created_at": d.created_at.isoformat() if d.created_at else "",
                 "updated_at": d.updated_at.isoformat() if d.updated_at else "",
@@ -385,6 +406,20 @@ def list_deals(
         "sla_risk_count": sum(1 for d in results if d.get("sla_risk")),
         "total_amount": sum(d.get("amount", 0) for d in results)
     }
+
+
+@router.post("/sync")
+async def sync_deals(
+    request: Request,
+    tenant_id: str | None = None,
+    tenant: str | None = None,
+    db: Session = Depends(get_db)
+) -> dict[str, Any]:
+    """Triggers on-demand synchronization of CRM deals for tenant from amoCRM / Bitrix24."""
+    requested = tenant_id or tenant
+    effective_tenant = get_authenticated_tenant_or_verify_admin(request, requested)
+    from ..services.crm_deals_sync import sync_deals_for_tenant
+    return await sync_deals_for_tenant(effective_tenant, db=db)
 
 
 STAGE_MAPPING: dict[str, DealStage] = {

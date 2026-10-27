@@ -192,6 +192,21 @@ export const dealsApi = {
     }
     return [];
   },
+
+  sync: async (
+    tenantId: string
+  ): Promise<{
+    status: string;
+    deals_count: number;
+    total_pipeline: number;
+    won_amount: number;
+    [key: string]: unknown;
+  }> => {
+    const res = await api.post('/deals/sync', null, {
+      params: { tenant_id: tenantId },
+    });
+    return res.data;
+  },
 };
 
 export const callsApi = {

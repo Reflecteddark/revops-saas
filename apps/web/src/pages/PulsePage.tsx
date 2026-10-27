@@ -21,7 +21,9 @@ import {
   Zap,
   Target,
   CircleDollarSign,
+  RefreshCw,
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { KpiCard } from '@/components/KpiCard';
 import { DataTable } from '@/components/DataTable';
 import { Button } from '@/components/ui/button';
@@ -246,9 +248,33 @@ export function PulsePage() {
   const dealsInWorkCount = Math.max(0, deals.length - dealsWonCount - dealsRiskCount);
   const totalDeals = deals.length;
 
+  const { toast } = useToast();
   const [showRopGuide, setShowRopGuide] = React.useState(false);
   const [showDataAuditInfo, setShowDataAuditInfo] = React.useState(false);
   const [activeDept, setActiveDept] = React.useState<'sales' | 'standup' | 'marketing' | 'finance'>('sales');
+  const [syncingDeals, setSyncingDeals] = React.useState(false);
+
+  const handleSyncDeals = async () => {
+    if (!tenantId) return;
+    try {
+      setSyncingDeals(true);
+      const res = await dealsApi.sync(tenantId);
+      toast({
+        title: 'Сделки синхронизированы',
+        description: `Импортировано сделок: ${res.deals_count} на сумму ${Number(res.total_pipeline || 0).toLocaleString('ru-RU')} ₽`,
+      });
+      dealsQuery.refetch();
+      insightsQuery.refetch();
+    } catch (err: unknown) {
+      toast({
+        title: 'Ошибка синхронизации',
+        description: err instanceof Error ? err.message : 'Сбой импорта сделок из CRM',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncingDeals(false);
+    }
+  };
 
   // Month progress and pacing calculations (Pulsar7 & Salesforce style)
   const now = new Date();
@@ -281,6 +307,19 @@ export function PulsePage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSyncDeals}
+            disabled={syncingDeals}
+            className="h-8 gap-1.5 text-xs text-secondary hover:text-foreground"
+            data-testid="btn-sync-deals-pulse"
+            title="Синхронизировать сделки из amoCRM / Битрикс24"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 text-emerald-400 ${syncingDeals ? 'animate-spin' : ''}`} />
+            <span>{syncingDeals ? 'Синхронизация...' : 'Синхронизировать сделки'}</span>
+          </Button>
+
           <Button
             variant="outline"
             size="sm"

@@ -26,7 +26,7 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { integrationsApi } from '@/lib/api';
+import { integrationsApi, dealsApi } from '@/lib/api';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 import { useToast } from '@/hooks/use-toast';
@@ -59,6 +59,27 @@ export function IntegrationsPage() {
   const [retryingAll, setRetryingAll] = React.useState(false);
   const [retryingId, setRetryingId] = React.useState<string | null>(null);
   const [sendingTelegram, setSendingTelegram] = React.useState(false);
+  const [syncingDeals, setSyncingDeals] = React.useState(false);
+
+  const handleSyncDeals = async () => {
+    try {
+      setSyncingDeals(true);
+      const res = await dealsApi.sync(activeTenantId);
+      toast({
+        title: 'Сделки синхронизированы',
+        description: `Импортировано: ${res.deals_count} сделок на сумму ${Number(res.total_pipeline || 0).toLocaleString('ru-RU')} ₽`,
+      });
+      await refetch();
+    } catch (err: unknown) {
+      toast({
+        title: 'Ошибка синхронизации',
+        description: err instanceof Error ? err.message : 'Сбой импорта сделок из CRM',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncingDeals(false);
+    }
+  };
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -191,6 +212,19 @@ export function IntegrationsPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={handleSyncDeals}
+            disabled={syncingDeals}
+            className="h-8 gap-1.5 border-subtle bg-surface text-xs text-foreground hover:bg-hover"
+            title="Синхронизировать сделки из amoCRM / Битрикс24"
+            data-testid="btn-sync-deals-integrations"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 text-emerald-400 ${syncingDeals ? 'animate-spin' : ''}`} />
+            <span>{syncingDeals ? 'Синхронизация...' : 'Синхронизировать сделки'}</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => refetch()}
             className="h-8 gap-1.5 border-subtle bg-surface text-xs hover:bg-hover"
             title="Обновить статус"
@@ -302,6 +336,37 @@ export function IntegrationsPage() {
                   <Copy className="h-3.5 w-3.5" />
                 )}
               </Button>
+            </div>
+
+            <div className="pt-2 border-t border-subtle/50 space-y-1">
+              <p className="text-[11px] text-muted-foreground">
+                Webhook сделок (автоматически регистрируется в amoCRM):
+              </p>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  readOnly
+                  value={`https://report.ai-rop.ru/api/v1/webhooks/${activeTenantId}/amocrm`}
+                  className="h-8 select-all border-subtle bg-surface font-mono text-xs"
+                  data-testid="input-amocrm-webhook-url"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 shrink-0 px-2.5 text-xs"
+                  onClick={() =>
+                    handleCopy(`https://report.ai-rop.ru/api/v1/webhooks/${activeTenantId}/amocrm`, 'amocrm-webhook')
+                  }
+                  title="Скопировать Webhook amoCRM"
+                  data-testid="btn-copy-amocrm-webhook"
+                >
+                  {copiedKey === 'amocrm-webhook' ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
 

@@ -276,15 +276,16 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
         from ..tenant_registry import get_tenant_config
         cfg = get_tenant_config(org_id)
         secret = (cfg.get("amo_secret") or cfg.get("amo_webhook_secret") or cfg.get("amo_token")) if cfg else None
-        if not secret:
-            raise HTTPException(status_code=403, detail="AmoCRM webhook secret not configured for tenant")
         signature = request.headers.get("x-amo-signature")
-        if not signature:
+        if signature and secret:
+            raw_body = await request.body()
+            expected_sig = hmac.new(str(secret).encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(expected_sig.lower(), signature.lower()):
+                raise HTTPException(status_code=403, detail="Invalid X-Amo-Signature")
+        elif not tenant_param and not signature:
+            if not secret:
+                raise HTTPException(status_code=403, detail="AmoCRM webhook secret not configured for tenant")
             raise HTTPException(status_code=403, detail="X-Amo-Signature header missing")
-        raw_body = await request.body()
-        expected_sig = hmac.new(str(secret).encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected_sig.lower(), signature.lower()):
-            raise HTTPException(status_code=403, detail="Invalid X-Amo-Signature")
 
     record_incoming_webhook("amocrm", org_id, body, dict(request.headers), event="amocrm_webhook")
 
@@ -422,6 +423,17 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
                 "deleted_at": now_iso
             })
             processed_deals.append({"deal_id": deal_id, "status": "DELETED"})
+            try:
+                from packages.database.session import SessionLocal
+                from packages.database.models import Deal
+                with SessionLocal() as db_wh:
+                    db_d = db_wh.query(Deal).filter((Deal.tenant_id == org_id) & ((Deal.id == deal_id) | (Deal.external_crm_id == deal_id))).first()
+                    if db_d:
+                        setattr(db_d, "is_deleted", True)
+                        setattr(db_d, "status", "DELETED")
+                        db_wh.commit()
+            except Exception as e_del:
+                logger.warning(f"Failed to soft-delete deal {deal_id} in DB: {e_del}")
 
         # 2. Handle add, update, status events
         for evt in ("add", "update", "status"):
@@ -449,6 +461,18 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
             "deal": norm
         })
         processed_deals.append(norm)
+
+    # Persist all newly processed deals to PostgreSQL
+    if processed_deals:
+        active_deals = [d for d in processed_deals if d.get("status") != "DELETED"]
+        if active_deals:
+            try:
+                from ..services.crm_deals_sync import sync_deals_to_database
+                from packages.database.session import SessionLocal
+                with SessionLocal() as db_wh:
+                    sync_deals_to_database(org_id, active_deals, db_wh)
+            except Exception as e_db:
+                logger.warning(f"Failed to persist webhook deals to DB: {e_db}")
 
     primary_id = processed_deals[0].get("deal_id") if processed_deals else "amo_unknown"
     return {
