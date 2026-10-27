@@ -188,7 +188,7 @@ def test_tnt002_zero_managers_and_deals_isolation(client, admin_headers):
     )
 
     # 3. New tenant without connected spreadsheet: target is 0.0 and managers is []
-    res_new = client.get("/api/v1/settings?tenant=TNT-003")
+    res_new = client.get("/api/v1/settings?tenant=TNT-UNLINKED-999")
     assert res_new.status_code == 200
     data_new = res_new.json()
     assert data_new.get("general", {}).get("monthly_target") == 0.0
