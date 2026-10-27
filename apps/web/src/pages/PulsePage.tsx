@@ -159,6 +159,19 @@ export function PulsePage() {
     enabled: Boolean(tenantId),
   });
 
+  const [selectedPipelineId, setSelectedPipelineId] = React.useState<string>('0');
+
+  const pipelinesQuery = useQuery({
+    queryKey: ['pipelines', tenantId],
+    queryFn: () => dealsApi.pipelines(tenantId!),
+    enabled: Boolean(tenantId),
+  });
+
+  const pipelines = pipelinesQuery.data || [];
+  const activePipeline = React.useMemo(() => {
+    return pipelines.find((p) => p.id === selectedPipelineId) || pipelines[0];
+  }, [pipelines, selectedPipelineId]);
+
   if (!tenantId) {
     return (
       <div
@@ -627,6 +640,9 @@ export function PulsePage() {
           <PipelineFunnel
             deals={deals}
             calls={calls}
+            pipeline={activePipeline}
+            pipelines={pipelines}
+            onSelectPipeline={setSelectedPipelineId}
             loading={isLoading}
           />
         </div>

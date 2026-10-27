@@ -15,9 +15,10 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from packages.database.models import Deal, DealStage, SubscriptionTier, Tenant, Workspace
+from packages.database.models import CallRecording, Deal, DealStage, SubscriptionTier, Tenant, Workspace
 from packages.database.session import get_db
 
 import jwt
@@ -334,21 +335,187 @@ def get_authenticated_tenant_or_verify_admin(request: Request, requested_tenant:
     return (requested_tenant or "TNT-001").strip().upper()
 
 
+@router.get("/pipelines")
+async def get_pipelines(
+    request: Request,
+    tenant_id: str | None = None,
+    tenant: str | None = None,
+    org_id: str | None = None,
+    db: Session = Depends(get_db)
+) -> dict[str, Any]:
+    """Returns all multi-pipelines with their dynamic stages, CRM colors, deal counts and budget totals."""
+    requested = tenant_id or tenant or org_id
+    effective_tenant = get_authenticated_tenant_or_verify_admin(request, requested)
+    clean_tid = effective_tenant.strip().upper()
+
+    # 1. Check Redis cache
+    cache_key = f"pipelines:{clean_tid}"
+    cached = get_cached_json_sync(cache_key)
+    if cached is not None and isinstance(cached, dict):
+        return cached
+
+    # 2. Query tenant settings and DB deals
+    t_obj = db.query(Tenant).filter(Tenant.id == clean_tid).first()
+    t_settings: dict[str, Any] = dict(t_obj.settings) if (t_obj and isinstance(t_obj.settings, dict)) else {}
+    stored_pipelines = t_settings.get("pipelines")
+
+    db_deals = (
+        db.query(Deal)
+        .filter(
+            (Deal.tenant_id == clean_tid)
+            | (Deal.tenant_id == clean_tid.lower())
+            | (Deal.tenant_id == clean_tid.upper())
+        )
+        .filter(Deal.is_deleted == False)
+        .all()
+    )
+
+    # If no deals and no stored pipelines, try auto-syncing if CRM credentials configured
+    if not db_deals and not stored_pipelines:
+        cfg = get_tenant_config(clean_tid) or {}
+        if cfg.get("amo_token") or cfg.get("bitrix_webhook_url"):
+            try:
+                from ..services.crm_deals_sync import sync_deals_for_tenant
+                await sync_deals_for_tenant(clean_tid, db=db)
+                t_obj = db.query(Tenant).filter(Tenant.id == clean_tid).first()
+                t_settings_updated: dict[str, Any] = dict(t_obj.settings) if (t_obj and isinstance(t_obj.settings, dict)) else {}
+                stored_pipelines = t_settings_updated.get("pipelines")
+                db_deals = db.query(Deal).filter(Deal.tenant_id == clean_tid, Deal.is_deleted == False).all()
+            except Exception as e_s:
+                logger.warning(f"Auto-sync for pipelines failed: {e_s}")
+
+    default_stages = [
+        {"id": "1", "name": "Новый лид", "color": "#39A8EF", "sort": 10, "is_won": False, "is_lost": False},
+        {"id": "2", "name": "Квалификация", "color": "#2FC6F6", "sort": 20, "is_won": False, "is_lost": False},
+        {"id": "3", "name": "Встреча / Демо", "color": "#55D0E0", "sort": 30, "is_won": False, "is_lost": False},
+        {"id": "4", "name": "КП / В работе", "color": "#47E4C2", "sort": 40, "is_won": False, "is_lost": False},
+        {"id": "5", "name": "Финальный счёт / Договор", "color": "#FFA900", "sort": 50, "is_won": False, "is_lost": False},
+        {"id": "6", "name": "Успешно реализовано", "color": "#7BD500", "sort": 60, "is_won": True, "is_lost": False},
+        {"id": "7", "name": "Закрыто и не реализовано", "color": "#FF5752", "sort": 70, "is_won": False, "is_lost": True},
+    ]
+
+    pipelines_map: dict[str, dict[str, Any]] = {}
+    if stored_pipelines and isinstance(stored_pipelines, list) and len(stored_pipelines) > 0:
+        for p in stored_pipelines:
+            p_id = str(p.get("id") or "0")
+            pipelines_map[p_id] = {
+                "id": p_id,
+                "name": str(p.get("name") or "Основная воронка"),
+                "is_main": bool(p.get("is_main")),
+                "stages": [dict(s) for s in p.get("stages", [])],
+                "deal_count": 0,
+                "total_amount": 0.0,
+                "won_amount": 0.0,
+                "lost_amount": 0.0,
+                "active_amount": 0.0,
+                "sla_risk_count": 0,
+            }
+
+    # Group existing deals by pipeline and compute live aggregates
+    for d in db_deals:
+        p_id = str(d.pipeline_id or "0").strip()
+        p_name = d.pipeline_name or "Основная воронка"
+        if p_id not in pipelines_map:
+            pipelines_map[p_id] = {
+                "id": p_id,
+                "name": p_name,
+                "is_main": (p_id in ("0", "main", "1")),
+                "stages": [],
+                "deal_count": 0,
+                "total_amount": 0.0,
+                "won_amount": 0.0,
+                "lost_amount": 0.0,
+                "active_amount": 0.0,
+                "sla_risk_count": 0,
+            }
+
+        amt = float(d.budget or 0.0)
+        is_won = bool(d.stage == DealStage.WON or "успешно" in str(d.stage_name).lower())
+        is_lost = bool(d.stage == DealStage.LOST or "закрыто" in str(d.stage_name).lower() or "отказ" in str(d.stage_name).lower())
+
+        p_entry = pipelines_map[p_id]
+        p_entry["deal_count"] += 1
+        p_entry["total_amount"] += amt
+        if is_won:
+            p_entry["won_amount"] += amt
+        elif is_lost:
+            p_entry["lost_amount"] += amt
+        else:
+            p_entry["active_amount"] += amt
+
+        if d.is_at_risk:
+            p_entry["sla_risk_count"] += 1
+
+    # Ensure every pipeline has stages list populated with counts
+    for p_id, p_entry in pipelines_map.items():
+        if not p_entry["stages"]:
+            p_entry["stages"] = [dict(s) for s in default_stages]
+
+        # Calculate counts per stage
+        for st in p_entry["stages"]:
+            st_id = str(st.get("id") or "").strip()
+            st_name = str(st.get("name") or "").strip().lower()
+            matching_deals = [
+                d for d in db_deals
+                if str(d.pipeline_id or "0").strip() == p_id
+                and (
+                    str(d.stage_name or "").strip().lower() == st_name
+                    or str(d.stage.value if d.stage else "").strip().lower() == st_name
+                    or (st.get("is_won") and d.stage == DealStage.WON)
+                    or (st.get("is_lost") and d.stage == DealStage.LOST)
+                )
+            ]
+            st["deal_count"] = len(matching_deals)
+            st["total_amount"] = sum(float(d.budget or 0.0) for d in matching_deals)
+
+    result_pipelines = list(pipelines_map.values())
+    if not result_pipelines:
+        result_pipelines = [{
+            "id": "0",
+            "name": "Основная воронка",
+            "is_main": True,
+            "stages": [dict(s, deal_count=0, total_amount=0.0) for s in default_stages],
+            "deal_count": 0,
+            "total_amount": 0.0,
+            "won_amount": 0.0,
+            "lost_amount": 0.0,
+            "active_amount": 0.0,
+            "sla_risk_count": 0,
+        }]
+
+    # Sort pipelines: main first
+    result_pipelines.sort(key=lambda p: (not p.get("is_main", False), p.get("name", "")))
+
+    response_data = {
+        "status": "ok",
+        "tenant_id": clean_tid,
+        "pipelines": result_pipelines,
+        "total_pipelines": len(result_pipelines),
+    }
+    set_cached_json_sync(cache_key, response_data, ex=30)
+    return response_data
+
+
 @router.get("")
 @router.get("/")
 async def list_deals(
     request: Request,
+    pipeline_id: str | None = None,
+    stage_id: str | None = None,
     stage: str | None = None,
+    loss_reason: str | None = None,
+    search: str | None = None,
     sla_risk_only: bool = False,
     org_id: str | None = None,
     tenant_id: str | None = None,
     tenant: str | None = None,
     db: Session = Depends(get_db)
 ) -> dict[str, Any]:
-    """Returns active CRM deals directly from raw_deals Google Sheets or local DB for given tenant."""
+    """Returns active CRM deals with pipeline scoping, custom stages, and loss reasons."""
     requested = tenant_id or tenant or org_id
     effective_tenant = get_authenticated_tenant_or_verify_admin(request, requested)
-    db_deals = (
+
+    q = (
         db.query(Deal)
         .filter(
             (Deal.tenant_id == effective_tenant)
@@ -356,8 +523,15 @@ async def list_deals(
             | (Deal.tenant_id == effective_tenant.upper())
         )
         .filter(Deal.is_deleted == False)
-        .all()
     )
+
+    if pipeline_id:
+        q = q.filter(Deal.pipeline_id == pipeline_id)
+    if loss_reason:
+        q = q.filter(Deal.loss_reason == loss_reason)
+
+    db_deals = q.all()
+
     if not db_deals:
         cfg = get_tenant_config(effective_tenant) or {}
         has_crm = bool(cfg.get("amo_token") or cfg.get("bitrix_webhook_url"))
@@ -365,7 +539,7 @@ async def list_deals(
             try:
                 from ..services.crm_deals_sync import sync_deals_for_tenant
                 await sync_deals_for_tenant(effective_tenant, db=db)
-                db_deals = (
+                q2 = (
                     db.query(Deal)
                     .filter(
                         (Deal.tenant_id == effective_tenant)
@@ -373,44 +547,104 @@ async def list_deals(
                         | (Deal.tenant_id == effective_tenant.upper())
                     )
                     .filter(Deal.is_deleted == False)
-                    .all()
                 )
+                if pipeline_id:
+                    q2 = q2.filter(Deal.pipeline_id == pipeline_id)
+                if loss_reason:
+                    q2 = q2.filter(Deal.loss_reason == loss_reason)
+                db_deals = q2.all()
             except Exception as e_sync:
                 logger.warning(f"Auto deal sync on query failed for {effective_tenant}: {e_sync}")
 
     if db_deals:
         source = "database"
-        all_deals = [
-            {
+        all_deals = []
+        for d in db_deals:
+            is_won = bool(d.stage == DealStage.WON or "успешно" in str(d.stage_name).lower())
+            is_lost = bool(d.stage == DealStage.LOST or "закрыто" in str(d.stage_name).lower() or "отказ" in str(d.stage_name).lower())
+            deal_status = "won" if is_won else ("lost" if is_lost else "active")
+
+            # Map stage order 1..8
+            stage_order = 1
+            if d.stage == DealStage.LEAD_INCOMING:
+                stage_order = 1
+            elif d.stage == DealStage.QUALIFICATION:
+                stage_order = 2
+            elif d.stage == DealStage.MEETING_SCHEDULED:
+                stage_order = 3
+            elif d.stage == DealStage.MEETING_DONE:
+                stage_order = 4
+            elif d.stage in (DealStage.COMMERCIAL_PROPOSAL, DealStage.DECISION_MAKING):
+                stage_order = 5
+            elif d.stage == DealStage.CONTRACT_PAYMENT:
+                stage_order = 6
+            elif is_won:
+                stage_order = 7
+            elif is_lost:
+                stage_order = 8
+
+            manager_name = (
+                d.assigned_user.full_name
+                if d.assigned_user
+                else ((d.custom_payload.get("manager_name") if isinstance(d.custom_payload, dict) else None) or "Менеджер")
+            )
+
+            all_deals.append({
                 "id": d.id,
                 "deal_id": d.id,
                 "org_id": effective_tenant,
+                "tenant_id": effective_tenant,
                 "crm_deal_id": d.external_crm_id or d.id,
                 "crm_source": d.crm_source or d.lead_source or "CRM",
                 "title": d.title,
+                "company_name": d.company_name or d.title,
+                "contact_phone": d.contact_phone or "",
                 "amount": float(d.budget),
                 "amount_str": f"{int(d.budget):,} ₽".replace(",", " "),
-                "stage_id": "6" if (d.stage and "успешно" in d.stage.value.lower()) else ("7" if (d.stage and "закрыто" in d.stage.value.lower()) else "1"),
+                "pipeline_id": d.pipeline_id or "0",
+                "pipeline_name": d.pipeline_name or "Основная воронка",
+                "stage_id": str(d.stage_name or (d.stage.value if d.stage else "1")),
+                "stage_name": d.stage_name or (d.stage.value if d.stage else "Первичный контакт"),
                 "stage": d.stage.value if d.stage else "Первичный контакт",
-                "status": "won" if (d.stage and "успешно" in d.stage.value.lower()) else ("lost" if (d.stage and "закрыто" in d.stage.value.lower()) else "active"),
+                "stage_order": stage_order,
+                "status": deal_status,
+                "loss_reason": d.loss_reason or "",
+                "loss_reason_code": d.loss_reason_code or "",
                 "sla_risk": d.is_at_risk,
-                "responsible_user": d.assigned_user.full_name if d.assigned_user else ((d.custom_payload.get("manager_name") if isinstance(d.custom_payload, dict) else None) or "Менеджер"),
+                "days_in_stage": d.days_in_stage or 0,
+                "responsible_user": manager_name,
+                "manager_name": manager_name,
                 "segment": "General B2B",
+                "calls_count": len(d.calls) if hasattr(d, "calls") and d.calls else 0,
+                "avg_call_score": float(d.avg_call_score or 0.0),
                 "created_at": d.created_at.isoformat() if d.created_at else "",
                 "updated_at": d.updated_at.isoformat() if d.updated_at else "",
                 "synced_at": datetime.now(timezone.utc).isoformat(),
-            }
-            for d in db_deals
-        ]
+            })
     else:
         is_demo_tenant = str(effective_tenant).lower().startswith("demo_") or str(effective_tenant).lower().startswith("demo-")
         all_deals = [] if is_demo_tenant else fetch_deals_from_sheets(tenant_id=effective_tenant)
         source = "google_sheets_raw_deals"
+
     results = all_deals
+    if stage_id:
+        results = [d for d in results if str(d.get("stage_id")) == str(stage_id) or str(d.get("stage_name")) == str(stage_id)]
     if stage:
-        results = [d for d in results if d["stage"] == stage]
+        results = [d for d in results if d.get("stage") == stage or d.get("stage_name") == stage]
+    if loss_reason:
+        results = [d for d in results if d.get("loss_reason") == loss_reason]
+    if search:
+        s_clean = search.strip().lower()
+        results = [
+            d for d in results
+            if s_clean in str(d.get("title", "")).lower()
+            or s_clean in str(d.get("company_name", "")).lower()
+            or s_clean in str(d.get("responsible_user", "")).lower()
+            or s_clean in str(d.get("deal_id", "")).lower()
+        ]
     if sla_risk_only:
-        results = [d for d in results if d["sla_risk"]]
+        results = [d for d in results if d.get("sla_risk")]
+
     return {
         "status": "ok",
         "tenant_id": effective_tenant,
@@ -420,6 +654,132 @@ async def list_deals(
         "sla_risk_count": sum(1 for d in results if d.get("sla_risk")),
         "total_amount": sum(d.get("amount", 0) for d in results)
     }
+
+
+@router.get("/{deal_id}")
+async def get_deal_details(
+    deal_id: str,
+    request: Request,
+    tenant_id: str | None = None,
+    tenant: str | None = None,
+    db: Session = Depends(get_db)
+) -> dict[str, Any]:
+    """Returns single deal details including linked audio call recordings with 13-criteria scorecards."""
+    clean_id = deal_id.strip()
+    requested = tenant_id or tenant
+    effective_tenant = get_authenticated_tenant_or_verify_admin(request, requested)
+    clean_tid = effective_tenant.strip().upper()
+
+    db_deal = (
+        db.query(Deal)
+        .filter(
+            (Deal.id == clean_id)
+            | (Deal.external_crm_id == clean_id)
+            | (Deal.id == f"B24-{clean_id}")
+            | (Deal.id == f"AMO-{clean_id}")
+        )
+        .first()
+    )
+
+    if db_deal:
+        deal_tenant = str(db_deal.tenant_id).upper()
+        if deal_tenant != clean_tid and clean_tid != "*":
+            raise HTTPException(status_code=403, detail="Cross-tenant access forbidden")
+
+        deal_match_conditions = [CallRecording.deal_id == db_deal.id]
+        if db_deal.external_crm_id and str(db_deal.external_crm_id).strip():
+            deal_match_conditions.append(CallRecording.deal_id == str(db_deal.external_crm_id).strip())
+
+        calls = (
+            db.query(CallRecording)
+            .filter(
+                CallRecording.tenant_id == deal_tenant,
+                or_(*deal_match_conditions)
+            )
+            .order_by(CallRecording.created_at.desc())
+            .all()
+        )
+        if not calls and db_deal.contact_phone:
+            calls = (
+                db.query(CallRecording)
+                .filter(CallRecording.tenant_id == deal_tenant, CallRecording.client_phone == db_deal.contact_phone)
+                .order_by(CallRecording.created_at.desc())
+                .all()
+            )
+
+        linked_calls = [
+            {
+                "id": c.id,
+                "external_call_id": c.external_call_id,
+                "client_phone": c.client_phone,
+                "duration_seconds": c.duration_seconds,
+                "duration_str": f"{c.duration_seconds // 60}:{c.duration_seconds % 60:02d}",
+                "status": c.status,
+                "overall_score": float(c.overall_score or 0.0),
+                "scorecard_criteria": c.scorecard_criteria or {},
+                "transcript_text": c.transcript_text or "",
+                "ai_summary": c.ai_summary or "",
+                "next_action_extracted": c.next_action_extracted or "",
+                "audio_s3_url": c.audio_s3_url,
+                "created_at": c.created_at.isoformat() if c.created_at else "",
+            }
+            for c in calls
+        ]
+
+        manager_name = (
+            db_deal.assigned_user.full_name
+            if db_deal.assigned_user
+            else ((db_deal.custom_payload.get("manager_name") if isinstance(db_deal.custom_payload, dict) else None) or "Не назначен")
+        )
+
+        return {
+            "status": "ok",
+            "deal": {
+                "id": db_deal.id,
+                "deal_id": db_deal.id,
+                "org_id": db_deal.tenant_id,
+                "tenant_id": db_deal.tenant_id,
+                "crm_deal_id": db_deal.external_crm_id or db_deal.id,
+                "crm_source": db_deal.crm_source or "crm",
+                "title": db_deal.title,
+                "company_name": db_deal.company_name or db_deal.title,
+                "contact_phone": db_deal.contact_phone or "",
+                "amount": float(db_deal.budget),
+                "amount_str": f"{int(db_deal.budget):,} ₽".replace(",", " "),
+                "pipeline_id": db_deal.pipeline_id or "0",
+                "pipeline_name": db_deal.pipeline_name or "Основная воронка",
+                "stage_id": str(db_deal.stage_name or (db_deal.stage.value if db_deal.stage else "1")),
+                "stage_name": db_deal.stage_name or (db_deal.stage.value if db_deal.stage else "Первичный контакт"),
+                "stage": db_deal.stage.value if db_deal.stage else "Первичный контакт",
+                "status": "won" if (db_deal.stage == DealStage.WON or "успешно" in str(db_deal.stage_name).lower()) else ("lost" if (db_deal.stage == DealStage.LOST or "закрыто" in str(db_deal.stage_name).lower() or "отказ" in str(db_deal.stage_name).lower()) else "active"),
+                "loss_reason": db_deal.loss_reason or "",
+                "loss_reason_code": db_deal.loss_reason_code or "",
+                "sla_risk": db_deal.is_at_risk,
+                "days_in_stage": db_deal.days_in_stage or 0,
+                "responsible_user": manager_name,
+                "manager_name": manager_name,
+                "created_at": db_deal.created_at.isoformat() if db_deal.created_at else "",
+                "updated_at": db_deal.updated_at.isoformat() if db_deal.updated_at else "",
+                "custom_payload": db_deal.custom_payload or {},
+                "calls": linked_calls,
+                "calls_count": len(linked_calls),
+            }
+        }
+
+    lookup = get_deals_lookup(clean_tid)
+    found = lookup.get(clean_id.upper())
+    if not found:
+        num = re.sub(r"\D", "", clean_id)
+        if num:
+            found = lookup.get(num) or lookup.get(f"B24-{num}") or lookup.get(f"AMO-{num}")
+
+    if found:
+        return {
+            "status": "ok",
+            "deal": dict(found, calls=[], calls_count=0)
+        }
+
+    raise HTTPException(status_code=404, detail=f"Сделка {deal_id} не найдена")
 
 
 @router.post("/sync")

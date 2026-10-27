@@ -21,6 +21,9 @@ const LoginPage = lazy(() =>
 const PulsePage = lazy(() =>
   import('@/pages/PulsePage').then((m) => ({ default: m.PulsePage }))
 );
+const DealsPage = lazy(() =>
+  import('@/pages/DealsPage').then((m) => ({ default: m.DealsPage }))
+);
 const AuditPage = lazy(() =>
   import('@/pages/AuditPage').then((m) => ({ default: m.AuditPage }))
 );
@@ -77,6 +80,14 @@ export function App() {
               element={
                 <Suspense fallback={<PageFallback />}>
                   <PulsePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="deals"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <DealsPage />
                 </Suspense>
               }
             />

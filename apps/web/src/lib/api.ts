@@ -38,6 +38,7 @@ import type {
   QuarantineCallsResponse,
   Settings,
   SimulateCallPayload,
+  Pipeline,
   StageConfig,
   TelegramConfig,
   TelegramReportResponse,
@@ -173,9 +174,12 @@ export const tenantsApi = {
 export const dealsApi = {
   list: async (params?: {
     tenant_id?: string;
+    pipeline_id?: string;
     status?: string;
     stage_id?: string;
     stage?: string;
+    loss_reason?: string;
+    search?: string;
     sla_risk_only?: boolean;
   }): Promise<Deal[]> => {
     const res = await api.get<
@@ -191,6 +195,34 @@ export const dealsApi = {
       return data.deals;
     }
     return [];
+  },
+
+  pipelines: async (tenantId?: string): Promise<Pipeline[]> => {
+    const effectiveTenant =
+      tenantId || useRevOpsStore.getState().activeTenantId || 'TNT-001';
+    const res = await api.get<{ pipelines?: Pipeline[]; [key: string]: unknown }>(
+      '/deals/pipelines',
+      {
+        params: { tenant_id: effectiveTenant },
+      }
+    );
+    const data = res.data;
+    if (data && Array.isArray(data.pipelines)) {
+      return data.pipelines;
+    }
+    return [];
+  },
+
+  get: async (dealId: string, tenantId?: string): Promise<Deal | null> => {
+    const effectiveTenant =
+      tenantId || useRevOpsStore.getState().activeTenantId || 'TNT-001';
+    const res = await api.get<{ deal?: Deal; [key: string]: unknown }>(
+      `/deals/${dealId}`,
+      {
+        params: { tenant_id: effectiveTenant },
+      }
+    );
+    return res.data?.deal || null;
   },
 
   sync: async (

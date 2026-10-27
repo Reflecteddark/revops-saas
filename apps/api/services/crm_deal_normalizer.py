@@ -99,11 +99,23 @@ def map_stage_bitrix24(
 ) -> dict[str, Any]:
     """
     Normalizes Bitrix24 stage into RevOps 1..7 standard.
-    Returns {stage_num: int | None, stage_name: str, weight: float | None, is_won: bool, is_lost: bool, is_active: bool, status: str}.
+    Returns {stage_num: int | None, stage_name: str, color: str, weight: float | None, is_won: bool, is_lost: bool, is_active: bool, status: str}.
     If stage is unknown: returns status='UNKNOWN', weight=None (zero NaN risk).
     """
     clean_stage = str(raw_stage_id or "").strip().upper()
     semantic = str(raw_semantic or "").strip().upper()
+
+    stage_color = ""
+    catalog_name = None
+    if stages_catalog and clean_stage in stages_catalog:
+        cat_item = stages_catalog[clean_stage]
+        if isinstance(cat_item, dict):
+            stage_color = str(cat_item.get("color") or "")
+            catalog_name = cat_item.get("name")
+            if not semantic and cat_item.get("semantic"):
+                semantic = str(cat_item.get("semantic")).upper()
+        elif isinstance(cat_item, str):
+            catalog_name = cat_item
 
     # 1. Custom client mapping config overrides
     if stage_mapping_config and clean_stage in stage_mapping_config:
@@ -117,7 +129,8 @@ def map_stage_bitrix24(
             status = "WON" if is_won else ("LOST" if is_lost else "ACTIVE")
             return {
                 "stage_num": st_num,
-                "stage_name": cfg.get("stage_name", DEFAULT_STAGE_NAMES.get(st_num, clean_stage)),
+                "stage_name": cfg.get("stage_name", catalog_name or DEFAULT_STAGE_NAMES.get(st_num, clean_stage)),
+                "color": cfg.get("color") or stage_color,
                 "weight": weight,
                 "is_won": is_won,
                 "is_lost": is_lost,
@@ -129,7 +142,8 @@ def map_stage_bitrix24(
     if semantic == "S" or "WON" in clean_stage or "УСПЕШНО" in clean_stage:
         return {
             "stage_num": 6,
-            "stage_name": "Успешно реализовано",
+            "stage_name": catalog_name or "Успешно реализовано",
+            "color": stage_color or "#7BD500",
             "weight": 1.0,
             "is_won": True,
             "is_lost": False,
@@ -139,7 +153,8 @@ def map_stage_bitrix24(
     if semantic == "F" or "LOSE" in clean_stage or "LOST" in clean_stage or "ПРОВАЛ" in clean_stage or "ОТКАЗ" in clean_stage:
         return {
             "stage_num": 7,
-            "stage_name": "Закрыто и не реализовано",
+            "stage_name": catalog_name or "Закрыто и не реализовано",
+            "color": stage_color or "#FF5752",
             "weight": 0.0,
             "is_won": False,
             "is_lost": True,
@@ -149,22 +164,23 @@ def map_stage_bitrix24(
 
     # 3. Standard pipeline stage recognition
     if "NEW" in clean_stage or "НОВАЯ" in clean_stage or clean_stage in ("1", "STAGE_1"):
-        return {"stage_num": 1, "stage_name": "Новая", "weight": 0.10, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
+        return {"stage_num": 1, "stage_name": catalog_name or "Новая", "color": stage_color or "#39A8EF", "weight": 0.10, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
     if "PREPARATION" in clean_stage or "ДОКУМЕНТ" in clean_stage or clean_stage in ("2", "STAGE_2"):
-        return {"stage_num": 2, "stage_name": "Подготовка документов", "weight": 0.35, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
+        return {"stage_num": 2, "stage_name": catalog_name or "Подготовка документов", "color": stage_color or "#2FC6F6", "weight": 0.35, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
     if "PREPAYMENT" in clean_stage or "ПРЕДОПЛАТ" in clean_stage or clean_stage in ("3", "STAGE_3"):
-        return {"stage_num": 3, "stage_name": "Счёт на предоплату", "weight": 0.60, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
+        return {"stage_num": 3, "stage_name": catalog_name or "Счёт на предоплату", "color": stage_color or "#55D0E0", "weight": 0.60, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
     if "EXECUTING" in clean_stage or "РАБОТ" in clean_stage or clean_stage in ("4", "STAGE_4"):
-        return {"stage_num": 4, "stage_name": "В работе", "weight": 0.85, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
+        return {"stage_num": 4, "stage_name": catalog_name or "В работе", "color": stage_color or "#47E4C2", "weight": 0.85, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
     if "FINAL" in clean_stage or "ФИНАЛЬН" in clean_stage or clean_stage in ("5", "STAGE_5"):
-        return {"stage_num": 5, "stage_name": "Финальный счёт", "weight": 0.95, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
+        return {"stage_num": 5, "stage_name": catalog_name or "Финальный счёт", "color": stage_color or "#FFA900", "weight": 0.95, "is_won": False, "is_lost": False, "is_active": True, "status": "ACTIVE"}
 
     # 4. Unknown Custom Stage (do not default to LOST or 10%)
     logger.warning(f"[Bitrix24 Stage Mapping] Unknown stage detected: '{clean_stage}' (semantic: {semantic})")
-    catalog_name = (stages_catalog or {}).get(clean_stage, f"Неизвестный этап ({clean_stage})")
+    cat_name = catalog_name or f"Неизвестный этап ({clean_stage})"
     return {
         "stage_num": None,
-        "stage_name": catalog_name,
+        "stage_name": cat_name,
+        "color": stage_color or "#9E9E9E",
         "weight": None,
         "is_won": False,
         "is_lost": False,
@@ -200,6 +216,7 @@ def map_stage_amocrm(
             return {
                 "stage_num": st_num,
                 "stage_name": cfg.get("stage_name", DEFAULT_STAGE_NAMES.get(st_num, f"amoCRM Status {status_str}")),
+                "color": str(cfg.get("color") or ""),
                 "weight": weight,
                 "is_won": is_won,
                 "is_lost": is_lost,
@@ -212,17 +229,19 @@ def map_stage_amocrm(
         cat_info = stages_catalog.get(key) or stages_catalog.get(status_str)
         if cat_info and isinstance(cat_info, dict):
             st_name = cat_info.get("name", f"Статус {status_str}")
+            st_color = str(cat_info.get("color") or "")
             is_won = bool(cat_info.get("is_won") or status_str == "142")
             is_lost = bool(cat_info.get("is_lost") or status_str == "143")
             if is_won:
-                return {"stage_num": 6, "stage_name": "Успешно реализовано", "weight": 1.0, "is_won": True, "is_lost": False, "is_active": False, "status": "WON"}
+                return {"stage_num": 6, "stage_name": st_name or "Успешно реализовано", "color": st_color or "#7BD500", "weight": 1.0, "is_won": True, "is_lost": False, "is_active": False, "status": "WON"}
             if is_lost:
-                return {"stage_num": 7, "stage_name": "Закрыто и не реализовано", "weight": 0.0, "is_won": False, "is_lost": True, "is_active": False, "status": "LOST"}
+                return {"stage_num": 7, "stage_name": st_name or "Закрыто и не реализовано", "color": st_color or "#FF5752", "weight": 0.0, "is_won": False, "is_lost": True, "is_active": False, "status": "LOST"}
             sort_order = int(cat_info.get("sort", 10)) // 10
             rev_stage = max(1, min(5, sort_order))
             return {
                 "stage_num": rev_stage,
                 "stage_name": st_name,
+                "color": st_color,
                 "weight": DEFAULT_STAGE_WEIGHTS.get(rev_stage, 0.1),
                 "is_won": False,
                 "is_lost": False,
@@ -232,15 +251,16 @@ def map_stage_amocrm(
 
     # 3. Standard default amoCRM status fallbacks
     if status_str == "142":
-        return {"stage_num": 6, "stage_name": "Успешно реализовано", "weight": 1.0, "is_won": True, "is_lost": False, "is_active": False, "status": "WON"}
+        return {"stage_num": 6, "stage_name": "Успешно реализовано", "color": "#7BD500", "weight": 1.0, "is_won": True, "is_lost": False, "is_active": False, "status": "WON"}
     if status_str == "143":
-        return {"stage_num": 7, "stage_name": "Закрыто и не реализовано", "weight": 0.0, "is_won": False, "is_lost": True, "is_active": False, "status": "LOST"}
+        return {"stage_num": 7, "stage_name": "Закрыто и не реализовано", "color": "#FF5752", "weight": 0.0, "is_won": False, "is_lost": True, "is_active": False, "status": "LOST"}
 
     # 4. Unknown Stage
     logger.warning(f"[amoCRM Stage Mapping] Unknown status detected: '{status_str}' (pipeline: {pipe_str})")
     return {
         "stage_num": None,
         "stage_name": f"Неизвестный этап (amo #{status_str})",
+        "color": "#9E9E9E",
         "weight": None,
         "is_won": False,
         "is_lost": False,
@@ -254,11 +274,13 @@ def normalize_bitrix24_deal(
     tenant_id: str,
     mapping_config: dict[str, Any] | None = None,
     stages_catalog: dict[str, Any] | None = None,
-    users_catalog: dict[str, Any] | None = None
+    users_catalog: dict[str, Any] | None = None,
+    categories_catalog: dict[str, Any] | None = None
 ) -> dict[str, Any]:
     """
     Normalizes a single Bitrix24 deal dictionary into RevOps standard schema.
     Guarantees prefix 'B24-{ID}', safe numbers, custom_payload preservation, and zero hardcoded stubs.
+    Supports multi-category pipelines and custom failure stages as loss reasons.
     """
     d = raw_deal.get("FIELDS") or raw_deal.get("fields") or raw_deal
     raw_id = str(d.get("ID") or d.get("id") or "").strip()
@@ -268,6 +290,19 @@ def normalize_bitrix24_deal(
     deal_id = raw_id if raw_id.startswith("B24-") else f"B24-{raw_id}"
     title = str(d.get("TITLE") or d.get("title") or f"Сделка #{raw_id}").strip()
 
+    # Category / Pipeline
+    raw_cat_id = str(d.get("CATEGORY_ID") or d.get("category_id") or "0").strip()
+    pipeline_id = raw_cat_id
+    pipeline_name = "Общая воронка"
+    if categories_catalog and raw_cat_id in categories_catalog:
+        cat_obj = categories_catalog[raw_cat_id]
+        if isinstance(cat_obj, dict):
+            pipeline_name = str(cat_obj.get("NAME") or cat_obj.get("name") or pipeline_name)
+        else:
+            pipeline_name = str(cat_obj)
+    elif raw_cat_id != "0":
+        pipeline_name = f"Воронка #{raw_cat_id}"
+
     # Price / Opportunity
     raw_price = d.get("OPPORTUNITY")
     if raw_price is None:
@@ -275,9 +310,21 @@ def normalize_bitrix24_deal(
     amount, is_price_unknown = parse_numeric_price(raw_price)
 
     # Stage & Semantics
-    raw_stage_id = d.get("STAGE_ID") or d.get("stage_id")
+    raw_stage_id = str(d.get("STAGE_ID") or d.get("stage_id") or "")
     raw_semantic = d.get("STAGE_SEMANTIC_ID") or d.get("stage_semantic_id")
     stage_info = map_stage_bitrix24(raw_stage_id, raw_semantic, mapping_config, stages_catalog)
+
+    # Loss Reason resolution: in Bitrix24, failure stages (SEMANTICS: F) are the loss reasons!
+    loss_reason = ""
+    loss_reason_code = str(raw_stage_id) if stage_info["is_lost"] else ""
+    if stage_info["is_lost"]:
+        for k, v in d.items():
+            k_lower = k.lower()
+            if any(w in k_lower for w in ("fail", "reason", "отказ", "причина")) and v:
+                loss_reason = str(v)
+                break
+        if not loss_reason:
+            loss_reason = stage_info.get("stage_name") or "Отказ"
 
     # Weighted amount calculation with strict NaN protection
     weight = stage_info["weight"]
@@ -324,8 +371,11 @@ def normalize_bitrix24_deal(
         "amount": amount,
         "amount_str": f"{int(amount):,} ₽".replace(",", " "),
         "price_is_unknown": is_price_unknown,
-        "stage_id": str(stage_info["stage_num"]) if stage_info["stage_num"] is not None else "0",
+        "pipeline_id": pipeline_id,
+        "pipeline_name": pipeline_name,
+        "stage_id": str(raw_stage_id or (stage_info["stage_num"] if stage_info["stage_num"] is not None else "0")),
         "stage_name": stage_info["stage_name"],
+        "stage_color": stage_info.get("color", ""),
         "created_at": created_at,
         "updated_at": updated_at,
         "responsible_user": responsible_user,
@@ -334,7 +384,9 @@ def normalize_bitrix24_deal(
         "source": "bitrix24",
         "client_id": raw_id.replace("B24-", ""),
         "client_grade": client_grade,
-        "lost_reason": "Отказ" if stage_info["is_lost"] else ("Удалена в CRM" if is_deleted else ""),
+        "loss_reason": loss_reason if (stage_info["is_lost"] or loss_reason) else "",
+        "loss_reason_code": loss_reason_code,
+        "lost_reason": loss_reason or ("Отказ" if stage_info["is_lost"] else ("Удалена в CRM" if is_deleted else "")),
         "last_stage_change": updated_at,
         "is_won": "1" if stage_info["is_won"] else "0",
         "is_lost": "1" if stage_info["is_lost"] or is_deleted else "0",
@@ -361,11 +413,14 @@ def normalize_amocrm_deal(
     tenant_id: str,
     mapping_config: dict[str, Any] | None = None,
     stages_catalog: dict[str, Any] | None = None,
-    users_catalog: dict[str, Any] | None = None
+    users_catalog: dict[str, Any] | None = None,
+    pipelines_catalog: dict[str, Any] | None = None,
+    loss_reasons_catalog: dict[str, Any] | None = None
 ) -> dict[str, Any]:
     """
     Normalizes a single amoCRM lead dictionary into RevOps standard schema.
     Guarantees prefix 'AMO-{ID}', safe numbers, custom_fields_values preservation, and zero hardcoded stubs.
+    Supports multi-pipelines, dynamic statuses, and loss reasons catalog.
     """
     raw_id = str(raw_deal.get("id") or raw_deal.get("ID") or "").strip()
     if not raw_id:
@@ -374,16 +429,55 @@ def normalize_amocrm_deal(
     deal_id = raw_id if raw_id.startswith("AMO-") else f"AMO-{raw_id}"
     title = str(raw_deal.get("name") or raw_deal.get("title") or f"Сделка #{raw_id}").strip()
 
+    # Pipeline and status
+    raw_pipe_id = str(raw_deal.get("pipeline_id") or "").strip()
+    pipeline_id = raw_pipe_id
+    pipeline_name = "Основная воронка"
+    if pipelines_catalog and raw_pipe_id in pipelines_catalog:
+        p_obj = pipelines_catalog[raw_pipe_id]
+        if isinstance(p_obj, dict):
+            pipeline_name = str(p_obj.get("name") or pipeline_name)
+        else:
+            pipeline_name = str(p_obj)
+
     # Price parsing without falsy '||' bug
     raw_price = raw_deal.get("price")
     if raw_price is None:
         raw_price = raw_deal.get("amount") or raw_deal.get("opportunity")
     amount, is_price_unknown = parse_numeric_price(raw_price)
 
-    # Pipeline and status
-    pipeline_id = raw_deal.get("pipeline_id")
-    status_id = raw_deal.get("status_id")
+    status_id = str(raw_deal.get("status_id") or "").strip()
     stage_info = map_stage_amocrm(pipeline_id, status_id, mapping_config, stages_catalog)
+
+    # Extract custom fields (custom_fields_values)
+    custom_fields_raw = raw_deal.get("custom_fields_values") or raw_deal.get("custom_fields") or []
+    custom_payload_str = sanitize_custom_payload(custom_fields_raw)
+
+    # Loss Reason resolution
+    loss_reason = ""
+    loss_reason_code = ""
+    raw_lr_id = raw_deal.get("loss_reason_id")
+    if raw_lr_id:
+        loss_reason_code = str(raw_lr_id)
+        if loss_reasons_catalog and loss_reason_code in loss_reasons_catalog:
+            loss_reason = str(loss_reasons_catalog[loss_reason_code])
+        else:
+            loss_reason = f"Причина #{loss_reason_code}"
+
+    if not loss_reason and isinstance(custom_fields_raw, list):
+        for cf in custom_fields_raw:
+            cf_name = str(cf.get("field_name") or cf.get("name") or "").lower()
+            cf_code = str(cf.get("field_code") or "").lower()
+            if any(w in cf_name or w in cf_code for w in ("причина", "отказ", "проигрыш", "loss_reason", "reason", "fail")):
+                vals = cf.get("values", [])
+                if vals and isinstance(vals[0], dict):
+                    v = vals[0].get("value")
+                    if v:
+                        loss_reason = str(v)
+                        break
+
+    if stage_info["is_lost"] and not loss_reason:
+        loss_reason = "Отказ"
 
     # Weighted amount calculation with strict NaN protection
     weight = stage_info["weight"]
@@ -423,10 +517,6 @@ def normalize_amocrm_deal(
     else:
         updated_at = today_str
 
-    # Extract custom fields (custom_fields_values)
-    custom_fields_raw = raw_deal.get("custom_fields_values") or raw_deal.get("custom_fields") or []
-    custom_payload_str = sanitize_custom_payload(custom_fields_raw)
-
     # Extract UTM tags from custom fields if present
     utm_source, utm_medium, utm_campaign = "", "", ""
     if isinstance(custom_fields_raw, list):
@@ -454,8 +544,11 @@ def normalize_amocrm_deal(
         "amount": amount,
         "amount_str": f"{int(amount):,} ₽".replace(",", " "),
         "price_is_unknown": is_price_unknown,
-        "stage_id": str(stage_info["stage_num"]) if stage_info["stage_num"] is not None else "0",
+        "pipeline_id": pipeline_id,
+        "pipeline_name": pipeline_name,
+        "stage_id": str(status_id or (stage_info["stage_num"] if stage_info["stage_num"] is not None else "0")),
         "stage_name": stage_info["stage_name"],
+        "stage_color": stage_info.get("color", ""),
         "created_at": created_at,
         "updated_at": updated_at,
         "responsible_user": responsible_user,
@@ -464,7 +557,9 @@ def normalize_amocrm_deal(
         "source": "amocrm",
         "client_id": raw_id.replace("AMO-", ""),
         "client_grade": client_grade,
-        "lost_reason": "Отказ" if stage_info["is_lost"] else ("Удалена в CRM" if is_deleted else ""),
+        "loss_reason": loss_reason if (stage_info["is_lost"] or loss_reason) else "",
+        "loss_reason_code": loss_reason_code,
+        "lost_reason": loss_reason or ("Отказ" if stage_info["is_lost"] else ("Удалена в CRM" if is_deleted else "")),
         "last_stage_change": updated_at,
         "is_won": "1" if stage_info["is_won"] else "0",
         "is_lost": "1" if stage_info["is_lost"] or is_deleted else "0",
@@ -492,10 +587,28 @@ def normalize_deal(
     tenant_id: str,
     mapping_config: dict[str, Any] | None = None,
     stages_catalog: dict[str, Any] | None = None,
-    users_catalog: dict[str, Any] | None = None
+    users_catalog: dict[str, Any] | None = None,
+    pipelines_catalog: dict[str, Any] | None = None,
+    loss_reasons_catalog: dict[str, Any] | None = None,
+    categories_catalog: dict[str, Any] | None = None
 ) -> dict[str, Any]:
     """Universal dispatcher for deal normalization based on source ('bitrix24' or 'amocrm')."""
     clean_src = str(source or "bitrix24").strip().lower()
     if clean_src in ("amocrm", "amo_crm", "amo"):
-        return normalize_amocrm_deal(raw_deal, tenant_id, mapping_config, stages_catalog, users_catalog)
-    return normalize_bitrix24_deal(raw_deal, tenant_id, mapping_config, stages_catalog, users_catalog)
+        return normalize_amocrm_deal(
+            raw_deal,
+            tenant_id,
+            mapping_config=mapping_config,
+            stages_catalog=stages_catalog,
+            users_catalog=users_catalog,
+            pipelines_catalog=pipelines_catalog,
+            loss_reasons_catalog=loss_reasons_catalog
+        )
+    return normalize_bitrix24_deal(
+        raw_deal,
+        tenant_id,
+        mapping_config=mapping_config,
+        stages_catalog=stages_catalog,
+        users_catalog=users_catalog,
+        categories_catalog=categories_catalog
+    )

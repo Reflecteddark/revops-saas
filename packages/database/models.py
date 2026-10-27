@@ -178,6 +178,11 @@ class Deal(Base):
     contact_phone = Column(String(50), nullable=True)
     budget = Column(Float, default=0.0, nullable=False)
     stage: Column[Enum] = Column(Enum(DealStage), default=DealStage.LEAD_INCOMING, nullable=False)
+    stage_name = Column(String(255), nullable=True)
+    pipeline_id = Column(String(100), nullable=True, index=True)
+    pipeline_name = Column(String(255), nullable=True)
+    loss_reason = Column(String(255), nullable=True)
+    loss_reason_code = Column(String(50), nullable=True)
     
     # SLA & Risk Radar fields
     days_in_stage = Column(Integer, default=0, nullable=False)

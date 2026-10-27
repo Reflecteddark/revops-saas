@@ -125,7 +125,13 @@ async def auto_register_amocrm_webhook(domain_clean: str, token: str, tenant_id:
         return False
 
 
-async def fetch_amocrm_deals(domain: str, token: str, tenant_id: str, timeout: float = 12.0) -> list[dict[str, Any]]:
+async def fetch_amocrm_deals(
+    domain: str,
+    token: str,
+    tenant_id: str,
+    timeout: float = 12.0,
+    pipelines_collector: list[dict[str, Any]] | None = None
+) -> list[dict[str, Any]]:
     """
     Fetches leads from amoCRM with pipelines, stages catalog, and user mappings.
     Returns normalized deals array ready for persistence.
@@ -144,6 +150,8 @@ async def fetch_amocrm_deals(domain: str, token: str, tenant_id: str, timeout: f
     async with httpx.AsyncClient(timeout=timeout) as client:
         # 1. Pipelines & Stages catalog
         stages_catalog: dict[str, Any] = {}
+        pipelines_catalog: dict[str, Any] = {}
+        pipelines_tree: list[dict[str, Any]] = []
         try:
             p_url = f"https://{domain_clean}/api/v4/leads/pipelines"
             p_resp = await client.get(p_url, headers=headers)
@@ -151,24 +159,58 @@ async def fetch_amocrm_deals(domain: str, token: str, tenant_id: str, timeout: f
                 p_data = p_resp.json()
                 for p in p_data.get("_embedded", {}).get("pipelines", []):
                     p_id = str(p.get("id"))
+                    p_name = str(p.get("name") or "Основная воронка")
+                    is_main = bool(p.get("is_main"))
+                    p_stages: list[dict[str, Any]] = []
                     for s in p.get("_embedded", {}).get("statuses", []):
                         s_id = str(s.get("id"))
                         s_name = str(s.get("name", ""))
+                        s_color = str(s.get("color") or "")
+                        s_sort = int(s.get("sort") or 10)
                         is_won = (s_id == "142") or ("успеш" in s_name.lower())
                         is_lost = (s_id == "143") or ("не реализов" in s_name.lower()) or ("отказ" in s_name.lower())
                         stage_meta = {
+                            "id": s_id,
                             "name": s_name,
-                            "sort": s.get("sort", 10),
+                            "color": s_color,
+                            "sort": s_sort,
                             "pipeline_id": p_id,
                             "is_won": is_won,
                             "is_lost": is_lost,
                         }
                         stages_catalog[s_id] = stage_meta
                         stages_catalog[f"{p_id}:{s_id}"] = stage_meta
+                        p_stages.append(stage_meta)
+                    p_info = {
+                        "id": p_id,
+                        "name": p_name,
+                        "is_main": is_main,
+                        "stages": p_stages
+                    }
+                    pipelines_catalog[p_id] = p_info
+                    pipelines_tree.append(p_info)
         except Exception as e_p:
             logger.warning(f"Could not fetch amoCRM pipelines: {e_p}")
 
-        # 2. Users catalog
+        if pipelines_collector is not None:
+            pipelines_collector.extend(pipelines_tree)
+
+        # 2. Loss reasons catalog
+        loss_reasons_catalog: dict[str, str] = {}
+        try:
+            lr_url = f"https://{domain_clean}/api/v4/leads/loss_reasons"
+            lr_resp = await client.get(lr_url, headers=headers)
+            if lr_resp.status_code == 200:
+                lr_data = lr_resp.json()
+                for item in lr_data.get("_embedded", {}).get("loss_reasons", []):
+                    lr_id = str(item.get("id"))
+                    lr_name = str(item.get("name") or "").strip()
+                    if lr_id and lr_name:
+                        loss_reasons_catalog[lr_id] = lr_name
+        except Exception as e_lr:
+            logger.warning(f"Could not fetch amoCRM loss reasons: {e_lr}")
+
+        # 3. Users catalog
         users_catalog: dict[str, str] = {}
         try:
             u_url = f"https://{domain_clean}/api/v4/users"
@@ -183,10 +225,10 @@ async def fetch_amocrm_deals(domain: str, token: str, tenant_id: str, timeout: f
         except Exception as e_u:
             logger.warning(f"Could not fetch amoCRM users: {e_u}")
 
-        # 3. Auto-register webhook in background of sync
+        # 4. Auto-register webhook in background of sync
         await auto_register_amocrm_webhook(domain_clean, token, tenant_id, client)
 
-        # 4. Fetch leads (with pagination)
+        # 5. Fetch leads (with pagination)
         raw_leads: list[dict[str, Any]] = []
         page = 1
         max_pages = 10
@@ -222,7 +264,9 @@ async def fetch_amocrm_deals(domain: str, token: str, tenant_id: str, timeout: f
                     l,
                     tenant_id=tenant_id,
                     stages_catalog=stages_catalog,
-                    users_catalog=users_catalog
+                    users_catalog=users_catalog,
+                    pipelines_catalog=pipelines_catalog,
+                    loss_reasons_catalog=loss_reasons_catalog
                 )
                 normalized.append(norm)
             except Exception as e_norm:
@@ -231,9 +275,14 @@ async def fetch_amocrm_deals(domain: str, token: str, tenant_id: str, timeout: f
         return normalized
 
 
-async def fetch_bitrix24_deals(webhook_url: str, tenant_id: str, timeout: float = 12.0) -> list[dict[str, Any]]:
+async def fetch_bitrix24_deals(
+    webhook_url: str,
+    tenant_id: str,
+    timeout: float = 12.0,
+    pipelines_collector: list[dict[str, Any]] | None = None
+) -> list[dict[str, Any]]:
     """
-    Fetches deals from Bitrix24 REST API with stages catalog and user mappings.
+    Fetches deals from Bitrix24 REST API with multi-categories, stages catalog and user mappings.
     Returns normalized deals array ready for persistence.
     """
     url_clean = clean_webhook_url(webhook_url)
@@ -242,24 +291,82 @@ async def fetch_bitrix24_deals(webhook_url: str, tenant_id: str, timeout: float 
         return []
 
     async with httpx.AsyncClient(timeout=timeout) as client:
-        # 1. Stages catalog
-        stages_catalog: dict[str, Any] = {}
+        # 1. Categories & Stages catalog
+        categories_catalog: dict[str, Any] = {"0": {"id": "0", "name": "Общая воронка", "is_main": True, "stages": []}}
+        pipelines_tree: list[dict[str, Any]] = []
         try:
-            st_url = f"{url_clean}/crm.status.list"
-            st_resp = await client.post(st_url, json={"filter": {"ENTITY_ID": "DEAL_STAGE"}})
-            if st_resp.status_code == 200:
-                for item in st_resp.json().get("result", []):
-                    st_id = str(item.get("STATUS_ID") or "")
-                    st_name = str(item.get("NAME") or "")
-                    semantic = str(item.get("SEMANTICS") or "")
-                    stages_catalog[st_id] = {
-                        "name": st_name,
-                        "semantic": semantic,
-                        "is_won": (semantic == "S"),
-                        "is_lost": (semantic == "F"),
-                    }
-        except Exception as e_s:
-            logger.warning(f"Could not fetch Bitrix24 deal stages: {e_s}")
+            cat_url = f"{url_clean}/crm.dealcategory.list"
+            cat_resp = await client.post(cat_url, json={})
+            if cat_resp.status_code == 200:
+                for cat in cat_resp.json().get("result", []):
+                    c_id = str(cat.get("ID") or "")
+                    c_name = str(cat.get("NAME") or f"Воронка #{c_id}")
+                    if c_id:
+                        categories_catalog[c_id] = {
+                            "id": c_id,
+                            "name": c_name,
+                            "is_main": (c_id == "0"),
+                            "stages": []
+                        }
+        except Exception as e_cat:
+            logger.warning(f"Could not fetch Bitrix24 deal categories: {e_cat}")
+
+        stages_catalog: dict[str, Any] = {}
+        for c_id, c_data in list(categories_catalog.items()):
+            c_stages: list[dict[str, Any]] = []
+            try:
+                st_url = f"{url_clean}/crm.dealcategory.stage.list"
+                st_resp = await client.post(st_url, json={"id": int(c_id) if c_id.isdigit() else 0})
+                if st_resp.status_code == 200 and st_resp.json().get("result"):
+                    for item in st_resp.json().get("result", []):
+                        st_id = str(item.get("STATUS_ID") or "")
+                        st_name = str(item.get("NAME") or "")
+                        semantic = str(item.get("SEMANTICS") or "")
+                        st_color = str(item.get("COLOR") or "")
+                        s_meta = {
+                            "id": st_id,
+                            "name": st_name,
+                            "color": st_color,
+                            "semantic": semantic,
+                            "pipeline_id": c_id,
+                            "is_won": (semantic == "S"),
+                            "is_lost": (semantic == "F"),
+                        }
+                        stages_catalog[st_id] = s_meta
+                        c_stages.append(s_meta)
+            except Exception as e_st:
+                logger.warning(f"Could not fetch stages for Bitrix24 category {c_id}: {e_st}")
+
+            # Fallback for category 0 if crm.dealcategory.stage.list returned empty
+            if not c_stages and c_id == "0":
+                try:
+                    s_url = f"{url_clean}/crm.status.list"
+                    s_resp = await client.post(s_url, json={"filter": {"ENTITY_ID": "DEAL_STAGE"}})
+                    if s_resp.status_code == 200:
+                        for item in s_resp.json().get("result", []):
+                            st_id = str(item.get("STATUS_ID") or "")
+                            st_name = str(item.get("NAME") or "")
+                            semantic = str(item.get("SEMANTICS") or "")
+                            st_color = str(item.get("COLOR") or "")
+                            s_meta = {
+                                "id": st_id,
+                                "name": st_name,
+                                "color": st_color,
+                                "semantic": semantic,
+                                "pipeline_id": "0",
+                                "is_won": (semantic == "S"),
+                                "is_lost": (semantic == "F"),
+                            }
+                            stages_catalog[st_id] = s_meta
+                            c_stages.append(s_meta)
+                except Exception as e_fallback:
+                    logger.warning(f"Fallback crm.status.list failed: {e_fallback}")
+
+            c_data["stages"] = c_stages
+            pipelines_tree.append(c_data)
+
+        if pipelines_collector is not None:
+            pipelines_collector.extend(pipelines_tree)
 
         # 2. Users catalog
         users_catalog: dict[str, str] = {}
@@ -285,7 +392,7 @@ async def fetch_bitrix24_deals(webhook_url: str, tenant_id: str, timeout: float 
             deal_url = f"{url_clean}/crm.deal.list"
             payload = {
                 "order": {"ID": "DESC"},
-                "select": ["ID", "TITLE", "OPPORTUNITY", "STAGE_ID", "STAGE_SEMANTIC_ID", "ASSIGNED_BY_ID", "DATE_CREATE", "DATE_MODIFY", "UF_*"],
+                "select": ["ID", "TITLE", "OPPORTUNITY", "STAGE_ID", "STAGE_SEMANTIC_ID", "CATEGORY_ID", "ASSIGNED_BY_ID", "DATE_CREATE", "DATE_MODIFY", "UF_*"],
                 "start": start
             }
             try:
@@ -313,7 +420,8 @@ async def fetch_bitrix24_deals(webhook_url: str, tenant_id: str, timeout: float 
                     d,
                     tenant_id=tenant_id,
                     stages_catalog=stages_catalog,
-                    users_catalog=users_catalog
+                    users_catalog=users_catalog,
+                    categories_catalog=categories_catalog
                 )
                 normalized.append(norm)
             except Exception as e_norm:
@@ -322,10 +430,16 @@ async def fetch_bitrix24_deals(webhook_url: str, tenant_id: str, timeout: float 
         return normalized
 
 
-def sync_deals_to_database(tenant_id: str, normalized_deals: list[dict[str, Any]], db: Session) -> dict[str, int]:
+def sync_deals_to_database(
+    tenant_id: str,
+    normalized_deals: list[dict[str, Any]],
+    db: Session,
+    pipelines_tree: list[dict[str, Any]] | None = None
+) -> dict[str, int]:
     """
     Persists normalized deals into PostgreSQL 'deals' table with strict workspace and tenant isolation.
     Soft-deletes or prunes missing records for this tenant.
+    Saves multi-pipeline structure to tenant settings.
     """
     clean_tid = tenant_id.strip().upper()
 
@@ -344,6 +458,13 @@ def sync_deals_to_database(tenant_id: str, normalized_deals: list[dict[str, Any]
         db.add(tenant)
         db.commit()
         db.refresh(tenant)
+
+    # Update tenant pipelines catalog if discovered
+    if pipelines_tree and tenant:
+        t_settings = dict(tenant.settings or {})
+        t_settings["pipelines"] = pipelines_tree
+        setattr(tenant, "settings", t_settings)
+        db.add(tenant)
 
     # 2. Ensure Workspace exists in DB
     ws_id = f"ws_{clean_tid}"
@@ -378,8 +499,13 @@ def sync_deals_to_database(tenant_id: str, normalized_deals: list[dict[str, Any]
         is_lost = str(norm.get("is_lost", "0")) in ("1", "true", "True")
         is_deleted = str(norm.get("is_deleted", "0")) in ("1", "true", "True")
 
-        stage_name = norm.get("stage_name") or norm.get("stage_id")
+        stage_name = str(norm.get("stage_name") or norm.get("stage_id") or "")
         stage_enum = map_stage_to_enum(stage_name, is_won=is_won, is_lost=is_lost)
+
+        pipeline_id = norm.get("pipeline_id")
+        pipeline_name = norm.get("pipeline_name")
+        loss_reason = norm.get("loss_reason")
+        loss_reason_code = norm.get("loss_reason_code")
 
         status = "DELETED" if is_deleted else ("WON" if stage_enum == DealStage.WON else ("LOST" if stage_enum == DealStage.LOST else "ACTIVE"))
         crm_source = str(norm.get("source") or norm.get("crm_source") or "amocrm")
@@ -388,8 +514,8 @@ def sync_deals_to_database(tenant_id: str, normalized_deals: list[dict[str, Any]
         sla_risk = bool(
             not is_won and not is_lost and not is_deleted and (
                 stage_enum in (DealStage.LEAD_INCOMING, DealStage.QUALIFICATION)
-                or "первичный" in str(stage_name).lower()
-                or "кп" in str(stage_name).lower()
+                or "первичный" in stage_name.lower()
+                or "кп" in stage_name.lower()
             )
         )
 
@@ -399,6 +525,8 @@ def sync_deals_to_database(tenant_id: str, normalized_deals: list[dict[str, Any]
         custom_payload = {
             "manager_name": manager_name,
             "stage_name": stage_name,
+            "pipeline_name": pipeline_name,
+            "loss_reason": loss_reason,
             "weighted_amount": norm.get("weighted_amount"),
             "client_grade": norm.get("client_grade", "B"),
             "source": crm_source,
@@ -422,6 +550,11 @@ def sync_deals_to_database(tenant_id: str, normalized_deals: list[dict[str, Any]
                 company_name=title,
                 budget=amount,
                 stage=stage_enum,
+                stage_name=stage_name,
+                pipeline_id=pipeline_id,
+                pipeline_name=pipeline_name,
+                loss_reason=loss_reason,
+                loss_reason_code=loss_reason_code,
                 crm_source=crm_source,
                 status=status,
                 is_deleted=is_deleted,
@@ -436,6 +569,11 @@ def sync_deals_to_database(tenant_id: str, normalized_deals: list[dict[str, Any]
             setattr(db_deal, "company_name", title)
             setattr(db_deal, "budget", amount)
             setattr(db_deal, "stage", stage_enum)
+            setattr(db_deal, "stage_name", stage_name)
+            setattr(db_deal, "pipeline_id", pipeline_id)
+            setattr(db_deal, "pipeline_name", pipeline_name)
+            setattr(db_deal, "loss_reason", loss_reason)
+            setattr(db_deal, "loss_reason_code", loss_reason_code)
             setattr(db_deal, "crm_source", crm_source)
             setattr(db_deal, "status", status)
             setattr(db_deal, "is_deleted", is_deleted)
@@ -460,6 +598,7 @@ def sync_deals_to_database(tenant_id: str, normalized_deals: list[dict[str, Any]
 
     # Invalidate cache
     delete_cached_json_sync(f"deals:{clean_tid}")
+    delete_cached_json_sync(f"pipelines:{clean_tid}")
 
     logger.info(f"Tenant {clean_tid} deal sync completed: {inserted} inserted, {updated} updated, {pruned} pruned")
     return {"inserted": inserted, "updated": updated, "pruned": pruned, "total_synced": len(normalized_deals)}
@@ -479,19 +618,29 @@ async def sync_deals_for_tenant(tenant_id: str, db: Session | None = None) -> di
     bitrix_webhook = cfg.get("bitrix_webhook_url")
 
     all_normalized: list[dict[str, Any]] = []
+    pipelines_collector: list[dict[str, Any]] = []
     sync_sources: list[str] = []
     amo_deals: list[dict[str, Any]] = []
     b24_deals: list[dict[str, Any]] = []
 
     # 1. Check amoCRM
     if amo_domain and amo_token:
-        amo_deals = await fetch_amocrm_deals(amo_domain, amo_token, tenant_id=clean_tid)
+        amo_deals = await fetch_amocrm_deals(
+            amo_domain,
+            amo_token,
+            tenant_id=clean_tid,
+            pipelines_collector=pipelines_collector
+        )
         all_normalized.extend(amo_deals)
         sync_sources.append("amoCRM")
 
     # 2. Check Bitrix24
     if bitrix_webhook and (crm_type in ("bitrix24", "both", "hybrid") or not amo_deals):
-        b24_deals = await fetch_bitrix24_deals(bitrix_webhook, tenant_id=clean_tid)
+        b24_deals = await fetch_bitrix24_deals(
+            bitrix_webhook,
+            tenant_id=clean_tid,
+            pipelines_collector=pipelines_collector
+        )
         all_normalized.extend(b24_deals)
         sync_sources.append("Bitrix24")
 
@@ -502,7 +651,7 @@ async def sync_deals_for_tenant(tenant_id: str, db: Session | None = None) -> di
         own_db = True
 
     try:
-        stats = sync_deals_to_database(clean_tid, all_normalized, db)
+        stats = sync_deals_to_database(clean_tid, all_normalized, db, pipelines_tree=pipelines_collector)
     finally:
         if own_db:
             db.close()

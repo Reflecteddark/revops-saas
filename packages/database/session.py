@@ -85,10 +85,19 @@ def init_db():
                 conn.execute(text("ALTER TABLE deals ADD COLUMN crm_source VARCHAR(50) DEFAULT 'bitrix24';"))
             if "status" not in deal_cols:
                 conn.execute(text("ALTER TABLE deals ADD COLUMN status VARCHAR(50) DEFAULT 'ACTIVE';"))
-            if "weighted_amount" not in deal_cols:
-                conn.execute(text("ALTER TABLE deals ADD COLUMN weighted_amount FLOAT;"))
+            if "stage_name" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN stage_name VARCHAR(255);"))
+            if "pipeline_id" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN pipeline_id VARCHAR(100);"))
+            if "pipeline_name" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN pipeline_name VARCHAR(255);"))
+            if "loss_reason" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN loss_reason VARCHAR(255);"))
+            if "loss_reason_code" not in deal_cols:
+                conn.execute(text("ALTER TABLE deals ADD COLUMN loss_reason_code VARCHAR(50);"))
 
             conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_deal_external_crm_id ON deals (tenant_id, external_crm_id);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_deals_pipeline_id ON deals (pipeline_id);"))
             conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_call_external_id ON call_recordings (tenant_id, external_call_id);"))
     except Exception as e:
         import logging

@@ -84,10 +84,58 @@ export interface TenantsSummary {
 }
 
 // ============================================================================
-// 3. Deals Management
+// 3. Deals Management & Multi-Pipelines
 // ============================================================================
 
 export type DealStatus = 'active' | 'won' | 'lost' | string;
+
+export interface PipelineStage {
+  id: string;
+  name: string;
+  color?: string;
+  sort?: number;
+  is_won?: boolean;
+  is_lost?: boolean;
+  semantic?: string;
+  deal_count?: number;
+  total_amount?: number;
+}
+
+export interface Pipeline {
+  id: string;
+  name: string;
+  is_main?: boolean;
+  stages: PipelineStage[];
+  deal_count?: number;
+  total_amount?: number;
+  won_amount?: number;
+  lost_amount?: number;
+  active_amount?: number;
+  sla_risk_count?: number;
+}
+
+export interface PipelinesResponse {
+  status: string;
+  tenant_id: string;
+  pipelines: Pipeline[];
+  total_pipelines: number;
+}
+
+export interface DealLinkedCall {
+  id: string;
+  external_call_id?: string | null;
+  client_phone: string;
+  duration_seconds: number;
+  duration_str: string;
+  status: string;
+  overall_score: number;
+  scorecard_criteria?: Record<string, number | null>;
+  transcript_text?: string;
+  ai_summary?: string;
+  next_action_extracted?: string;
+  audio_s3_url?: string | null;
+  created_at?: string;
+}
 
 export interface Deal {
   id: string;
@@ -100,10 +148,22 @@ export interface Deal {
   amount_str: string;
   stage_id: string;
   stage: string;
+  stage_name?: string;
+  stage_order?: number;
+  pipeline_id?: string | null;
+  pipeline_name?: string | null;
   status: DealStatus;
+  loss_reason?: string;
+  loss_reason_code?: string;
   sla_risk: boolean;
+  days_in_stage?: number;
   responsible_user: string;
+  manager_name?: string;
+  contact_phone?: string;
   segment: string;
+  calls_count?: number;
+  avg_call_score?: number;
+  calls?: DealLinkedCall[];
   created_at: string;
   updated_at: string;
   synced_at: string;
@@ -114,7 +174,12 @@ export interface Deal {
   is_active?: boolean;
   budget?: number | null;
   expected_close_date?: string | null;
-  pipeline_id?: string | null;
+  custom_payload?: Record<string, unknown>;
+}
+
+export interface SingleDealResponse {
+  status: string;
+  deal: Deal;
 }
 
 export interface DealsResponse {

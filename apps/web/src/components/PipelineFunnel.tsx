@@ -14,19 +14,23 @@ import * as React from 'react';
 import { Filter, Layers } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { Call, Deal } from '@/types/api';
+import type { Call, Deal, Pipeline } from '@/types/api';
 
 export interface StageData {
-  id: number;
+  id: string | number;
   name: string;
   amount: number;
   count: number;
-  colorClass: string;
+  colorClass?: string;
+  color?: string;
 }
 
 export interface PipelineFunnelProps {
   deals?: Deal[];
   calls?: Call[];
+  pipeline?: Pipeline;
+  pipelines?: Pipeline[];
+  onSelectPipeline?: (pipelineId: string) => void;
   loading?: boolean;
   className?: string;
 }
@@ -34,10 +38,48 @@ export interface PipelineFunnelProps {
 export function PipelineFunnel({
   deals = [],
   calls = [],
+  pipeline,
+  pipelines = [],
+  onSelectPipeline,
   loading = false,
   className,
 }: PipelineFunnelProps) {
   const stages: StageData[] = React.useMemo(() => {
+    // 1. Dynamic stages from active pipeline if available
+    if (pipeline && pipeline.stages && pipeline.stages.length > 0) {
+      return pipeline.stages.map((st, idx) => {
+        const stNameLower = st.name.toLowerCase();
+        let amt = typeof st.total_amount === 'number' ? st.total_amount : 0;
+        let cnt = typeof st.deal_count === 'number' ? st.deal_count : 0;
+
+        if (deals && deals.length > 0) {
+          const matchingDeals = deals.filter((d) => {
+            const dName = (d.stage_name || d.stage || '').toLowerCase();
+            if (dName === stNameLower) return true;
+            if (st.is_won && (d.status === 'won' || dName.includes('успеш'))) return true;
+            if (st.is_lost && (d.status === 'lost' || dName.includes('закрыт') || dName.includes('отказ'))) return true;
+            return String(d.stage_id) === String(st.id);
+          });
+          amt = matchingDeals.reduce((sum, d) => sum + (d.amount || 0), 0);
+          cnt = matchingDeals.length;
+        }
+
+        return {
+          id: st.id || idx,
+          name: st.name,
+          amount: amt,
+          count: cnt,
+          color: st.color || undefined,
+          colorClass: st.is_won
+            ? 'bg-emerald-500'
+            : st.is_lost
+            ? 'bg-rose-500'
+            : 'bg-primary',
+        };
+      });
+    }
+
+    // 2. Canonical 5 stages fallback (SSOT default)
     let val1 = 0, val2 = 0, val3 = 0, val4 = 0, val5 = 0;
     let cnt1 = 0, cnt2 = 0, cnt3 = 0, cnt4 = 0, cnt5 = 0;
 
@@ -100,12 +142,20 @@ export function PipelineFunnel({
       { id: 4, name: '4. Согласование договора', amount: val4, count: cnt4, colorClass: 'bg-amber-500' },
       { id: 5, name: '5. Оплата (Closed-Won)', amount: val5, count: cnt5, colorClass: 'bg-emerald-500' },
     ];
-  }, [deals, calls]);
+  }, [deals, calls, pipeline]);
 
   const maxAmount = Math.max(...stages.map((s) => s.amount), 1);
-  const baseCount = Math.max(stages[0].count, 1);
-  const finalWonCount = stages[4].count;
-  const overallConversion = stages[0].count > 0 ? Math.round((finalWonCount / baseCount) * 100) : 0;
+  const firstStage = stages[0] || { count: 0, amount: 0 };
+  const baseCount = Math.max(firstStage.count, 1);
+  const lastWonStage =
+    stages.find(
+      (s) =>
+        s.name.toLowerCase().includes('оплат') ||
+        s.name.toLowerCase().includes('успеш')
+    ) || stages[stages.length - 1];
+  const finalWonCount = lastWonStage ? lastWonStage.count : 0;
+  const overallConversion =
+    firstStage.count > 0 ? Math.round((finalWonCount / baseCount) * 100) : 0;
 
   if (loading) {
     return (
@@ -135,13 +185,31 @@ export function PipelineFunnel({
       data-testid="pipeline-funnel"
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-hover border border-subtle text-foreground">
             <Layers className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-[13px] font-semibold text-foreground">Воронка продаж SSOT</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-[13px] font-semibold text-foreground">
+                {pipeline?.name ? `Воронка: ${pipeline.name}` : 'Воронка продаж SSOT'}
+              </h3>
+              {pipelines && pipelines.length > 1 && onSelectPipeline && (
+                <select
+                  value={pipeline?.id || '0'}
+                  onChange={(e) => onSelectPipeline(e.target.value)}
+                  className="h-6 rounded border border-subtle bg-surface px-1.5 text-[11px] font-medium text-foreground focus:outline-none"
+                  aria-label="Выбор воронки"
+                >
+                  {pipelines.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
             <p className="text-xs text-secondary">
               Сквозная конверсия сделок по этапам пайплайна
             </p>
@@ -184,7 +252,10 @@ export function PipelineFunnel({
               <div className="h-2 w-full overflow-hidden rounded-full bg-hover border border-subtle">
                 <div
                   className={cn('h-full rounded-full transition-all duration-500 ease-out', stage.colorClass)}
-                  style={{ width: `${Math.max(widthPct, stage.count > 0 ? 3 : 0)}%` }}
+                  style={{
+                    width: `${Math.max(widthPct, stage.count > 0 ? 3 : 0)}%`,
+                    backgroundColor: stage.color || undefined,
+                  }}
                 />
               </div>
             </div>
