@@ -97,6 +97,14 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
 
     cfg = get_tenant_config(clean_tenant) or {}
     tenant_crm = str(cfg.get("crm_type") or "bitrix24").strip().lower()
+    sheet_id = cfg.get("spreadsheet_id") or get_tenant_spreadsheet_id(clean_tenant)
+
+    CLEAN_STARTER_TEMPLATE_ID = "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A"
+    if clean_tenant in ("TNT-002", "TNT-CLEAN-001") or sheet_id == CLEAN_STARTER_TEMPLATE_ID:
+        empty_res: list[dict[str, Any]] = []
+        _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
+        set_cached_json_sync(cache_key, empty_res, ex=60)
+        return empty_res
 
     sa_path = get_service_account_path()
     if not sa_path:
@@ -160,7 +168,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
     cfg = get_tenant_config(clean_tenant) or {}
     sheet_id = cfg.get("spreadsheet_id") or get_tenant_spreadsheet_id(clean_tenant)
     if not sheet_id:
-        empty_res: list[dict[str, Any]] = []
+        empty_res = []
         _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
         set_cached_json_sync(cache_key, empty_res, ex=60)
         return empty_res

@@ -222,7 +222,7 @@ def test_provision_tenant_returns_amocrm_redirect_uri(client, admin_headers):
     mock_module.provision_tenant.return_value = mock_tenant
     mock_module.load_registry.return_value = {"tenants": [mock_tenant]}
 
-    with patch.dict(sys.modules, {"tenant_provisioner": mock_module}):
+    with patch.dict(sys.modules, {"tenant_provisioner": mock_module, "apps.api.tenant_provisioner": mock_module}):
         res = client.post("/api/v1/admin/tenants/provision", json=payload, headers=admin_headers)
         assert res.status_code == 200, f"Provision failed: {res.text}"
         data = res.json()
