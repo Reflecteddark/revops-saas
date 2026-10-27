@@ -480,6 +480,8 @@ async def sync_deals_for_tenant(tenant_id: str, db: Session | None = None) -> di
 
     all_normalized: list[dict[str, Any]] = []
     sync_sources: list[str] = []
+    amo_deals: list[dict[str, Any]] = []
+    b24_deals: list[dict[str, Any]] = []
 
     # 1. Check amoCRM
     if amo_domain and amo_token:

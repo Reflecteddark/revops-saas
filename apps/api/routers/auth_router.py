@@ -275,6 +275,7 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
         "sub": matched_client.get("login"),
         "tenant_id": effective_tenant,
         "role": "admin" if is_admin else (matched_client.get("role") or "РОП"),
+        "is_admin": is_admin,
         "name": matched_client.get("name") or matched_client.get("login")
     }
     jwt_access_token = create_access_token(token_payload)

@@ -77,7 +77,7 @@ def provision_tenant(
         "tenant_id": new_tenant_id,
         "tenant_name": company_name,
         "email": client_email,
-        "spreadsheet_id": sheet_id,
+        "spreadsheet_id": sheet_id or "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A",
         "crm_type": crm_type,
         "status": "active",
         "niche_name": niche_name,

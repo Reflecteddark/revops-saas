@@ -447,13 +447,24 @@ export function AdminClientsTab() {
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-1.5 rounded-md border border-subtle bg-subtle/60 px-2 py-1 text-[11px] font-medium text-foreground hover:bg-hover hover:border-strong transition-colors"
+                            title={t.spreadsheet_id === '1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A' ? 'Чистый шаблон (Clean Starter)' : 'Открыть таблицу тенанта'}
                           >
                             <FileSpreadsheet className="h-3 w-3 text-emerald-400" />
-                            <span>Открыть</span>
+                            <span>{t.spreadsheet_id === '1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A' ? 'Шаблон' : 'Открыть'}</span>
                             <ExternalLink className="h-2.5 w-2.5 text-tertiary" />
                           </a>
                         ) : (
-                          <span className="text-tertiary">—</span>
+                          <a
+                            href="https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                            title="Создать копию чистого шаблона Google Таблицы на своем Google Диске"
+                          >
+                            <FileSpreadsheet className="h-3 w-3 text-emerald-400" />
+                            <span>Создать копию</span>
+                            <ExternalLink className="h-2.5 w-2.5 text-tertiary" />
+                          </a>
                         )}
                       </td>
 

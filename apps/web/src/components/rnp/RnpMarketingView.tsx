@@ -52,9 +52,9 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
     });
   }, [deals]);
 
-  const sqlPct = totalLeads > 0 ? Math.round((sqlDeals.length / totalLeads) * 100) : 42;
+  const sqlPct = totalLeads > 0 ? Math.round((sqlDeals.length / totalLeads) * 100) : 0;
 
-  // Channels breakdown from crm_source
+  // Channels breakdown from crm_source strictly from factual deals (Zero Mock)
   const channels = React.useMemo(() => {
     const counts: Record<string, number> = {};
     for (const d of deals) {
@@ -69,11 +69,7 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
     }));
 
     items.sort((a, b) => b.count - a.count);
-    return items.length > 0 ? items : [
-      { name: 'Входящие amoCRM', count: 18, pct: 60 },
-      { name: 'Bitrix24 Лид-формы', count: 8, pct: 27 },
-      { name: 'Повторные обращения', count: 4, pct: 13 },
-    ];
+    return items;
   }, [deals, totalLeads]);
 
   return (
@@ -171,27 +167,33 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
               </p>
             </div>
             <Badge variant="outline" className="text-xs font-mono">
-              {channels.length} источника
+              {channels.length} {channels.length === 1 ? 'источник' : (channels.length >= 2 && channels.length <= 4 ? 'источника' : 'источников')}
             </Badge>
           </div>
 
           <div className="space-y-3 pt-2">
-            {channels.map((ch, idx) => (
-              <div key={idx} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-foreground">{ch.name}</span>
-                  <span className="font-mono text-tertiary">
-                    {ch.count} сделок ({ch.pct}%)
-                  </span>
+            {channels.length > 0 ? (
+              channels.map((ch, idx) => (
+                <div key={idx} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-foreground">{ch.name}</span>
+                    <span className="font-mono text-tertiary">
+                      {ch.count} сделок ({ch.pct}%)
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-subtle overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary/80 transition-all duration-300"
+                      style={{ width: `${ch.pct}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 w-full rounded-full bg-subtle overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary/80 transition-all duration-300"
-                    style={{ width: `${ch.pct}%` }}
-                  />
-                </div>
+              ))
+            ) : (
+              <div className="py-6 text-center text-xs text-tertiary">
+                Сделок в подключенных CRM пока не обнаружено
               </div>
-            ))}
+            )}
           </div>
         </div>
 

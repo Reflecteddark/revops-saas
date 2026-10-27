@@ -46,7 +46,7 @@ import { RnpMarketingView } from '@/components/rnp/RnpMarketingView';
 import { RnpFinanceView } from '@/components/rnp/RnpFinanceView';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { callsApi, dealsApi, insightsApi, settingsApi } from '@/lib/api';
-import type { Call, RecommendationItem } from '@/types/api';
+import type { Call, Deal, RecommendationItem } from '@/types/api';
 
 const callColumns: ColumnDef<Call, unknown>[] = [
   {
@@ -192,16 +192,25 @@ export function PulsePage() {
   const settings = settingsQuery.data;
   const recentCalls = calls.slice(0, 10);
 
-  // Deals won amount
+  // Deals won filter helper (handles 'Успешно реализовано', 'Оплачено', 'won')
+  const isWonDeal = React.useCallback((d: Deal) => {
+    if (d.status === 'won') return true;
+    const st = (d.stage || '').toLowerCase();
+    return st.includes('успешн') || st.includes('оплач') || st.includes('won');
+  }, []);
+
+  // Deals won amount strictly from factual CRM deals
   const dealsWonAmount = React.useMemo(() => {
     return deals
-      .filter((d) => d.stage === 'Оплачено' || d.stage === 'Успешно' || d.status === 'won')
+      .filter(isWonDeal)
       .reduce((acc, d) => acc + (d.amount || 0), 0);
-  }, [deals]);
+  }, [deals, isWonDeal]);
 
   // SSOT KPIs calculations (Strictly factual, Zero Mock)
   const kpi = insights?.kpi;
-  const revenue = Number(kpi?.revenue ?? dealsWonAmount ?? 0);
+  const revenue = Number(
+    kpi?.revenue && kpi.revenue > 0 ? kpi.revenue : (dealsWonAmount || 0)
+  );
   const slaRiskCount = kpi?.sla_risk_count ?? kpi?.sla_at_risk_count ?? 0;
 
   const pipelineSum = deals.reduce((acc, d) => acc + (d.amount || 0), 0);
@@ -241,9 +250,7 @@ export function PulsePage() {
   const midCallsCount = calls.filter((c) => (c.score || 0) >= 6 && (c.score || 0) < 9).length;
   const lostCallsCount = calls.filter((c) => (c.score || 0) < 6).length;
 
-  const dealsWonCount = deals.filter(
-    (d) => d.stage === 'Оплачено' || d.stage === 'Успешно' || d.status === 'won'
-  ).length;
+  const dealsWonCount = deals.filter(isWonDeal).length;
   const dealsRiskCount = deals.filter((d) => d.sla_risk || (d as any).risk).length || slaRiskCount;
   const dealsInWorkCount = Math.max(0, deals.length - dealsWonCount - dealsRiskCount);
   const totalDeals = deals.length;
@@ -690,7 +697,7 @@ export function PulsePage() {
       </div>
 
       {/* MPSTATS-style Daily Heatmap Matrix with Sparklines */}
-      <DailyPulseMatrix calls={calls} loading={isLoading} />
+      <DailyPulseMatrix calls={calls} managers={settings?.managers || []} loading={isLoading} />
 
       {/* 8:00 – 20:00 Hourly Call & Dial Intensity Heatmap (наборы / от 1 мин) */}
       <DailyHourlyHeatmap calls={calls} managers={settings?.managers || []} />

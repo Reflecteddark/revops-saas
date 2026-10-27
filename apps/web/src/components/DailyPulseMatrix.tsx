@@ -38,6 +38,7 @@ export interface ManagerRowData {
 
 export interface DailyPulseMatrixProps {
   calls: Call[];
+  managers?: (string | { name?: string; id?: string; role?: string })[];
   loading?: boolean;
   onInspectCall?: (call: Call) => void;
   className?: string;
@@ -143,6 +144,7 @@ function InlineSparkline({
 
 export function DailyPulseMatrix({
   calls,
+  managers = [],
   loading = false,
   className,
 }: DailyPulseMatrixProps) {
@@ -152,17 +154,27 @@ export function DailyPulseMatrix({
 
   const last7Days = React.useMemo(() => getLast7Days(), []);
 
-  // Compute managers and day metrics strictly from factual calls (Zero Mock)
+  // Compute managers and day metrics strictly from factual calls and registered team managers (Zero Mock)
   const managerRows: ManagerRowData[] = React.useMemo(() => {
-    const managerNames = Array.from(
-      new Set(calls.map((c) => c.manager).filter(Boolean))
-    ) as string[];
+    const fromCalls = calls.map((c) => c.manager).filter(Boolean);
+    const fromManagers = (managers || [])
+      .map((m) => (typeof m === 'string' ? m : m?.name))
+      .filter(Boolean);
+    const managerNames = Array.from(new Set([...fromCalls, ...fromManagers])) as string[];
 
     if (managerNames.length === 0) {
       return [];
     }
 
     return managerNames.map((mgrName, mgrIdx) => {
+      const mgrConfig = (managers || []).find((m) =>
+        (typeof m === 'string' ? m : m?.name) === mgrName
+      );
+      const roleStr =
+        typeof mgrConfig === 'object' && mgrConfig?.role
+          ? mgrConfig.role
+          : 'Менеджер ОП';
+
       const mgrCalls = calls.filter((c) => c.manager === mgrName);
 
       const days: DayMetric[] = last7Days.map((d) => {
@@ -202,14 +214,14 @@ export function DailyPulseMatrix({
       return {
         id: `mgr-${mgrIdx}`,
         name: mgrName,
-        role: 'Менеджер ОП',
+        role: roleStr,
         days,
         totalCalls,
         avgScore,
         nextStepPct,
       };
     });
-  }, [calls, last7Days]);
+  }, [calls, managers, last7Days]);
 
   const filteredManagers = managerRows.filter((m) =>
     m.name.toLowerCase().includes(searchQuery.toLowerCase().trim())

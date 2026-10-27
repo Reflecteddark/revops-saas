@@ -636,6 +636,18 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
         raw_id = str(fields.get("ID") or body.get("id") or "bx_unknown")
         deal_id = raw_id if raw_id.startswith("B24-") else f"B24-{raw_id}"
         now_iso = datetime.now(timezone.utc).isoformat()
+        try:
+            from packages.database.session import SessionLocal
+            from packages.database.models import Deal
+            with SessionLocal() as db_wh:
+                db_d = db_wh.query(Deal).filter((Deal.tenant_id == org_id) & ((Deal.id == deal_id) | (Deal.external_crm_id == deal_id))).first()
+                if db_d:
+                    setattr(db_d, "is_deleted", True)
+                    setattr(db_d, "status", "DELETED")
+                    db_wh.commit()
+        except Exception as e_del:
+            logger.warning(f"Failed to soft-delete Bitrix24 deal {deal_id} in DB: {e_del}")
+
         await manager.broadcast(org_id, {
             "type": "deal_deleted",
             "tenant_id": org_id,
@@ -652,9 +664,17 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
             "processed_deal": deal_id
         }
 
-    # 2. Add / Update: normalize and broadcast
+    # 2. Add / Update: normalize, persist to DB, and broadcast
     try:
         norm_deal = normalize_bitrix24_deal(fields, org_id)
+        try:
+            from ..services.crm_deals_sync import sync_deals_to_database
+            from packages.database.session import SessionLocal
+            with SessionLocal() as db_wh:
+                sync_deals_to_database(org_id, [norm_deal], db_wh)
+        except Exception as e_db:
+            logger.warning(f"Failed to persist Bitrix24 webhook deal to DB: {e_db}")
+
         await manager.broadcast(org_id, {
             "type": "deal_updated",
             "tenant_id": org_id,

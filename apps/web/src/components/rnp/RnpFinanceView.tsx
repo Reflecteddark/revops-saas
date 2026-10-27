@@ -35,12 +35,18 @@ export function RnpFinanceView({
   planTarget,
   revenue,
 }: RnpFinanceViewProps) {
-  // Total raw pipeline
+  const isWonOrLost = React.useCallback((d: Deal) => {
+    if (d.status === 'won' || d.status === 'lost') return true;
+    const st = (d.stage || '').toLowerCase();
+    return st.includes('успешн') || st.includes('оплач') || st.includes('won') || st.includes('закрыт') || st.includes('отказ');
+  }, []);
+
+  // Total raw pipeline (active in-progress deals)
   const pipelineSum = React.useMemo(() => {
     return deals
-      .filter((d) => d.status !== 'won' && d.status !== 'lost')
+      .filter((d) => !isWonOrLost(d))
       .reduce((acc, d) => acc + (d.amount || 0), 0);
-  }, [deals]);
+  }, [deals, isWonOrLost]);
 
   // Stage probability map
   const stageWeights = React.useMemo(() => {
@@ -55,7 +61,7 @@ export function RnpFinanceView({
   const weightedPipeline = React.useMemo(() => {
     let sum = 0;
     for (const d of deals) {
-      if (d.status === 'won' || d.status === 'lost') continue;
+      if (isWonOrLost(d)) continue;
       const stName = (d.stage || '').toLowerCase();
       // Match with configured stages or fallback heuristic
       let weight = 0.35;
@@ -71,7 +77,7 @@ export function RnpFinanceView({
       sum += (d.amount || 0) * weight;
     }
     return Math.round(sum);
-  }, [deals, stageWeights]);
+  }, [deals, isWonOrLost, stageWeights]);
 
   // Remaining plan deficit
   const remainingTarget = Math.max(0, planTarget - revenue);
@@ -87,7 +93,7 @@ export function RnpFinanceView({
   const stageBreakdown = React.useMemo(() => {
     const map: Record<string, { amount: number; count: number }> = {};
     for (const d of deals) {
-      if (d.status === 'won' || d.status === 'lost') continue;
+      if (isWonOrLost(d)) continue;
       const st = d.stage || 'Первый контакт';
       if (!map[st]) map[st] = { amount: 0, count: 0 };
       map[st].amount += d.amount || 0;
