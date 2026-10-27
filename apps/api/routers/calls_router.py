@@ -587,20 +587,18 @@ def get_dashboard_calls_data(
 
             # Prioritize specific client/contact extracted from the call
             sc_client = sc.get("client")
-            if sc_client and sc_client not in ("Клиент", "Клиент B2B", "Неизвестно"):
+            if sc_client and sc_client not in ("Клиент", "Клиент B2B", "Неизвестно") and "электроник" not in sc_client.lower() and "оптовая" not in sc_client.lower():
                 client_name = sc_client
-            elif call_deal and call_deal.company_name and call_deal.company_name != call_deal.title:
+            elif call_deal and call_deal.company_name and "электроник" not in call_deal.company_name.lower() and "оптовая" not in call_deal.company_name.lower():
                 client_name = call_deal.company_name
-            elif sc_client:
+            elif sc_client and "электроник" not in sc_client.lower() and "оптовая" not in sc_client.lower():
                 client_name = sc_client
-            elif call_deal:
-                client_name = call_deal.company_name or call_deal.title
             else:
                 client_name = "Клиент"
 
             raw_deal_title = call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}")
-            if "?" in raw_deal_title:
-                raw_deal_title = call_deal.title if call_deal else f"Сделка {c.deal_id}"
+            if "?" in raw_deal_title or "оптовая" in raw_deal_title.lower() or "электроник" in raw_deal_title.lower():
+                raw_deal_title = f"Сделка #{c.deal_id or c.id[-4:]}"
 
             deal_stage = call_deal.stage.value if (call_deal and hasattr(call_deal.stage, "value")) else (str(call_deal.stage) if call_deal and call_deal.stage else "Первичный контакт")
 

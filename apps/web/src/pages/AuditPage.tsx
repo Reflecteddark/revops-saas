@@ -66,15 +66,9 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
     accessorKey: 'client',
     header: 'Клиент',
     cell: ({ row }) => (
-      <div className="font-medium text-foreground">
-        <div>{row.original.client}</div>
-        {row.original.deal_title &&
-          row.original.deal_title !== row.original.client && (
-            <div className="text-[11px] font-normal text-muted-foreground">
-              {row.original.deal_title}
-            </div>
-          )}
-      </div>
+      <span className="font-medium text-foreground">
+        {row.original.client || 'Клиент'}
+      </span>
     ),
   },
   {

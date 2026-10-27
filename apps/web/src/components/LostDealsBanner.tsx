@@ -201,9 +201,6 @@ export function LostDealsBanner({
                     <strong className="font-medium text-foreground">
                       {call.client || 'Клиент'}
                     </strong>
-                    {call.deal_title && call.deal_title !== call.client
-                      ? ` · ${call.deal_title}`
-                      : ''}
                     <span className="ml-1.5 text-tertiary">· {reason}</span>
                   </div>
                 </div>
