@@ -443,7 +443,7 @@ async def get_pipelines(
         else:
             p_entry["active_amount"] += amt
 
-        if d.is_at_risk:
+        if d.is_at_risk and not is_won and not is_lost:
             p_entry["sla_risk_count"] += 1
 
     # Ensure every pipeline has stages list populated with counts
@@ -618,7 +618,7 @@ async def list_deals(
                 "status": deal_status,
                 "loss_reason": d.loss_reason or "",
                 "loss_reason_code": d.loss_reason_code or "",
-                "sla_risk": d.is_at_risk,
+                "sla_risk": False if (deal_status in ("won", "lost") or d.stage in (DealStage.WON, DealStage.LOST) or any(w in str(d.stage_name or "").lower() for w in ("успешно", "закрыт", "отказ", "не реализовано"))) else bool(d.is_at_risk),
                 "days_in_stage": d.days_in_stage or 0,
                 "responsible_user": manager_name,
                 "manager_name": manager_name,
@@ -762,7 +762,7 @@ async def get_deal_details(
                 "status": "won" if (db_deal.stage == DealStage.WON or "успешно" in str(db_deal.stage_name).lower()) else ("lost" if (db_deal.stage == DealStage.LOST or "закрыто" in str(db_deal.stage_name).lower() or "отказ" in str(db_deal.stage_name).lower()) else "active"),
                 "loss_reason": db_deal.loss_reason or "",
                 "loss_reason_code": db_deal.loss_reason_code or "",
-                "sla_risk": db_deal.is_at_risk,
+                "sla_risk": False if (db_deal.stage in (DealStage.WON, DealStage.LOST) or any(w in str(db_deal.stage_name or "").lower() for w in ("успешно", "закрыт", "отказ", "не реализовано"))) else bool(db_deal.is_at_risk),
                 "days_in_stage": db_deal.days_in_stage or 0,
                 "responsible_user": manager_name,
                 "manager_name": manager_name,

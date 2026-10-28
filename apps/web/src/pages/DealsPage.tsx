@@ -34,7 +34,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { dealsApi } from '@/lib/api';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 import { DealDetailsDrawer } from '@/components/DealDetailsDrawer';
-import { computeDealHealth, DealHealthMetrics } from '@/lib/dealHealth';
+import {
+  computeDealHealth,
+  isDealClosed,
+  DealHealthMetrics,
+} from '@/lib/dealHealth';
 import type { Deal, Pipeline } from '@/types/api';
 
 type ViewMode = 'kanban' | 'radar' | 'table';
@@ -51,7 +55,8 @@ export function DealsPage() {
   const [viewMode, setViewMode] = React.useState<ViewMode>('kanban');
   const [activeFilter, setActiveFilter] = React.useState<QuickFilter>('all');
   const [pipelines, setPipelines] = React.useState<Pipeline[]>([]);
-  const [selectedPipelineId, setSelectedPipelineId] = React.useState<string>('');
+  const [selectedPipelineId, setSelectedPipelineId] =
+    React.useState<string>('');
   const [deals, setDeals] = React.useState<Deal[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [syncing, setSyncing] = React.useState<boolean>(false);
@@ -192,10 +197,13 @@ export function DealsPage() {
   const filterCounts = React.useMemo(() => {
     return {
       all: dealsWithHealth.length,
-      risk: dealsWithHealth.filter((d) => d.health.healthTier === 'critical').length,
+      risk: dealsWithHealth.filter((d) => d.health.healthTier === 'critical')
+        .length,
       stalled: dealsWithHealth.filter((d) => d.health.isStalled).length,
       divergence: dealsWithHealth.filter((d) => d.health.divergenceRisk).length,
-      sla: dealsWithHealth.filter((d) => d.sla_risk).length,
+      sla: dealsWithHealth.filter(
+        (d) => Boolean(d.sla_risk) && !isDealClosed(d)
+      ).length,
     };
   }, [dealsWithHealth]);
 
@@ -203,13 +211,16 @@ export function DealsPage() {
   const filteredDeals = React.useMemo(() => {
     return dealsWithHealth.filter((d) => {
       // Quick filter pill
-      if (activeFilter === 'risk' && d.health.healthTier !== 'critical') return false;
+      if (activeFilter === 'risk' && d.health.healthTier !== 'critical')
+        return false;
       if (activeFilter === 'stalled' && !d.health.isStalled) return false;
-      if (activeFilter === 'divergence' && !d.health.divergenceRisk) return false;
-      if (activeFilter === 'sla' && !d.sla_risk) return false;
+      if (activeFilter === 'divergence' && !d.health.divergenceRisk)
+        return false;
+      if (activeFilter === 'sla' && (!d.sla_risk || isDealClosed(d)))
+        return false;
 
       // Checkbox SLA filter compatibility
-      if (slaRiskOnly && !d.sla_risk) return false;
+      if (slaRiskOnly && (!d.sla_risk || isDealClosed(d))) return false;
 
       // Loss reason filter
       if (lossReasonFilter !== 'all' && d.loss_reason !== lossReasonFilter) {
@@ -290,18 +301,24 @@ export function DealsPage() {
     )
   );
   const pipelineAtRisk = filteredDeals
-    .filter((d) => d.health.healthTier === 'critical' || d.sla_risk)
+    .filter(
+      (d) =>
+        !isDealClosed(d) && (d.health.healthTier === 'critical' || d.sla_risk)
+    )
     .reduce((sum, d) => sum + (d.amount || 0), 0);
-  const totalSlaRisks = filteredDeals.filter((d) => d.sla_risk).length;
+  const totalSlaRisks = filteredDeals.filter(
+    (d) => Boolean(d.sla_risk) && !isDealClosed(d)
+  ).length;
 
   // Stalled and Risk deals for Radar View
   const radarDeals = React.useMemo(() => {
     return dealsWithHealth.filter(
       (d) =>
-        d.sla_risk ||
-        d.health.healthTier === 'critical' ||
-        d.health.isStalled ||
-        d.health.divergenceRisk
+        !isDealClosed(d) &&
+        (d.sla_risk ||
+          d.health.healthTier === 'critical' ||
+          d.health.isStalled ||
+          d.health.divergenceRisk)
     );
   }, [dealsWithHealth]);
 
@@ -314,7 +331,8 @@ export function DealsPage() {
             Сделки и Воронка продаж
           </h1>
           <p className="text-sm text-secondary">
-            Revenue Intelligence, мультиворонки CRM, контроль темпа и аудит переговоров
+            Revenue Intelligence, мультиворонки CRM, контроль темпа и аудит
+            переговоров
           </p>
         </div>
 
@@ -325,7 +343,7 @@ export function DealsPage() {
             <select
               value={selectedPipelineId}
               onChange={(e) => handlePipelineChange(e.target.value)}
-              className="h-9 cursor-pointer rounded-lg border border-subtle bg-surface px-3 py-1.5 pr-8 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+              className="shadow-xs h-9 cursor-pointer rounded-lg border border-subtle bg-surface px-3 py-1.5 pr-8 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               aria-label="Выбор воронки продаж"
             >
               {pipelines.map((p) => (
@@ -337,13 +355,13 @@ export function DealsPage() {
           </div>
 
           {/* View Toggle */}
-          <div className="flex rounded-lg border border-subtle bg-surface p-0.5 shadow-xs">
+          <div className="shadow-xs flex rounded-lg border border-subtle bg-surface p-0.5">
             <button
               onClick={() => setViewMode('kanban')}
               className={cn(
                 'flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
                 viewMode === 'kanban'
-                  ? 'bg-active font-semibold text-foreground shadow-xs'
+                  ? 'shadow-xs bg-active font-semibold text-foreground'
                   : 'text-tertiary hover:text-foreground'
               )}
             >
@@ -355,14 +373,14 @@ export function DealsPage() {
               className={cn(
                 'flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
                 viewMode === 'radar'
-                  ? 'bg-rose-500/15 font-semibold text-rose-300 shadow-xs'
+                  ? 'shadow-xs bg-rose-500/15 font-semibold text-rose-300'
                   : 'text-tertiary hover:text-foreground'
               )}
             >
               <Zap className="h-3.5 w-3.5 text-rose-400" />
               <span>Радар рисков</span>
               {radarDeals.length > 0 && (
-                <span className="ml-1 rounded-full bg-rose-500/20 px-1.5 py-0.2 text-[10px] font-bold text-rose-400">
+                <span className="py-0.2 ml-1 rounded-full bg-rose-500/20 px-1.5 text-[10px] font-bold text-rose-400">
                   {radarDeals.length}
                 </span>
               )}
@@ -372,7 +390,7 @@ export function DealsPage() {
               className={cn(
                 'flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
                 viewMode === 'table'
-                  ? 'bg-active font-semibold text-foreground shadow-xs'
+                  ? 'shadow-xs bg-active font-semibold text-foreground'
                   : 'text-tertiary hover:text-foreground'
               )}
             >
@@ -385,7 +403,7 @@ export function DealsPage() {
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-subtle bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:opacity-50 shadow-xs"
+            className="shadow-xs flex h-9 items-center gap-1.5 rounded-lg border border-subtle bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:opacity-50"
             title="Синхронизировать с amoCRM / Bitrix24"
           >
             <RefreshCw
@@ -402,68 +420,64 @@ export function DealsPage() {
       {/* Enterprise Executive Control Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {/* Card 1: Total Deals */}
-        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+        <div className="shadow-xs space-y-1 rounded-xl border border-subtle bg-surface p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-tertiary">Всего сделок</span>
             <Activity className="h-3.5 w-3.5 text-primary" />
           </div>
-          <p className="text-xl font-bold font-mono text-foreground">
+          <p className="font-mono text-xl font-bold text-foreground">
             {totalDealsCount}
           </p>
-          <p className="text-[11px] text-tertiary truncate">
+          <p className="truncate text-[11px] text-tertiary">
             {activePipeline.name}
           </p>
         </div>
 
         {/* Card 2: Nominal Pipeline */}
-        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+        <div className="shadow-xs space-y-1 rounded-xl border border-subtle bg-surface p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-tertiary">Общий пайплайн</span>
             <span className="font-mono text-[10px] text-tertiary">100%</span>
           </div>
-          <p className="text-xl font-bold font-mono text-foreground">
+          <p className="font-mono text-xl font-bold text-foreground">
             {totalPipelineAmount.toLocaleString('ru-RU')} ₽
           </p>
-          <p className="text-[11px] text-tertiary">
-            Номинальная сумма воронки
-          </p>
+          <p className="text-[11px] text-tertiary">Номинальная сумма воронки</p>
         </div>
 
         {/* Card 3: Weighted AI Forecast */}
-        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+        <div className="shadow-xs space-y-1 rounded-xl border border-subtle bg-surface p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-tertiary">Взвешенный прогноз ИИ</span>
             <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
           </div>
-          <p className="text-xl font-bold font-mono text-emerald-400">
+          <p className="font-mono text-xl font-bold text-emerald-400">
             {weightedForecast.toLocaleString('ru-RU')} ₽
           </p>
-          <p className="text-[11px] text-tertiary">
-            С учётом этапа и звонков
-          </p>
+          <p className="text-[11px] text-tertiary">С учётом этапа и звонков</p>
         </div>
 
         {/* Card 4: Pipeline at Risk */}
-        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+        <div className="shadow-xs space-y-1 rounded-xl border border-subtle bg-surface p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-tertiary">Выручка под угрозой</span>
             <AlertTriangle className="h-3.5 w-3.5 text-rose-400" />
           </div>
-          <p className="text-xl font-bold font-mono text-rose-400">
+          <p className="font-mono text-xl font-bold text-rose-400">
             {pipelineAtRisk.toLocaleString('ru-RU')} ₽
           </p>
-          <p className="text-[11px] text-tertiary">
-            Критический health / риск
-          </p>
+          <p className="text-[11px] text-tertiary">Критический health / риск</p>
         </div>
 
         {/* Card 5: SLA & Velocity Control */}
-        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+        <div className="shadow-xs space-y-1 rounded-xl border border-subtle bg-surface p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-tertiary">Риск SLA по регламенту</span>
+            <span className="text-xs text-tertiary">
+              Риск SLA по регламенту
+            </span>
             <Clock className="h-3.5 w-3.5 text-amber-400" />
           </div>
-          <p className="text-xl font-bold font-mono text-amber-400">
+          <p className="font-mono text-xl font-bold text-amber-400">
             {totalSlaRisks}
           </p>
           <p className="text-[11px] text-tertiary">
@@ -476,7 +490,7 @@ export function DealsPage() {
 
       {/* Quick Filter Pills & Search Bar */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-subtle bg-surface p-3 shadow-xs">
+        <div className="shadow-xs flex flex-wrap items-center justify-between gap-3 rounded-xl border border-subtle bg-surface p-3">
           {/* Search Box */}
           <div className="flex min-w-[240px] flex-1 items-center gap-2">
             <Search className="h-4 w-4 shrink-0 text-tertiary" />
@@ -526,10 +540,10 @@ export function DealsPage() {
           <button
             onClick={() => setActiveFilter('all')}
             className={cn(
-              'h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              'h-7 rounded-lg border px-3 text-xs font-medium transition-all',
               activeFilter === 'all'
-                ? 'border-primary/50 bg-primary/10 text-primary font-semibold shadow-xs'
-                : 'border-subtle bg-surface text-secondary hover:text-foreground hover:bg-hover'
+                ? 'border-primary/50 bg-primary/10 shadow-xs font-semibold text-primary'
+                : 'border-subtle bg-surface text-secondary hover:bg-hover hover:text-foreground'
             )}
           >
             Все сделки ({filterCounts.all})
@@ -538,10 +552,10 @@ export function DealsPage() {
           <button
             onClick={() => setActiveFilter('risk')}
             className={cn(
-              'flex items-center gap-1.5 h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              'flex h-7 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all',
               activeFilter === 'risk'
-                ? 'border-rose-500/50 bg-rose-500/15 text-rose-300 font-semibold shadow-xs'
-                : 'border-subtle bg-surface text-secondary hover:text-rose-400 hover:bg-hover'
+                ? 'shadow-xs border-rose-500/50 bg-rose-500/15 font-semibold text-rose-300'
+                : 'border-subtle bg-surface text-secondary hover:bg-hover hover:text-rose-400'
             )}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
@@ -551,10 +565,10 @@ export function DealsPage() {
           <button
             onClick={() => setActiveFilter('stalled')}
             className={cn(
-              'flex items-center gap-1.5 h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              'flex h-7 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all',
               activeFilter === 'stalled'
-                ? 'border-amber-500/50 bg-amber-500/15 text-amber-300 font-semibold shadow-xs'
-                : 'border-subtle bg-surface text-secondary hover:text-amber-400 hover:bg-hover'
+                ? 'shadow-xs border-amber-500/50 bg-amber-500/15 font-semibold text-amber-300'
+                : 'border-subtle bg-surface text-secondary hover:bg-hover hover:text-amber-400'
             )}
           >
             <Clock className="h-3 w-3 text-amber-400" />
@@ -564,10 +578,10 @@ export function DealsPage() {
           <button
             onClick={() => setActiveFilter('divergence')}
             className={cn(
-              'flex items-center gap-1.5 h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              'flex h-7 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all',
               activeFilter === 'divergence'
-                ? 'border-indigo-500/50 bg-indigo-500/15 text-indigo-300 font-semibold shadow-xs'
-                : 'border-subtle bg-surface text-secondary hover:text-indigo-400 hover:bg-hover'
+                ? 'shadow-xs border-indigo-500/50 bg-indigo-500/15 font-semibold text-indigo-300'
+                : 'border-subtle bg-surface text-secondary hover:bg-hover hover:text-indigo-400'
             )}
           >
             <ShieldAlert className="h-3 w-3 text-indigo-400" />
@@ -577,10 +591,10 @@ export function DealsPage() {
           <button
             onClick={() => setActiveFilter('sla')}
             className={cn(
-              'flex items-center gap-1.5 h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              'flex h-7 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all',
               activeFilter === 'sla'
-                ? 'border-amber-500/50 bg-amber-500/15 text-amber-300 font-semibold shadow-xs'
-                : 'border-subtle bg-surface text-secondary hover:text-amber-400 hover:bg-hover'
+                ? 'shadow-xs border-amber-500/50 bg-amber-500/15 font-semibold text-amber-300'
+                : 'border-subtle bg-surface text-secondary hover:bg-hover hover:text-amber-400'
             )}
           >
             <AlertTriangle className="h-3 w-3 text-amber-400" />
@@ -612,7 +626,7 @@ export function DealsPage() {
             return (
               <div
                 key={stage.id}
-                className="bg-surface/70 flex w-80 shrink-0 flex-col overflow-hidden rounded-xl border border-subtle shadow-xs"
+                className="bg-surface/70 shadow-xs flex w-80 shrink-0 flex-col overflow-hidden rounded-xl border border-subtle"
               >
                 {/* Column Header */}
                 <div
@@ -649,8 +663,8 @@ export function DealsPage() {
                         d.health.healthTier === 'healthy'
                           ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
                           : d.health.healthTier === 'warning'
-                          ? 'border-amber-500/30 text-amber-400 bg-amber-500/10'
-                          : 'border-rose-500/30 text-rose-400 bg-rose-500/10';
+                            ? 'border-amber-500/30 text-amber-400 bg-amber-500/10'
+                            : 'border-rose-500/30 text-rose-400 bg-rose-500/10';
 
                       return (
                         <div
@@ -663,7 +677,7 @@ export function DealsPage() {
                         >
                           {/* Card Top Row: Title & Health Score */}
                           <div className="flex items-start justify-between gap-2">
-                            <div className="space-y-0.5 min-w-0">
+                            <div className="min-w-0 space-y-0.5">
                               <span className="line-clamp-2 text-xs font-semibold text-foreground transition-colors group-hover:text-primary">
                                 {d.company_name || d.health.cleanTitle}
                               </span>
@@ -676,12 +690,12 @@ export function DealsPage() {
                             <Badge
                               variant="outline"
                               className={cn(
-                                'font-mono text-[10px] font-bold px-1.5 py-0 shrink-0',
+                                'shrink-0 px-1.5 py-0 font-mono text-[10px] font-bold',
                                 healthColor
                               )}
                               title={`Health Score: ${d.health.healthScore}/100. Win Prob: ${d.health.winProbability}%`}
                             >
-                              <Activity className="h-2.5 w-2.5 mr-1" />
+                              <Activity className="mr-1 h-2.5 w-2.5" />
                               {d.health.healthScore}
                             </Badge>
                           </div>
@@ -692,7 +706,7 @@ export function DealsPage() {
                               {d.amount_str ||
                                 `${d.amount?.toLocaleString('ru-RU')} ₽`}
                             </span>
-                            <span className="text-[10px] text-tertiary font-mono">
+                            <span className="font-mono text-[10px] text-tertiary">
                               ИИ: {d.health.winProbability}%
                             </span>
                           </div>
@@ -712,23 +726,25 @@ export function DealsPage() {
                             )}
 
                             {/* SLA Risk Alert Badge */}
-                            {d.sla_risk && !d.health.divergenceRisk && (
-                              <Badge
-                                variant="outline"
-                                className="border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-[10px] font-semibold text-amber-300"
-                              >
-                                <AlertTriangle className="mr-1 h-3 w-3 text-amber-400" />
-                                Риск SLA
-                              </Badge>
-                            )}
+                            {d.sla_risk &&
+                              !isDealClosed(d) &&
+                              !d.health.divergenceRisk && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-[10px] font-semibold text-amber-300"
+                                >
+                                  <AlertTriangle className="mr-1 h-3 w-3 text-amber-400" />
+                                  Риск SLA
+                                </Badge>
+                              )}
 
                             {/* Velocity / Stagnation Badge */}
                             <Badge
                               variant="outline"
                               className={cn(
-                                'px-1.5 py-0 text-[10px] font-mono',
+                                'px-1.5 py-0 font-mono text-[10px]',
                                 d.health.isStalled
-                                  ? 'border-amber-500/40 bg-amber-500/15 text-amber-300 font-semibold'
+                                  ? 'border-amber-500/40 bg-amber-500/15 font-semibold text-amber-300'
                                   : 'border-subtle text-tertiary'
                               )}
                               title={
@@ -769,9 +785,11 @@ export function DealsPage() {
                           </div>
 
                           {/* AI Next Best Action Strip */}
-                          <div className="rounded bg-subtle/30 px-2 py-1 text-[11px] text-secondary flex items-center gap-1.5">
-                            <Sparkles className="h-3 w-3 text-amber-400 shrink-0" />
-                            <span className="truncate">{d.health.aiNextAction}</span>
+                          <div className="bg-subtle/30 flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-secondary">
+                            <Sparkles className="h-3 w-3 shrink-0 text-amber-400" />
+                            <span className="truncate">
+                              {d.health.aiNextAction}
+                            </span>
                           </div>
 
                           {/* Responsible Manager */}
@@ -780,7 +798,9 @@ export function DealsPage() {
                               {d.responsible_user || 'Не назначен'}
                             </span>
                             <span className="font-mono text-[10px]">
-                              {d.created_at ? d.created_at.substring(0, 10) : ''}
+                              {d.created_at
+                                ? d.created_at.substring(0, 10)
+                                : ''}
                             </span>
                           </div>
                         </div>
@@ -795,7 +815,7 @@ export function DealsPage() {
       ) : viewMode === 'radar' ? (
         /* ⚡ Радар рисков SLA (Focus Mode for РОП Standup) */
         <div className="space-y-4">
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-rose-500/10 p-2 text-rose-400">
                 <Zap className="h-5 w-5" />
@@ -805,16 +825,20 @@ export function DealsPage() {
                   Радар рисков SLA и зависших сделок
                 </h3>
                 <p className="text-xs text-secondary">
-                  Фокусный реестр для ежедневной 15-минутки РОПа. Сделки с угрозой срыва, нарушением регламента или застоем.
+                  Фокусный реестр для ежедневной 15-минутки РОПа. Сделки с
+                  угрозой срыва, нарушением регламента или застоем.
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="border-rose-500/40 text-rose-300 font-mono">
+            <Badge
+              variant="outline"
+              className="border-rose-500/40 font-mono text-rose-300"
+            >
               На контроле: {radarDeals.length} сделок
             </Badge>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-subtle bg-surface shadow-xs">
+          <div className="shadow-xs overflow-hidden rounded-xl border border-subtle bg-surface">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-subtle/40 border-b border-subtle text-[10px] font-semibold uppercase tracking-wider text-tertiary">
@@ -832,13 +856,17 @@ export function DealsPage() {
                 <tbody className="divide-y divide-subtle">
                   {radarDeals.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-secondary">
-                        <div className="max-w-md mx-auto space-y-1">
+                      <td
+                        colSpan={8}
+                        className="py-12 text-center text-secondary"
+                      >
+                        <div className="mx-auto max-w-md space-y-1">
                           <p className="text-sm font-semibold text-emerald-400">
                             Все сделки под контролем!
                           </p>
                           <p className="text-xs text-tertiary">
-                            В текущей воронке нет сделок с критическим здоровьем или нарушением SLA.
+                            В текущей воронке нет сделок с критическим здоровьем
+                            или нарушением SLA.
                           </p>
                         </div>
                       </td>
@@ -866,12 +894,12 @@ export function DealsPage() {
                           <Badge
                             variant="outline"
                             className={cn(
-                              'font-mono text-[11px] font-bold px-2 py-0.5',
+                              'px-2 py-0.5 font-mono text-[11px] font-bold',
                               d.health.healthTier === 'healthy'
-                                ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
+                                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
                                 : d.health.healthTier === 'warning'
-                                ? 'border-amber-500/30 text-amber-400 bg-amber-500/10'
-                                : 'border-rose-500/30 text-rose-400 bg-rose-500/10'
+                                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                                  : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
                             )}
                           >
                             {d.health.healthScore} / 100
@@ -879,17 +907,20 @@ export function DealsPage() {
                         </td>
 
                         <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
-                          {d.amount_str || `${d.amount?.toLocaleString('ru-RU')} ₽`}
+                          {d.amount_str ||
+                            `${d.amount?.toLocaleString('ru-RU')} ₽`}
                         </td>
 
                         <td className="px-4 py-3">
-                          <div className="text-foreground font-medium">
+                          <div className="font-medium text-foreground">
                             {d.stage_name || d.stage}
                           </div>
                           <span
                             className={cn(
                               'font-mono text-[10px]',
-                              d.health.isStalled ? 'text-amber-400 font-semibold' : 'text-tertiary'
+                              d.health.isStalled
+                                ? 'font-semibold text-amber-400'
+                                : 'text-tertiary'
                             )}
                           >
                             ⏳ {d.health.daysInStage} дней на этапе
@@ -900,32 +931,34 @@ export function DealsPage() {
                           {d.health.divergenceRisk ? (
                             <Badge
                               variant="outline"
-                              className="border-rose-500/40 bg-rose-500/15 text-rose-300 text-[10px]"
+                              className="border-rose-500/40 bg-rose-500/15 text-[10px] text-rose-300"
                             >
                               ⚡ Расхождение с CRM
                             </Badge>
-                          ) : d.sla_risk ? (
+                          ) : d.sla_risk && !isDealClosed(d) ? (
                             <Badge
                               variant="outline"
-                              className="border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px]"
+                              className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
                             >
                               ⚠️ Просрочен регламент
                             </Badge>
                           ) : d.health.isStalled ? (
                             <Badge
                               variant="outline"
-                              className="border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px]"
+                              className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
                             >
                               ⏳ Застой сделки
                             </Badge>
                           ) : (
-                            <span className="text-tertiary text-[11px]">Низкий скоринг</span>
+                            <span className="text-[11px] text-tertiary">
+                              Низкий скоринг
+                            </span>
                           )}
                         </td>
 
-                        <td className="px-4 py-3 max-w-xs truncate text-secondary">
+                        <td className="max-w-xs truncate px-4 py-3 text-secondary">
                           <span className="flex items-center gap-1.5">
-                            <Sparkles className="h-3 w-3 text-amber-400 shrink-0" />
+                            <Sparkles className="h-3 w-3 shrink-0 text-amber-400" />
                             <span>{d.health.aiNextAction}</span>
                           </span>
                         </td>
@@ -941,7 +974,7 @@ export function DealsPage() {
                               setSelectedDeal(d);
                               setDrawerOpen(true);
                             }}
-                            className="inline-flex items-center gap-1 rounded-md border border-subtle bg-surface px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-hover transition-colors"
+                            className="inline-flex items-center gap-1 rounded-md border border-subtle bg-surface px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-hover"
                           >
                             <span>Аудит</span>
                             <ChevronRight className="h-3 w-3" />
@@ -957,7 +990,7 @@ export function DealsPage() {
         </div>
       ) : (
         /* 📋 High-density Table View */
-        <div className="overflow-hidden rounded-xl border border-subtle bg-surface shadow-xs">
+        <div className="shadow-xs overflow-hidden rounded-xl border border-subtle bg-surface">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-subtle/40 border-b border-subtle text-[10px] font-semibold uppercase tracking-wider text-tertiary">
@@ -1011,7 +1044,7 @@ export function DealsPage() {
                       </td>
 
                       <td className="px-4 py-3">
-                        <div className="text-foreground font-medium">
+                        <div className="font-medium text-foreground">
                           {d.stage_name || d.stage}
                         </div>
                         <span className="font-mono text-[10px] text-tertiary">
@@ -1028,12 +1061,12 @@ export function DealsPage() {
                         <div className="flex items-center gap-1.5">
                           <span
                             className={cn(
-                              'font-mono font-bold text-[11px]',
+                              'font-mono text-[11px] font-bold',
                               d.health.healthTier === 'healthy'
                                 ? 'text-emerald-400'
                                 : d.health.healthTier === 'warning'
-                                ? 'text-amber-400'
-                                : 'text-rose-400'
+                                  ? 'text-amber-400'
+                                  : 'text-rose-400'
                             )}
                           >
                             {d.health.healthScore}
@@ -1049,10 +1082,11 @@ export function DealsPage() {
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {typeof d.calls_count === 'number' && d.calls_count > 0 ? (
+                        {typeof d.calls_count === 'number' &&
+                        d.calls_count > 0 ? (
                           <Badge
                             variant="outline"
-                            className="font-mono text-[10px] border-primary/30 text-primary"
+                            className="border-primary/30 font-mono text-[10px] text-primary"
                           >
                             📞 {d.calls_count}
                           </Badge>
@@ -1065,26 +1099,28 @@ export function DealsPage() {
                         {d.loss_reason ? (
                           <Badge
                             variant="outline"
-                            className="border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px]"
+                            className="border-rose-500/30 bg-rose-500/10 text-[10px] text-rose-300"
                           >
                             {d.loss_reason}
                           </Badge>
-                        ) : d.sla_risk ? (
+                        ) : d.sla_risk && !isDealClosed(d) ? (
                           <Badge
                             variant="outline"
-                            className="border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px]"
+                            className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
                           >
                             Риск SLA
                           </Badge>
                         ) : d.status === 'won' ? (
                           <Badge
                             variant="outline"
-                            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px]"
+                            className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-400"
                           >
                             Успешно
                           </Badge>
                         ) : (
-                          <span className="text-tertiary text-[11px]">В работе</span>
+                          <span className="text-[11px] text-tertiary">
+                            В работе
+                          </span>
                         )}
                       </td>
 

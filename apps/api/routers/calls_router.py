@@ -770,8 +770,15 @@ async def ingest_call_from_n8n(
                     curr_score = getattr(deal, "avg_call_score", 0.0) or 0.0
                     new_score = float(score) if not curr_score else round((float(curr_score) + float(score)) / 2, 1)
                     setattr(deal, "avg_call_score", new_score)
-                if score is not None and score < 8:
+                deal_is_closed = (
+                    getattr(deal, "status", "") in ("won", "lost")
+                    or getattr(deal, "stage", "") in (DealStage.WON, DealStage.LOST)
+                    or any(w in str(getattr(deal, "stage_name", "")).lower() for w in ("успешно", "закрыт", "отказ", "не реализовано"))
+                )
+                if not deal_is_closed and score is not None and score < 8:
                     setattr(deal, "is_at_risk", True)
+                elif deal_is_closed:
+                    setattr(deal, "is_at_risk", False)
                 current_title = str(getattr(deal, "title", "") or "")
                 if (current_title.startswith("?") or current_title.startswith("Сделка #") or not current_title) and payload.deal_title and not payload.deal_title.startswith("?"):
                     setattr(deal, "title", payload.deal_title)

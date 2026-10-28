@@ -42,6 +42,30 @@ export interface ParsedCriterion {
 }
 
 /**
+ * Determines whether a deal has reached a terminal state (Won or Lost).
+ * Terminal deals are excluded from SLA timers, stagnation warnings, and operational SLA alerts.
+ */
+export function isDealClosed(deal: Deal | null | undefined): boolean {
+  if (!deal) return false;
+  const status = String(deal.status || '').toLowerCase();
+  if (status === 'won' || status === 'lost' || status === 'deleted') {
+    return true;
+  }
+  const stageName = String(deal.stage_name || deal.stage || '').toLowerCase();
+  const stageId = String(deal.stage_id || '').trim();
+  return (
+    stageName.includes('успеш') ||
+    stageName.includes('закрыт') ||
+    stageName.includes('отказ') ||
+    stageName.includes('не реализован') ||
+    stageId === '6' ||
+    stageId === '7' ||
+    stageId === '142' ||
+    stageId === '143'
+  );
+}
+
+/**
  * Universal extractor for 13 B2B criteria from various CRM / Gemini AI payloads.
  */
 export function parse13Criteria(raw: unknown): ParsedCriterion[] {
@@ -83,17 +107,40 @@ export function parse13Criteria(raw: unknown): ParsedCriterion[] {
   // Case C: nested object format with passed: boolean
   const result: ParsedCriterion[] = [];
   const entries = Object.entries(obj);
-  for (let i = 0; i < entries.length && i < 13; i++) {
+  for (let i = 0; i < entries.length && result.length < 13; i++) {
     const [key, val] = entries[i];
     // Exclude technical metadata keys
-    if (['id', 'deal_id', 'deal_title', 'client', 'manager', 'stage', 'duration', 'amount', 'score', 'status', 'status_label', 'risk_amount', 'next_step', 'error_summary', 'recommendation', 'transcript'].includes(key.toLowerCase())) {
+    if (
+      [
+        'id',
+        'deal_id',
+        'deal_title',
+        'client',
+        'manager',
+        'stage',
+        'duration',
+        'amount',
+        'score',
+        'status',
+        'status_label',
+        'risk_amount',
+        'next_step',
+        'error_summary',
+        'recommendation',
+        'transcript',
+        'calls',
+        'calls_count',
+      ].includes(key.toLowerCase())
+    ) {
       continue;
     }
     const criterionName = CRITERIA_NAMES[result.length] || key;
     let passed = false;
     if (typeof val === 'object' && val !== null) {
       const vObj = val as Record<string, unknown>;
-      passed = Boolean(vObj.passed || vObj.score === 1 || Number(vObj.score) >= 70);
+      passed = Boolean(
+        vObj.passed || vObj.score === 1 || Number(vObj.score) >= 70
+      );
     } else {
       passed = val === 1 || val === true || Number(val) === 1;
     }
@@ -119,9 +166,27 @@ export function parse13Criteria(raw: unknown): ParsedCriterion[] {
 export function computeDealHealth(deal: Deal): DealHealthMetrics {
   // Clean deal title from encoding artifacts (e.g. "????? #4870417")
   let cleanTitle = String(deal.title || '').trim();
-  if (cleanTitle.startsWith('????') || cleanTitle.startsWith('??????') || !cleanTitle) {
+  if (
+    cleanTitle.startsWith('????') ||
+    cleanTitle.startsWith('??????') ||
+    !cleanTitle
+  ) {
     cleanTitle = `Сделка #${deal.crm_deal_id || deal.deal_id || deal.id}`;
   }
+
+  const stageNameLower = (deal.stage_name || deal.stage || '').toLowerCase();
+  const isWon =
+    deal.status === 'won' ||
+    stageNameLower.includes('успеш') ||
+    String(deal.stage_id) === '142' ||
+    String(deal.stage_id) === '6';
+  const isLost =
+    deal.status === 'lost' ||
+    stageNameLower.includes('закрыт') ||
+    stageNameLower.includes('отказ') ||
+    String(deal.stage_id) === '143' ||
+    String(deal.stage_id) === '7';
+  const isClosed = isWon || isLost;
 
   // 1. Base score from linked calls
   let scoreBase = 70; // baseline
@@ -129,42 +194,64 @@ export function computeDealHealth(deal: Deal): DealHealthMetrics {
     scoreBase = deal.avg_call_score;
   }
 
-  // 2. Penalty for SLA risk
-  if (deal.sla_risk) {
+  // 2. Penalty for SLA risk (applies ONLY to open active deals)
+  const hasActiveSlaRisk = Boolean(deal.sla_risk) && !isClosed;
+  if (hasActiveSlaRisk) {
     scoreBase -= 25;
   }
 
-  // 3. Penalty for days in stage / stagnation
+  // 3. Penalty for days in stage / stagnation (applies ONLY to open active deals)
   const daysInStage = deal.days_in_stage || 1;
-  const isStalled = daysInStage > 3 && deal.status === 'active';
+  const isStalled = daysInStage > 3 && !isClosed && deal.status === 'active';
   if (isStalled) {
     scoreBase -= Math.min(25, (daysInStage - 3) * 5);
   }
 
   // 4. Won / Lost adjustments
-  if (deal.status === 'won') {
+  if (isWon) {
     scoreBase = 100;
-  } else if (deal.status === 'lost') {
+  } else if (isLost) {
     scoreBase = 0;
   }
 
-  const healthScore = Math.max(5, Math.min(100, Math.round(scoreBase)));
+  const healthScore = isWon
+    ? 100
+    : isLost
+      ? 5
+      : Math.max(5, Math.min(100, Math.round(scoreBase)));
 
-  const healthTier: 'healthy' | 'warning' | 'critical' =
-    healthScore >= 80 ? 'healthy' : healthScore >= 50 ? 'warning' : 'critical';
+  const healthTier: 'healthy' | 'warning' | 'critical' = isWon
+    ? 'healthy'
+    : isLost
+      ? 'critical'
+      : healthScore >= 80
+        ? 'healthy'
+        : healthScore >= 50
+          ? 'warning'
+          : 'critical';
 
   // 5. Win probability (based on stage order + health score)
   let stageWeight = 0.2;
-  const stageNameLower = (deal.stage_name || deal.stage || '').toLowerCase();
-  if (deal.status === 'won' || stageNameLower.includes('успеш')) {
+  if (isWon) {
     stageWeight = 1.0;
-  } else if (deal.status === 'lost' || stageNameLower.includes('закрыт') || stageNameLower.includes('отказ')) {
+  } else if (isLost) {
     stageWeight = 0.0;
-  } else if (stageNameLower.includes('договор') || stageNameLower.includes('счёт') || stageNameLower.includes('согласован')) {
+  } else if (
+    stageNameLower.includes('договор') ||
+    stageNameLower.includes('счёт') ||
+    stageNameLower.includes('согласован')
+  ) {
     stageWeight = 0.85;
-  } else if (stageNameLower.includes('решен') || stageNameLower.includes('кп')) {
+  } else if (
+    stageNameLower.includes('решен') ||
+    stageNameLower.includes('кп')
+  ) {
     stageWeight = 0.65;
-  } else if (stageNameLower.includes('переговор') || stageNameLower.includes('встреч') || stageNameLower.includes('демо')) {
+  } else if (
+    stageNameLower.includes('переговор') ||
+    stageNameLower.includes('встреч') ||
+    stageNameLower.includes('демо')
+  ) {
     stageWeight = 0.45;
   } else if (stageNameLower.includes('квалифик')) {
     stageWeight = 0.25;
@@ -172,15 +259,26 @@ export function computeDealHealth(deal: Deal): DealHealthMetrics {
     stageWeight = 0.15;
   }
 
-  const winProbability = Math.round(stageWeight * (healthScore / 100) * 100);
+  const winProbability = isWon
+    ? 100
+    : isLost
+      ? 0
+      : Math.round(stageWeight * (healthScore / 100) * 100);
 
-  // 6. Divergence risk: advanced stage but poor call score or SLA risk
-  const isAdvancedStage = stageWeight >= 0.45;
-  const divergenceRisk = isAdvancedStage && (healthScore < 55 || deal.sla_risk === true);
+  // 6. Divergence risk: advanced stage but poor call score or SLA risk (NEVER on closed deals)
+  const isAdvancedStage = stageWeight >= 0.45 && !isClosed;
+  const divergenceRisk =
+    isAdvancedStage && (healthScore < 55 || hasActiveSlaRisk);
 
   // 7. AI Next Action hint
   let aiNextAction = 'Контроль регламента контакта';
-  if (deal.sla_risk) {
+  if (isWon) {
+    aiNextAction = 'Сделка закрыта и оплачена (Closed-Won)';
+  } else if (isLost) {
+    aiNextAction = deal.loss_reason
+      ? `Закрыто: ${deal.loss_reason}`
+      : 'Сделка закрыта и не реализована';
+  } else if (hasActiveSlaRisk) {
     aiNextAction = 'Срочно связаться: регламент SLA нарушен';
   } else if (isStalled) {
     aiNextAction = `Зависла на ${daysInStage} дн.: запланировать звонок`;
