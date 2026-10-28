@@ -78,13 +78,18 @@ def load_tenant_dataset(
                     d.assigned_user.full_name if d.assigned_user
                     else ((d.custom_payload or {}).get("manager_name") if isinstance(d.custom_payload, dict) else "")
                 )
+                is_closed = (
+                    st_name in ("WON", "LOST", "DELETED")
+                    or stage_val in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "142", "143", "6", "7")
+                    or any(w in stage_val.lower() for w in ("успешн", "закрыт", "отказ", "не реализован"))
+                )
                 deals_list.append({
                     "id": str(d.id),
-                    "title": str(d.title or f"Сделка {d.id}"),
+                    "title": str(d.title or f"Сделка #{d.id}"),
                     "budget": float(d.budget or 0.0),
                     "stage": stage_val,
                     "status": st_name,
-                    "is_at_risk": bool(d.is_at_risk or (d.days_in_stage or 0) > 3),
+                    "is_at_risk": False if is_closed else bool(d.is_at_risk or (d.days_in_stage or 0) > 3),
                     "days_in_stage": int(d.days_in_stage or 0),
                     "crm_source": str(d.crm_source or ""),
                     "manager_name": mgr or ""
@@ -105,13 +110,20 @@ def load_tenant_dataset(
                             budget_val = float(raw_budget or 0.0)
                         except (ValueError, TypeError):
                             budget_val = 0.0
+                        rd_st = str(rd.get("status") or "ACTIVE").upper()
+                        rd_stage = str(rd.get("stage") or rd.get("stage_name") or "")
+                        rd_closed = (
+                            rd_st in ("WON", "LOST", "DELETED")
+                            or rd_stage.upper() in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "142", "143", "6", "7")
+                            or any(w in rd_stage.lower() for w in ("успешн", "закрыт", "отказ", "не реализован"))
+                        )
                         deals_list.append({
                             "id": str(rd.get("id") or rd.get("deal_id") or ""),
-                            "title": str(rd.get("title") or rd.get("company_name") or f"Сделка {rd.get('id')}"),
+                            "title": str(rd.get("title") or rd.get("company_name") or f"Сделка #{rd.get('id')}"),
                             "budget": budget_val,
-                            "stage": str(rd.get("stage") or rd.get("stage_name") or ""),
-                            "status": str(rd.get("status") or "ACTIVE").upper(),
-                            "is_at_risk": bool(rd.get("sla_risk") or rd.get("is_risk") or (rd.get("days_in_stage", 0) or 0) > 3),
+                            "stage": rd_stage,
+                            "status": rd_st,
+                            "is_at_risk": False if rd_closed else bool(rd.get("sla_risk") or rd.get("is_risk") or (rd.get("days_in_stage", 0) or 0) > 3),
                             "days_in_stage": int(rd.get("days_in_stage") or rd.get("days_in_current_stage") or 0),
                             "crm_source": str(rd.get("crm_source") or rd.get("source") or ""),
                             "manager_name": str(rd.get("manager_name") or rd.get("manager") or "")
@@ -134,13 +146,20 @@ def load_tenant_dataset(
                             budget_val = float(raw_budget or 0.0)
                         except (ValueError, TypeError):
                             budget_val = 0.0
+                        sd_st = str(sd.get("status") or "ACTIVE").upper()
+                        sd_stage = str(sd.get("stage") or sd.get("stage_name") or "")
+                        sd_closed = (
+                            sd_st in ("WON", "LOST", "DELETED")
+                            or sd_stage.upper() in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "142", "143", "6", "7")
+                            or any(w in sd_stage.lower() for w in ("успешн", "закрыт", "отказ", "не реализован"))
+                        )
                         deals_list.append({
                             "id": str(sd.get("id") or sd.get("deal_id") or ""),
-                            "title": str(sd.get("title") or sd.get("company_name") or f"Сделка {sd.get('id')}"),
+                            "title": str(sd.get("title") or sd.get("company_name") or f"Сделка #{sd.get('id')}"),
                             "budget": budget_val,
-                            "stage": str(sd.get("stage") or sd.get("stage_name") or ""),
-                            "status": str(sd.get("status") or "ACTIVE").upper(),
-                            "is_at_risk": bool(sd.get("sla_risk") or sd.get("is_risk") or (sd.get("days_in_stage", 0) or 0) > 3),
+                            "stage": sd_stage,
+                            "status": sd_st,
+                            "is_at_risk": False if sd_closed else bool(sd.get("sla_risk") or sd.get("is_risk") or (sd.get("days_in_stage", 0) or 0) > 3),
                             "days_in_stage": int(sd.get("days_in_stage") or sd.get("days_in_current_stage") or 0),
                             "crm_source": str(sd.get("crm_source") or sd.get("source") or ""),
                             "manager_name": str(sd.get("manager_name") or sd.get("manager") or "")
@@ -301,8 +320,9 @@ def compute_leak_metrics(
 
     active_deals = [
         d for d in deals
-        if str(d.get("status", "")).upper() in ("ACTIVE", "NEW", "PREPARATION", "PREPAYMENT_INVOICE", "EXECUTING", "FINAL_INVOICE")
-        and str(d.get("stage", "")).upper() not in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "7. ЗАКРЫТО И НЕ РЕАЛИЗОВАНО")
+        if str(d.get("status", "")).upper() not in ("WON", "LOST", "DELETED")
+        and str(d.get("stage", "")).upper() not in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "142", "143", "6", "7")
+        and not any(w in str(d.get("stage", "")).lower() for w in ("успешн", "закрыт", "отказ", "не реализован"))
     ]
     active_pipeline = sum(float(d.get("budget", 0.0) or 0.0) for d in active_deals)
     stuck_deals = [d for d in active_deals if d.get("is_at_risk")]

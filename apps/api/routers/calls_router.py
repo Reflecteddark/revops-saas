@@ -674,7 +674,7 @@ async def ingest_call_from_n8n(
         if payload.status:
             status = payload.status
             status_label = payload.status_label or ("ЭТАЛОН" if status == "won" else "СЛИВ")
-            risk_amt = payload.risk_amount or ("0 ₽" if status == "won" else "500 000 ₽")
+            risk_amt = payload.risk_amount or ("0 ₽" if status == "won" else (payload.amount or "0 ₽"))
         else:
             if score is not None and score >= 10 and next_step == 1:
                 status = "won"
@@ -683,11 +683,11 @@ async def ingest_call_from_n8n(
             elif next_step == 0:
                 status = "risk"
                 status_label = "СЛИВ (НЕТ NEXT STEP)"
-                risk_amt = "500 000 ₽"
+                risk_amt = payload.amount or "0 ₽"
             else:
                 status = "risk" if (score is not None and score < 8) else "won"
                 status_label = "СЛИВ" if (score is not None and score < 8) else "ЭТАЛОН"
-                risk_amt = "500 000 ₽" if (score is not None and score < 8) else "0 ₽"
+                risk_amt = payload.amount or "0 ₽" if (score is not None and score < 8) else "0 ₽"
     else:
         cr_list = [None] * 13
         score = None
@@ -766,18 +766,29 @@ async def ingest_call_from_n8n(
                 db.add(deal)
                 db.flush()
             elif deal:
-                if score is not None:
-                    curr_score = getattr(deal, "avg_call_score", 0.0) or 0.0
-                    new_score = float(score) if not curr_score else round((float(curr_score) + float(score)) / 2, 1)
-                    setattr(deal, "avg_call_score", new_score)
+                existing_call_scores = [
+                    float(c.overall_score)
+                    for c in db.query(CallRecording).filter(
+                        CallRecording.tenant_id == target_tenant,
+                        CallRecording.deal_id == deal.id
+                    ).all()
+                    if c.overall_score is not None and (c.duration_seconds or 0) >= 20 and c.id != call_id
+                ]
+                if score is not None and dur_sec >= 20:
+                    existing_call_scores.append(float(score))
+
+                if existing_call_scores:
+                    mean_score = round(sum(existing_call_scores) / len(existing_call_scores), 1)
+                    setattr(deal, "avg_call_score", mean_score)
+
                 deal_is_closed = (
                     getattr(deal, "status", "") in ("won", "lost")
                     or getattr(deal, "stage", "") in (DealStage.WON, DealStage.LOST)
                     or any(w in str(getattr(deal, "stage_name", "")).lower() for w in ("успешно", "закрыт", "отказ", "не реализовано"))
                 )
-                if not deal_is_closed and score is not None and score < 8:
+                if not deal_is_closed and score is not None and score < 8 and dur_sec >= 20:
                     setattr(deal, "is_at_risk", True)
-                elif deal_is_closed:
+                elif deal_is_closed or (score is not None and score >= 8):
                     setattr(deal, "is_at_risk", False)
                 current_title = str(getattr(deal, "title", "") or "")
                 if (current_title.startswith("?") or current_title.startswith("Сделка #") or not current_title) and payload.deal_title and not payload.deal_title.startswith("?"):

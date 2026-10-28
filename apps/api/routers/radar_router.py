@@ -14,6 +14,23 @@ from ..auth import get_current_user
 router = APIRouter(prefix="/radar", tags=["Operational Risk Radar & Cockpit РОПа"])
 
 
+def _is_deal_closed(deal: Deal) -> bool:
+    status = str(getattr(deal, "status", "") or "").lower()
+    if status in ("won", "lost", "deleted"):
+        return True
+    stage = getattr(deal, "stage", None)
+    if stage in {DealStage.WON, DealStage.LOST}:
+        return True
+    stage_val = str(getattr(stage, "value", stage) or "").lower()
+    stage_name = str(getattr(deal, "stage_name", "") or "").lower()
+    combined = f"{status} {stage_val} {stage_name}"
+    if any(k in combined for k in ("успешн", "закрыт", "отказ", "не реализован")):
+        return True
+    stage_id = str(getattr(deal, "stage_id", "") or "")
+    if stage_id in ("142", "143", "6", "7"):
+        return True
+    return False
+
 @router.get("/cockpit")
 def get_rop_cockpit(
     current_user: User = Depends(get_current_user),
@@ -37,15 +54,15 @@ def get_rop_cockpit(
 
     all_deals = query.all()
 
-    deals_no_next_step = [d for d in all_deals if not d.has_next_step and d.stage not in {DealStage.WON, DealStage.LOST}]
-    deals_sla_breach = [d for d in all_deals if d.days_in_stage > d.stage_sla_days and d.stage not in {DealStage.WON, DealStage.LOST}]
-    deals_high_risk = [d for d in all_deals if d.is_at_risk and d.stage not in {DealStage.WON, DealStage.LOST}]
+    deals_no_next_step = [d for d in all_deals if not d.has_next_step and not _is_deal_closed(d)]
+    deals_sla_breach = [d for d in all_deals if d.days_in_stage > d.stage_sla_days and not _is_deal_closed(d)]
+    deals_high_risk = [d for d in all_deals if d.is_at_risk and not _is_deal_closed(d)]
 
-    total_pipeline_value = sum(d.budget for d in all_deals if d.stage not in {DealStage.WON, DealStage.LOST})
+    total_pipeline_value = sum(d.budget for d in all_deals if not _is_deal_closed(d))
     at_risk_value = sum(d.budget for d in set(deals_no_next_step + deals_sla_breach + deals_high_risk))
 
     return {
-        "total_active_deals_count": len([d for d in all_deals if d.stage not in {DealStage.WON, DealStage.LOST}]),
+        "total_active_deals_count": len([d for d in all_deals if not _is_deal_closed(d)]),
         "total_pipeline_value_rub": round(total_pipeline_value, 2),
         "at_risk_value_rub": round(at_risk_value, 2),
         "risk_ratio_pct": round((at_risk_value / (total_pipeline_value + 1e-6)) * 100.0, 1),

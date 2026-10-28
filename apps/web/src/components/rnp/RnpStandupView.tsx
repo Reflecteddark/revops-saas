@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/card';
 import { DailyHourlyHeatmap } from './DailyHourlyHeatmap';
 import type { Call, Deal, ManagerConfig } from '@/types/api';
+import { isDealClosed } from '@/lib/dealHealth';
 
 export interface RnpStandupViewProps {
   calls: Call[];
@@ -108,7 +109,7 @@ export function RnpStandupView({
 
   // Stalled high-value deals (>48h SLA risk)
   const highRiskDeals = React.useMemo(() => {
-    return deals.filter((d) => d.sla_risk || d.status === 'risk').slice(0, 5);
+    return deals.filter((d) => !isDealClosed(d) && (d.sla_risk || d.status === 'risk')).slice(0, 5);
   }, [deals]);
 
   // Manager performance synthesis for Standup
@@ -187,7 +188,7 @@ export function RnpStandupView({
         (d) => d.status !== 'won' && d.status !== 'lost'
       );
       const riskDeals = mgrDeals.filter(
-        (d) => d.sla_risk || d.status === 'risk'
+        (d) => !isDealClosed(d) && (d.sla_risk || d.status === 'risk')
       );
       const riskDealsCount = riskDeals.length;
       const riskDealsSum = riskDeals.reduce(

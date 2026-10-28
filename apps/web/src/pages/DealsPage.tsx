@@ -738,24 +738,26 @@ export function DealsPage() {
                                 </Badge>
                               )}
 
-                            {/* Velocity / Stagnation Badge */}
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'px-1.5 py-0 font-mono text-[10px]',
-                                d.health.isStalled
-                                  ? 'border-amber-500/40 bg-amber-500/15 font-semibold text-amber-300'
-                                  : 'border-subtle text-tertiary'
-                              )}
-                              title={
-                                d.health.isStalled
-                                  ? `Зависла на этапе более ${d.health.daysInStage} дней!`
-                                  : `Дней на этапе: ${d.health.daysInStage}`
-                              }
-                            >
-                              <Clock className="mr-1 h-3 w-3" />
-                              {d.health.daysInStage} дн.
-                            </Badge>
+                            {/* Velocity / Stagnation Badge - only for open active deals */}
+                            {!isDealClosed(d) && (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  'px-1.5 py-0 font-mono text-[10px]',
+                                  d.health.isStalled
+                                    ? 'border-amber-500/40 bg-amber-500/15 font-semibold text-amber-300'
+                                    : 'border-subtle text-tertiary'
+                                )}
+                                title={
+                                  d.health.isStalled
+                                    ? `Зависла на этапе более ${d.health.daysInStage} дней!`
+                                    : `Дней на этапе: ${d.health.daysInStage}`
+                                }
+                              >
+                                <Clock className="mr-1 h-3 w-3" />
+                                {d.health.daysInStage} дн.
+                              </Badge>
+                            )}
 
                             {/* Loss Reason Badge */}
                             {d.loss_reason && (

@@ -208,8 +208,15 @@ export function PulsePage() {
   // Deals won filter helper (handles 'Успешно реализовано', 'Оплачено', 'won')
   const isWonDeal = React.useCallback((d: Deal) => {
     if (d.status === 'won') return true;
-    const st = (d.stage || '').toLowerCase();
-    return st.includes('успешн') || st.includes('оплач') || st.includes('won');
+    const st = (d.stage_name || d.stage || '').toLowerCase();
+    return st.includes('успешн') || st.includes('оплач') || st.includes('won') || String(d.stage_id) === '142' || String(d.stage_id) === '6';
+  }, []);
+
+  // Deals lost filter helper (handles 'Закрыто и не реализовано', 'Отказ', 'lost')
+  const isLostDeal = React.useCallback((d: Deal) => {
+    if (d.status === 'lost') return true;
+    const st = (d.stage_name || d.stage || '').toLowerCase();
+    return st.includes('закрыт') || st.includes('отказ') || st.includes('не реализован') || String(d.stage_id) === '143' || String(d.stage_id) === '7';
   }, []);
 
   // Deals won amount strictly from factual CRM deals
@@ -219,6 +226,11 @@ export function PulsePage() {
       .reduce((acc, d) => acc + (d.amount || 0), 0);
   }, [deals, isWonDeal]);
 
+  // Active open deals strictly in progress (excludes won and lost)
+  const openDeals = React.useMemo(() => {
+    return deals.filter((d) => !isWonDeal(d) && !isLostDeal(d));
+  }, [deals, isWonDeal, isLostDeal]);
+
   // SSOT KPIs calculations (Strictly factual, Zero Mock)
   const kpi = insights?.kpi;
   const revenue = Number(
@@ -226,8 +238,12 @@ export function PulsePage() {
   );
   const slaRiskCount = kpi?.sla_risk_count ?? kpi?.sla_at_risk_count ?? 0;
 
-  const pipelineSum = deals.reduce((acc, d) => acc + (d.amount || 0), 0);
-  const avgCheckRub = deals.length > 0 ? Math.round(pipelineSum / deals.length) : 0;
+  // Active open pipeline sum in progress (excludes won revenue and lost deals)
+  const pipelineSum = React.useMemo(() => {
+    return openDeals.reduce((acc, d) => acc + (d.amount || 0), 0);
+  }, [openDeals]);
+
+  const avgCheckRub = openDeals.length > 0 ? Math.round(pipelineSum / openDeals.length) : 0;
   const uniqueManagersCount = new Set(calls.map((c) => c.manager).filter(Boolean)).size;
 
   const monthlyTarget = settingsQuery.data?.general?.monthly_target;
@@ -264,8 +280,9 @@ export function PulsePage() {
   const lostCallsCount = calls.filter((c) => (c.score || 0) < 6).length;
 
   const dealsWonCount = deals.filter(isWonDeal).length;
-  const dealsRiskCount = deals.filter((d) => d.sla_risk || (d as any).risk).length || slaRiskCount;
-  const dealsInWorkCount = Math.max(0, deals.length - dealsWonCount - dealsRiskCount);
+  const dealsLostCount = deals.filter(isLostDeal).length;
+  const dealsRiskCount = openDeals.filter((d) => Boolean(d.sla_risk) || Boolean((d as any).risk)).length;
+  const dealsInWorkCount = Math.max(0, openDeals.length - dealsRiskCount);
   const totalDeals = deals.length;
 
   const { toast } = useToast();
@@ -528,7 +545,7 @@ export function PulsePage() {
           title="Пайплайн"
           value={isLoading ? 0 : pipelineSum.toLocaleString('ru-RU')}
           unit="₽"
-          trend={deals.length > 0 ? { direction: 'flat', value: deals.length, label: 'сделок в работе' } : undefined}
+          trend={openDeals.length > 0 ? { direction: 'flat', value: openDeals.length, label: 'сделок в работе' } : undefined}
           inverted={false}
           loading={isLoading}
         />
