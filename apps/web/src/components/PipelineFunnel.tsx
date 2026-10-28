@@ -54,14 +54,47 @@ export function PipelineFunnel({
 
         if (deals && deals.length > 0) {
           const matchingDeals = deals.filter((d) => {
+            if (d.status === 'deleted') return false;
+            if (
+              d.pipeline_id &&
+              pipeline.id &&
+              pipeline.id !== '0' &&
+              String(d.pipeline_id) !== String(pipeline.id)
+            ) {
+              return false;
+            }
             const dName = (d.stage_name || d.stage || '').toLowerCase();
-            if (dName === stNameLower) return true;
-            if (st.is_won && (d.status === 'won' || dName.includes('успеш'))) return true;
-            if (st.is_lost && (d.status === 'lost' || dName.includes('закрыт') || dName.includes('отказ'))) return true;
+            if (dName && dName === stNameLower) return true;
+            if (
+              st.is_won &&
+              (d.status === 'won' ||
+                dName.includes('успеш') ||
+                String(d.stage_id) === '142' ||
+                String(d.stage_id) === '6')
+            )
+              return true;
+            if (
+              st.is_lost &&
+              (d.status === 'lost' ||
+                dName.includes('закрыт') ||
+                dName.includes('отказ') ||
+                String(d.stage_id) === '143' ||
+                String(d.stage_id) === '7')
+            )
+              return true;
             return String(d.stage_id) === String(st.id);
           });
-          amt = matchingDeals.reduce((sum, d) => sum + (d.amount || 0), 0);
-          cnt = matchingDeals.length;
+          if (matchingDeals.length > 0) {
+            amt = matchingDeals.reduce((sum, d) => sum + (d.amount || 0), 0);
+            cnt = matchingDeals.length;
+          } else if (typeof st.deal_count === 'number' && st.deal_count > 0) {
+            // Preserve backend pre-aggregated counts if deal list lacks local stage match
+            amt = typeof st.total_amount === 'number' ? st.total_amount : 0;
+            cnt = st.deal_count;
+          } else {
+            amt = 0;
+            cnt = 0;
+          }
         }
 
         return {
@@ -145,17 +178,25 @@ export function PipelineFunnel({
   }, [deals, calls, pipeline]);
 
   const maxAmount = Math.max(...stages.map((s) => s.amount), 1);
+  const totalAmount = stages.reduce((acc, s) => acc + s.amount, 0);
+  const totalFunnelDeals = stages.reduce((acc, s) => acc + s.count, 0);
+
   const firstStage = stages[0] || { count: 0, amount: 0 };
-  const baseCount = Math.max(firstStage.count, 1);
   const lastWonStage =
     stages.find(
       (s) =>
         s.name.toLowerCase().includes('оплат') ||
-        s.name.toLowerCase().includes('успеш')
+        s.name.toLowerCase().includes('успеш') ||
+        s.name.toLowerCase().includes('won')
     ) || stages[stages.length - 1];
   const finalWonCount = lastWonStage ? lastWonStage.count : 0;
+
+  // База расчёта сквозной конверсии:
+  // Если первый этап содержит сделки (водопадная воронка) — используем его.
+  // Если первый этап пуст (снапшот CRM: новые лиды сразу взяты в работу) — используем общее число сделок в воронке.
+  const baseCount = firstStage.count > 0 ? firstStage.count : totalFunnelDeals;
   const overallConversion =
-    firstStage.count > 0 ? Math.round((finalWonCount / baseCount) * 100) : 0;
+    baseCount > 0 ? Math.round((finalWonCount / baseCount) * 100) : 0;
 
   if (loading) {
     return (
@@ -227,7 +268,9 @@ export function PipelineFunnel({
       <div className="space-y-3 pt-1" data-testid="funnel-stages-list">
         {stages.map((stage) => {
           const widthPct = maxAmount > 0 ? Math.min(100, Math.round((stage.amount / maxAmount) * 100)) : 0;
-          const convFromTop = stages[0].amount > 0 ? Math.round((stage.amount / stages[0].amount) * 100) : 0;
+          // Процент этапа: от первого этапа, если он заполнен, либо от общего объёма воронки
+          const baseStageAmount = stages[0]?.amount > 0 ? stages[0].amount : (totalAmount > 0 ? totalAmount : maxAmount);
+          const convFromTop = baseStageAmount > 0 ? Math.round((stage.amount / baseStageAmount) * 100) : 0;
 
           return (
             <div key={stage.id} className="group rounded-lg p-2 transition-colors duration-150 hover:bg-hover/50">

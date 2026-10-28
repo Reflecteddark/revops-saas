@@ -74,6 +74,24 @@ describe('PipelineFunnel', () => {
     expect(screen.getByText(/конверсия в оплату:/i)).toBeInTheDocument();
   });
 
+  it('calculates conversion correctly when first stage has 0 deals (snapshot CRM funnel)', () => {
+    const pipelineWithEmptyTop = {
+      id: 'pipe-1',
+      name: 'Основная воронка',
+      stages: [
+        { id: '1', name: 'Новый лид', deal_count: 0, total_amount: 0, is_won: false, is_lost: false },
+        { id: '2', name: 'Квалификация', deal_count: 0, total_amount: 0, is_won: false, is_lost: false },
+        { id: '3', name: 'Успешно реализовано', deal_count: 1, total_amount: 500000, is_won: true, is_lost: false },
+        { id: '4', name: 'Закрыто и не реализовано', deal_count: 1, total_amount: 500000, is_won: false, is_lost: true },
+      ],
+    };
+
+    render(<PipelineFunnel pipeline={pipelineWithEmptyTop as any} deals={[]} />);
+
+    // 1 won out of 2 total deals in pipeline = 50% conversion
+    expect(screen.getAllByText(/50%/).length).toBeGreaterThanOrEqual(1);
+  });
+
   it('renders skeleton in loading state', () => {
     render(<PipelineFunnel loading={true} />);
 
