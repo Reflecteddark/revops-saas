@@ -772,6 +772,13 @@ async def ingest_call_from_n8n(
                     setattr(deal, "avg_call_score", new_score)
                 if score is not None and score < 8:
                     setattr(deal, "is_at_risk", True)
+                current_title = str(getattr(deal, "title", "") or "")
+                if (current_title.startswith("?") or current_title.startswith("Сделка #") or not current_title) and payload.deal_title and not payload.deal_title.startswith("?"):
+                    setattr(deal, "title", payload.deal_title)
+                if payload.client and payload.client != "Клиент":
+                    current_comp = str(getattr(deal, "company_name", "") or "")
+                    if current_comp.startswith("?") or not current_comp or current_comp == "Клиент":
+                        setattr(deal, "company_name", payload.client)
 
             mgr = db.query(User).filter(
                 User.tenant_id == target_tenant

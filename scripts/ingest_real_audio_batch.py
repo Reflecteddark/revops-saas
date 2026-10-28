@@ -127,7 +127,7 @@ cr13: Защита маржинальности (скидки не даются 
 }"""
 
 
-def audit_audio_file(audio_path: Path, max_retries: int = 3) -> dict[str, Any] | None:
+def audit_audio_file(audio_path: Path, max_retries: int = 4) -> dict[str, Any] | None:
     """Streams audio file to Gemini 3.5 Flash-Lite and parses 13-criteria response."""
     if not audio_path.exists():
         logger.error(f"File not found: {audio_path}")
@@ -181,10 +181,10 @@ def audit_audio_file(audio_path: Path, max_retries: int = 3) -> dict[str, Any] |
                                     pass
                 else:
                     logger.warning(f"Attempt {attempt}: Gemini proxy returned {r.status_code}: {r.text[:120]}")
-                    time.sleep(2.0 * attempt)
+                    time.sleep(2.5 * attempt)
         except Exception as e_req:
             logger.warning(f"Attempt {attempt}: Gemini request error: {e_req}")
-            time.sleep(2.0 * attempt)
+            time.sleep(2.5 * attempt)
 
     return None
 
@@ -199,7 +199,7 @@ def ingest_call_to_api(
     audit_data: dict[str, Any],
     file_name: str,
     duration_sec: int = 120,
-    amount_str: str = "300 000 ₽"
+    amount_str: str = "350 000 ₽"
 ) -> bool:
     """Posts audited call to RevOps API endpoint (/api/v1/calls/ingest)."""
     cr_keys = [f"cr{i}" for i in range(1, 14)]
@@ -244,17 +244,20 @@ def ingest_call_to_api(
     }
 
     url = f"{API_BASE_URL}/api/v1/calls/ingest"
-    try:
-        with httpx.Client(timeout=15.0) as client:
-            resp = client.post(url, json=payload, headers=headers)
-            if resp.status_code == 200:
-                return True
-            else:
-                logger.error(f"Ingest failed for {call_id} (HTTP {resp.status_code}): {resp.text[:200]}")
-                return False
-    except Exception as e:
-        logger.error(f"Ingest network exception for {call_id}: {e}")
-        return False
+    for attempt in range(1, 4):
+        try:
+            with httpx.Client(timeout=20.0) as client:
+                resp = client.post(url, json=payload, headers=headers)
+                if resp.status_code == 200:
+                    return True
+                else:
+                    logger.error(f"Ingest attempt {attempt} failed for {call_id} (HTTP {resp.status_code}): {resp.text[:200]}")
+                    time.sleep(1.0)
+        except Exception as e:
+            logger.error(f"Ingest network exception attempt {attempt} for {call_id}: {e}")
+            time.sleep(1.0)
+
+    return False
 
 
 def run_batch_ingestion(
@@ -275,7 +278,9 @@ def run_batch_ingestion(
         "processed_items": []
     }
 
-    all_files: list[tuple[Path, str]] = []
+    neg_files: list[Path] = []
+    ops_files: list[Path] = []
+
     for fld in folder_paths:
         if not fld.exists():
             logger.warning(f"Folder does not exist: {fld}")
@@ -283,28 +288,65 @@ def run_batch_ingestion(
         flist = sorted(fld.glob("*.mp3"))
         if limit_per_folder:
             flist = flist[:limit_per_folder]
-        for f in flist:
-            all_files.append((f, fld.name))
+        if "переговор" in fld.name.lower():
+            neg_files.extend(flist)
+        else:
+            ops_files.extend(flist)
 
-    reconciliation["input_files_collected"] = len(all_files)
-    logger.info(f"=== RECONCILIATION: Collected {len(all_files)} total audio files from disk ===")
+    total_count = len(neg_files) + len(ops_files)
+    reconciliation["input_files_collected"] = total_count
+    logger.info(f"=== RECONCILIATION: Collected {total_count} audio files ({len(neg_files)} negotiations, {len(ops_files)} calls) ===")
 
-    for idx, (audio_file, folder_name) in enumerate(all_files, 1):
+    # Catalog of deals:
+    existing_amo_ids = [
+        "AMO-4870417", "AMO-4949955", "AMO-4949937", "AMO-4949939",
+        "AMO-4949949", "AMO-4949965", "AMO-4949987"
+    ]
+    deal_catalog: list[dict[str, str]] = []
+    for idx, f in enumerate(neg_files):
+        clean_name = re.sub(r"^\d+[\s\-_]+", "", f.stem).replace("_", " ").strip()
+        title = clean_name if clean_name else f"Сделка #{1001 + idx}"
+        deal_id = existing_amo_ids[idx] if idx < len(existing_amo_ids) else f"AMO-{4950000 + idx + 1}"
+        deal_catalog.append({"deal_id": deal_id, "deal_title": title})
+
+    if not deal_catalog:
+        deal_catalog = [{"deal_id": "AMO-4870417", "deal_title": "Основная сделка"}]
+
+    # Combine work items with exact deal mappings
+    work_items: list[dict[str, Any]] = []
+    for idx, f in enumerate(neg_files, 1):
+        slug = re.sub(r'[^a-zA-Z0-9]', '', f.stem)[:12] or f"neg{idx}"
+        deal = deal_catalog[idx - 1]
+        work_items.append({
+            "file": f,
+            "type": "negotiation",
+            "call_id": f"CALL-NEG-{idx:03d}-{slug}",
+            "deal_id": deal["deal_id"],
+            "deal_title": deal["deal_title"]
+        })
+
+    for idx, f in enumerate(ops_files, 1):
+        slug = re.sub(r'[^a-zA-Z0-9]', '', f.stem)[:12] or f"ops{idx}"
+        target_deal = deal_catalog[(idx - 1) % len(deal_catalog)]
+        work_items.append({
+            "file": f,
+            "type": "operational",
+            "call_id": f"CALL-OPS-{idx:03d}-{slug}",
+            "deal_id": target_deal["deal_id"],
+            "deal_title": target_deal["deal_title"]
+        })
+
+    for global_idx, item in enumerate(work_items, 1):
+        audio_file: Path = item["file"]
         file_name = audio_file.name
         file_size_kb = round(audio_file.stat().st_size / 1024, 1)
+        call_id = item["call_id"]
+        deal_id = item["deal_id"]
+        deal_title = item["deal_title"]
 
-        clean_name = re.sub(r"^\d+[\s\-_]+", "", audio_file.stem)
-        deal_title = clean_name.replace("_", " ").strip()
-        if not deal_title or deal_title.startswith("record"):
-            deal_title = f"Сделка #{1000 + idx}"
+        logger.info(f"\n[{global_idx}/{len(work_items)}] ({item['type'].upper()}) «{file_name}» ({file_size_kb} KB) -> Deal: {deal_id} [{deal_title}]")
 
-        # Clean sanitized ID
-        call_id = f"CALL-{folder_name[:4].upper()}-{idx:03d}-{re.sub(r'[^a-zA-Z0-9]', '', audio_file.stem)[:15]}"
-        deal_id = f"AMO-{4870400 + idx}" if tenant_id == "TNT-002" else f"B24-{1000 + idx}"
-
-        logger.info(f"\n[{idx}/{len(all_files)}] Обработка: «{file_name}» ({file_size_kb} KB) -> Deal: {deal_title}")
-
-        # 1. AI Audit via Gemini
+        # 1. AI Audit via Gemini 3.5 Flash-Lite
         t0 = time.time()
         audit_res = audit_audio_file(audio_file)
         dur_audit = round(time.time() - t0, 1)
@@ -374,6 +416,25 @@ def run_batch_ingestion(
         reconciliation["input_files_collected"] - reconciliation["ingested_to_db"]
     )
 
+    # 3. Live verification of delivery to LK
+    reconciliation["lk_delivered_calls_count"] = 0
+    reconciliation["lk_delivered_deals_count"] = 0
+    try:
+        url_verify = f"{API_BASE_URL}/api/v1/calls/data?tenant_id={tenant_id}"
+        headers_verify = {"X-Admin-Key": ADMIN_KEY, "User-Agent": "Mozilla/5.0"}
+        with httpx.Client(timeout=10.0, follow_redirects=True) as client:
+            r_verify = client.get(url_verify, headers=headers_verify)
+            if r_verify.status_code == 200:
+                lk_calls = r_verify.json().get("calls", [])
+                reconciliation["lk_delivered_calls_count"] = len(lk_calls)
+
+            r_deals = client.get(f"{API_BASE_URL}/api/v1/deals?tenant_id={tenant_id}", headers=headers_verify)
+            if r_deals.status_code == 200:
+                lk_deals = r_deals.json().get("deals", [])
+                reconciliation["lk_delivered_deals_count"] = len(lk_deals)
+    except Exception as e:
+        logger.warning(f"Could not verify live LK API calls: {e}")
+
     # Save log artifact
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
@@ -386,8 +447,10 @@ def run_batch_ingestion(
     logger.info(f" 1. Забрал из папок на диске:      {reconciliation['input_files_collected']} файлов")
     logger.info(f" 2. Прошло по системе (Gemini AI): {reconciliation['audited_by_gemini']} звонков")
     logger.info(f" 3. Доставилось в БД и ЛК:         {reconciliation['ingested_to_db']} звонков")
-    logger.info(f" 4. Ошибки аудита / сбои API:      {reconciliation['failed_audit']} / {reconciliation['failed_ingest']}")
-    logger.info(f" 5. Расхождение (Delta):           {reconciliation['reconciliation_delta']} файлов")
+    logger.info(f" 4. Звонков в ЛК (GET /calls/data): {reconciliation['lk_delivered_calls_count']} звонков")
+    logger.info(f" 5. Сделок в ЛК (GET /deals):      {reconciliation['lk_delivered_deals_count']} сделок")
+    logger.info(f" 6. Ошибки аудита / сбои API:      {reconciliation['failed_audit']} / {reconciliation['failed_ingest']}")
+    logger.info(f" 7. Расхождение (Delta):           {reconciliation['reconciliation_delta']} файлов")
     if reconciliation["reconciliation_delta"] == 0:
         logger.info("  СТАТУС ЦЕЛОСТНОСТИ: 100% ПОЛНОЕ СООТВЕТСТВИЕ БЕЗ ПОТЕРЬ ✅")
     else:
@@ -403,6 +466,5 @@ if __name__ == "__main__":
         Path(r"C:\Users\strel\Desktop\RevOps Platform\Переговоры_asales"),
         Path(r"C:\Users\strel\Desktop\RevOps Platform\Звонки"),
     ]
-    # Check limit argument
     limit = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else None
     run_batch_ingestion(folders, tenant_id="TNT-002", limit_per_folder=limit)
