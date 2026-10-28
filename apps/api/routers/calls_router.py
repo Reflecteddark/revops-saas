@@ -18,7 +18,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from packages.analytics_engine.speech_scoring import evaluate_speech_scorecard
-from packages.database.models import CallRecording, Deal, User, UserRole
+from packages.database.models import CallRecording, Deal, DealStage, User, UserRole
 from packages.database.session import get_db
 
 from ..auth import get_current_user, security
@@ -743,6 +743,36 @@ async def ingest_call_from_n8n(
                 (Deal.id == payload.deal_id) | (Deal.external_crm_id == payload.deal_id)
             ).first() if payload.deal_id else None
 
+            if not deal and payload.deal_id:
+                ws_id = f"ws_{target_tenant}"
+                amt_clean = float(re.sub(r"[^\d.]", "", str(payload.amount or "300000")) or 300000)
+                deal = Deal(
+                    id=payload.deal_id,
+                    external_crm_id=payload.deal_id,
+                    tenant_id=target_tenant,
+                    workspace_id=ws_id,
+                    title=payload.deal_title or f"Сделка {payload.deal_id}",
+                    company_name=payload.client or "Клиент",
+                    budget=amt_clean,
+                    stage=DealStage.QUALIFICATION if status == "won" else DealStage.LEAD_INCOMING,
+                    stage_name=payload.stage or ("Переговоры" if status == "won" else "Первичный контакт"),
+                    pipeline_name="Основная воронка",
+                    pipeline_id="0",
+                    is_at_risk=bool(score is not None and score < 8),
+                    avg_call_score=float(score) if score is not None else 0.0,
+                    crm_source="amocrm" if target_tenant == "TNT-002" else "bitrix24",
+                    status="active"
+                )
+                db.add(deal)
+                db.flush()
+            elif deal:
+                if score is not None:
+                    curr_score = getattr(deal, "avg_call_score", 0.0) or 0.0
+                    new_score = float(score) if not curr_score else round((float(curr_score) + float(score)) / 2, 1)
+                    setattr(deal, "avg_call_score", new_score)
+                if score is not None and score < 8:
+                    setattr(deal, "is_at_risk", True)
+
             mgr = db.query(User).filter(
                 User.tenant_id == target_tenant
             ).first()
@@ -753,7 +783,7 @@ async def ingest_call_from_n8n(
                 deal_id=deal.id if deal else (payload.deal_id if payload.deal_id and db.query(Deal).filter(Deal.id == payload.deal_id).first() else None),
                 manager_id=mgr.id if mgr else None,
                 external_call_id=call_id,
-                client_phone="+79000000000",
+                client_phone=payload.client or "+79000000000",
                 duration_seconds=dur_sec,
                 status="completed",
                 transcript_text=payload.transcript or "",
