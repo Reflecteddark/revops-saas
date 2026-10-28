@@ -1,12 +1,13 @@
 /**
  * apps/web/src/pages/DealsPage.tsx
  *
- * Deals and Sales Pipeline Management Page.
+ * Enterprise Revenue Intelligence Platform for Deals & Funnel.
  * Features:
  * - Multi-Pipeline Switcher (amoCRM pipelines & Bitrix24 deal categories)
- * - Dynamic Stages Kanban Board with custom CRM colors
- * - Tabular view with search and filters (SLA risk, Loss reasons, Manager)
- * - Slide-Over Deal Drawer with Whisper audio audits and 13 criteria scorecard
+ * - Executive Revenue Control Strip (Nominal Pipeline, Weighted Forecast, Pipeline at Risk, Velocity)
+ * - Smart Deal Cards in Kanban (Health Score 0-100, Velocity / Stagnation, Divergence Alerts, AI Next Best Action)
+ * - Focus Mode: Радар рисков SLA (Executive table for 15-min daily sales standups)
+ * - High-density Tabular registry with multi-criteria filters
  * - One-click CRM direct resync
  */
 
@@ -19,6 +20,13 @@ import {
   AlertTriangle,
   Phone,
   XCircle,
+  Activity,
+  TrendingUp,
+  Clock,
+  ShieldAlert,
+  Sparkles,
+  Zap,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -26,18 +34,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { dealsApi } from '@/lib/api';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 import { DealDetailsDrawer } from '@/components/DealDetailsDrawer';
+import { computeDealHealth, DealHealthMetrics } from '@/lib/dealHealth';
 import type { Deal, Pipeline } from '@/types/api';
 
-type ViewMode = 'kanban' | 'table';
+type ViewMode = 'kanban' | 'radar' | 'table';
+type QuickFilter = 'all' | 'risk' | 'stalled' | 'divergence' | 'sla';
+
+interface DealWithHealth extends Deal {
+  health: DealHealthMetrics;
+}
 
 export function DealsPage() {
   const activeTenantId = useRevOpsStore((s) => s.activeTenantId) || 'TNT-001';
 
   // State
   const [viewMode, setViewMode] = React.useState<ViewMode>('kanban');
+  const [activeFilter, setActiveFilter] = React.useState<QuickFilter>('all');
   const [pipelines, setPipelines] = React.useState<Pipeline[]>([]);
-  const [selectedPipelineId, setSelectedPipelineId] =
-    React.useState<string>('');
+  const [selectedPipelineId, setSelectedPipelineId] = React.useState<string>('');
   const [deals, setDeals] = React.useState<Deal[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [syncing, setSyncing] = React.useState<boolean>(false);
@@ -155,6 +169,14 @@ export function DealsPage() {
     );
   }, [pipelines, selectedPipelineId]);
 
+  // Compute Health Metrics for all deals
+  const dealsWithHealth: DealWithHealth[] = React.useMemo(() => {
+    return deals.map((d) => ({
+      ...d,
+      health: computeDealHealth(d),
+    }));
+  }, [deals]);
+
   // Extract all unique loss reasons for filter dropdown
   const uniqueLossReasons = React.useMemo(() => {
     const reasons = new Set<string>();
@@ -166,15 +188,40 @@ export function DealsPage() {
     return Array.from(reasons);
   }, [deals]);
 
-  // Filter deals based on search, SLA risk, and loss reasons
+  // Quick filter counts
+  const filterCounts = React.useMemo(() => {
+    return {
+      all: dealsWithHealth.length,
+      risk: dealsWithHealth.filter((d) => d.health.healthTier === 'critical').length,
+      stalled: dealsWithHealth.filter((d) => d.health.isStalled).length,
+      divergence: dealsWithHealth.filter((d) => d.health.divergenceRisk).length,
+      sla: dealsWithHealth.filter((d) => d.sla_risk).length,
+    };
+  }, [dealsWithHealth]);
+
+  // Filter deals based on search, SLA risk, loss reasons, and quick filter pills
   const filteredDeals = React.useMemo(() => {
-    return deals.filter((d) => {
+    return dealsWithHealth.filter((d) => {
+      // Quick filter pill
+      if (activeFilter === 'risk' && d.health.healthTier !== 'critical') return false;
+      if (activeFilter === 'stalled' && !d.health.isStalled) return false;
+      if (activeFilter === 'divergence' && !d.health.divergenceRisk) return false;
+      if (activeFilter === 'sla' && !d.sla_risk) return false;
+
+      // Checkbox SLA filter compatibility
       if (slaRiskOnly && !d.sla_risk) return false;
-      if (lossReasonFilter !== 'all' && d.loss_reason !== lossReasonFilter)
+
+      // Loss reason filter
+      if (lossReasonFilter !== 'all' && d.loss_reason !== lossReasonFilter) {
         return false;
+      }
+
+      // Search query
       if (search.trim()) {
         const s = search.trim().toLowerCase();
-        const titleMatch = d.title.toLowerCase().includes(s);
+        const titleMatch =
+          d.title.toLowerCase().includes(s) ||
+          d.health.cleanTitle.toLowerCase().includes(s);
         const compMatch = String(d.company_name || '')
           .toLowerCase()
           .includes(s);
@@ -184,12 +231,13 @@ export function DealsPage() {
         const idMatch = String(d.crm_deal_id || d.deal_id || '')
           .toLowerCase()
           .includes(s);
-        if (!titleMatch && !compMatch && !managerMatch && !idMatch)
+        if (!titleMatch && !compMatch && !managerMatch && !idMatch) {
           return false;
+        }
       }
       return true;
     });
-  }, [deals, search, slaRiskOnly, lossReasonFilter]);
+  }, [dealsWithHealth, activeFilter, search, slaRiskOnly, lossReasonFilter]);
 
   // Group deals into Kanban columns based on pipeline stages
   const kanbanColumns = React.useMemo(() => {
@@ -202,15 +250,17 @@ export function DealsPage() {
         if (
           st.is_won &&
           (d.status === 'won' || dealStageName.includes('успеш'))
-        )
+        ) {
           return true;
+        }
         if (
           st.is_lost &&
           (d.status === 'lost' ||
             dealStageName.includes('закрыт') ||
             dealStageName.includes('отказ'))
-        )
+        ) {
           return true;
+        }
         return String(d.stage_id) === String(st.id);
       });
 
@@ -227,12 +277,33 @@ export function DealsPage() {
     });
   }, [activePipeline, filteredDeals]);
 
+  // Enterprise Executive Metrics calculations
   const totalDealsCount = filteredDeals.length;
   const totalPipelineAmount = filteredDeals.reduce(
     (sum, d) => sum + (d.amount || 0),
     0
   );
+  const weightedForecast = Math.round(
+    filteredDeals.reduce(
+      (sum, d) => sum + (d.amount || 0) * (d.health.winProbability / 100),
+      0
+    )
+  );
+  const pipelineAtRisk = filteredDeals
+    .filter((d) => d.health.healthTier === 'critical' || d.sla_risk)
+    .reduce((sum, d) => sum + (d.amount || 0), 0);
   const totalSlaRisks = filteredDeals.filter((d) => d.sla_risk).length;
+
+  // Stalled and Risk deals for Radar View
+  const radarDeals = React.useMemo(() => {
+    return dealsWithHealth.filter(
+      (d) =>
+        d.sla_risk ||
+        d.health.healthTier === 'critical' ||
+        d.health.isStalled ||
+        d.health.divergenceRisk
+    );
+  }, [dealsWithHealth]);
 
   return (
     <div className="space-y-6" data-testid="deals-page">
@@ -243,8 +314,7 @@ export function DealsPage() {
             Сделки и Воронка продаж
           </h1>
           <p className="text-sm text-secondary">
-            Мультиворонки CRM, кастомные этапы, контроль SLA и аналитика причин
-            отказа
+            Revenue Intelligence, мультиворонки CRM, контроль темпа и аудит переговоров
           </p>
         </div>
 
@@ -255,7 +325,7 @@ export function DealsPage() {
             <select
               value={selectedPipelineId}
               onChange={(e) => handlePipelineChange(e.target.value)}
-              className="h-9 cursor-pointer rounded-lg border border-subtle bg-surface px-3 py-1.5 pr-8 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              className="h-9 cursor-pointer rounded-lg border border-subtle bg-surface px-3 py-1.5 pr-8 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
               aria-label="Выбор воронки продаж"
             >
               {pipelines.map((p) => (
@@ -267,13 +337,13 @@ export function DealsPage() {
           </div>
 
           {/* View Toggle */}
-          <div className="flex rounded-lg border border-subtle bg-surface p-0.5">
+          <div className="flex rounded-lg border border-subtle bg-surface p-0.5 shadow-xs">
             <button
               onClick={() => setViewMode('kanban')}
               className={cn(
                 'flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
                 viewMode === 'kanban'
-                  ? 'bg-active font-semibold text-foreground shadow-sm'
+                  ? 'bg-active font-semibold text-foreground shadow-xs'
                   : 'text-tertiary hover:text-foreground'
               )}
             >
@@ -281,11 +351,28 @@ export function DealsPage() {
               <span>Канбан</span>
             </button>
             <button
+              onClick={() => setViewMode('radar')}
+              className={cn(
+                'flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
+                viewMode === 'radar'
+                  ? 'bg-rose-500/15 font-semibold text-rose-300 shadow-xs'
+                  : 'text-tertiary hover:text-foreground'
+              )}
+            >
+              <Zap className="h-3.5 w-3.5 text-rose-400" />
+              <span>Радар рисков</span>
+              {radarDeals.length > 0 && (
+                <span className="ml-1 rounded-full bg-rose-500/20 px-1.5 py-0.2 text-[10px] font-bold text-rose-400">
+                  {radarDeals.length}
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setViewMode('table')}
               className={cn(
                 'flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
                 viewMode === 'table'
-                  ? 'bg-active font-semibold text-foreground shadow-sm'
+                  ? 'bg-active font-semibold text-foreground shadow-xs'
                   : 'text-tertiary hover:text-foreground'
               )}
             >
@@ -298,7 +385,7 @@ export function DealsPage() {
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-subtle bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:opacity-50"
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-subtle bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:opacity-50 shadow-xs"
             title="Синхронизировать с amoCRM / Bitrix24"
           >
             <RefreshCw
@@ -312,80 +399,197 @@ export function DealsPage() {
         </div>
       </div>
 
-      {/* Aggregate KPI Strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-subtle bg-surface p-4">
-          <span className="text-xs text-tertiary">Всего сделок</span>
-          <p className="mt-1 text-xl font-bold text-foreground">
+      {/* Enterprise Executive Control Strip */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {/* Card 1: Total Deals */}
+        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-tertiary">Всего сделок</span>
+            <Activity className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <p className="text-xl font-bold font-mono text-foreground">
             {totalDealsCount}
           </p>
-        </div>
-        <div className="rounded-xl border border-subtle bg-surface p-4">
-          <span className="text-xs text-tertiary">Общий пайплайн</span>
-          <p className="mt-1 text-xl font-bold text-foreground">
-            {totalPipelineAmount.toLocaleString('ru-RU')} ₽
-          </p>
-        </div>
-        <div className="rounded-xl border border-subtle bg-surface p-4">
-          <span className="text-xs text-tertiary">Риск SLA по регламенту</span>
-          <p className="mt-1 text-xl font-bold text-amber-400">
-            {totalSlaRisks}
-          </p>
-        </div>
-        <div className="rounded-xl border border-subtle bg-surface p-4">
-          <span className="text-xs text-tertiary">Активная воронка</span>
-          <p className="mt-1 truncate text-sm font-semibold text-foreground">
+          <p className="text-[11px] text-tertiary truncate">
             {activePipeline.name}
           </p>
         </div>
-      </div>
 
-      {/* Search & Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-subtle bg-surface p-3">
-        <div className="flex min-w-[240px] flex-1 items-center gap-2">
-          <Search className="h-4 w-4 shrink-0 text-tertiary" />
-          <input
-            type="text"
-            placeholder="Поиск по сделке, компании или менеджеру..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-transparent text-xs text-foreground placeholder:text-tertiary focus:outline-none"
-          />
+        {/* Card 2: Nominal Pipeline */}
+        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-tertiary">Общий пайплайн</span>
+            <span className="font-mono text-[10px] text-tertiary">100%</span>
+          </div>
+          <p className="text-xl font-bold font-mono text-foreground">
+            {totalPipelineAmount.toLocaleString('ru-RU')} ₽
+          </p>
+          <p className="text-[11px] text-tertiary">
+            Номинальная сумма воронки
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* SLA Risk Filter */}
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-secondary hover:text-foreground">
+        {/* Card 3: Weighted AI Forecast */}
+        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-tertiary">Взвешенный прогноз ИИ</span>
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+          </div>
+          <p className="text-xl font-bold font-mono text-emerald-400">
+            {weightedForecast.toLocaleString('ru-RU')} ₽
+          </p>
+          <p className="text-[11px] text-tertiary">
+            С учётом этапа и звонков
+          </p>
+        </div>
+
+        {/* Card 4: Pipeline at Risk */}
+        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-tertiary">Выручка под угрозой</span>
+            <AlertTriangle className="h-3.5 w-3.5 text-rose-400" />
+          </div>
+          <p className="text-xl font-bold font-mono text-rose-400">
+            {pipelineAtRisk.toLocaleString('ru-RU')} ₽
+          </p>
+          <p className="text-[11px] text-tertiary">
+            Критический health / риск
+          </p>
+        </div>
+
+        {/* Card 5: SLA & Velocity Control */}
+        <div className="rounded-xl border border-subtle bg-surface p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-tertiary">Риск SLA по регламенту</span>
+            <Clock className="h-3.5 w-3.5 text-amber-400" />
+          </div>
+          <p className="text-xl font-bold font-mono text-amber-400">
+            {totalSlaRisks}
+          </p>
+          <p className="text-[11px] text-tertiary">
+            {filterCounts.stalled > 0
+              ? `${filterCounts.stalled} зависло >3 дней`
+              : 'Все в регламенте'}
+          </p>
+        </div>
+      </div>
+
+      {/* Quick Filter Pills & Search Bar */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-subtle bg-surface p-3 shadow-xs">
+          {/* Search Box */}
+          <div className="flex min-w-[240px] flex-1 items-center gap-2">
+            <Search className="h-4 w-4 shrink-0 text-tertiary" />
             <input
-              type="checkbox"
-              checked={slaRiskOnly}
-              onChange={(e) => setSlaRiskOnly(e.target.checked)}
-              className="rounded border-subtle text-primary focus:ring-primary"
+              type="text"
+              placeholder="Поиск по сделке, компании или менеджеру..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-transparent text-xs text-foreground placeholder:text-tertiary focus:outline-none"
             />
-            <span className="font-semibold text-amber-400">
-              Только риск SLA
-            </span>
-          </label>
+          </div>
 
-          {/* Loss Reason Dropdown */}
-          {uniqueLossReasons.length > 0 && (
-            <select
-              value={lossReasonFilter}
-              onChange={(e) => setLossReasonFilter(e.target.value)}
-              className="bg-subtle/50 h-8 rounded-lg border border-subtle px-2.5 text-xs text-secondary focus:outline-none"
-            >
-              <option value="all">Все причины закрытия</option>
-              {uniqueLossReasons.map((lr) => (
-                <option key={lr} value={lr}>
-                  {lr}
-                </option>
-              ))}
-            </select>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* SLA Risk Filter Checkbox */}
+            <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-secondary hover:text-foreground">
+              <input
+                type="checkbox"
+                checked={slaRiskOnly}
+                onChange={(e) => setSlaRiskOnly(e.target.checked)}
+                className="rounded border-subtle text-primary focus:ring-primary"
+              />
+              <span className="font-semibold text-amber-400">
+                Только риск SLA
+              </span>
+            </label>
+
+            {/* Loss Reason Dropdown */}
+            {uniqueLossReasons.length > 0 && (
+              <select
+                value={lossReasonFilter}
+                onChange={(e) => setLossReasonFilter(e.target.value)}
+                className="bg-subtle/50 h-8 rounded-lg border border-subtle px-2.5 text-xs text-secondary focus:outline-none"
+              >
+                <option value="all">Все причины закрытия</option>
+                {uniqueLossReasons.map((lr) => (
+                  <option key={lr} value={lr}>
+                    {lr}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        </div>
+
+        {/* Executive Quick Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setActiveFilter('all')}
+            className={cn(
+              'h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              activeFilter === 'all'
+                ? 'border-primary/50 bg-primary/10 text-primary font-semibold shadow-xs'
+                : 'border-subtle bg-surface text-secondary hover:text-foreground hover:bg-hover'
+            )}
+          >
+            Все сделки ({filterCounts.all})
+          </button>
+
+          <button
+            onClick={() => setActiveFilter('risk')}
+            className={cn(
+              'flex items-center gap-1.5 h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              activeFilter === 'risk'
+                ? 'border-rose-500/50 bg-rose-500/15 text-rose-300 font-semibold shadow-xs'
+                : 'border-subtle bg-surface text-secondary hover:text-rose-400 hover:bg-hover'
+            )}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+            <span>Зона риска ({filterCounts.risk})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveFilter('stalled')}
+            className={cn(
+              'flex items-center gap-1.5 h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              activeFilter === 'stalled'
+                ? 'border-amber-500/50 bg-amber-500/15 text-amber-300 font-semibold shadow-xs'
+                : 'border-subtle bg-surface text-secondary hover:text-amber-400 hover:bg-hover'
+            )}
+          >
+            <Clock className="h-3 w-3 text-amber-400" />
+            <span>Зависшие &gt;3 дн. ({filterCounts.stalled})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveFilter('divergence')}
+            className={cn(
+              'flex items-center gap-1.5 h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              activeFilter === 'divergence'
+                ? 'border-indigo-500/50 bg-indigo-500/15 text-indigo-300 font-semibold shadow-xs'
+                : 'border-subtle bg-surface text-secondary hover:text-indigo-400 hover:bg-hover'
+            )}
+          >
+            <ShieldAlert className="h-3 w-3 text-indigo-400" />
+            <span>Расхождения с CRM ({filterCounts.divergence})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveFilter('sla')}
+            className={cn(
+              'flex items-center gap-1.5 h-7 rounded-lg px-3 text-xs font-medium transition-all border',
+              activeFilter === 'sla'
+                ? 'border-amber-500/50 bg-amber-500/15 text-amber-300 font-semibold shadow-xs'
+                : 'border-subtle bg-surface text-secondary hover:text-amber-400 hover:bg-hover'
+            )}
+          >
+            <AlertTriangle className="h-3 w-3 text-amber-400" />
+            <span>Риск SLA ({filterCounts.sla})</span>
+          </button>
         </div>
       </div>
 
-      {/* Main View: Kanban vs Table */}
+      {/* Main View Area */}
       {loading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -400,7 +604,7 @@ export function DealsPage() {
           ))}
         </div>
       ) : viewMode === 'kanban' ? (
-        /* Kanban Board */
+        /* ▦ Smart Kanban Board */
         <div className="flex gap-4 overflow-x-auto pb-4">
           {kanbanColumns.map(({ stage, deals: colDeals, totalAmount }) => {
             const stageColor = stage.color || '#9E9E9E';
@@ -408,7 +612,7 @@ export function DealsPage() {
             return (
               <div
                 key={stage.id}
-                className="bg-surface/60 flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-subtle shadow-sm"
+                className="bg-surface/70 flex w-80 shrink-0 flex-col overflow-hidden rounded-xl border border-subtle shadow-xs"
               >
                 {/* Column Header */}
                 <div
@@ -432,7 +636,7 @@ export function DealsPage() {
                 </div>
 
                 {/* Column Deals List */}
-                <div className="max-h-[680px] flex-1 space-y-2.5 overflow-y-auto p-2">
+                <div className="max-h-[720px] flex-1 space-y-2.5 overflow-y-auto p-2.5">
                   {colDeals.length === 0 ? (
                     <div className="border-subtle/60 rounded-lg border border-dashed p-4 text-center">
                       <span className="text-[11px] text-tertiary">
@@ -440,88 +644,320 @@ export function DealsPage() {
                       </span>
                     </div>
                   ) : (
-                    colDeals.map((d) => (
-                      <div
-                        key={d.id}
-                        onClick={() => {
-                          setSelectedDeal(d);
-                          setDrawerOpen(true);
-                        }}
-                        className="shadow-xs hover:border-primary/50 group relative cursor-pointer space-y-2 rounded-lg border border-subtle bg-surface p-3.5 transition-all hover:shadow-md"
-                      >
-                        {/* Title & Company */}
-                        <div className="space-y-0.5">
-                          <span className="line-clamp-2 text-xs font-semibold text-foreground transition-colors group-hover:text-primary">
-                            {d.company_name || d.title}
-                          </span>
-                          <span className="block font-mono text-[10px] text-tertiary">
-                            {d.crm_deal_id || d.id}
-                          </span>
-                        </div>
+                    colDeals.map((d) => {
+                      const healthColor =
+                        d.health.healthTier === 'healthy'
+                          ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
+                          : d.health.healthTier === 'warning'
+                          ? 'border-amber-500/30 text-amber-400 bg-amber-500/10'
+                          : 'border-rose-500/30 text-rose-400 bg-rose-500/10';
 
-                        {/* Amount */}
-                        <div className="font-mono text-sm font-bold text-foreground">
-                          {d.amount_str ||
-                            `${d.amount?.toLocaleString('ru-RU')} ₽`}
-                        </div>
+                      return (
+                        <div
+                          key={d.id}
+                          onClick={() => {
+                            setSelectedDeal(d);
+                            setDrawerOpen(true);
+                          }}
+                          className="shadow-xs hover:border-primary/50 group relative cursor-pointer space-y-2.5 rounded-lg border border-subtle bg-surface p-3.5 transition-all hover:shadow-md"
+                        >
+                          {/* Card Top Row: Title & Health Score */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-0.5 min-w-0">
+                              <span className="line-clamp-2 text-xs font-semibold text-foreground transition-colors group-hover:text-primary">
+                                {d.company_name || d.health.cleanTitle}
+                              </span>
+                              <span className="block font-mono text-[10px] text-tertiary">
+                                {d.crm_deal_id || d.id}
+                              </span>
+                            </div>
 
-                        {/* Badges / Indicators */}
-                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                          {/* SLA Risk Alert Badge */}
-                          {d.sla_risk && (
+                            {/* Health Score Pill */}
                             <Badge
                               variant="outline"
-                              className="border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-[10px] font-semibold text-amber-300"
+                              className={cn(
+                                'font-mono text-[10px] font-bold px-1.5 py-0 shrink-0',
+                                healthColor
+                              )}
+                              title={`Health Score: ${d.health.healthScore}/100. Win Prob: ${d.health.winProbability}%`}
                             >
-                              <AlertTriangle className="mr-1 h-3 w-3 text-amber-400" />
-                              Риск SLA
+                              <Activity className="h-2.5 w-2.5 mr-1" />
+                              {d.health.healthScore}
                             </Badge>
-                          )}
+                          </div>
 
-                          {/* Loss Reason Badge */}
-                          {d.loss_reason && (
-                            <Badge
-                              variant="outline"
-                              className="max-w-[180px] truncate border-rose-500/30 bg-rose-500/10 px-1.5 py-0 text-[10px] font-medium text-rose-300"
-                            >
-                              <XCircle className="mr-1 h-3 w-3 shrink-0 text-rose-400" />
-                              {d.loss_reason}
-                            </Badge>
-                          )}
+                          {/* Amount */}
+                          <div className="flex items-baseline justify-between">
+                            <span className="font-mono text-sm font-bold text-foreground">
+                              {d.amount_str ||
+                                `${d.amount?.toLocaleString('ru-RU')} ₽`}
+                            </span>
+                            <span className="text-[10px] text-tertiary font-mono">
+                              ИИ: {d.health.winProbability}%
+                            </span>
+                          </div>
 
-                          {/* Calls Count Badge */}
-                          {typeof d.calls_count === 'number' &&
-                            d.calls_count > 0 && (
+                          {/* Risk, Velocity and Touchpoint Badges */}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                            {/* Divergence Risk Badge */}
+                            {d.health.divergenceRisk && (
                               <Badge
                                 variant="outline"
-                                className="border-primary/30 bg-primary/10 px-1.5 py-0 font-mono text-[10px] text-primary"
+                                className="border-rose-500/40 bg-rose-500/15 px-1.5 py-0 text-[10px] font-semibold text-rose-300"
+                                title="Сделка на продвинутом этапе, но аудиты звонков или SLA сигнализируют о срыве"
                               >
-                                <Phone className="mr-1 h-3 w-3" />
-                                {d.calls_count}
+                                <ShieldAlert className="mr-1 h-3 w-3 text-rose-400" />
+                                Расхождение CRM
                               </Badge>
                             )}
-                        </div>
 
-                        {/* Responsible Manager */}
-                        <div className="border-subtle/50 flex items-center justify-between border-t pt-1 text-[11px] text-tertiary">
-                          <span className="max-w-[140px] truncate">
-                            {d.responsible_user || 'Не назначен'}
-                          </span>
-                          <span className="font-mono text-[10px]">
-                            {d.created_at ? d.created_at.substring(0, 10) : ''}
-                          </span>
+                            {/* SLA Risk Alert Badge */}
+                            {d.sla_risk && !d.health.divergenceRisk && (
+                              <Badge
+                                variant="outline"
+                                className="border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-[10px] font-semibold text-amber-300"
+                              >
+                                <AlertTriangle className="mr-1 h-3 w-3 text-amber-400" />
+                                Риск SLA
+                              </Badge>
+                            )}
+
+                            {/* Velocity / Stagnation Badge */}
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'px-1.5 py-0 text-[10px] font-mono',
+                                d.health.isStalled
+                                  ? 'border-amber-500/40 bg-amber-500/15 text-amber-300 font-semibold'
+                                  : 'border-subtle text-tertiary'
+                              )}
+                              title={
+                                d.health.isStalled
+                                  ? `Зависла на этапе более ${d.health.daysInStage} дней!`
+                                  : `Дней на этапе: ${d.health.daysInStage}`
+                              }
+                            >
+                              <Clock className="mr-1 h-3 w-3" />
+                              {d.health.daysInStage} дн.
+                            </Badge>
+
+                            {/* Loss Reason Badge */}
+                            {d.loss_reason && (
+                              <Badge
+                                variant="outline"
+                                className="max-w-[180px] truncate border-rose-500/30 bg-rose-500/10 px-1.5 py-0 text-[10px] font-medium text-rose-300"
+                              >
+                                <XCircle className="mr-1 h-3 w-3 shrink-0 text-rose-400" />
+                                {d.loss_reason}
+                              </Badge>
+                            )}
+
+                            {/* Calls Count Badge */}
+                            {typeof d.calls_count === 'number' &&
+                              d.calls_count > 0 && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-primary/30 bg-primary/10 px-1.5 py-0 font-mono text-[10px] text-primary"
+                                >
+                                  <Phone className="mr-1 h-3 w-3" />
+                                  {d.calls_count}
+                                  {d.avg_call_score
+                                    ? ` • ${Math.round(d.avg_call_score)}%`
+                                    : ''}
+                                </Badge>
+                              )}
+                          </div>
+
+                          {/* AI Next Best Action Strip */}
+                          <div className="rounded bg-subtle/30 px-2 py-1 text-[11px] text-secondary flex items-center gap-1.5">
+                            <Sparkles className="h-3 w-3 text-amber-400 shrink-0" />
+                            <span className="truncate">{d.health.aiNextAction}</span>
+                          </div>
+
+                          {/* Responsible Manager */}
+                          <div className="border-subtle/50 flex items-center justify-between border-t pt-1.5 text-[11px] text-tertiary">
+                            <span className="max-w-[140px] truncate">
+                              {d.responsible_user || 'Не назначен'}
+                            </span>
+                            <span className="font-mono text-[10px]">
+                              {d.created_at ? d.created_at.substring(0, 10) : ''}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
             );
           })}
         </div>
+      ) : viewMode === 'radar' ? (
+        /* ⚡ Радар рисков SLA (Focus Mode for РОП Standup) */
+        <div className="space-y-4">
+          <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-rose-500/10 p-2 text-rose-400">
+                <Zap className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">
+                  Радар рисков SLA и зависших сделок
+                </h3>
+                <p className="text-xs text-secondary">
+                  Фокусный реестр для ежедневной 15-минутки РОПа. Сделки с угрозой срыва, нарушением регламента или застоем.
+                </p>
+              </div>
+            </div>
+            <Badge variant="outline" className="border-rose-500/40 text-rose-300 font-mono">
+              На контроле: {radarDeals.length} сделок
+            </Badge>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-subtle bg-surface shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-subtle/40 border-b border-subtle text-[10px] font-semibold uppercase tracking-wider text-tertiary">
+                  <tr>
+                    <th className="px-4 py-3">Сделка</th>
+                    <th className="px-4 py-3">Health</th>
+                    <th className="px-4 py-3 text-right">Сумма</th>
+                    <th className="px-4 py-3">Этап / Застой</th>
+                    <th className="px-4 py-3">Фактор риска</th>
+                    <th className="px-4 py-3">ИИ-Рекомендация РОПу</th>
+                    <th className="px-4 py-3">Менеджер</th>
+                    <th className="px-4 py-3 text-right">Действие</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-subtle">
+                  {radarDeals.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-secondary">
+                        <div className="max-w-md mx-auto space-y-1">
+                          <p className="text-sm font-semibold text-emerald-400">
+                            Все сделки под контролем!
+                          </p>
+                          <p className="text-xs text-tertiary">
+                            В текущей воронке нет сделок с критическим здоровьем или нарушением SLA.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    radarDeals.map((d) => (
+                      <tr
+                        key={d.id}
+                        onClick={() => {
+                          setSelectedDeal(d);
+                          setDrawerOpen(true);
+                        }}
+                        className="hover:bg-hover/60 cursor-pointer transition-colors"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-foreground">
+                            {d.company_name || d.health.cleanTitle}
+                          </div>
+                          <div className="font-mono text-[10px] text-tertiary">
+                            {d.crm_deal_id || d.id}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'font-mono text-[11px] font-bold px-2 py-0.5',
+                              d.health.healthTier === 'healthy'
+                                ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
+                                : d.health.healthTier === 'warning'
+                                ? 'border-amber-500/30 text-amber-400 bg-amber-500/10'
+                                : 'border-rose-500/30 text-rose-400 bg-rose-500/10'
+                            )}
+                          >
+                            {d.health.healthScore} / 100
+                          </Badge>
+                        </td>
+
+                        <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
+                          {d.amount_str || `${d.amount?.toLocaleString('ru-RU')} ₽`}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <div className="text-foreground font-medium">
+                            {d.stage_name || d.stage}
+                          </div>
+                          <span
+                            className={cn(
+                              'font-mono text-[10px]',
+                              d.health.isStalled ? 'text-amber-400 font-semibold' : 'text-tertiary'
+                            )}
+                          >
+                            ⏳ {d.health.daysInStage} дней на этапе
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {d.health.divergenceRisk ? (
+                            <Badge
+                              variant="outline"
+                              className="border-rose-500/40 bg-rose-500/15 text-rose-300 text-[10px]"
+                            >
+                              ⚡ Расхождение с CRM
+                            </Badge>
+                          ) : d.sla_risk ? (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px]"
+                            >
+                              ⚠️ Просрочен регламент
+                            </Badge>
+                          ) : d.health.isStalled ? (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px]"
+                            >
+                              ⏳ Застой сделки
+                            </Badge>
+                          ) : (
+                            <span className="text-tertiary text-[11px]">Низкий скоринг</span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3 max-w-xs truncate text-secondary">
+                          <span className="flex items-center gap-1.5">
+                            <Sparkles className="h-3 w-3 text-amber-400 shrink-0" />
+                            <span>{d.health.aiNextAction}</span>
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3 text-secondary">
+                          {d.responsible_user || 'Не назначен'}
+                        </td>
+
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDeal(d);
+                              setDrawerOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md border border-subtle bg-surface px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-hover transition-colors"
+                          >
+                            <span>Аудит</span>
+                            <ChevronRight className="h-3 w-3" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       ) : (
-        /* Table View */
-        <div className="overflow-hidden rounded-xl border border-subtle bg-surface shadow-sm">
+        /* 📋 High-density Table View */
+        <div className="overflow-hidden rounded-xl border border-subtle bg-surface shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-subtle/40 border-b border-subtle text-[10px] font-semibold uppercase tracking-wider text-tertiary">
@@ -531,6 +967,7 @@ export function DealsPage() {
                   <th className="px-4 py-3">Воронка</th>
                   <th className="px-4 py-3">Этап</th>
                   <th className="px-4 py-3 text-right">Сумма</th>
+                  <th className="px-4 py-3">Health Score</th>
                   <th className="px-4 py-3">Менеджер</th>
                   <th className="px-4 py-3 text-center">Звонки</th>
                   <th className="px-4 py-3">Статус / Причина</th>
@@ -540,7 +977,7 @@ export function DealsPage() {
               <tbody className="divide-y divide-subtle">
                 {filteredDeals.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-tertiary">
+                    <td colSpan={10} className="py-8 text-center text-tertiary">
                       Сделки не найдены
                     </td>
                   </tr>
@@ -552,70 +989,105 @@ export function DealsPage() {
                         setSelectedDeal(d);
                         setDrawerOpen(true);
                       }}
-                      className="group cursor-pointer transition-colors hover:bg-hover"
+                      className="hover:bg-hover/60 cursor-pointer transition-colors"
                     >
-                      <td className="px-4 py-3 font-mono text-tertiary group-hover:text-foreground">
-                        {d.crm_deal_id || d.id}
+                      <td className="px-4 py-3 font-mono text-[11px] text-tertiary">
+                        {d.crm_deal_id || d.deal_id || d.id}
                       </td>
+
                       <td className="px-4 py-3">
-                        <span className="block font-semibold text-foreground transition-colors group-hover:text-primary">
-                          {d.company_name || d.title}
-                        </span>
-                        {d.sla_risk && (
-                          <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold text-amber-400">
-                            <AlertTriangle className="h-3 w-3" /> Риск SLA
-                          </span>
+                        <div className="font-semibold text-foreground">
+                          {d.company_name || d.health.cleanTitle}
+                        </div>
+                        {d.company_name && d.title !== d.company_name && (
+                          <div className="text-[11px] text-secondary">
+                            {d.health.cleanTitle}
+                          </div>
                         )}
                       </td>
+
                       <td className="px-4 py-3 text-secondary">
-                        {d.pipeline_name || 'Основная воронка'}
+                        {d.pipeline_name || activePipeline.name}
                       </td>
+
                       <td className="px-4 py-3">
-                        <span className="font-medium text-foreground">
+                        <div className="text-foreground font-medium">
                           {d.stage_name || d.stage}
+                        </div>
+                        <span className="font-mono text-[10px] text-tertiary">
+                          ⏳ {d.health.daysInStage} дн.
                         </span>
                       </td>
+
                       <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
                         {d.amount_str ||
                           `${d.amount?.toLocaleString('ru-RU')} ₽`}
                       </td>
-                      <td className="max-w-[140px] truncate px-4 py-3 text-secondary">
+
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              'font-mono font-bold text-[11px]',
+                              d.health.healthTier === 'healthy'
+                                ? 'text-emerald-400'
+                                : d.health.healthTier === 'warning'
+                                ? 'text-amber-400'
+                                : 'text-rose-400'
+                            )}
+                          >
+                            {d.health.healthScore}
+                          </span>
+                          <span className="text-[10px] text-tertiary">
+                            (ИИ: {d.health.winProbability}%)
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-3 text-secondary">
                         {d.responsible_user || 'Не назначен'}
                       </td>
+
                       <td className="px-4 py-3 text-center">
-                        {typeof d.calls_count === 'number' &&
-                        d.calls_count > 0 ? (
+                        {typeof d.calls_count === 'number' && d.calls_count > 0 ? (
                           <Badge
                             variant="outline"
-                            className="font-mono text-[10px]"
+                            className="font-mono text-[10px] border-primary/30 text-primary"
                           >
-                            {d.calls_count}
+                            📞 {d.calls_count}
                           </Badge>
                         ) : (
                           <span className="text-tertiary">—</span>
                         )}
                       </td>
+
                       <td className="px-4 py-3">
                         {d.loss_reason ? (
                           <Badge
                             variant="outline"
-                            className="max-w-[160px] truncate border-rose-500/30 bg-rose-500/10 text-[10px] text-rose-300"
+                            className="border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px]"
                           >
                             {d.loss_reason}
+                          </Badge>
+                        ) : d.sla_risk ? (
+                          <Badge
+                            variant="outline"
+                            className="border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px]"
+                          >
+                            Риск SLA
                           </Badge>
                         ) : d.status === 'won' ? (
                           <Badge
                             variant="outline"
-                            className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-400"
+                            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px]"
                           >
-                            Оплачена
+                            Успешно
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[10px]">
-                            В работе
-                          </Badge>
+                          <span className="text-tertiary text-[11px]">В работе</span>
                         )}
                       </td>
+
                       <td className="px-4 py-3 font-mono text-[11px] text-tertiary">
                         {d.created_at ? d.created_at.substring(0, 10) : ''}
                       </td>
@@ -628,7 +1100,7 @@ export function DealsPage() {
         </div>
       )}
 
-      {/* Deal Details Slide-Over Drawer */}
+      {/* Slide-over Deal Details Drawer */}
       <DealDetailsDrawer
         deal={selectedDeal}
         open={drawerOpen}
@@ -638,5 +1110,3 @@ export function DealsPage() {
     </div>
   );
 }
-
-export default DealsPage;

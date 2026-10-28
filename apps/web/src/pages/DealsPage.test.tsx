@@ -139,7 +139,7 @@ describe('DealsPage', () => {
     await waitFor(() => {
       expect(screen.getAllByText(/Новые продажи/).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Всего сделок')).toBeInTheDocument();
-      expect(screen.getByText('1 500 000 ₽')).toBeInTheDocument();
+      expect(screen.getAllByText(/1 500 000 ₽/).length).toBeGreaterThanOrEqual(1);
     });
   });
 

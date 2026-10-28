@@ -1,8 +1,11 @@
 /**
  * apps/web/src/components/DealDetailsDrawer.tsx
  *
- * Slide-over drawer displaying comprehensive deal info, custom loss reasons,
- * and all linked calls with Whisper transcripts and 13-criteria AI audit scorecards.
+ * Executive Deal Drawer 2.0:
+ * - Enterprise Health Score & Win Probability
+ * - Divergence Risk Alerts (CRM vs AI Reality)
+ * - Cleaned Title auto-resolution
+ * - Exact 13 B2B Audit Criteria scorecard with Whisper audio transcripts
  */
 
 import * as React from 'react';
@@ -16,11 +19,15 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Activity,
+  TrendingUp,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { dealsApi } from '@/lib/api';
+import { computeDealHealth, parse13Criteria } from '@/lib/dealHealth';
 import type { Deal, DealLinkedCall } from '@/types/api';
 
 export interface DealDetailsDrawerProps {
@@ -29,35 +36,6 @@ export interface DealDetailsDrawerProps {
   onOpenChange: (open: boolean) => void;
   tenantId?: string;
 }
-
-const CRITERIA_LABELS: Record<string, string> = {
-  cr1: 'Приветствие',
-  cr2: 'Квалификация',
-  cr3: 'Выявление потребностей',
-  cr4: 'Презентация цены',
-  cr5: 'Отработка возражений',
-  cr6: 'Следующий шаг',
-  cr7: 'Следование скрипту',
-  cr8: 'Баланс диалога',
-  cr9: 'Нетоксичность',
-  cr10: 'Эмпатия',
-  cr11: 'Срочность',
-  cr12: 'Отстройка от конкурентов',
-  cr13: 'Закрытие',
-  greeting: 'Приветствие',
-  qualification: 'Квалификация',
-  needs_analysis: 'Выявление потребностей',
-  price_presentation: 'Презентация цены',
-  objections: 'Отработка возражений',
-  next_step: 'Следующий шаг',
-  script_compliance: 'Следование скрипту',
-  talk_ratio: 'Баланс диалога',
-  toxicity: 'Нетоксичность',
-  empathy: 'Эмпатия',
-  urgency: 'Срочность',
-  competitor_handling: 'Отстройка от конкурентов',
-  closing: 'Закрытие',
-};
 
 export function DealDetailsDrawer({
   deal,
@@ -78,8 +56,9 @@ export function DealDetailsDrawer({
 
     setFullDeal(deal);
     let isMounted = true;
-    setLoading(true);
 
+    // Fetch single deal detail with full linked calls payload
+    setLoading(true);
     dealsApi
       .get(deal.id, tenantId)
       .then((data) => {
@@ -108,6 +87,8 @@ export function DealDetailsDrawer({
   const isWon = activeDeal.status === 'won' || activeDeal.stage_id === '6';
   const isLost = activeDeal.status === 'lost' || activeDeal.stage_id === '7';
   const calls: DealLinkedCall[] = activeDeal.calls || [];
+
+  const health = computeDealHealth(activeDeal);
 
   return (
     <div
@@ -139,8 +120,11 @@ export function DealDetailsDrawer({
               </span>
             </div>
             <h2 className="text-lg font-bold text-foreground">
-              {activeDeal.company_name || activeDeal.title}
+              {health.cleanTitle}
             </h2>
+            {activeDeal.company_name && activeDeal.company_name !== health.cleanTitle && !activeDeal.company_name.startsWith('????') && (
+              <p className="text-xs text-secondary">{activeDeal.company_name}</p>
+            )}
           </div>
           <button
             onClick={() => onOpenChange(false)}
@@ -153,47 +137,99 @@ export function DealDetailsDrawer({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Key Deal Stats Grid */}
+          {/* Executive Revenue Intelligence Bar */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-lg border border-subtle bg-subtle/30 p-3 space-y-1">
-              <span className="text-xs text-tertiary">Бюджет сделки</span>
-              <p className="text-base font-bold text-foreground">
+              <span className="text-[11px] text-tertiary">Бюджет сделки</span>
+              <p className="text-base font-bold text-foreground font-mono">
                 {activeDeal.amount_str || `${activeDeal.amount?.toLocaleString('ru-RU')} ₽`}
               </p>
             </div>
 
             <div className="rounded-lg border border-subtle bg-subtle/30 p-3 space-y-1">
-              <span className="text-xs text-tertiary">Воронка</span>
-              <p className="text-sm font-semibold text-foreground truncate">
-                {activeDeal.pipeline_name || 'Основная воронка'}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-tertiary">Health Score</span>
+                <Activity className="h-3 w-3 text-primary" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span
+                  className={cn(
+                    'text-base font-bold font-mono',
+                    health.healthTier === 'healthy'
+                      ? 'text-emerald-400'
+                      : health.healthTier === 'warning'
+                      ? 'text-amber-400'
+                      : 'text-rose-400'
+                  )}
+                >
+                  {health.healthScore}
+                </span>
+                <span className="text-[10px] text-tertiary">/ 100</span>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-subtle bg-subtle/30 p-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-tertiary">Win Prob (ИИ)</span>
+                <TrendingUp className="h-3 w-3 text-emerald-400" />
+              </div>
+              <p className="text-base font-bold text-foreground font-mono">
+                {health.winProbability}%
               </p>
             </div>
 
             <div className="rounded-lg border border-subtle bg-subtle/30 p-3 space-y-1">
-              <span className="text-xs text-tertiary">Этап воронки</span>
-              <p className="text-sm font-semibold text-foreground truncate">
-                {activeDeal.stage_name || activeDeal.stage}
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-subtle bg-subtle/30 p-3 space-y-1">
-              <span className="text-xs text-tertiary">Менеджер</span>
-              <p className="text-sm font-semibold text-foreground truncate">
+              <span className="text-[11px] text-tertiary">Воронка / Менеджер</span>
+              <p className="text-xs font-semibold text-foreground truncate">
                 {activeDeal.responsible_user || activeDeal.manager_name || 'Не назначен'}
+              </p>
+              <p className="text-[10px] text-tertiary truncate">
+                {activeDeal.pipeline_name || 'Основная воронка'}
               </p>
             </div>
           </div>
 
+          {/* Divergence Risk Alert */}
+          {health.divergenceRisk && (
+            <div className="flex items-start gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3.5 text-rose-300">
+              <ShieldAlert className="h-5 w-5 shrink-0 text-rose-400 mt-0.5" />
+              <div className="text-xs leading-relaxed space-y-1">
+                <span className="font-semibold block text-rose-200">
+                  ⚡ Риск расхождения (Divergence Alert)
+                </span>
+                <p>
+                  Сделка находится на продвинутом этапе «{activeDeal.stage_name || activeDeal.stage}», но аудиты звонков или регламент SLA сигнализируют об угрозе срыва переговоров.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* SLA Alert or Loss Reason Banner */}
-          {activeDeal.sla_risk && (
+          {activeDeal.sla_risk && !health.divergenceRisk && (
             <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-amber-300">
               <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400" />
               <div className="text-xs leading-relaxed">
                 <span className="font-semibold">Внимание: Риск SLA! </span>
-                Сделка находится на этапе «{activeDeal.stage_name || activeDeal.stage}» без назначенного следующего шага более допустимого времени.
+                Сделка находится на этапе «{activeDeal.stage_name || activeDeal.stage}» без назначенного следующего шага более допустимого регламентом времени.
               </div>
             </div>
           )}
+
+          {/* AI Next Best Action recommendation */}
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
+              <span className="text-secondary">
+                <strong className="text-foreground font-semibold">ИИ-Рекомендация РОПу: </strong>
+                {health.aiNextAction}
+              </span>
+            </div>
+            {health.isStalled && (
+              <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-400 bg-amber-500/10">
+                Зависла {health.daysInStage} дн.
+              </Badge>
+            )}
+          </div>
 
           {isLost && (
             <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 space-y-2">
@@ -263,6 +299,12 @@ export function DealDetailsDrawer({
                       ? 'text-amber-400 bg-amber-500/10 border-amber-500/30'
                       : 'text-rose-400 bg-rose-500/10 border-rose-500/30';
 
+                  const criteriaList = parse13Criteria(c.scorecard_criteria);
+                  const statusLabel =
+                    c.scorecard_criteria && typeof c.scorecard_criteria === 'object'
+                      ? (c.scorecard_criteria as Record<string, unknown>).status_label
+                      : null;
+
                   return (
                     <div
                       key={c.id}
@@ -292,6 +334,14 @@ export function DealDetailsDrawer({
                               <span className="text-[11px] text-tertiary">
                                 • {c.duration_str || `${c.duration_seconds} сек`}
                               </span>
+                              {Boolean(statusLabel) && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] px-1.5 py-0 border-rose-500/30 text-rose-300 bg-rose-500/10"
+                                >
+                                  {String(statusLabel)}
+                                </Badge>
+                              )}
                             </div>
                             <span className="text-[11px] text-tertiary">
                               {c.created_at ? new Date(c.created_at).toLocaleString('ru-RU') : 'Недавно'}
@@ -334,46 +384,42 @@ export function DealDetailsDrawer({
                             </div>
                           )}
 
-                          {/* 13 Criteria Scorecard Grid */}
-                          {c.scorecard_criteria &&
-                            Object.keys(c.scorecard_criteria).length > 0 && (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                          {/* 13 B2B Audit Criteria Scorecard Grid */}
+                          {criteriaList.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs font-semibold text-foreground">
+                                <div className="flex items-center gap-1.5">
                                   <Sparkles className="h-3.5 w-3.5 text-amber-400" />
                                   <span>13 критериев B2B-аудита:</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                                  {Object.entries(c.scorecard_criteria).map(
-                                    ([k, val]) => {
-                                      const passed = Number(val) === 1;
-                                      const label =
-                                        CRITERIA_LABELS[k] ||
-                                        k.toUpperCase();
-                                      return (
-                                        <div
-                                          key={k}
-                                          className={cn(
-                                            'flex items-center justify-between rounded px-2 py-1 text-[11px] border',
-                                            passed
-                                              ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-300'
-                                              : 'border-rose-500/20 bg-rose-500/5 text-rose-300'
-                                          )}
-                                        >
-                                          <span className="truncate pr-1">
-                                            {label}
-                                          </span>
-                                          {passed ? (
-                                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                                          ) : (
-                                            <XCircle className="h-3.5 w-3.5 text-rose-400 shrink-0" />
-                                          )}
-                                        </div>
-                                      );
-                                    }
-                                  )}
-                                </div>
+                                <span className="text-[11px] text-tertiary font-mono">
+                                  {criteriaList.filter((cr) => cr.passed).length} / 13 пройдено
+                                </span>
                               </div>
-                            )}
+                              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                                {criteriaList.map((crit) => (
+                                  <div
+                                    key={crit.id}
+                                    className={cn(
+                                      'flex items-center justify-between rounded px-2.5 py-1.5 text-[11px] border',
+                                      crit.passed
+                                        ? 'border-emerald-500/25 bg-emerald-500/5 text-emerald-300'
+                                        : 'border-rose-500/25 bg-rose-500/5 text-rose-300'
+                                    )}
+                                  >
+                                    <span className="truncate pr-1.5 font-medium">
+                                      {crit.name}
+                                    </span>
+                                    {crit.passed ? (
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                                    ) : (
+                                      <XCircle className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {/* AI Summary */}
                           {c.ai_summary && (
@@ -423,5 +469,3 @@ export function DealDetailsDrawer({
     </div>
   );
 }
-
-export default DealDetailsDrawer;
