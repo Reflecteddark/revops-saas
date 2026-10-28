@@ -525,8 +525,12 @@ async def list_deals(
         .filter(Deal.is_deleted == False)
     )
 
-    if pipeline_id:
-        q = q.filter(Deal.pipeline_id == pipeline_id)
+    if pipeline_id and pipeline_id not in ("all", "*"):
+        matching_count = q.filter(Deal.pipeline_id == pipeline_id).count()
+        if matching_count > 0:
+            q = q.filter(Deal.pipeline_id == pipeline_id)
+        elif pipeline_id not in ("0", "main", "default"):
+            q = q.filter(Deal.pipeline_id == pipeline_id)
     if loss_reason:
         q = q.filter(Deal.loss_reason == loss_reason)
 
@@ -548,8 +552,12 @@ async def list_deals(
                     )
                     .filter(Deal.is_deleted == False)
                 )
-                if pipeline_id:
-                    q2 = q2.filter(Deal.pipeline_id == pipeline_id)
+                if pipeline_id and pipeline_id not in ("all", "*"):
+                    matching_count2 = q2.filter(Deal.pipeline_id == pipeline_id).count()
+                    if matching_count2 > 0:
+                        q2 = q2.filter(Deal.pipeline_id == pipeline_id)
+                    elif pipeline_id not in ("0", "main", "default"):
+                        q2 = q2.filter(Deal.pipeline_id == pipeline_id)
                 if loss_reason:
                     q2 = q2.filter(Deal.loss_reason == loss_reason)
                 db_deals = q2.all()
