@@ -9,7 +9,7 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ClipboardCheck, Filter } from 'lucide-react';
+import { ClipboardCheck, Filter, Download, Volume2 } from 'lucide-react';
 import { DataTable } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -135,6 +135,7 @@ export function AuditPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
   const [managerFilter, setManagerFilter] = React.useState<string>('all');
   const [periodFilter, setPeriodFilter] = React.useState<string>('all');
+  const [crFilter, setCrFilter] = React.useState<string>('all');
 
   const {
     data: calls = [],
@@ -193,8 +194,47 @@ export function AuditPage() {
         if (periodFilter === '30d' && diffDays > 30) return false;
       }
     }
+    // CR filter: only calls where specific criterion failed (=== 0)
+    if (crFilter !== 'all') {
+      const crIndex = parseInt(crFilter, 10);
+      if (!isNaN(crIndex)) {
+        const val = call.cr?.[crIndex];
+        if (val !== 0) return false;
+      }
+    }
     return true;
   });
+
+  const handleExportCsv = () => {
+    if (filteredCalls.length === 0) return;
+    const headers = [
+      'Дата',
+      'Клиент',
+      'Менеджер',
+      'Этап',
+      'Оценка',
+      'Статус',
+      ...CR_DEFINITIONS.map((c) => `${c.id.toUpperCase()}_${c.shortLabel}`),
+    ];
+    const rows = filteredCalls.map((c) => [
+      c.date || c.created_at || '',
+      `"${(c.client || '').replace(/"/g, '""')}"`,
+      `"${(c.manager || '').replace(/"/g, '""')}"`,
+      `"${(c.stage || '').replace(/"/g, '""')}"`,
+      c.score ?? '—',
+      c.status || '',
+      ...CR_DEFINITIONS.map((_, idx) => (c.cr && c.cr[idx] !== undefined ? c.cr[idx] : '')),
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `revops-audit-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6">
@@ -337,9 +377,29 @@ export function AuditPage() {
           </Select>
         </div>
 
+        {/* CR criteria failure filter */}
+        <div className="w-[180px]">
+          <Select value={crFilter} onValueChange={setCrFilter}>
+            <SelectTrigger className="h-8 text-xs" data-testid="filter-cr">
+              <SelectValue placeholder="Критерий" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">
+                Все критерии
+              </SelectItem>
+              {CR_DEFINITIONS.map((cr, idx) => (
+                <SelectItem key={cr.id} value={String(idx)} className="text-xs">
+                  Провал: {cr.id.toUpperCase()} ({cr.shortLabel})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {(statusFilter !== 'all' ||
           managerFilter !== 'all' ||
-          periodFilter !== 'all') && (
+          periodFilter !== 'all' ||
+          crFilter !== 'all') && (
           <Button
             variant="ghost"
             size="sm"
@@ -347,12 +407,25 @@ export function AuditPage() {
               setStatusFilter('all');
               setManagerFilter('all');
               setPeriodFilter('all');
+              setCrFilter('all');
             }}
             className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             Сбросить
           </Button>
         )}
+
+        {/* CSV Export Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 text-xs font-medium sm:ml-auto"
+          onClick={handleExportCsv}
+          data-testid="btn-export-csv"
+        >
+          <Download className="h-3.5 w-3.5" />
+          <span>Скачать CSV</span>
+        </Button>
       </div>
 
       {/* DataTable */}

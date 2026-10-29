@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 import { PulsePage } from './PulsePage';
@@ -88,7 +89,9 @@ function renderWithClient(ui: React.ReactElement) {
     },
   });
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>{ui}</BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

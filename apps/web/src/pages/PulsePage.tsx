@@ -41,6 +41,7 @@ import { MonteCarloCorridor } from '@/components/MonteCarloCorridor';
 import { AiImpactCard } from '@/components/AiImpactCard';
 import { PulseSmartAlert } from '@/components/PulseSmartAlert';
 import { BusinessEconomicsCard } from '@/components/BusinessEconomicsCard';
+import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 import { StatusSegmentedBar } from '@/components/StatusSegmentedBar';
 import { DailyPulseMatrix } from '@/components/DailyPulseMatrix';
 import { DailyHourlyHeatmap } from '@/components/rnp/DailyHourlyHeatmap';
@@ -516,6 +517,15 @@ export function PulsePage() {
 
         {/* Tab 1: Sales Department (Default) */}
         <TabsContent value="sales" className="mt-4 space-y-6" data-testid="tab-content-sales">
+
+      {/* Interactive Onboarding Checklist for new clients */}
+      <OnboardingChecklist
+        dealsCount={openDeals.length}
+        callsCount={calls.length}
+        hasPlan={hasPlan}
+        managersCount={uniqueManagersCount}
+        hasTelegram={Boolean(settingsQuery.data?.telegram?.bot_token || settingsQuery.data?.telegram?.chat_id)}
+      />
 
       {/* MPSTATS Smart Alert Banner */}
       <PulseSmartAlert

@@ -146,6 +146,22 @@ export function CallDetailsDrawer({ call, open, onOpenChange }: CallDetailsDrawe
 
           {/* Body with Scroll */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
+            {/* Audio Player if URL exists */}
+            {(call.audio_url || (call as any).audio_s3_url) && (
+              <div className="space-y-1.5 rounded-xl border border-subtle bg-surface/50 p-3">
+                <div className="flex items-center gap-1.5 text-xs text-secondary font-medium">
+                  <Volume2 className="h-4 w-4 text-primary" />
+                  <span>Аудиозапись диалога:</span>
+                </div>
+                <audio
+                  controls
+                  className="h-8 w-full"
+                  src={call.audio_url || (call as any).audio_s3_url}
+                  data-testid="drawer-call-audio-player"
+                />
+              </div>
+            )}
+
             {/* ROP Recommendation & Script */}
             {call.recommendation && (
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4 space-y-2">
