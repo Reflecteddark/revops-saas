@@ -1,4 +1,4 @@
-/**
+﻿﻿/**
  * apps/web/src/components/DailyPulseMatrix.tsx
  *
  * MPSTATS-style "Рука на пульсе" daily heatmap matrix with inline SVG sparklines,
@@ -396,9 +396,9 @@ export function DailyPulseMatrix({
                         ) : metricMode === 'score' ? (
                           <span
                             className={
-                              mgr.avgScore >= 9
+                              mgr.avgScore >= CALL_SCORE_THRESHOLDS.high.min
                                 ? 'text-emerald-500'
-                                : mgr.avgScore >= 6
+                                : mgr.avgScore >= CALL_SCORE_THRESHOLDS.mid.min
                                 ? 'text-amber-500'
                                 : 'text-rose-500'
                             }
@@ -416,14 +416,14 @@ export function DailyPulseMatrix({
                           metricMode === 'calls'
                             ? d.callsCount >= 8
                             : metricMode === 'score'
-                            ? d.avgScore >= 9
+                            ? d.avgScore >= CALL_SCORE_THRESHOLDS.high.min
                             : d.nextStepPct >= 80;
 
                         const isBad =
                           metricMode === 'calls'
                             ? d.callsCount <= 2
                             : metricMode === 'score'
-                            ? d.avgScore < 6
+                            ? d.avgScore < CALL_SCORE_THRESHOLDS.mid.min
                             : d.nextStepPct < 50;
 
                         // Soft pastel heatmap tinting
