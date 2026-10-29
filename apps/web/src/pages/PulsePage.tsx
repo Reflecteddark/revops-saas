@@ -8,6 +8,7 @@
  */
 
 import * as React from 'react';
+import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -263,9 +264,11 @@ export function PulsePage() {
   const fakeYesCount = calls.filter((c) => c.status === 'fake_yes').length;
 
   const totalCalls = calls.length;
-  const wonCallsCount = calls.filter((c) => (c.score || 0) >= 9).length;
-  const midCallsCount = calls.filter((c) => (c.score || 0) >= 6 && (c.score || 0) < 9).length;
-  const lostCallsCount = calls.filter((c) => (c.score || 0) < 6).length;
+  const wonCallsCount = calls.filter((c) => (c.score || 0) >= CALL_SCORE_THRESHOLDS.high.min).length;
+  const midCallsCount = calls.filter(
+    (c) => (c.score || 0) >= CALL_SCORE_THRESHOLDS.mid.min && (c.score || 0) <= CALL_SCORE_THRESHOLDS.mid.max
+  ).length;
+  const lostCallsCount = calls.filter((c) => (c.score || 0) <= CALL_SCORE_THRESHOLDS.low.max).length;
 
   const dealsWonCount = deals.filter(isWonDeal).length;
   const dealsLostCount = deals.filter(isLostDeal).length;

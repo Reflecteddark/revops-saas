@@ -7,6 +7,7 @@
  */
 
 import * as React from 'react';
+import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
 import { Zap, AlertTriangle, ShieldCheck, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
@@ -29,11 +30,15 @@ interface TierMetrics {
 
 export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
   const { tiers, fakeYesCalls, maxSpread } = React.useMemo(() => {
-    const lowCalls = calls.filter((c) => (c.score ?? 0) <= 6);
+    const lowCalls = calls.filter((c) => (c.score ?? 0) <= CALL_SCORE_THRESHOLDS.low.max);
     const midCalls = calls.filter(
-      (c) => (c.score ?? 0) >= 7 && (c.score ?? 0) <= 10
+      (c) =>
+        (c.score ?? 0) >= CALL_SCORE_THRESHOLDS.mid.min &&
+        (c.score ?? 0) <= CALL_SCORE_THRESHOLDS.mid.max
     );
-    const highCalls = calls.filter((c) => (c.score ?? 0) >= 11);
+    const highCalls = calls.filter(
+      (c) => (c.score ?? 0) >= CALL_SCORE_THRESHOLDS.high.min
+    );
 
     const calcTier = (tierCalls: Call[]) => {
       const count = tierCalls.length;
@@ -91,7 +96,7 @@ export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
       },
       {
         name: 'Рабочая норма (Средний)',
-        scoreRange: '7 – 10 баллов',
+        scoreRange: '6 – 8 баллов',
         count: tMid.count,
         winRate: tMid.rate,
         sumWon: tMid.sumWon,
@@ -101,7 +106,7 @@ export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
       },
       {
         name: 'Эталонные переговоры',
-        scoreRange: '11 – 13 баллов',
+        scoreRange: '9 – 13 баллов',
         count: tHigh.count,
         winRate: tHigh.rate,
         sumWon: tHigh.sumWon,

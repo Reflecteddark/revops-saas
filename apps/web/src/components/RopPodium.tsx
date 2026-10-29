@@ -7,6 +7,7 @@
  */
 
 import * as React from 'react';
+import { PODIUM_ATTENTION_THRESHOLD } from '@/lib/thresholds';
 import { Crown, Trophy, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -109,7 +110,7 @@ export function RopPodium({
 
     // Hazard rep: lowest avgScore or highest riskCallsCount (excludes system placeholder names like 'Не представился')
     const risky = [...allCandidates].filter(
-      (m) => m.riskCallsCount > 0 || m.avgScore < 8.5
+      (m) => m.riskCallsCount > 0 || m.avgScore < PODIUM_ATTENTION_THRESHOLD
     );
     risky.sort(
       (a, b) => a.avgScore - b.avgScore || b.riskCallsCount - a.riskCallsCount
