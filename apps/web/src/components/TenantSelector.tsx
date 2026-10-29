@@ -73,6 +73,26 @@ export function TenantSelector({ className }: TenantSelectorProps) {
 
   const tenantList: Tenant[] = Array.isArray(data) ? data : tenants;
 
+  if (tenantList.length <= 1) {
+    const active =
+      tenantList.find((t) => t.tenant_id === activeTenantId) || tenantList[0];
+    if (!active) return null;
+    return (
+      <div
+        className={cn(
+          'bg-hover/50 flex items-center gap-1.5 rounded-lg border border-subtle px-3 py-1 text-xs font-semibold text-foreground',
+          className
+        )}
+        data-testid="tenant-single-badge"
+      >
+        <span>{active.tenant_name}</span>
+        <span className="font-mono text-[10px] text-tertiary">
+          ({active.tenant_id})
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className={cn('flex items-center', className)}>
       <Select
@@ -80,7 +100,7 @@ export function TenantSelector({ className }: TenantSelectorProps) {
         onValueChange={(val) => setActiveTenantId(val)}
       >
         <SelectTrigger
-          className="h-8 w-[220px] rounded-lg border border-subtle bg-hover text-xs font-medium text-foreground hover:border-strong transition-colors duration-150"
+          className="h-8 w-[220px] rounded-lg border border-subtle bg-hover text-xs font-medium text-foreground transition-colors duration-150 hover:border-strong"
           data-testid="tenant-selector-trigger"
         >
           <SelectValue placeholder="Выберите тенант" />

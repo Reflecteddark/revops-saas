@@ -84,15 +84,31 @@ export function RopPodium({
         m.callsCount > 0 ? Math.round((m.nextStepWon / m.callsCount) * 100) : 0,
     }));
 
+    const isSystemName = (n: string) => {
+      const lower = n.toLowerCase();
+      return (
+        lower.includes('не представился') ||
+        lower.includes('менеджер') ||
+        lower.includes('автоответчик') ||
+        lower.includes('неизвестно') ||
+        !n.trim()
+      );
+    };
+
+    const validManagers = managers.filter((m) => !isSystemName(m.name));
+    const allCandidates = validManagers.length > 0 ? validManagers : managers;
+
     // Sort by avgScore desc, then pipeAmt desc
-    managers.sort((a, b) => b.avgScore - a.avgScore || b.pipeAmt - a.pipeAmt);
+    allCandidates.sort(
+      (a, b) => b.avgScore - a.avgScore || b.pipeAmt - a.pipeAmt
+    );
 
-    const top1 = managers[0] || null;
-    const top2 = managers.length > 1 ? managers[1] : null;
-    const top3 = managers.length > 2 ? managers[2] : null;
+    const top1 = allCandidates[0] || null;
+    const top2 = allCandidates.length > 1 ? allCandidates[1] : null;
+    const top3 = allCandidates.length > 2 ? allCandidates[2] : null;
 
-    // Hazard rep: lowest avgScore or highest riskCallsCount
-    const risky = [...managers].filter(
+    // Hazard rep: lowest avgScore or highest riskCallsCount (excludes system placeholder names like 'Не представился')
+    const risky = [...allCandidates].filter(
       (m) => m.riskCallsCount > 0 || m.avgScore < 8.5
     );
     risky.sort(

@@ -62,9 +62,7 @@ export function Header({ className }: HeaderProps) {
   const displayName = !isCorruptedName
     ? rawName
     : user?.email
-      ? user.email.toLowerCase().includes('dmitriy')
-        ? 'Дмитрий Федотов'
-        : user.email.split('@')[0]
+      ? user.email.split('@')[0]
       : 'Пользователь';
 
   return (

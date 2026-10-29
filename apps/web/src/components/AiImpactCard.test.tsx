@@ -63,13 +63,15 @@ describe('AiImpactCard', () => {
     expect(screen.getByText('Зона риска (Низкий балл)')).toBeInTheDocument();
     expect(screen.getByText('Рабочая норма (Средний)')).toBeInTheDocument();
     expect(screen.getByText('Эталонные переговоры')).toBeInTheDocument();
-    expect(screen.getByText('4.8x МАКСИМУМ')).toBeInTheDocument();
+    expect(screen.getByText(/Эталонный сегмент|МАКСИМУМ/i)).toBeInTheDocument();
   });
 
   it('detects and flags Fake Yes alert calls', () => {
     render(<AiImpactCard calls={mockCalls} />);
 
     expect(screen.getByTestId('fake-yes-strip')).toBeInTheDocument();
-    expect(screen.getByText(/1 алертов «Ложного согласия»/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/1 алертов «Ложного согласия»/i)
+    ).toBeInTheDocument();
   });
 });

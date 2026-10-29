@@ -109,7 +109,9 @@ export function RnpStandupView({
 
   // Stalled high-value deals (>48h SLA risk)
   const highRiskDeals = React.useMemo(() => {
-    return deals.filter((d) => !isDealClosed(d) && (d.sla_risk || d.status === 'risk')).slice(0, 5);
+    return deals
+      .filter((d) => !isDealClosed(d) && (d.sla_risk || d.status === 'risk'))
+      .slice(0, 5);
   }, [deals]);
 
   // Manager performance synthesis for Standup
@@ -159,10 +161,7 @@ export function RnpStandupView({
         const dt = c.date || c.created_at || '';
         return dt.includes(yStr);
       });
-      const yesterdayCallsCount =
-        mgrYesterdayCalls.length > 0
-          ? mgrYesterdayCalls.length
-          : Math.min(totalCalls, 8); // fallback for demo/weekends
+      const yesterdayCallsCount = mgrYesterdayCalls.length;
 
       // Next Step strictly from Gemini AI Speech Audit
       const auditedCalls = mgrCalls.filter(

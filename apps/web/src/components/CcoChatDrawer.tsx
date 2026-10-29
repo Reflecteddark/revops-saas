@@ -96,10 +96,7 @@ export function CcoChatDrawer({ open, onOpenChange }: CcoChatDrawerProps) {
       const fallbackMsg: ChatMessage = {
         id: `ai-err-${Date.now()}`,
         role: 'assistant',
-        text:
-          '### Оперативный ответ CCO\n\n' +
-          'Анализ живых данных показывает, что ключевая точка утечки выручки — этап согласования договоров. ' +
-          'Рекомендуется сократить цикл согласования и зафиксировать обязательный слот повторного звонка.',
+        text: '⚠️ Сервис ИИ-аналитики временно недоступен. Пожалуйста, повторите запрос через минуту.',
       };
       setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
