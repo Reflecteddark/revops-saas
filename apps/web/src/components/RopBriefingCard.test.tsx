@@ -33,7 +33,7 @@ const mockCalls: Call[] = [
     transcript: '...',
   },
   {
-    id: 'c-2',
+    id: 'c-2a',
     deal_id: 'd-2',
     deal_title: 'Сделка 2',
     client: 'ЗАО Бета',
@@ -50,6 +50,48 @@ const mockCalls: Call[] = [
     date: '2026-10-28 11:00',
     cr: [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
     error_summary: 'Нет даты и времени',
+    recommendation: 'Фиксировать срок',
+    transcript: '...',
+  },
+  {
+    id: 'c-2b',
+    deal_id: 'd-2',
+    deal_title: 'Сделка 2b',
+    client: 'ЗАО Бета',
+    manager: 'Владислав',
+    stage: 'Встреча',
+    duration: '01:50',
+    amount: '300 000 ₽',
+    amount_num: 300000,
+    score: 5,
+    status: 'lost',
+    status_label: 'Слив',
+    risk_amount: '300 000 ₽',
+    next_step: 0,
+    date: '2026-10-28 11:10',
+    cr: [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
+    error_summary: 'Слив',
+    recommendation: 'Фиксировать срок',
+    transcript: '...',
+  },
+  {
+    id: 'c-2c',
+    deal_id: 'd-2',
+    deal_title: 'Сделка 2c',
+    client: 'ЗАО Бета',
+    manager: 'Владислав',
+    stage: 'Встреча',
+    duration: '02:15',
+    amount: '300 000 ₽',
+    amount_num: 300000,
+    score: 5,
+    status: 'lost',
+    status_label: 'Слив',
+    risk_amount: '300 000 ₽',
+    next_step: 0,
+    date: '2026-10-28 11:20',
+    cr: [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
+    error_summary: 'Слив',
     recommendation: 'Фиксировать срок',
     transcript: '...',
   },
@@ -88,19 +130,27 @@ describe('RopBriefingCard', () => {
     render(<RopBriefingCard calls={mockCalls} />);
 
     expect(screen.getByTestId('rop-briefing-card')).toBeInTheDocument();
-    expect(screen.getByText('⚡ Фокус дня для планёрки РОПа')).toBeInTheDocument();
-    // Excluded 'Автоответчик', only 2 real calls
-    expect(screen.getByText(/Сформировано ИИ на основе аудита 2 звонков/)).toBeInTheDocument();
+    expect(
+      screen.getByText('⚡ Фокус дня для планёрки РОПа')
+    ).toBeInTheDocument();
+    // Excluded 'Автоответчик', 4 real calls
+    expect(
+      screen.getByText(/Сформировано ИИ на основе аудита 4 звонков/)
+    ).toBeInTheDocument();
 
     // Main flaw
-    expect(screen.getByText('Главная системная дыра отдела:')).toBeInTheDocument();
+    expect(
+      screen.getByText('Главная системная дыра отдела:')
+    ).toBeInTheDocument();
 
     // Top performer
     expect(screen.getByText('Кого похвалить на планёрке:')).toBeInTheDocument();
     expect(screen.getByText('Ася')).toBeInTheDocument();
 
     // Coaching candidate
-    expect(screen.getByText('Кого разобрать индивидуально:')).toBeInTheDocument();
+    expect(
+      screen.getByText('Кого разобрать индивидуально:')
+    ).toBeInTheDocument();
     expect(screen.getByText('Владислав')).toBeInTheDocument();
   });
 
