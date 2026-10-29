@@ -480,7 +480,7 @@ export function PulsePage() {
               data-testid="tab-dept-finance"
             >
               <CircleDollarSign className="h-3.5 w-3.5 text-emerald-500" />
-              <span>Финансы & Маржа (P&L)</span>
+              <span>Финансы & Покрытие</span>
             </TabsTrigger>
           </TabsList>
 
@@ -839,7 +839,7 @@ export function PulsePage() {
           />
         </TabsContent>
 
-        {/* Tab 4: Financial Margin & P&L View */}
+        {/* Tab 4: Financial Margin & Coverage View */}
         <TabsContent value="finance" className="mt-4" data-testid="tab-content-finance">
           <RnpFinanceView
             deals={deals}

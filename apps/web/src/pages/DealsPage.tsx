@@ -433,9 +433,15 @@ export function DealsPage() {
         </div>
 
         {/* Card 3: Weighted AI Forecast */}
-        <div className="shadow-xs space-y-1 rounded-xl border border-subtle bg-surface p-4">
+        <div
+          className="shadow-xs space-y-1 rounded-xl border border-subtle bg-surface p-4"
+          title="Сумма сделок × вероятность закрытия каждой (этап + здоровье)"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs text-tertiary">Взвешенный прогноз ИИ</span>
+            <span className="text-xs text-tertiary flex items-center gap-1">
+              <span>Взвешенный прогноз ИИ</span>
+              <span className="cursor-help text-tertiary hover:text-foreground">ⓘ</span>
+            </span>
             <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
           </div>
           <p className="font-mono text-xl font-bold text-emerald-400">

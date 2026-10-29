@@ -132,10 +132,16 @@ export function RnpFinanceView({
           </CardContent>
         </Card>
 
-        <Card className="border-subtle bg-surface">
+        <Card
+          className="border-subtle bg-surface"
+          title="Пайплайн × вес этапа (упрощённый расчёт)"
+        >
           <CardHeader className="pb-2">
             <CardDescription className="text-xs text-tertiary flex items-center justify-between">
-              <span>Взвешенный пайплайн</span>
+              <span className="flex items-center gap-1">
+                <span>Взвешенный пайплайн</span>
+                <span className="cursor-help text-tertiary hover:text-foreground">ⓘ</span>
+              </span>
               <Scale className="h-4 w-4 text-sky-400" />
             </CardDescription>
             <CardTitle className="text-xl sm:text-2xl font-bold font-mono text-sky-400">

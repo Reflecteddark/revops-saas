@@ -159,10 +159,10 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-foreground">
-                Источники и каналы поступления сделок
+                Источники CRM
               </h3>
               <p className="text-xs text-tertiary">
-                Сквозная разбивка лидогенерации по подключенным CRM и каналам
+                Тип CRM-системы, из которой пришла сделка
               </p>
             </div>
             <Badge variant="outline" className="text-xs font-mono">

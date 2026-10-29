@@ -70,7 +70,7 @@ describe('RnpMarketingView', () => {
   it('renders channels breakdown and AI traffic balancing recommendation', () => {
     render(<RnpMarketingView deals={mockDeals} managers={mockManagers} />);
 
-    expect(screen.getByText(/Источники и каналы поступления сделок/i)).toBeInTheDocument();
+    expect(screen.getByText(/Источники CRM/i)).toBeInTheDocument();
     expect(screen.getByText('amoCRM реклама')).toBeInTheDocument();
     expect(screen.getByText('Bitrix24 форма')).toBeInTheDocument();
     expect(screen.getByText(/Балансировка трафика и вместимости/i)).toBeInTheDocument();

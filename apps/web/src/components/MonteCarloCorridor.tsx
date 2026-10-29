@@ -145,8 +145,11 @@ export function MonteCarloCorridor({
           </div>
 
           {/* P50 */}
-          <div className="text-center">
-            <div className="text-[11px] text-tertiary">P50 (Базовый факт)</div>
+          <div className="text-center" title="Статистический диапазон на основе распределения текущих сделок">
+            <div className="text-[11px] text-tertiary flex items-center justify-center gap-1">
+              <span>P50 (Базовый факт)</span>
+              <span className="cursor-help text-tertiary hover:text-foreground">ⓘ</span>
+            </div>
             <div className="font-mono font-bold text-foreground tabular-nums">
               {p50.toLocaleString('ru-RU')} ₽
             </div>

@@ -167,7 +167,7 @@ export function ExpressScenarioCalculator({
             {basePlan.toLocaleString('ru-RU')} ₽
           </div>
           <p className="text-[11px] text-tertiary text-pretty">
-            Текущий прогноз без внедрения ИИ-ассистента
+            Текущий сценарий (по введённым параметрам)
           </p>
         </div>
 

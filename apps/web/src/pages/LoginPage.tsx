@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { authApi } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 import type { User } from '@/types/api';
 
@@ -22,6 +23,7 @@ export function LoginPage() {
   const setUser = useRevOpsStore((s) => s.setUser);
   const setToken = useRevOpsStore((s) => s.setToken);
   const setActiveTenantId = useRevOpsStore((s) => s.setActiveTenantId);
+  const { toast } = useToast();
 
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -160,6 +162,19 @@ export function LoginPage() {
                 </>
               )}
             </Button>
+            <button
+              type="button"
+              className="text-xs text-secondary hover:text-primary underline block text-center w-full transition-colors pt-1"
+              onClick={() =>
+                toast({
+                  title: 'Восстановление пароля',
+                  description: 'Напишите вашему администратору или на support@ai-rop.ru',
+                })
+              }
+              data-testid="btn-forgot-password"
+            >
+              Забыли пароль?
+            </button>
             <p className="text-[11px] text-center text-muted-foreground">
               Защищенное TLS-соединение. RevOps Enterprise OS v20.7.2
             </p>
