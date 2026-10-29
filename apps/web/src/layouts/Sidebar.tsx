@@ -33,7 +33,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { title: 'Рука на пульсе', href: '/pulse', icon: Activity },
   { title: 'Сделки', href: '/deals', icon: Columns },
-  { title: 'Аудит', href: '/audit', icon: ClipboardCheck },
+  { title: 'ИИ-Аудит', href: '/audit', icon: ClipboardCheck },
   { title: 'Интеграции', href: '/integrations', icon: Radio },
   { title: 'Настройки', href: '/settings', icon: Settings },
   { title: 'Админ-панель', href: '/admin', icon: ShieldCheck, adminOnly: true },

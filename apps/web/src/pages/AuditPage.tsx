@@ -31,6 +31,7 @@ import {
 import { RopPodium } from '@/components/RopPodium';
 import { SpeechRadarChart } from '@/components/SpeechRadarChart';
 import { SkillsHeatmap } from '@/components/SkillsHeatmap';
+import { RopBriefingCard } from '@/components/RopBriefingCard';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { callsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -241,10 +242,13 @@ export function AuditPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2.5">
             <h1 className="text-balance text-2xl font-bold tracking-tight text-foreground">
-              Аудит звонков
+              🎙️ ИИ-Аудит звонков
             </h1>
+            <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+              13 критериев B2B
+            </span>
             <Badge
               variant="outline"
               className="font-mono text-xs tabular-nums"
@@ -254,7 +258,7 @@ export function AuditPage() {
             </Badge>
           </div>
           <p className="mt-0.5 text-pretty text-sm text-muted-foreground">
-            Детализированный реестр звонков с проверкой 13 критериев B2B-продаж.
+            Автоматический речевой аудит, выявление системных сливов и подготовка повестки утренней планёрки РОПа.
           </p>
         </div>
       </div>
@@ -290,20 +294,30 @@ export function AuditPage() {
         onSelectRep={(rep) => setManagerFilter(rep || 'all')}
       />
 
-      {/* Sprint 2: Speech Radar & Skills Heatmap Grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-5">
+      {/* Speech Radar & ROP Briefing (Left) + Skills Heatmap (Right) */}
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        <div className="flex flex-col space-y-5 lg:col-span-5">
           <SpeechRadarChart
             calls={calls}
             selectedRep={managerFilter !== 'all' ? managerFilter : null}
             onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+          />
+          <RopBriefingCard
+            calls={calls}
+            onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+            onSelectCriterion={(crIdx) => setCrFilter(String(crIdx))}
           />
         </div>
         <div className="lg:col-span-7">
           <SkillsHeatmap
             calls={calls}
             selectedRep={managerFilter !== 'all' ? managerFilter : null}
+            selectedCriterion={crFilter !== 'all' ? parseInt(crFilter, 10) : null}
             onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+            onSelectCell={(rep, crIdx) => {
+              setManagerFilter(rep);
+              setCrFilter(String(crIdx));
+            }}
           />
         </div>
       </div>
