@@ -23,7 +23,8 @@ export interface KpiCardProps {
   inverted?: boolean; // top-level prop or via trend.inverted
   icon?: React.ReactNode; // lucide-react icon
   loading?: boolean; // skeleton
-  variant?: 'default' | 'accent' | 'danger'; // danger — подсветка для sla_risk
+  variant?: 'default' | 'accent' | 'danger';
+  subtitle?: React.ReactNode; // danger — подсветка для sla_risk
   onClick?: () => void;
   className?: string;
 }
@@ -37,6 +38,7 @@ export function KpiCard({
   icon,
   loading = false,
   variant = 'default',
+  subtitle,
   onClick,
   className,
 }: KpiCardProps) {
@@ -214,6 +216,11 @@ export function KpiCard({
                     {trend.label}
                   </span>
                 )}
+              </div>
+            )}
+            {subtitle && (
+              <div className="mt-1.5 text-xs">
+                {subtitle}
               </div>
             )}
           </>

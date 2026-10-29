@@ -12,6 +12,7 @@
  */
 
 import * as React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Columns,
   Table as TableIcon,
@@ -27,6 +28,7 @@ import {
   Sparkles,
   Zap,
   ChevronRight,
+  Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -149,29 +151,8 @@ export function DealsPage() {
   const activePipeline = React.useMemo(() => {
     return (
       pipelines.find((p) => p.id === selectedPipelineId) ||
-      pipelines[0] || {
-        id: '0',
-        name: 'Основная воронка',
-        stages: [
-          { id: '1', name: 'Новый лид', color: '#39A8EF' },
-          { id: '2', name: 'Квалификация', color: '#2FC6F6' },
-          { id: '3', name: 'Встреча / Демо', color: '#55D0E0' },
-          { id: '4', name: 'КП / В работе', color: '#47E4C2' },
-          { id: '5', name: 'Финальный счёт', color: '#FFA900' },
-          {
-            id: '6',
-            name: 'Успешно реализовано',
-            color: '#7BD500',
-            is_won: true,
-          },
-          {
-            id: '7',
-            name: 'Закрыто и не реализовано',
-            color: '#FF5752',
-            is_lost: true,
-          },
-        ],
-      }
+      pipelines[0] ||
+      null
     );
   }, [pipelines, selectedPipelineId]);
 
@@ -253,6 +234,7 @@ export function DealsPage() {
 
   // Group deals into Kanban columns based on pipeline stages
   const kanbanColumns = React.useMemo(() => {
+    if (!activePipeline) return [];
     const stages = activePipeline.stages || [];
     return stages.map((st) => {
       const stNameLower = st.name.toLowerCase();
@@ -347,11 +329,15 @@ export function DealsPage() {
               className="shadow-xs h-9 cursor-pointer rounded-lg border border-subtle bg-surface px-3 py-1.5 pr-8 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               aria-label="Выбор воронки продаж"
             >
-              {pipelines.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} {p.deal_count ? `(${p.deal_count} сделок)` : ''}
-                </option>
-              ))}
+              {pipelines.length === 0 ? (
+                <option value="">Воронка не загружена</option>
+              ) : (
+                pipelines.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.deal_count ? `(${p.deal_count} сделок)` : ''}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -430,7 +416,7 @@ export function DealsPage() {
             {totalDealsCount}
           </p>
           <p className="truncate text-[11px] text-tertiary">
-            {activePipeline.name}
+            {activePipeline?.name || 'Воронка не выбрана'}
           </p>
         </div>
 
@@ -617,6 +603,27 @@ export function DealsPage() {
               <Skeleton className="h-28 w-full rounded-lg" />
             </div>
           ))}
+        </div>
+      ) : !activePipeline && !pipelinesLoading ? (
+        <div
+          className="surface flex flex-col items-center justify-center rounded-2xl border border-subtle p-12 text-center"
+          data-testid="empty-pipeline-state"
+        >
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-500">
+            <Layers className="h-7 w-7" />
+          </div>
+          <h3 className="text-base font-bold text-foreground">
+            Воронка не загружена
+          </h3>
+          <p className="mt-1.5 max-w-md text-xs text-secondary">
+            Проверьте подключение CRM в разделе Интеграции
+          </p>
+          <Link
+            to="/integrations"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-medium text-white shadow-xs hover:bg-primary/90 transition-colors"
+          >
+            Интеграции
+          </Link>
         </div>
       ) : viewMode === 'kanban' ? (
         /* ▦ Smart Kanban Board */
@@ -1043,7 +1050,7 @@ export function DealsPage() {
                       </td>
 
                       <td className="px-4 py-3 text-secondary">
-                        {d.pipeline_name || activePipeline.name}
+                        {d.pipeline_name || activePipeline?.name || '—'}
                       </td>
 
                       <td className="px-4 py-3">

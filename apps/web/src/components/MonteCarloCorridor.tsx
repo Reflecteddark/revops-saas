@@ -16,6 +16,7 @@ export interface MonteCarloCorridorProps {
   p90?: number;
   monthlyTarget?: number;
   confidenceScore?: number;
+  hasRealData?: boolean;
   className?: string;
 }
 
@@ -24,7 +25,8 @@ export function MonteCarloCorridor({
   p50 = 3500000,
   p90 = 4800000,
   monthlyTarget = 3000000,
-  confidenceScore = 0.92,
+  confidenceScore = 0,
+  hasRealData = false,
   className,
 }: MonteCarloCorridorProps) {
   // Compute probability of achieving target based on P10/P50/P90 standard normal approximation
@@ -74,7 +76,10 @@ export function MonteCarloCorridor({
               Моделирование выручки Монте-Карло
             </h3>
             <p className="text-xs text-secondary">
-              Вероятностный диапазон исходов (10 000 симуляций, достоверность {Math.round(confidenceScore * 100)}%)
+              Вероятностный диапазон исходов
+              {hasRealData && confidenceScore > 0
+                ? ` • достоверность ${Math.round(confidenceScore * 100)}%`
+                : ' • оценка по текущей воронке'}
             </p>
           </div>
         </div>

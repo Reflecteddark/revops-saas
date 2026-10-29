@@ -117,13 +117,12 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
               <Clock className="h-4 w-4 text-violet-400" />
             </CardDescription>
             <CardTitle className="text-2xl font-bold font-mono text-foreground">
-              11 <span className="text-sm font-normal text-tertiary">мин</span>
+              <span className="text-tertiary">—</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
-              <Zap className="h-3 w-3" />
-              <span>Норматив &lt;15 мин соблюдён</span>
+            <span className="text-[11px] text-tertiary flex items-center gap-1 font-medium">
+              <span>Нет данных о первом контакте</span>
             </span>
           </CardContent>
         </Card>

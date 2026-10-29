@@ -76,7 +76,7 @@ export function RnpStandupView({
   };
 
   // Filter yesterday's calls
-  const yesterdayCalls = React.useMemo(() => {
+  const { yesterdayCalls, isFallback } = React.useMemo(() => {
     const now = new Date();
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -88,7 +88,11 @@ export function RnpStandupView({
     });
 
     // Fallback: if today is Monday or yesterday had 0 calls, take the most recent 10 calls
-    return filtered.length > 0 ? filtered : calls.slice(0, 10);
+    const fallbackNeeded = filtered.length === 0;
+    return {
+      yesterdayCalls: fallbackNeeded ? calls.slice(0, 10) : filtered,
+      isFallback: fallbackNeeded && calls.length > 0,
+    };
   }, [calls]);
 
   // Yesterday's metrics
@@ -336,6 +340,14 @@ export function RnpStandupView({
               >
                 STANDUP MODE
               </Badge>
+              {isFallback && (
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-400"
+                >
+                  Вчера звонков не было — показаны последние
+                </Badge>
+              )}
             </div>
             <p className="max-w-2xl text-pretty text-xs text-secondary">
               Регламент фокусного утреннего разбора: факт вчерашних действий,

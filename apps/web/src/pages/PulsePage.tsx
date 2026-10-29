@@ -8,10 +8,12 @@
  */
 
 import * as React from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   AlertTriangle,
+  AlertCircle,
   BookOpen,
   CheckCircle2,
   HelpCircle,
@@ -232,8 +234,9 @@ export function PulsePage() {
   const uniqueManagersCount = new Set(calls.map((c) => c.manager).filter(Boolean)).size;
 
   const monthlyTarget = settingsQuery.data?.general?.monthly_target;
+  const hasPlan = Boolean(monthlyTarget && monthlyTarget > 0);
   const planTarget = Number(
-    monthlyTarget && monthlyTarget > 0
+    hasPlan
       ? monthlyTarget
       : (insights?.p90_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.8) : revenue))
   );
@@ -531,6 +534,7 @@ export function PulsePage() {
         qualityPct={qualityPct}
         stalledDealsCount={stalledDealsCount}
         fakeYesCount={fakeYesCount}
+        corridorConfidencePct={insights?.confidence_score ? Math.round(insights.confidence_score * 100) : 0}
       />
 
       {/* 5 Primary KPI Cards */}
@@ -560,7 +564,7 @@ export function PulsePage() {
           loading={isLoading}
         />
         <KpiCard
-          title="Дефицит до плана"
+          title={hasPlan ? "Дефицит до плана" : "Дефицит (оценка)"}
           value={isLoading ? 0 : deficitSum.toLocaleString('ru-RU')}
           unit="₽"
           trend={
@@ -568,9 +572,22 @@ export function PulsePage() {
               ? {
                   direction: deficitSum === 0 ? 'up' : 'down',
                   value: Math.round((revenue / planTarget) * 100),
-                  label: `% вып. (план ${(planTarget / 1000000).toFixed(1)}M ₽)`,
+                  label: hasPlan
+                    ? `% вып. (план ${(planTarget / 1000000).toFixed(1)}M ₽)`
+                    : `% вып. (оценка ${(planTarget / 1000000).toFixed(1)}M ₽)`,
                 }
               : undefined
+          }
+          subtitle={
+            !hasPlan ? (
+              <div className="text-[11px] text-amber-400 flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span>Оценка • </span>
+                <Link to="/settings" className="underline hover:text-amber-300">
+                  Задайте план
+                </Link>
+              </div>
+            ) : undefined
           }
           inverted={true}
           loading={isLoading}
@@ -715,7 +732,8 @@ export function PulsePage() {
         p50={Number(insights?.p50_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.6) : revenue))}
         p90={Number(insights?.p90_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.95) : revenue))}
         monthlyTarget={planTarget}
-        confidenceScore={insights?.confidence_score ?? 0.92}
+        confidenceScore={insights?.confidence_score ?? 0}
+        hasRealData={Boolean(insights?.p10_corridor_rub)}
       />
 
       {/* Financial Scenario Math & AI Impact Grid */}

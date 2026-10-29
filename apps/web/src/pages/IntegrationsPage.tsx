@@ -167,7 +167,7 @@ export function IntegrationsPage() {
     }
   };
 
-  const isBalanced = reconciliation?.is_balanced ?? true;
+  const isBalanced = reconciliation?.is_balanced ?? null;
   const activeFailures = reconciliation?.dlq_failures ?? 0;
   const balancePercentage = reconciliation?.balance_percentage ?? 100;
 
@@ -187,18 +187,26 @@ export function IntegrationsPage() {
                 </h1>
                 <Badge
                   variant={
-                    isBalanced && activeFailures === 0 ? 'default' : 'secondary'
+                    isBalanced === null
+                      ? 'secondary'
+                      : isBalanced && activeFailures === 0
+                        ? 'default'
+                        : 'secondary'
                   }
                   className={
-                    isBalanced && activeFailures === 0
-                      ? 'bg-emerald-600 font-medium text-white'
-                      : 'bg-amber-600 font-medium text-white'
+                    isBalanced === null
+                      ? 'bg-muted text-muted-foreground font-medium border border-subtle'
+                      : isBalanced && activeFailures === 0
+                        ? 'bg-emerald-600 font-medium text-white'
+                        : 'bg-amber-600 font-medium text-white'
                   }
                   data-testid="reconciliation-status-badge"
                 >
-                  {isBalanced && activeFailures === 0
-                    ? '🟢 100% СХОДИМОСТЬ (0 ПОТЕРЬ)'
-                    : `⚠️ ТРЕБУЕТ ВНИМАНИЯ (${activeFailures} В DLQ)`}
+                  {isBalanced === null
+                    ? '⏳ Проверка сходимости...'
+                    : isBalanced && activeFailures === 0
+                      ? '🟢 100% СХОДИМОСТЬ (0 ПОТЕРЬ)'
+                      : `⚠️ ТРЕБУЕТ ВНИМАНИЯ (${activeFailures} В DLQ)`}
                 </Badge>
               </div>
               <p className="text-xs text-secondary">
