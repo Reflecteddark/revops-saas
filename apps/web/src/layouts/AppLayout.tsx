@@ -5,6 +5,7 @@ import { Header } from './Header';
 import { CcoChatDrawer } from '@/components/CcoChatDrawer';
 import { cn } from '@/lib/utils';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useAutoSync } from '@/hooks/useAutoSync';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 
 export interface AppLayoutProps {
@@ -16,7 +17,9 @@ export function AppLayout({ children, className }: AppLayoutProps = {}) {
   const activeTenantId = useRevOpsStore((s) => s.activeTenantId);
   const isAnalystChatOpen = useRevOpsStore((s) => s.isAnalystChatOpen);
   const setAnalystChatOpen = useRevOpsStore((s) => s.setAnalystChatOpen);
+
   useWebSocket(activeTenantId);
+  useAutoSync();
 
   return (
     <div

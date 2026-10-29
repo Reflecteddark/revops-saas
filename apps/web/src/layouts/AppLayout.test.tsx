@@ -31,6 +31,11 @@ vi.mock('@/lib/api', () => ({
   authApi: {
     logout: vi.fn().mockResolvedValue(undefined),
   },
+  dealsApi: {
+    sync: vi
+      .fn()
+      .mockResolvedValue({ success: true, deals_count: 0, total_pipeline: 0 }),
+  },
   insightsApi: {
     chat: vi.fn().mockResolvedValue({ reply: 'Тестовый ответ CCO' }),
   },
