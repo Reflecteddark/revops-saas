@@ -31,6 +31,7 @@ export interface ClientProfile {
   name: string;
   role: string;
   tenant: string;
+  tenant_id?: string;
   is_active?: boolean;
 }
 
@@ -222,6 +223,8 @@ export interface Call {
   risk_amount: string;
   next_step: number | null;
   date: string;
+  audio_url?: string;
+  audio_s3_url?: string;
   cr: CriterionScore[];
   error_summary: string;
   recommendation: string;
@@ -294,7 +297,8 @@ export interface LossReason {
 
 export interface TelegramConfig {
   /** Server never exposes real bot token to client. Always masked or omitted. */
-  bot_token?: never;
+  bot_token?: string;
+  chat_id?: string;
   rop_chat_id: string;
   ceo_chat_id: string;
   team_chat_id: string;

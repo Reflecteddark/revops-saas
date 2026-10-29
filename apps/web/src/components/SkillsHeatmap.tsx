@@ -18,7 +18,7 @@ export interface SkillsHeatmapProps {
   className?: string;
 }
 
-import { CR_SHORT_LABELS, CR_DEFINITIONS } from '@/lib/criteria';
+import { CR_SHORT_LABELS } from '@/lib/criteria';
 export const CRITERIA_SHORT_NAMES: string[] = CR_SHORT_LABELS;
 
 export interface RepSkillSummary {

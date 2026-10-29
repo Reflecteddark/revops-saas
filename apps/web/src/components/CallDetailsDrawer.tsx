@@ -19,6 +19,7 @@ import {
   Check,
   Sparkles,
   AlertTriangle,
+  Volume2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CR_LABELS, CR_DEFINITIONS } from '@/pages/AuditPage';

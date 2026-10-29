@@ -9,7 +9,7 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ClipboardCheck, Filter, Download, Volume2 } from 'lucide-react';
+import { ClipboardCheck, Filter, Download } from 'lucide-react';
 import { DataTable } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

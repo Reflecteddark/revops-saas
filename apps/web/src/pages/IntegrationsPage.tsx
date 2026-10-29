@@ -46,7 +46,8 @@ import {
 import type { IntegrationsHealthResponse } from '@/types/api';
 
 export function IntegrationsPage() {
-  const activeTenantId = useActiveTenantSafe();
+  const rawTenantId = useActiveTenantSafe();
+  const activeTenantId = rawTenantId || undefined;
   const { toast } = useToast();
   const tenants = useRevOpsStore((s) => s.tenants);
   const activeTenant = tenants.find(
@@ -64,7 +65,7 @@ export function IntegrationsPage() {
   const handleSyncDeals = async () => {
     try {
       setSyncingDeals(true);
-      const res = await dealsApi.sync(activeTenantId);
+      const res = await dealsApi.sync(activeTenantId || '');
       toast({
         title: 'Сделки синхронизированы',
         description: `Импортировано: ${res.deals_count} сделок на сумму ${Number(res.total_pipeline || 0).toLocaleString('ru-RU')} ₽`,

@@ -52,7 +52,8 @@ interface DealWithHealth extends Deal {
 }
 
 export function DealsPage() {
-  const activeTenantId = useRevOpsStore((s) => s.activeTenantId);
+  const rawTenantId = useRevOpsStore((s) => s.activeTenantId);
+  const activeTenantId = rawTenantId || undefined;
 
   // State
   const [viewMode, setViewMode] = React.useState<ViewMode>('kanban');
@@ -132,7 +133,7 @@ export function DealsPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await dealsApi.sync(activeTenantId);
+      await dealsApi.sync(activeTenantId || '');
       const pipes = await dealsApi.pipelines(activeTenantId);
       setPipelines(pipes);
       const activePipeId =
@@ -610,7 +611,7 @@ export function DealsPage() {
             </div>
           ))}
         </div>
-      ) : !activePipeline && !pipelinesLoading ? (
+      ) : !activePipeline && !loading ? (
         <div
           className="surface flex flex-col items-center justify-center rounded-2xl border border-subtle p-12 text-center"
           data-testid="empty-pipeline-state"

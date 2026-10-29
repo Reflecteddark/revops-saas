@@ -272,7 +272,6 @@ export function PulsePage() {
   const lostCallsCount = calls.filter((c) => (c.score || 0) <= CALL_SCORE_THRESHOLDS.low.max).length;
 
   const dealsWonCount = deals.filter(isWonDeal).length;
-  const dealsLostCount = deals.filter(isLostDeal).length;
   const dealsRiskCount = openDeals.filter((d) => Boolean(d.sla_risk) || Boolean((d as any).risk)).length;
   const dealsInWorkCount = Math.max(0, openDeals.length - dealsRiskCount);
   const totalDeals = deals.length;

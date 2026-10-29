@@ -12,7 +12,6 @@
 import * as React from 'react';
 import {
   Target,
-  Zap,
   Clock,
   TrendingUp,
   Sparkles,
