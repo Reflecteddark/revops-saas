@@ -189,7 +189,7 @@ describe('AppLayout', () => {
     );
 
     expect(screen.getByTestId('user-menu-trigger')).toHaveTextContent(
-      'Дмитрий Федотов'
+      'dmitriyfedotov1908'
     );
     expect(screen.getByTestId('user-menu-trigger')).not.toHaveTextContent('?');
   });

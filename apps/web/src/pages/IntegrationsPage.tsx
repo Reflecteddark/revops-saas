@@ -73,7 +73,8 @@ export function IntegrationsPage() {
     } catch (err: unknown) {
       toast({
         title: 'Ошибка синхронизации',
-        description: err instanceof Error ? err.message : 'Сбой импорта сделок из CRM',
+        description:
+          err instanceof Error ? err.message : 'Сбой импорта сделок из CRM',
         variant: 'destructive',
       });
     } finally {
@@ -218,8 +219,12 @@ export function IntegrationsPage() {
             title="Синхронизировать сделки из amoCRM / Битрикс24"
             data-testid="btn-sync-deals-integrations"
           >
-            <RefreshCw className={`h-3.5 w-3.5 text-emerald-400 ${syncingDeals ? 'animate-spin' : ''}`} />
-            <span>{syncingDeals ? 'Синхронизация...' : 'Синхронизировать сделки'}</span>
+            <RefreshCw
+              className={`h-3.5 w-3.5 text-emerald-400 ${syncingDeals ? 'animate-spin' : ''}`}
+            />
+            <span>
+              {syncingDeals ? 'Синхронизация...' : 'Синхронизировать сделки'}
+            </span>
           </Button>
 
           <Button
@@ -259,8 +264,10 @@ export function IntegrationsPage() {
             <Zap className="h-3.5 w-3.5" />
             <span>
               {retryingAll
-                ? 'Перезапуск...'
-                : 'Переслушать сбои из DLQ (1 клик)'}
+                ? 'Повтор...'
+                : activeFailures === 0
+                  ? 'Сбоев нет (0 в очереди)'
+                  : `Повторить сбои (${activeFailures})`}
             </span>
           </Button>
         </div>
@@ -338,7 +345,7 @@ export function IntegrationsPage() {
               </Button>
             </div>
 
-            <div className="pt-2 border-t border-subtle/50 space-y-1">
+            <div className="border-subtle/50 space-y-1 border-t pt-2">
               <p className="text-[11px] text-muted-foreground">
                 Webhook сделок (автоматически регистрируется в amoCRM):
               </p>
@@ -355,7 +362,10 @@ export function IntegrationsPage() {
                   variant="outline"
                   className="h-8 shrink-0 px-2.5 text-xs"
                   onClick={() =>
-                    handleCopy(`https://report.ai-rop.ru/api/v1/webhooks/${activeTenantId}/amocrm`, 'amocrm-webhook')
+                    handleCopy(
+                      `https://report.ai-rop.ru/api/v1/webhooks/${activeTenantId}/amocrm`,
+                      'amocrm-webhook'
+                    )
                   }
                   title="Скопировать Webhook amoCRM"
                   data-testid="btn-copy-amocrm-webhook"
@@ -494,7 +504,7 @@ export function IntegrationsPage() {
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                1. Шлюз Ingress & Redis 7
+                1. Приём данных (Телефония & CRM)
               </CardTitle>
               <Badge
                 variant="outline"
@@ -529,7 +539,7 @@ export function IntegrationsPage() {
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                2. DWH (PostgreSQL 16)
+                2. База данных & Записи звонков
               </CardTitle>
               <Badge
                 variant="outline"
@@ -562,13 +572,13 @@ export function IntegrationsPage() {
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                3. Зеркало Таблиц
+                3. Синхронизация Google Таблиц
               </CardTitle>
               <Badge
                 variant="outline"
                 className="border-emerald-500/30 bg-emerald-500/10 text-[11px] text-emerald-400"
               >
-                🟢 batchUpdate
+                🟢 Автосинхронизация
               </Badge>
             </CardHeader>
             <CardContent>
@@ -596,7 +606,7 @@ export function IntegrationsPage() {
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                4. Изолятор сбоев (DLQ)
+                4. Очередь сбоев доставки
               </CardTitle>
               <Badge
                 variant="outline"

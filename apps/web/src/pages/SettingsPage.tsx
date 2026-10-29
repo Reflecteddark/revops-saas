@@ -82,13 +82,16 @@ export function SettingsPage() {
   const [newManagerId, setNewManagerId] = useState<string>('');
   const [newManagerName, setNewManagerName] = useState<string>('');
   const [newManagerRole, setNewManagerRole] = useState<string>('Менеджер ОП');
-  const [newManagerRevenueTarget, setNewManagerRevenueTarget] = useState<string>('');
+  const [newManagerRevenueTarget, setNewManagerRevenueTarget] =
+    useState<string>('');
   const [newManagerDailyCalls, setNewManagerDailyCalls] = useState<number>(20);
   const [newManagerDailyDials, setNewManagerDailyDials] = useState<number>(40);
   const [newManagerMeetings, setNewManagerMeetings] = useState<number>(15);
-  const [newManagerMeetingsEnabled, setNewManagerMeetingsEnabled] = useState<boolean>(true);
+  const [newManagerMeetingsEnabled, setNewManagerMeetingsEnabled] =
+    useState<boolean>(true);
   const [newManagerCapacity, setNewManagerCapacity] = useState<number>(40);
-  const [newManagerNextStepPct, setNewManagerNextStepPct] = useState<number>(80);
+  const [newManagerNextStepPct, setNewManagerNextStepPct] =
+    useState<number>(80);
   const [addManagerError, setAddManagerError] = useState<string | null>(null);
   const [ropChatId, setRopChatId] = useState<string>('');
   const [ceoChatId, setCeoChatId] = useState<string>('');
@@ -219,7 +222,9 @@ export function SettingsPage() {
         setTimeout(() => setSaveStatus(null), 5000);
       } else if (!silent) {
         setSaveStatus({
-          text: data.message || 'Все сотрудники из CRM уже синхронизированы в реестре.',
+          text:
+            data.message ||
+            'Все сотрудники из CRM уже синхронизированы в реестре.',
           type: 'success',
         });
         setTimeout(() => setSaveStatus(null), 4000);
@@ -374,8 +379,7 @@ export function SettingsPage() {
         revTargetNum !== null && !isNaN(revTargetNum) ? revTargetNum : null,
       daily_calls_target: newManagerDailyCalls > 0 ? newManagerDailyCalls : 20,
       daily_dials_target: newManagerDailyDials > 0 ? newManagerDailyDials : 40,
-      monthly_meetings_target:
-        newManagerMeetings > 0 ? newManagerMeetings : 15,
+      monthly_meetings_target: newManagerMeetings > 0 ? newManagerMeetings : 15,
       meetings_enabled: newManagerMeetingsEnabled,
       next_step_target_pct:
         newManagerNextStepPct >= 0 && newManagerNextStepPct <= 100
@@ -485,14 +489,11 @@ export function SettingsPage() {
   const companyPlan = general?.monthly_target || 5000000;
   const totalPersonalPlans = managers.reduce(
     (sum, m) =>
-      sum +
-      (m.revenue_target && m.revenue_target > 0 ? m.revenue_target : 0),
+      sum + (m.revenue_target && m.revenue_target > 0 ? m.revenue_target : 0),
     0
   );
   const distributionPct =
-    companyPlan > 0
-      ? Math.round((totalPersonalPlans / companyPlan) * 100)
-      : 0;
+    companyPlan > 0 ? Math.round((totalPersonalPlans / companyPlan) * 100) : 0;
   const remainingPlan = companyPlan - totalPersonalPlans;
 
   return (
@@ -513,7 +514,7 @@ export function SettingsPage() {
             variant="outline"
             className="border-primary/20 bg-primary/5 px-2.5 py-1 text-xs text-primary"
           >
-            Тенант: {tenantId}
+            Компания: {displayCompanyName} ({tenantId})
           </Badge>
           <Button
             variant="ghost"
@@ -892,7 +893,8 @@ export function SettingsPage() {
                   <span>Реестр менеджеров и нормативы KPI</span>
                 </CardTitle>
                 <CardDescription>
-                  Персональные планы выручки, нормативы звонков и встреч, вместимость сделок и качество Next Step.
+                  Персональные планы выручки, нормативы звонков и встреч,
+                  вместимость сделок и качество Next Step.
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -953,9 +955,9 @@ export function SettingsPage() {
                   distributionPct >= 95 && distributionPct <= 105
                     ? 'border-emerald-500/30 bg-emerald-500/10'
                     : (distributionPct >= 70 && distributionPct < 95) ||
-                      (distributionPct > 105 && distributionPct <= 120)
-                    ? 'border-amber-500/30 bg-amber-500/10'
-                    : 'border-rose-500/30 bg-rose-500/10'
+                        (distributionPct > 105 && distributionPct <= 120)
+                      ? 'border-amber-500/30 bg-amber-500/10'
+                      : 'border-rose-500/30 bg-rose-500/10'
                 }`}
                 data-testid="company-plan-distribution-banner"
               >
@@ -968,24 +970,25 @@ export function SettingsPage() {
                       </h4>
                       <Badge
                         variant="outline"
-                        className={`text-xs font-mono font-semibold ${
+                        className={`font-mono text-xs font-semibold ${
                           distributionPct >= 95 && distributionPct <= 105
                             ? 'border-emerald-500 text-emerald-400'
                             : (distributionPct >= 70 && distributionPct < 95) ||
-                              (distributionPct > 105 && distributionPct <= 120)
-                            ? 'border-amber-500 text-amber-400'
-                            : 'border-rose-500 text-rose-400'
+                                (distributionPct > 105 &&
+                                  distributionPct <= 120)
+                              ? 'border-amber-500 text-amber-400'
+                              : 'border-rose-500 text-rose-400'
                         }`}
                         data-testid="distribution-status-badge"
                       >
                         {distributionPct >= 95 && distributionPct <= 105
                           ? '🟢 План сбалансирован'
                           : (distributionPct >= 70 && distributionPct < 95) ||
-                            (distributionPct > 105 && distributionPct <= 120)
-                          ? '🟡 Частично распределён'
-                          : distributionPct < 70
-                          ? '🔴 Не весь план распределён по сотрудникам'
-                          : '🔴 Критическое превышение плана'}
+                              (distributionPct > 105 && distributionPct <= 120)
+                            ? '🟡 Частично распределён'
+                            : distributionPct < 70
+                              ? '🔴 Не весь план распределён по сотрудникам'
+                              : '🔴 Критическое превышение плана'}
                       </Badge>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1006,10 +1009,12 @@ export function SettingsPage() {
                           className={`font-mono font-bold ${
                             distributionPct >= 95 && distributionPct <= 105
                               ? 'text-emerald-400'
-                              : (distributionPct >= 70 && distributionPct < 95) ||
-                                (distributionPct > 105 && distributionPct <= 120)
-                              ? 'text-amber-400'
-                              : 'text-rose-400'
+                              : (distributionPct >= 70 &&
+                                    distributionPct < 95) ||
+                                  (distributionPct > 105 &&
+                                    distributionPct <= 120)
+                                ? 'text-amber-400'
+                                : 'text-rose-400'
                           }`}
                         >
                           {distributionPct}%
@@ -1028,20 +1033,21 @@ export function SettingsPage() {
                   </div>
                   {/* Прогресс-бар распределения */}
                   <div className="w-full space-y-1 sm:w-48">
-                    <div className="bg-subtle h-2 w-full overflow-hidden rounded-full">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-subtle">
                       <div
                         className={`h-full transition-all duration-300 ${
                           distributionPct >= 95 && distributionPct <= 105
                             ? 'bg-emerald-500'
                             : (distributionPct >= 70 && distributionPct < 95) ||
-                              (distributionPct > 105 && distributionPct <= 120)
-                            ? 'bg-amber-500'
-                            : 'bg-rose-500'
+                                (distributionPct > 105 &&
+                                  distributionPct <= 120)
+                              ? 'bg-amber-500'
+                              : 'bg-rose-500'
                         }`}
                         style={{ width: `${Math.min(100, distributionPct)}%` }}
                       />
                     </div>
-                    <div className="text-tertiary text-right font-mono text-[10px]">
+                    <div className="text-right font-mono text-[10px] text-tertiary">
                       {totalPersonalPlans.toLocaleString('ru-RU')} /{' '}
                       {companyPlan.toLocaleString('ru-RU')} ₽
                     </div>
@@ -1057,7 +1063,9 @@ export function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       <UserPlus className="h-4 w-4 text-primary" />
-                      <span>Новый менеджер в команду (с пресетами нормативов)</span>
+                      <span>
+                        Новый менеджер в команду (с пресетами нормативов)
+                      </span>
                     </div>
                     <Button
                       variant="ghost"
@@ -1143,9 +1151,7 @@ export function SettingsPage() {
                         max="200"
                         value={newManagerDailyCalls}
                         onChange={(e) =>
-                          setNewManagerDailyCalls(
-                            parseInt(e.target.value) || 0
-                          )
+                          setNewManagerDailyCalls(parseInt(e.target.value) || 0)
                         }
                         className="mt-1 h-8 font-mono text-xs"
                         data-testid="input-new-manager-calls"
@@ -1161,9 +1167,7 @@ export function SettingsPage() {
                         max="500"
                         value={newManagerDailyDials}
                         onChange={(e) =>
-                          setNewManagerDailyDials(
-                            parseInt(e.target.value) || 0
-                          )
+                          setNewManagerDailyDials(parseInt(e.target.value) || 0)
                         }
                         className="mt-1 h-8 font-mono text-xs"
                         data-testid="input-new-manager-dials"
@@ -1174,11 +1178,13 @@ export function SettingsPage() {
                         <Label className="text-xs text-muted-foreground">
                           Встречи / мес
                         </Label>
-                        <label className="flex items-center gap-1 cursor-pointer text-[10px] text-muted-foreground">
+                        <label className="flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground">
                           <input
                             type="checkbox"
                             checked={newManagerMeetingsEnabled}
-                            onChange={(e) => setNewManagerMeetingsEnabled(e.target.checked)}
+                            onChange={(e) =>
+                              setNewManagerMeetingsEnabled(e.target.checked)
+                            }
                             className="h-3 w-3 rounded border-subtle text-primary"
                             data-testid="checkbox-new-manager-meetings-enabled"
                           />
@@ -1190,12 +1196,14 @@ export function SettingsPage() {
                         min="0"
                         max="500"
                         disabled={!newManagerMeetingsEnabled}
-                        value={newManagerMeetingsEnabled ? newManagerMeetings : ''}
-                        placeholder={newManagerMeetingsEnabled ? '15' : '— (Откл.)'}
+                        value={
+                          newManagerMeetingsEnabled ? newManagerMeetings : ''
+                        }
+                        placeholder={
+                          newManagerMeetingsEnabled ? '15' : '— (Откл.)'
+                        }
                         onChange={(e) =>
-                          setNewManagerMeetings(
-                            parseInt(e.target.value) || 0
-                          )
+                          setNewManagerMeetings(parseInt(e.target.value) || 0)
                         }
                         className={`mt-1 h-8 font-mono text-xs ${!newManagerMeetingsEnabled ? 'bg-muted/40 cursor-not-allowed opacity-60' : ''}`}
                         data-testid="input-new-manager-meetings"
@@ -1211,9 +1219,7 @@ export function SettingsPage() {
                         max="500"
                         value={newManagerCapacity}
                         onChange={(e) =>
-                          setNewManagerCapacity(
-                            parseInt(e.target.value) || 0
-                          )
+                          setNewManagerCapacity(parseInt(e.target.value) || 0)
                         }
                         className="mt-1 h-8 font-mono text-xs"
                         data-testid="input-new-manager-capacity"
@@ -1312,12 +1318,15 @@ export function SettingsPage() {
                           В команде пока нет добавленных сотрудников. Нажмите{' '}
                           <button
                             type="button"
-                            onClick={() => syncCrmManagersMutation.mutate(false)}
+                            onClick={() =>
+                              syncCrmManagersMutation.mutate(false)
+                            }
                             className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
                           >
                             «🔄 {crmLabel}»
                           </button>{' '}
-                          для автоматического импорта из CRM или добавьте вручную через «+ Добавить менеджера».
+                          для автоматического импорта из CRM или добавьте
+                          вручную через «+ Добавить менеджера».
                         </td>
                       </tr>
                     )}
@@ -1426,7 +1435,9 @@ export function SettingsPage() {
                               className="h-7 w-14 font-mono text-xs"
                               data-testid={`input-manager-calls-${m.id}`}
                             />
-                            <span className="text-muted-foreground font-mono text-xs">/</span>
+                            <span className="font-mono text-xs text-muted-foreground">
+                              /
+                            </span>
                             <Input
                               type="number"
                               min="0"
@@ -1469,7 +1480,7 @@ export function SettingsPage() {
                                   e.target.checked
                                 )
                               }
-                              className="h-4 w-4 rounded border-subtle text-primary focus:ring-primary cursor-pointer"
+                              className="h-4 w-4 cursor-pointer rounded border-subtle text-primary focus:ring-primary"
                               title={
                                 m.meetings_enabled !== false
                                   ? 'Встречи учитываются в KPI и РНП'
@@ -1504,7 +1515,7 @@ export function SettingsPage() {
                                 data-testid={`input-manager-meetings-${m.id}`}
                               />
                             ) : (
-                              <span className="font-mono text-xs text-muted-foreground italic">
+                              <span className="font-mono text-xs italic text-muted-foreground">
                                 — (Откл.)
                               </span>
                             )}
