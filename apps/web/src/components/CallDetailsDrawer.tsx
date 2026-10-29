@@ -21,7 +21,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CR_LABELS } from '@/pages/AuditPage';
+import { CR_LABELS, CR_DEFINITIONS } from '@/pages/AuditPage';
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 
@@ -219,8 +219,9 @@ export function CallDetailsDrawer({ call, open, onOpenChange }: CallDetailsDrawe
                   return (
                     <div
                       key={idx}
+                      title={CR_DEFINITIONS[idx]?.description}
                       className={cn(
-                        'flex items-center justify-between rounded-lg p-2.5 text-xs border transition-colors',
+                        'flex items-center justify-between rounded-lg p-2.5 text-xs border transition-colors cursor-help',
                         isPassed
                           ? 'border-emerald-500/20 bg-emerald-500/[0.04] text-foreground'
                           : isFailed

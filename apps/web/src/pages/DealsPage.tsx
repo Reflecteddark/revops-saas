@@ -37,6 +37,7 @@ import { DealDetailsDrawer } from '@/components/DealDetailsDrawer';
 import {
   computeDealHealth,
   isDealClosed,
+  cleanEntityTitle,
   DealHealthMetrics,
 } from '@/lib/dealHealth';
 import type { Deal, Pipeline } from '@/types/api';
@@ -679,7 +680,7 @@ export function DealsPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 space-y-0.5">
                               <span className="line-clamp-2 text-xs font-semibold text-foreground transition-colors group-hover:text-primary">
-                                {d.company_name || d.health.cleanTitle}
+                                {cleanEntityTitle(d.company_name) || d.health.cleanTitle}
                               </span>
                               <span className="block font-mono text-[10px] text-tertiary">
                                 {d.crm_deal_id || d.id}
@@ -779,8 +780,8 @@ export function DealsPage() {
                                 >
                                   <Phone className="mr-1 h-3 w-3" />
                                   {d.calls_count}
-                                  {d.avg_call_score
-                                    ? ` • ${Math.round(d.avg_call_score)}%`
+                                  {typeof d.avg_call_score === 'number' && d.avg_call_score > 0
+                                    ? ` • ${d.avg_call_score <= 13 ? d.avg_call_score.toFixed(1) + "/13" : Math.round(d.avg_call_score) + "%"}`
                                     : ''}
                                 </Badge>
                               )}
@@ -885,7 +886,7 @@ export function DealsPage() {
                       >
                         <td className="px-4 py-3">
                           <div className="font-semibold text-foreground">
-                            {d.company_name || d.health.cleanTitle}
+                            {cleanEntityTitle(d.company_name) || d.health.cleanTitle}
                           </div>
                           <div className="font-mono text-[10px] text-tertiary">
                             {d.crm_deal_id || d.id}
@@ -1032,7 +1033,7 @@ export function DealsPage() {
 
                       <td className="px-4 py-3">
                         <div className="font-semibold text-foreground">
-                          {d.company_name || d.health.cleanTitle}
+                          {cleanEntityTitle(d.company_name) || d.health.cleanTitle}
                         </div>
                         {d.company_name && d.title !== d.company_name && (
                           <div className="text-[11px] text-secondary">

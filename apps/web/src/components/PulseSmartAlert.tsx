@@ -57,7 +57,7 @@ export function PulseSmartAlert({
           </p>
           {showHelp && (
             <div className="mt-2 rounded-lg bg-surface/80 border border-subtle p-2.5 text-[11px] text-tertiary">
-              Регламент B2B-аудита RevOps: критерий <strong>cr12 (Фиксация Next Step)</strong> является обязательным для перевода сделки на следующий этап воронки.
+              Регламент B2B-аудита RevOps: критерий <strong>cr10 (Твёрдый Next Step)</strong> является обязательным для перевода сделки на следующий этап воронки.
             </div>
           )}
         </div>

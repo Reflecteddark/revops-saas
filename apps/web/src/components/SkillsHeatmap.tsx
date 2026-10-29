@@ -18,21 +18,8 @@ export interface SkillsHeatmapProps {
   className?: string;
 }
 
-export const CRITERIA_SHORT_NAMES: string[] = [
-  'Контакт',
-  'Программа',
-  'Квалификация',
-  'Боли',
-  'Презентация',
-  'Возражения',
-  'Next Step',
-  'Инициатива',
-  'Экспертность',
-  'Чистота речи',
-  'Дедлайн',
-  'Бюджет',
-  'Финал',
-];
+import { CR_SHORT_LABELS, CR_DEFINITIONS } from '@/lib/criteria';
+export const CRITERIA_SHORT_NAMES: string[] = CR_SHORT_LABELS;
 
 export interface RepSkillSummary {
   name: string;

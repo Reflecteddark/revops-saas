@@ -142,7 +142,7 @@ export function PulsePage() {
   });
 
   const callsQuery = useQuery({
-    queryKey: ['calls', tenantId],
+    queryKey: ['calls', tenantId, 'recent'],
     queryFn: () => callsApi.list({ tenant_id: tenantId!, limit: 20 }),
     enabled: Boolean(tenantId),
   });
@@ -172,22 +172,7 @@ export function PulsePage() {
     return pipelines.find((p) => p.id === selectedPipelineId) || pipelines[0];
   }, [pipelines, selectedPipelineId]);
 
-  if (!tenantId) {
-    return (
-      <div
-        className="flex min-h-[400px] flex-col items-center justify-center text-center p-8"
-        data-testid="empty-tenant-state"
-      >
-        <div className="rounded-xl bg-hover p-4 mb-4 border border-subtle">
-          <PhoneCall className="h-7 w-7 text-tertiary" />
-        </div>
-        <h2 className="text-base font-semibold tracking-tight text-foreground">Тенант не выбран</h2>
-        <p className="mt-1 text-xs text-secondary max-w-sm">
-          Выберите тенант в шапке приложения для отображения оперативного пульса и аналитики.
-        </p>
-      </div>
-    );
-  }
+
 
   const isError = insightsQuery.isError || callsQuery.isError;
   const isLoading = insightsQuery.isLoading || callsQuery.isLoading;
@@ -322,6 +307,23 @@ export function PulsePage() {
   const pacingPct = targetToDate > 0 ? Math.round((revenue / targetToDate) * 100) : 100;
   const isPacingGood = pacingPct >= 100;
   const isPacingMid = pacingPct >= 85;
+
+  if (!tenantId) {
+    return (
+      <div
+        className="flex min-h-[400px] flex-col items-center justify-center text-center p-8"
+        data-testid="empty-tenant-state"
+      >
+        <div className="rounded-xl bg-hover p-4 mb-4 border border-subtle">
+          <PhoneCall className="h-7 w-7 text-tertiary" />
+        </div>
+        <h2 className="text-base font-semibold tracking-tight text-foreground">Тенант не выбран</h2>
+        <p className="mt-1 text-xs text-secondary max-w-sm">
+          Выберите тенант в шапке приложения для отображения оперативного пульса и аналитики.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -648,6 +650,7 @@ export function PulsePage() {
       {/* Lost Deals Yesterday Widget */}
       <LostDealsBanner
         calls={calls}
+        filterYesterdayOnly={true}
         onInspectCall={(call) => setSelectedCall(call)}
       />
 

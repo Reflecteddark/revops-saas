@@ -18,21 +18,8 @@ export interface SpeechRadarChartProps {
   className?: string;
 }
 
-const RADAR_LABELS: string[] = [
-  'Контакт',
-  'Программа',
-  'Квалификация',
-  'Боли',
-  'Презентация',
-  'Возражения',
-  'Next Step',
-  'Инициатива',
-  'Экспертность',
-  'Чистота речи',
-  'Дедлайн',
-  'Бюджет',
-  'Финал',
-];
+import { CR_SHORT_LABELS } from '@/lib/criteria';
+const RADAR_LABELS: string[] = CR_SHORT_LABELS;
 
 export function SpeechRadarChart({
   calls = [],

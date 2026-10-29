@@ -36,21 +36,8 @@ import { callsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 
-export const CR_LABELS: string[] = [
-  'Установление контакта',
-  'Программирование звонка',
-  'Квалификация клиента',
-  'Выявление болей / потребности',
-  'Презентация под боли',
-  'Работа с возражениями',
-  'Фиксация Next Step / Zoom',
-  'Инициатива в диалоге',
-  'Экспертность менеджера',
-  'Отсутствие слов-паразитов',
-  'Обозначение дедлайна',
-  'Понимание бюджета',
-  'Завершение звонка',
-];
+import { CR_DEFINITIONS, CR_LABELS } from '@/lib/criteria';
+export { CR_DEFINITIONS, CR_LABELS };
 
 const auditColumns: ColumnDef<Call, unknown>[] = [
   {
@@ -155,7 +142,7 @@ export function AuditPage() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['calls', tenantId],
+    queryKey: ['calls', tenantId, 'all'],
     queryFn: () => callsApi.list({ tenant_id: tenantId! }),
     enabled: Boolean(tenantId),
   });
@@ -432,7 +419,8 @@ export function AuditPage() {
                     <div
                       key={idx}
                       data-testid={`cr-item-${idx + 1}`}
-                      className={`flex items-center justify-between rounded-md border p-2 text-xs transition-colors ${colorClass}`}
+                      title={CR_DEFINITIONS[idx]?.description}
+                      className={`flex items-center justify-between rounded-md border p-2 text-xs transition-colors cursor-help ${colorClass}`}
                     >
                       <div className="flex items-center space-x-2 truncate">
                         <span className="shrink-0 font-mono font-bold">
@@ -443,7 +431,7 @@ export function AuditPage() {
                         </span>
                       </div>
                       <span className="ml-2 shrink-0 font-mono font-bold">
-                        {val === 1 ? '1' : val === 0 ? '0' : 'null'}
+                        {val === 1 ? '1' : val === 0 ? '0' : '—'}
                       </span>
                     </div>
                   );

@@ -163,6 +163,6 @@ describe('AuditPage', () => {
     // Check CR3 (val: null -> gray text-muted-foreground)
     const cr3 = screen.getByTestId('cr-item-3');
     expect(cr3).toHaveClass('text-muted-foreground');
-    expect(cr3).toHaveTextContent('null');
+    expect(cr3).toHaveTextContent('—');
   });
 });

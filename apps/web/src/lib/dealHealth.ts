@@ -6,6 +6,7 @@
  */
 
 import type { Deal } from '@/types/api';
+import { CR_DEFINITIONS } from '@/lib/criteria';
 
 export interface DealHealthMetrics {
   healthScore: number; // 0 - 100
@@ -18,21 +19,9 @@ export interface DealHealthMetrics {
   cleanTitle: string;
 }
 
-export const CRITERIA_NAMES: string[] = [
-  '1. Приветствие и регламент',
-  '2. Квалификация ЛПР и критериев',
-  '3. Выявление болей и задач',
-  '4. Презентация ценности',
-  '5. Презентация стоимости',
-  '6. Отработка возражений',
-  '7. Фиксация дедлайна / шага',
-  '8. Соблюдение скрипта',
-  '9. Баланс эфира (>50% слушает)',
-  '10. Эмпатия и вежливость',
-  '11. Отстройка от конкурентов',
-  '12. Создание срочности',
-  '13. Отсутствие давления',
-];
+export const CRITERIA_NAMES: string[] = CR_DEFINITIONS.map(
+  (c, idx) => `${idx + 1}. ${c.label}`
+);
 
 export interface ParsedCriterion {
   id: string;
@@ -160,19 +149,28 @@ export function parse13Criteria(raw: unknown): ParsedCriterion[] {
       }));
 }
 
+export function cleanEntityTitle(
+  title?: string | null,
+  fallbackId?: string | number
+): string {
+  const s = String(title || '').trim();
+  if (
+    !s ||
+    /^[?\s\-_#]+$/.test(s) ||
+    s.includes('???') ||
+    s.startsWith('????')
+  ) {
+    return fallbackId ? `Сделка #${fallbackId}` : '';
+  }
+  return s;
+}
+
 /**
  * Computes Enterprise Revenue Health Metrics for a Deal.
  */
 export function computeDealHealth(deal: Deal): DealHealthMetrics {
-  // Clean deal title from encoding artifacts (e.g. "????? #4870417")
-  let cleanTitle = String(deal.title || '').trim();
-  if (
-    cleanTitle.startsWith('????') ||
-    cleanTitle.startsWith('??????') ||
-    !cleanTitle
-  ) {
-    cleanTitle = `Сделка #${deal.crm_deal_id || deal.deal_id || deal.id}`;
-  }
+  const dealId = deal.crm_deal_id || deal.deal_id || deal.id;
+  const cleanTitle = cleanEntityTitle(deal.title, dealId);
 
   const stageNameLower = (deal.stage_name || deal.stage || '').toLowerCase();
   const isWon =
@@ -188,10 +186,13 @@ export function computeDealHealth(deal: Deal): DealHealthMetrics {
     String(deal.stage_id) === '7';
   const isClosed = isWon || isLost;
 
-  // 1. Base score from linked calls
+  // 1. Base score from linked calls (scale 0..13 normalized to 0..100)
   let scoreBase = 70; // baseline
   if (typeof deal.avg_call_score === 'number' && deal.avg_call_score > 0) {
-    scoreBase = deal.avg_call_score;
+    scoreBase =
+      deal.avg_call_score <= 13
+        ? Math.round((deal.avg_call_score / 13) * 100)
+        : Math.min(100, Math.round(deal.avg_call_score));
   }
 
   // 2. Penalty for SLA risk (applies ONLY to open active deals)
