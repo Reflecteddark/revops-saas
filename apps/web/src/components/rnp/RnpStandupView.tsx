@@ -23,6 +23,7 @@ import {
   ShieldAlert,
   Flame,
 } from 'lucide-react';
+import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -106,7 +107,7 @@ export function RnpStandupView({
   ).length;
 
   const yesterdayLeaksCount = yesterdayCalls.filter(
-    (c) => c.status === 'risk' || (c.score !== null && c.score < 6)
+    (c) => c.status === 'risk' || (c.score !== null && c.score < CALL_SCORE_THRESHOLDS.mid.min)
   ).length;
 
   const wonDealsCount = deals.filter((d) => d.status === 'won').length;
@@ -450,7 +451,7 @@ export function RnpStandupView({
               if (onInspectCall) {
                 const leakCall = yesterdayCalls.find(
                   (c) =>
-                    c.status === 'risk' || (c.score !== null && c.score < 6)
+                    c.status === 'risk' || (c.score !== null && c.score < CALL_SCORE_THRESHOLDS.mid.min)
                 );
                 if (leakCall) onInspectCall(leakCall);
               }

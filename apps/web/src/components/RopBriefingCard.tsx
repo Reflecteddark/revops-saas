@@ -14,6 +14,12 @@ import { Sparkles, AlertTriangle, Trophy, UserX, Copy, Check } from 'lucide-reac
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 import { CR_DEFINITIONS } from '@/lib/criteria';
+import { isSystemName } from '@/lib/systemNames';
+import {
+  COACHING_THRESHOLD,
+  NEXT_STEP_MIN_PCT,
+  MIN_CALLS_FOR_COACHING,
+} from '@/lib/thresholds';
 
 export interface RopBriefingCardProps {
   calls?: Call[];
@@ -21,8 +27,6 @@ export interface RopBriefingCardProps {
   onSelectCriterion?: (crIndex: number) => void;
   className?: string;
 }
-
-const SYSTEM_BOT_NAMES = new Set(['Автоответчик', 'Недозвон', 'Не представился', 'Неизвестный', '-']);
 
 export function RopBriefingCard({
   calls = [],
@@ -34,9 +38,7 @@ export function RopBriefingCard({
 
   // Analysis computation
   const briefing = React.useMemo(() => {
-    const validCalls = calls.filter(
-      (c) => c.manager && !SYSTEM_BOT_NAMES.has(c.manager.trim())
-    );
+    const validCalls = calls.filter((c) => !isSystemName(c.manager));
 
     if (validCalls.length === 0) {
       return null;
@@ -111,9 +113,10 @@ export function RopBriefingCard({
     });
     const topRep = sortedByScore[0] || null;
 
-    // Reps needing coaching: score < 8.0 or nextStepPct < 60%
-    const coachingCandidates = repStats
-      .filter((r) => r.avgScore < 8.0 || r.nextStepPct < 60)
+    // Reps needing coaching (A7): minimum MIN_CALLS_FOR_COACHING calls, score < COACHING_THRESHOLD or nextStepPct < NEXT_STEP_MIN_PCT
+    const eligibleReps = repStats.filter((r) => r.callsCount >= MIN_CALLS_FOR_COACHING);
+    const coachingCandidates = eligibleReps
+      .filter((r) => r.avgScore < COACHING_THRESHOLD || r.nextStepPct < NEXT_STEP_MIN_PCT)
       .sort((a, b) => a.avgScore - b.avgScore)
       .slice(0, 3);
 
@@ -285,7 +288,7 @@ ${coachingStr}
               </span>
             </div>
             <p className="mt-1 text-[11px] text-secondary">
-              Next Step: {topRep.nextStepPct}% • Эталон соблюдения скрипта и дожима до встречи.
+              Next Step: {topRep.nextStepPct}% • Лидер команды по среднему баллу и конверсии в шаг.
             </p>
           </div>
         )}

@@ -7,7 +7,8 @@
  */
 
 import * as React from 'react';
-import { PODIUM_ATTENTION_THRESHOLD } from '@/lib/thresholds';
+import { PODIUM_ATTENTION_THRESHOLD, COACHING_THRESHOLD } from '@/lib/thresholds';
+import { isSystemName } from '@/lib/systemNames';
 import { Crown, Trophy, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -71,7 +72,7 @@ export function RopPodium({
       if (
         c.status === 'lost' ||
         c.status === 'risk' ||
-        (c.score !== null && c.score < 8) ||
+        (c.score !== null && c.score < COACHING_THRESHOLD) ||
         c.next_step === 0
       ) {
         m.riskCallsCount += 1;
@@ -84,17 +85,6 @@ export function RopPodium({
       nextStepPct:
         m.callsCount > 0 ? Math.round((m.nextStepWon / m.callsCount) * 100) : 0,
     }));
-
-    const isSystemName = (n: string) => {
-      const lower = n.toLowerCase();
-      return (
-        lower.includes('не представился') ||
-        lower.includes('менеджер') ||
-        lower.includes('автоответчик') ||
-        lower.includes('неизвестно') ||
-        !n.trim()
-      );
-    };
 
     const validManagers = managers.filter((m) => !isSystemName(m.name));
     const allCandidates = validManagers.length > 0 ? validManagers : managers;

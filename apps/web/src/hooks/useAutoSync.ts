@@ -12,7 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { dealsApi } from '@/lib/api';
 
-const SYNC_COOLDOWN_MS = 15_000;
+const SYNC_COOLDOWN_MS = 60_000;
 const lastSyncTimestamps: Record<string, number> = {};
 const activeSyncPromises: Record<string, Promise<unknown>> = {};
 
@@ -57,9 +57,6 @@ export function useAutoSync() {
             queryClient.invalidateQueries({ queryKey: ['calls'] }),
             queryClient.invalidateQueries({ queryKey: ['insights'] }),
             queryClient.invalidateQueries({ queryKey: ['pipelines'] }),
-            queryClient.invalidateQueries({
-              queryKey: ['integrations-health'],
-            }),
           ]);
         } catch (err) {
           // Gracefully log without breaking UI

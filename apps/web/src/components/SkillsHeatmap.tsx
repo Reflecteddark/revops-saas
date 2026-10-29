@@ -15,6 +15,13 @@ import { Users, Award, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 import { CR_DEFINITIONS, CR_SHORT_LABELS } from '@/lib/criteria';
+import { isSystemName } from '@/lib/systemNames';
+import {
+  CALL_SCORE_THRESHOLDS,
+  COACHING_THRESHOLD,
+  HEATMAP_TOP_THRESHOLD,
+  MIN_CALLS_FOR_HEATMAP,
+} from '@/lib/thresholds';
 
 export interface SkillsHeatmapProps {
   calls?: Call[];
@@ -36,13 +43,7 @@ export interface RepSkillSummary {
   criteriaRates: { index: number; passCount: number; rate: number }[];
 }
 
-const SYSTEM_BOT_NAMES = new Set([
-  'Автоответчик',
-  'Недозвон',
-  'Не представился',
-  'Неизвестный',
-  '-',
-]);
+
 
 export function SkillsHeatmap({
   calls = [],
@@ -63,7 +64,7 @@ export function SkillsHeatmap({
 
     calls.forEach((c) => {
       const name = (c.manager || 'Менеджер').trim();
-      if (SYSTEM_BOT_NAMES.has(name)) {
+      if (isSystemName(name)) {
         botCount += 1;
         return;
       }
@@ -91,10 +92,11 @@ export function SkillsHeatmap({
 
       let role = 'Норматив';
       let roleType: 'top' | 'norm' | 'risk' = 'norm';
-      if (avgScore >= 10.5) {
+      // A13: Only reps with >= MIN_CALLS_FOR_HEATMAP qualify for "Эталон"
+      if (count >= MIN_CALLS_FOR_HEATMAP && avgScore >= HEATMAP_TOP_THRESHOLD) {
         role = 'Эталон звонков';
         roleType = 'top';
-      } else if (avgScore < 8.0) {
+      } else if (avgScore < COACHING_THRESHOLD) {
         role = 'Зона риска';
         roleType = 'risk';
       }
@@ -200,9 +202,9 @@ export function SkillsHeatmap({
         {repsData.map((rep) => {
           const isSelected = selectedRep === rep.name;
           const scoreColor =
-            rep.avgScore >= 9.0
+            rep.avgScore >= CALL_SCORE_THRESHOLDS.high.min
               ? 'text-emerald-500 dark:text-emerald-400'
-              : rep.avgScore >= 6.0
+              : rep.avgScore >= CALL_SCORE_THRESHOLDS.mid.min
                 ? 'text-amber-500 dark:text-amber-400'
                 : 'text-rose-500 dark:text-rose-400';
 
@@ -237,6 +239,7 @@ export function SkillsHeatmap({
                     </span>
                     <span>•</span>
                     <span
+                      title={rep.roleType === 'top' ? 'Средний балл ≥ 10.5/13 за все звонки' : undefined}
                       className={cn(
                         'font-medium',
                         rep.roleType === 'top'

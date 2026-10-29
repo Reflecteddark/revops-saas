@@ -790,6 +790,11 @@ async def get_deal_details(
     raise HTTPException(status_code=404, detail=f"Сделка {deal_id} не найдена")
 
 
+# Track per-tenant sync timestamps for backend rate-limiting (30s cooldown)
+_TENANT_LAST_SYNC: dict[str, float] = {}
+SYNC_RATE_LIMIT_COOLDOWN_SEC = 30.0
+
+
 @router.post("/sync")
 async def sync_deals(
     request: Request,
@@ -798,8 +803,23 @@ async def sync_deals(
     db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """Triggers on-demand synchronization of CRM deals for tenant from amoCRM / Bitrix24."""
+    import time
     requested = tenant_id or tenant
     effective_tenant = get_authenticated_tenant_or_verify_admin(request, requested)
+
+    # Per-tenant rate limiting: return 429 if called within cooldown window
+    now = time.time()
+    last_sync = _TENANT_LAST_SYNC.get(effective_tenant, 0.0)
+    elapsed = now - last_sync
+    if elapsed < SYNC_RATE_LIMIT_COOLDOWN_SEC:
+        retry_after = max(1, int(SYNC_RATE_LIMIT_COOLDOWN_SEC - elapsed))
+        raise HTTPException(
+            status_code=429,
+            detail=f"Синхронизация для тенанта {effective_tenant} уже выполнялась менее {int(SYNC_RATE_LIMIT_COOLDOWN_SEC)} сек. назад. Повторите попытку через {retry_after} сек.",
+            headers={"Retry-After": str(retry_after)}
+        )
+
+    _TENANT_LAST_SYNC[effective_tenant] = now
     from ..services.crm_deals_sync import sync_deals_for_tenant
     return await sync_deals_for_tenant(effective_tenant, db=db)
 

@@ -117,6 +117,7 @@ export function AdminClientsTab() {
       setB24Webhook('');
       setSheetId('');
       queryClient.invalidateQueries({ queryKey: ['admin-tenants-list'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
     onError: (err: Error) => {
       setActionAlert({ text: `Ошибка развертывания: ${err.message}`, type: 'error' });
@@ -128,6 +129,7 @@ export function AdminClientsTab() {
     onSuccess: (res) => {
       setActionAlert({ text: res.message || 'Статус обновлен', type: 'success' });
       queryClient.invalidateQueries({ queryKey: ['admin-tenants-list'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
     onError: (err: Error) => {
       setActionAlert({ text: `Ошибка смены статуса: ${err.message}`, type: 'error' });
@@ -142,6 +144,7 @@ export function AdminClientsTab() {
         type: 'success',
       });
       queryClient.invalidateQueries({ queryKey: ['admin-tenants-list'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
     onError: (err: Error) => {
       setActionAlert({ text: `Ошибка восстановления формул: ${err.message}`, type: 'error' });
@@ -155,6 +158,7 @@ export function AdminClientsTab() {
       setDeletingTenant(null);
       setDeleteConfirmText('');
       queryClient.invalidateQueries({ queryKey: ['admin-tenants-list'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
     onError: (err: Error) => {
       setActionAlert({ text: `Ошибка удаления контура: ${err.message}`, type: 'error' });
@@ -922,6 +926,7 @@ export function AdminClientsTab() {
         onClose={() => setEditingTenant(null)}
         onSuccess={(msg) => {
           queryClient.invalidateQueries({ queryKey: ['admin-tenants-list'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
           setActionAlert({ text: msg, type: 'success' });
         }}
       />

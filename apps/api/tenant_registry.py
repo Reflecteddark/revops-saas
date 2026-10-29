@@ -75,6 +75,7 @@ class InterProcessFileLock:
 def get_all_candidate_registry_paths() -> list[Path]:
     candidates = [
         Path("/opt/revops-enterprise-os/tenants_registry.json"),
+        Path("/opt/revops-enterprise-os/multitenant_revops/tenants_registry.json"),
         Path("/opt/revops-saas/tenants_registry.json"),
         Path(__file__).resolve().parent.parent.parent / "tenants_registry.json",
         Path(__file__).resolve().parent.parent.parent.parent / "revops-enterprise-os" / "tenants_registry.json",
@@ -180,16 +181,41 @@ def save_tenants_registry(data: dict[str, Any], target_path: Path | None = None,
                     json.dump(data, f, ensure_ascii=False, indent=2)
                     f.flush()
                     os.fsync(f.fileno())
-                os.replace(tmp_file, p)
+                try:
+                    os.replace(tmp_file, p)
+                except OSError as os_err:
+                    # In Linux / Docker containers, mounted files (e.g. -v host:container) cannot be replaced via rename
+                    # and raise [Errno 16] EBUSY (Device or resource busy) or [Errno 18] EXDEV.
+                    if getattr(os_err, "errno", None) in (16, 18) or "busy" in str(os_err).lower():
+                        with open(p, "w", encoding="utf-8") as dest_f:
+                            json.dump(data, dest_f, ensure_ascii=False, indent=2)
+                            dest_f.flush()
+                            os.fsync(dest_f.fileno())
+                        if tmp_file and tmp_file.exists():
+                            try:
+                                tmp_file.unlink()
+                            except Exception:
+                                pass
+                    else:
+                        raise
                 logger.info(f"Atomically saved tenants registry mirror to {p}")
             except Exception as ex:
                 logger.error(f"Failed to atomic save tenants registry mirror to {p}: {ex}")
+                # Secondary fallback: in-place write directly to target file
+                try:
+                    with open(p, "w", encoding="utf-8") as dest_f:
+                        json.dump(data, dest_f, ensure_ascii=False, indent=2)
+                        dest_f.flush()
+                        os.fsync(dest_f.fileno())
+                    logger.info(f"Direct in-place save succeeded for {p}")
+                except Exception as ex2:
+                    logger.error(f"Direct in-place save also failed for {p}: {ex2}")
+                    success = False
                 if tmp_file and tmp_file.exists():
                     try:
                         tmp_file.unlink()
                     except Exception:
                         pass
-                success = False
 
         _REGISTRY_CACHE["data"] = data
         _REGISTRY_CACHE["timestamp"] = time.time()

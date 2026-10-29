@@ -195,10 +195,12 @@ export function AuditPage() {
         if (periodFilter === '30d' && diffDays > 30) return false;
       }
     }
-    // CR filter: only calls where specific criterion failed (=== 0)
+    // CR filter (A9): supports both 0-based index ('0'..'12') and 'cr1'..'cr13'
     if (crFilter !== 'all') {
-      const crIndex = parseInt(crFilter, 10);
-      if (!isNaN(crIndex)) {
+      const crIndex = crFilter.toLowerCase().startsWith('cr')
+        ? parseInt(crFilter.slice(2), 10) - 1
+        : parseInt(crFilter, 10);
+      if (!isNaN(crIndex) && crIndex >= 0 && crIndex < 13) {
         const val = call.cr?.[crIndex];
         if (val !== 0) return false;
       }
@@ -231,7 +233,10 @@ export function AuditPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `revops-audit-${new Date().toISOString().slice(0, 10)}.csv`);
+    // A14: Include active filter in exported CSV filename
+    const filterPrefix = crFilter !== 'all' ? `${crFilter.toLowerCase().startsWith('cr') ? crFilter : `cr${parseInt(crFilter, 10) + 1}`}-` : '';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute('download', `revops-audit-${filterPrefix}${dateStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

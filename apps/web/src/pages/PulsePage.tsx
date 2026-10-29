@@ -85,8 +85,8 @@ const callColumns: ColumnDef<Call, unknown>[] = [
       if (score === null || score === undefined) {
         return <span className="text-tertiary text-xs">—</span>;
       }
-      const isGood = score >= 9;
-      const isMid = score >= 6;
+      const isGood = score >= CALL_SCORE_THRESHOLDS.high.min;
+      const isMid = score >= CALL_SCORE_THRESHOLDS.mid.min;
       const scoreColor = isGood
         ? 'text-emerald-400 font-semibold'
         : isMid

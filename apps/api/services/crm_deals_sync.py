@@ -587,12 +587,20 @@ def sync_deals_to_database(
     # Prune / soft-delete obsolete deals that are no longer in CRM
     existing_deals = db.query(Deal).filter(Deal.tenant_id == clean_tid).all()
     pruned = 0
-    for ed in existing_deals:
-        if active_deal_ids and ed.id not in active_deal_ids and ed.external_crm_id not in active_deal_ids:
-            if not ed.is_deleted:
-                setattr(ed, "is_deleted", True)
-                setattr(ed, "status", "DELETED")
-                pruned += 1
+    existing_count = len(existing_deals)
+    # Safety barrier (A5): do not prune if response contains < 50% of known deals (likely network failure/partial pagination)
+    if existing_count > 0 and len(active_deal_ids) < existing_count * 0.5:
+        logger.warning(
+            f"Prune skipped for tenant {clean_tid}: synced {len(active_deal_ids)} deals, "
+            f"but DB has {existing_count}. Possible partial CRM response."
+        )
+    else:
+        for ed in existing_deals:
+            if active_deal_ids and ed.id not in active_deal_ids and ed.external_crm_id not in active_deal_ids:
+                if not ed.is_deleted:
+                    setattr(ed, "is_deleted", True)
+                    setattr(ed, "status", "DELETED")
+                    pruned += 1
 
     db.commit()
 
@@ -609,7 +617,9 @@ async def sync_deals_for_tenant(tenant_id: str, db: Session | None = None) -> di
     Main entry point for syncing deals of a tenant from their active CRM.
     Pulls from amoCRM or Bitrix24, persists to PostgreSQL, and invalidates cache.
     """
-    clean_tid = (tenant_id or "TNT-001").strip().upper()
+    if not tenant_id or not str(tenant_id).strip():
+        raise ValueError("tenant_id is required for sync_deals_for_tenant")
+    clean_tid = str(tenant_id).strip().upper()
     cfg = get_tenant_config(clean_tid) or {}
 
     crm_type = str(cfg.get("crm_type") or "bitrix24").strip().lower()
@@ -643,6 +653,20 @@ async def sync_deals_for_tenant(tenant_id: str, db: Session | None = None) -> di
         )
         all_normalized.extend(b24_deals)
         sync_sources.append("Bitrix24")
+
+    # 2.5 Early warning if no CRM configured (A12)
+    if not sync_sources:
+        logger.info(f"Tenant {clean_tid} has no active CRM configured (amoCRM or Bitrix24)")
+        return {
+            "status": "warning",
+            "message": f"Ни одна CRM (amoCRM / Bitrix24) не настроена для тенанта {clean_tid}",
+            "tenant_id": clean_tid,
+            "sources": [],
+            "deals_count": 0,
+            "total_pipeline": 0.0,
+            "won_amount": 0.0,
+            "details": {"inserted": 0, "updated": 0, "pruned": 0, "total_synced": 0},
+        }
 
     # 3. Persist to DB
     own_db = False

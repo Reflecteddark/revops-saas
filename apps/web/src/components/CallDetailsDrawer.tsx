@@ -22,6 +22,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
 import { CR_LABELS, CR_DEFINITIONS } from '@/pages/AuditPage';
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
@@ -39,8 +40,8 @@ export function CallDetailsDrawer({ call, open, onOpenChange }: CallDetailsDrawe
   if (!call) return null;
 
   const score = call.score ?? (call as any)?.overall_score;
-  const isGood = score !== null && score !== undefined && score >= 9;
-  const isMid = score !== null && score !== undefined && score >= 6;
+  const isGood = score !== null && score !== undefined && score >= CALL_SCORE_THRESHOLDS.high.min;
+  const isMid = score !== null && score !== undefined && score >= CALL_SCORE_THRESHOLDS.mid.min;
   const scoreBadgeColor = isGood
     ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20'
     : isMid

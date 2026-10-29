@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { isSystemName } from '@/lib/systemNames';
+import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
 import type { Call } from '@/types/api';
 
 export interface DayMetric {
@@ -104,8 +106,8 @@ function InlineSparkline({
           const y = height - barHeight;
           const x = i * (barWidth + barGap);
 
-          const isGood = d.avgScore >= 9;
-          const isMid = d.avgScore >= 6;
+          const isGood = d.avgScore >= CALL_SCORE_THRESHOLDS.high.min;
+          const isMid = d.avgScore >= CALL_SCORE_THRESHOLDS.mid.min;
           const fill =
             d.callsCount === 0
               ? 'rgba(244, 63, 94, 0.35)'
@@ -160,7 +162,7 @@ export function DailyPulseMatrix({
     const fromManagers = (managers || [])
       .map((m) => (typeof m === 'string' ? m : m?.name))
       .filter(Boolean);
-    const managerNames = Array.from(new Set([...fromCalls, ...fromManagers])) as string[];
+    const managerNames = Array.from(new Set([...fromCalls, ...fromManagers])).filter((name) => !isSystemName(name)) as string[];
 
     if (managerNames.length === 0) {
       return [];

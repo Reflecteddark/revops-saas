@@ -1096,8 +1096,30 @@ def clear_console_logs():
 # ============================================================================
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
+
 CLIENTS_FILE = DATA_DIR / "registered_clients.json"
+
+def get_all_registered_clients_paths() -> list[Path]:
+    candidates = [
+        Path("/app/data/registered_clients.json"),
+        Path("/opt/revops-saas/data/registered_clients.json"),
+        CLIENTS_FILE,
+    ]
+    res: list[Path] = []
+    seen = set()
+    for p in candidates:
+        try:
+            s = str(p.resolve())
+        except Exception:
+            s = str(p)
+        if s not in seen:
+            seen.add(s)
+            res.append(p)
+    return res
 
 DEFAULT_SYSTEM_CLIENTS = [
     {
@@ -1128,26 +1150,45 @@ DEFAULT_SYSTEM_CLIENTS = [
 
 
 def load_registered_clients() -> list[dict[str, Any]]:
-    if CLIENTS_FILE.exists():
-        try:
-            with open(CLIENTS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.warning(f"Error reading {CLIENTS_FILE}: {e}")
+    for p in get_all_registered_clients_paths():
+        if p.exists():
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list) and len(data) > 0:
+                        return data
+            except Exception as e:
+                logger.warning(f"Error reading {p}: {e}")
     return list(DEFAULT_SYSTEM_CLIENTS)
 
 
 def save_registered_clients(clients: list[dict[str, Any]]):
-    try:
-        CLIENTS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        tmp = CLIENTS_FILE.parent / f".tmp_clients_{os.getpid()}_{time.time_ns()}.json"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(clients, f, ensure_ascii=False, indent=2)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, CLIENTS_FILE)
-    except Exception as e:
-        logger.error(f"Error saving {CLIENTS_FILE}: {e}")
+    for p in get_all_registered_clients_paths():
+        try:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            tmp = p.parent / f".tmp_clients_{os.getpid()}_{time.time_ns()}.json"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(clients, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            try:
+                os.replace(tmp, p)
+            except OSError as os_err:
+                if getattr(os_err, "errno", None) in (16, 18, 30) or "busy" in str(os_err).lower() or "read-only" in str(os_err).lower():
+                    with open(p, "w", encoding="utf-8") as dest_f:
+                        json.dump(clients, dest_f, ensure_ascii=False, indent=2)
+                        dest_f.flush()
+                        os.fsync(dest_f.fileno())
+                    if tmp.exists():
+                        try:
+                            tmp.unlink()
+                        except Exception:
+                            pass
+                else:
+                    raise
+            logger.info(f"Saved registered clients to {p}")
+        except Exception as e:
+            logger.warning(f"Could not save clients to {p}: {e}")
 
 
 class ClientRegisterRequest(BaseModel):
@@ -1281,7 +1322,21 @@ def save_archived_tenants(archives: list[dict[str, Any]]):
                 json.dump(archives, f, ensure_ascii=False, indent=2)
                 f.flush()
                 os.fsync(f.fileno())
-            os.replace(tmp, p)
+            try:
+                os.replace(tmp, p)
+            except OSError as os_err:
+                if getattr(os_err, "errno", None) in (16, 18) or "busy" in str(os_err).lower():
+                    with open(p, "w", encoding="utf-8") as dest_f:
+                        json.dump(archives, dest_f, ensure_ascii=False, indent=2)
+                        dest_f.flush()
+                        os.fsync(dest_f.fileno())
+                    if tmp.exists():
+                        try:
+                            tmp.unlink()
+                        except Exception:
+                            pass
+                else:
+                    raise
         except Exception as e:
             logger.warning(f"Failed to write archive to {p}: {e}")
 
@@ -1654,8 +1709,8 @@ def update_tenant_endpoint(tenant_id: str, req: TenantUpdateRequest):
 def delete_tenant_endpoint(tenant_id: str):
     """
     Permanently deletes a tenant and all associated data:
-    - Removes from PostgreSQL tenants, deals, calls, users
-    - Removes from tenants_registry.json
+    - Removes from PostgreSQL tenants, deals, calls, users, workspaces
+    - Directly prunes from all candidate tenants_registry.json files on disk
     - Removes from registered_clients.json
     - Removes from tenants_archive.json
     """
@@ -1663,8 +1718,13 @@ def delete_tenant_endpoint(tenant_id: str):
     if clean_id == "TNT-001":
         raise HTTPException(status_code=400, detail="Удаление мастер-тенанта TNT-001 запрещено")
 
-    from ..tenant_registry import load_tenants_registry
-    from packages.database.models import Tenant, User, Deal, CallRecording
+    from ..tenant_registry import (
+        load_tenants_registry,
+        save_tenants_registry,
+        get_all_candidate_registry_paths,
+        _REGISTRY_CACHE,
+    )
+    from packages.database.models import Tenant, User, Deal, CallRecording, Workspace
     from packages.database.session import SessionLocal
 
     # 1. Database cleanup
@@ -1680,15 +1740,24 @@ def delete_tenant_endpoint(tenant_id: str):
         calls = db.query(CallRecording).filter(CallRecording.tenant_id == clean_id).all()
         for c in calls:
             db.delete(c)
+        workspaces = db.query(Workspace).filter(Workspace.tenant_id == clean_id).all()
+        for w in workspaces:
+            db.delete(w)
         t = db.query(Tenant).filter(Tenant.id == clean_id).first()
         if t:
             db.delete(t)
             deleted_from_db = True
         db.commit()
+    except Exception as dbe:
+        db.rollback()
+        logger.error(f"Database error deleting tenant {clean_id}: {dbe}")
     finally:
         db.close()
 
-    # 2. Registry cleanup
+    # 2. Invalidate in-memory cache to guarantee fresh state
+    _REGISTRY_CACHE["data"] = None
+    _REGISTRY_CACHE["timestamp"] = 0
+
     registry = load_tenants_registry()
     found_in_registry = any(str(t.get("tenant_id", "")).upper() == clean_id for t in registry.get("tenants", []))
     archives = load_archived_tenants()
@@ -1697,16 +1766,37 @@ def delete_tenant_endpoint(tenant_id: str):
     if not (deleted_from_db or found_in_registry or found_in_archive):
         raise HTTPException(status_code=404, detail=f"Тенант {tenant_id} не найден")
 
+    # Filter out clean_id
     registry["tenants"] = [t for t in registry.get("tenants", []) if str(t.get("tenant_id", "")).upper() != clean_id]
-    if found_in_registry or deleted_from_db:
-        sync_save_registry(registry)
+    save_tenants_registry(registry, sync_mirrors=True)
 
-    # 3. Archive cleanup
+    # 3. Direct prune on every candidate registry file on disk (guarantees bind-mounted docker files are updated)
+    for cand in get_all_candidate_registry_paths():
+        try:
+            if cand.exists():
+                with open(cand, "r", encoding="utf-8") as f:
+                    cand_data = json.load(f)
+                cand_tenants = cand_data.get("tenants", [])
+                if any(str(t.get("tenant_id", "")).upper() == clean_id for t in cand_tenants):
+                    cand_data["tenants"] = [t for t in cand_tenants if str(t.get("tenant_id", "")).upper() != clean_id]
+                    with open(cand, "w", encoding="utf-8") as f:
+                        json.dump(cand_data, f, ensure_ascii=False, indent=2)
+                        f.flush()
+                        os.fsync(f.fileno())
+                    logger.info(f"Directly pruned {clean_id} from {cand}")
+        except Exception as cand_err:
+            logger.warning(f"Could not directly prune {clean_id} from {cand}: {cand_err}")
+
+    # Set cache to the pruned registry so immediate subsequent reads are fresh
+    _REGISTRY_CACHE["data"] = registry
+    _REGISTRY_CACHE["timestamp"] = time.time()
+
+    # 4. Archive cleanup
     new_archives = [a for a in archives if str(a.get("tenant_id", "")).upper() != clean_id]
     if len(new_archives) != len(archives):
         save_archived_tenants(new_archives)
 
-    # 4. Registered clients cleanup
+    # 5. Registered clients cleanup
     clients = load_registered_clients()
     new_clients = [c for c in clients if clean_id not in str(c.get("tenant", "")).upper()]
     if len(new_clients) != len(clients):
