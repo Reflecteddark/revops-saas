@@ -46,7 +46,12 @@ export function LoginPage() {
         const clientRes = await authApi.clientLogin(email.trim(), password);
         accessToken = clientRes.access_token || clientRes.token || (clientRes as any).session_token || null;
         const tenantMatch = clientRes.user?.tenant?.match(/TNT-[A-Za-z0-9_-]+/i);
-        const tenantId = tenantMatch ? tenantMatch[0].toUpperCase() : 'TNT-001';
+        const tenantId = tenantMatch ? tenantMatch[0].toUpperCase() : (clientRes.user?.tenant_id || null);
+        if (!tenantId) {
+          setError('Тенант не определён. Обратитесь к администратору.');
+          setLoading(false);
+          return;
+        }
 
         user = {
           id: clientRes.user?.login || email.trim(),

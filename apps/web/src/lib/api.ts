@@ -198,8 +198,7 @@ export const dealsApi = {
   },
 
   pipelines: async (tenantId?: string): Promise<Pipeline[]> => {
-    const effectiveTenant =
-      tenantId || useRevOpsStore.getState().activeTenantId || 'TNT-001';
+    const effectiveTenant = requireTenantId(tenantId);
     const res = await api.get<{ pipelines?: Pipeline[]; [key: string]: unknown }>(
       '/deals/pipelines',
       {
@@ -214,8 +213,7 @@ export const dealsApi = {
   },
 
   get: async (dealId: string, tenantId?: string): Promise<Deal | null> => {
-    const effectiveTenant =
-      tenantId || useRevOpsStore.getState().activeTenantId || 'TNT-001';
+    const effectiveTenant = requireTenantId(tenantId);
     const res = await api.get<{ deal?: Deal; [key: string]: unknown }>(
       `/deals/${dealId}`,
       {
@@ -266,8 +264,7 @@ export const callsApi = {
 
 export const settingsApi = {
   get: async (tenantId?: string): Promise<Settings> => {
-    const effectiveTenant =
-      tenantId || useRevOpsStore.getState().activeTenantId || 'TNT-001';
+    const effectiveTenant = requireTenantId(tenantId);
     const res = await api.get<Settings>('/settings', {
       params: { tenant_id: effectiveTenant },
     });
@@ -517,9 +514,10 @@ export const adminApi = {
     return res.data;
   },
 
-  getCrmStatus: async (tenantId = 'TNT-001'): Promise<CrmStatusResponse> => {
+  getCrmStatus: async (tenantId?: string): Promise<CrmStatusResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
     const res = await api.get<CrmStatusResponse>('/admin/crm/status', {
-      params: { tenant_id: tenantId },
+      params: { tenant_id: effectiveTenant },
     });
     return res.data;
   },
@@ -594,6 +592,12 @@ export const insightsApi = {
   },
 };
 
+function requireTenantId(tenantId?: string): string {
+  const id = tenantId || useRevOpsStore.getState().activeTenantId;
+  if (!id) throw new Error('Tenant ID is required');
+  return id;
+}
+
 function getAdminKey(): string {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('revops_admin_key') || '';
@@ -603,14 +607,15 @@ function getAdminKey(): string {
 
 export const integrationsApi = {
   getHealth: async (
-    tenantId = 'TNT-001'
+    tenantId?: string
   ): Promise<IntegrationsHealthResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
     const adminKey = getAdminKey();
 
     const res = await api.get<IntegrationsHealthResponse>(
       '/integrations/health',
       {
-        params: { tenant_id: tenantId },
+        params: { tenant_id: effectiveTenant },
         headers: {
           ...(adminKey ? { 'X-Admin-Key': adminKey } : {}),
         },
@@ -620,16 +625,17 @@ export const integrationsApi = {
   },
 
   retryDlq: async (
-    tenantId = 'TNT-001',
+    tenantId?: string,
     dlqId?: string
   ): Promise<DlqRetryResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
     const adminKey = getAdminKey();
 
     const res = await api.post<DlqRetryResponse>(
       '/integrations/dlq/retry',
       {},
       {
-        params: { tenant_id: tenantId, ...(dlqId ? { dlq_id: dlqId } : {}) },
+        params: { tenant_id: effectiveTenant, ...(dlqId ? { dlq_id: dlqId } : {}) },
         headers: {
           ...(adminKey ? { 'X-Admin-Key': adminKey } : {}),
         },
@@ -639,15 +645,16 @@ export const integrationsApi = {
   },
 
   sendTelegramReport: async (
-    tenantId = 'TNT-001'
+    tenantId?: string
   ): Promise<TelegramReportResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
     const adminKey = getAdminKey();
 
     const res = await api.post<TelegramReportResponse>(
       '/integrations/report/telegram',
       {},
       {
-        params: { tenant_id: tenantId },
+        params: { tenant_id: effectiveTenant },
         headers: {
           ...(adminKey ? { 'X-Admin-Key': adminKey } : {}),
         },

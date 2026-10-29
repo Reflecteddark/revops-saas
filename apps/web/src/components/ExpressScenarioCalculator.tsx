@@ -14,6 +14,8 @@ export interface ExpressScenarioCalculatorProps {
   initialLeads?: number;
   initialCheck?: number;
   initialManagers?: number;
+  realLeakPct?: number; // % реальных потерь из CRM
+  realConversionPct?: number; // % реальной конверсии won/total
   className?: string;
 }
 
@@ -21,6 +23,8 @@ export function ExpressScenarioCalculator({
   initialLeads = 50,
   initialCheck = 300000,
   initialManagers = 4,
+  realLeakPct,
+  realConversionPct,
   className,
 }: ExpressScenarioCalculatorProps) {
   const [leads, setLeads] = React.useState<number>(initialLeads);
@@ -28,10 +32,13 @@ export function ExpressScenarioCalculator({
   const [managers, setManagers] = React.useState<number>(initialManagers);
   const upliftPct = 15;
 
+  const leakPct = realLeakPct ?? 28;
+  const convPct = realConversionPct ?? 25;
+
   // Financial calculations
   const currentPipeline = leads * avgCheck;
-  const leakAmount = Math.round(currentPipeline * 0.28);
-  const basePlan = Math.round(currentPipeline * 0.25);
+  const leakAmount = Math.round(currentPipeline * (leakPct / 100));
+  const basePlan = Math.round(currentPipeline * (convPct / 100));
   const optPlan = Math.round(basePlan * (1 + upliftPct / 100) * 1.15);
   const addedRevenue = optPlan - basePlan;
 
@@ -142,7 +149,7 @@ export function ExpressScenarioCalculator({
         <div className="surface rounded p-3.5 border border-rose-500/20 bg-rose-500/[0.03] space-y-1">
           <div className="flex items-center gap-1.5 text-xs text-rose-400 font-medium">
             <AlertTriangle className="h-3.5 w-3.5" />
-            <span className="text-balance">Сливы без контроля (28%)</span>
+            <span className="text-balance">Сливы без контроля ({leakPct}%{!realLeakPct ? ' — допущение' : ''})</span>
           </div>
           <div
             className="font-mono text-lg font-bold text-rose-400 tabular-nums"
@@ -158,7 +165,7 @@ export function ExpressScenarioCalculator({
         {/* Base Plan Card */}
         <div className="surface rounded p-3.5 border border-subtle bg-hover/20 space-y-1">
           <div className="flex items-center gap-1.5 text-xs text-secondary font-medium">
-            <span className="text-balance">Базовый факт (конверсия 25%)</span>
+            <span className="text-balance">Базовый факт (конверсия {convPct}%{!realConversionPct ? ' — допущение' : ''})</span>
           </div>
           <div
             className="font-mono text-lg font-bold text-foreground tabular-nums"

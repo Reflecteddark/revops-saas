@@ -52,7 +52,7 @@ interface DealWithHealth extends Deal {
 }
 
 export function DealsPage() {
-  const activeTenantId = useRevOpsStore((s) => s.activeTenantId) || 'TNT-001';
+  const activeTenantId = useRevOpsStore((s) => s.activeTenantId);
 
   // State
   const [viewMode, setViewMode] = React.useState<ViewMode>('kanban');

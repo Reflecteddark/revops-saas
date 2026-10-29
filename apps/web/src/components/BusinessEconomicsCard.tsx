@@ -41,7 +41,7 @@ export function BusinessEconomicsCard({
 
   targetRub,
   qualityPct,
-  corridorConfidencePct = 92,
+  corridorConfidencePct = 0,
 
   className,
 }: BusinessEconomicsProps) {
@@ -213,7 +213,7 @@ export function BusinessEconomicsCard({
             <div className="flex items-center justify-between text-secondary">
               <span>Точность Монте-Карло</span>
               <span className="font-mono font-medium text-cyan-400">
-                {corridorConfidencePct}%
+                {corridorConfidencePct > 0 ? `${corridorConfidencePct}%` : '—'}
               </span>
             </div>
           </div>

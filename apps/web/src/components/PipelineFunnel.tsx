@@ -112,6 +112,11 @@ export function PipelineFunnel({
       });
     }
 
+    // Return empty if neither real pipeline stages nor deals are present
+    if (!deals || deals.length === 0) {
+      return [];
+    }
+
     // 2. Canonical 5 stages fallback (SSOT default)
     let val1 = 0, val2 = 0, val3 = 0, val4 = 0, val5 = 0;
     let cnt1 = 0, cnt2 = 0, cnt3 = 0, cnt4 = 0, cnt5 = 0;
@@ -266,7 +271,12 @@ export function PipelineFunnel({
 
       {/* Funnel Stages List */}
       <div className="space-y-3 pt-1" data-testid="funnel-stages-list">
-        {stages.map((stage) => {
+        {stages.length === 0 ? (
+          <div className="py-8 text-center text-xs text-secondary" data-testid="funnel-empty-notice">
+            Данные воронки загружаются из CRM...
+          </div>
+        ) : (
+          stages.map((stage) => {
           const widthPct = maxAmount > 0 ? Math.min(100, Math.round((stage.amount / maxAmount) * 100)) : 0;
           // Процент этапа: от первого этапа, если он заполнен, либо от общего объёма воронки
           const baseStageAmount = stages[0]?.amount > 0 ? stages[0].amount : (totalAmount > 0 ? totalAmount : maxAmount);
@@ -303,7 +313,7 @@ export function PipelineFunnel({
               </div>
             </div>
           );
-        })}
+        }))}
       </div>
     </div>
   );

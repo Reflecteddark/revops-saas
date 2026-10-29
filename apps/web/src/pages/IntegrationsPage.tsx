@@ -46,7 +46,7 @@ import {
 import type { IntegrationsHealthResponse } from '@/types/api';
 
 export function IntegrationsPage() {
-  const activeTenantId = useActiveTenantSafe() || 'TNT-001';
+  const activeTenantId = useActiveTenantSafe();
   const { toast } = useToast();
   const tenants = useRevOpsStore((s) => s.tenants);
   const activeTenant = tenants.find(

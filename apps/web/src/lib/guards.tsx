@@ -9,6 +9,14 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 import type { User } from '@/types/api';
 
+const ADMIN_EMAILS: string[] = (
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ADMIN_EMAILS) ||
+  ''
+)
+  .split(',')
+  .map((e: string) => e.trim().toLowerCase())
+  .filter(Boolean);
+
 export function isUserAdmin(user: User | null): boolean {
   if (!user) return false;
   const role = String(user.role || '').toLowerCase();
@@ -19,7 +27,7 @@ export function isUserAdmin(user: User | null): boolean {
     role.includes('admin') ||
     role.includes('супервайзер') ||
     email === 'admin' ||
-    email === 'dmitriyfedotov1908@gmail.com'
+    (ADMIN_EMAILS.length > 0 && ADMIN_EMAILS.includes(email))
   );
 }
 

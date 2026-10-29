@@ -79,7 +79,7 @@ export function CcoChatDrawer({ open, onOpenChange }: CcoChatDrawerProps) {
     try {
       const response = await insightsApi.chat({
         message: text,
-        tenant_id: tenantId || 'TNT-001',
+        tenant_id: tenantId!,
         history: messages
           .slice(-6)
           .map((m) => ({ role: m.role, text: m.text })),

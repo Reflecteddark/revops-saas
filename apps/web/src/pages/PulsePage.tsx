@@ -756,6 +756,8 @@ export function PulsePage() {
             initialLeads={Math.max(1, deals.length)}
             initialCheck={avgCheckRub > 0 ? avgCheckRub : 250000}
             initialManagers={Math.max(1, uniqueManagersCount)}
+            realLeakPct={(insights as any)?.loss_rate_pct}
+            realConversionPct={(insights as any)?.conversion_rate_pct}
           />
         </div>
         <div className="lg:col-span-6">
