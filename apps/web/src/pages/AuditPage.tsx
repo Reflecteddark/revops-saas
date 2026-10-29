@@ -457,6 +457,18 @@ export function AuditPage() {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Audio Player */}
+          {(selectedCall?.audio_url || (selectedCall as any)?.audio_s3_url) && (
+            <div className="mt-3 rounded-lg border border-subtle bg-hover p-3">
+              <audio
+                controls
+                className="w-full h-8"
+                src={selectedCall?.audio_url || (selectedCall as any)?.audio_s3_url}
+                data-testid="audit-call-audio-player"
+              />
+            </div>
+          )}
+
           <div className="mt-2 flex-1 space-y-5 overflow-y-auto pr-1">
             {/* 13 CR Criteria visualization */}
             <div>

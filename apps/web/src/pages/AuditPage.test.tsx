@@ -48,6 +48,7 @@ const mockCalls: Call[] = [
     error_summary: 'Не уточнил дедлайн',
     recommendation: 'Зафиксировать сроки',
     transcript: 'Транскрипт тестового звонка ООО АгроХим',
+    audio_url: 'https://storage.example.com/audio1.mp3',
   },
   {
     id: 'call-2',
@@ -136,6 +137,7 @@ describe('AuditPage', () => {
     expect(screen.getByTestId('audit-call-transcript')).toHaveTextContent(
       'Транскрипт тестового звонка ООО АгроХим'
     );
+    expect(screen.getByTestId('audit-call-audio-player')).toBeInTheDocument();
   });
 
   it('visualizes 13 CR criteria correctly: 1 as green, 0 as red, null as gray', async () => {
