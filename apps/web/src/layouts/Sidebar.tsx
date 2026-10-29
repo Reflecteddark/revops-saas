@@ -102,14 +102,14 @@ export function Sidebar({ className }: SidebarProps = {}) {
         </nav>
       </div>
 
-      {/* Footer info: version and migration tag */}
+      {/* Footer info */}
       <div className="flex items-center justify-between border-t border-subtle px-2 pt-3 text-xs">
-        <span className="font-mono text-[11px] text-tertiary">v20.7.2</span>
+        <span className="font-mono text-[11px] text-tertiary">RevOps OS</span>
         <Badge
           variant="outline"
           className="border-subtle bg-hover px-1.5 py-0.5 text-[11px] font-normal tracking-wide text-tertiary"
         >
-          Платформа React
+          Enterprise
         </Badge>
       </div>
     </aside>

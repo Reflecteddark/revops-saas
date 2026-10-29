@@ -332,7 +332,7 @@ export function AuditPage() {
                 Отказ (lost)
               </SelectItem>
               <SelectItem value="fake_yes" className="text-xs">
-                Fake Yes
+                Ложное согласие
               </SelectItem>
             </SelectContent>
           </Select>

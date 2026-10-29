@@ -630,8 +630,7 @@ export function SettingsPage() {
                       🎯 ПЛАН ВЫРУЧКИ НА МЕСЯЦ (₽):
                     </label>
                     <p className="text-[11px] text-muted-foreground">
-                      Автоматически записывается в ячейку B9 Google Таблицы
-                      (лист «⚙️ Настройки»).
+                      Автоматически синхронизируется с Google Таблицей вашей компании.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

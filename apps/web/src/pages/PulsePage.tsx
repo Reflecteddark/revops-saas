@@ -334,17 +334,14 @@ export function PulsePage() {
 
   return (
     <div className="space-y-6">
-      {/* MPSTATS-style Header Bar with Action Buttons */}
+      {/* Header Bar with Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-subtle pb-4">
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold tracking-tight text-foreground text-balance">
               Рука на пульсе: Оперативная экономика продаж
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              LIVE
-            </span>
+
           </div>
           <p className="text-xs text-secondary mt-1 text-pretty">
             Подключение: <span className="text-foreground font-medium">{tenantId}</span> &bull;
@@ -403,7 +400,7 @@ export function PulsePage() {
         <div className="surface rounded-2xl border border-subtle p-4 text-xs space-y-2">
           <div className="flex items-center justify-between pb-1 border-b border-subtle">
             <h3 className="font-semibold text-foreground text-balance">
-              Стандарт ежедневного 15-минутного спринта РОПа (MPSTATS Playbook)
+              Стандарт ежедневного 15-минутного спринта РОПа
             </h3>
             <button
               onClick={() => setShowRopGuide(false)}
@@ -527,7 +524,7 @@ export function PulsePage() {
         hasTelegram={Boolean(settingsQuery.data?.telegram?.bot_token || settingsQuery.data?.telegram?.chat_id)}
       />
 
-      {/* MPSTATS Smart Alert Banner */}
+      {/* Smart Alert Banner */}
       <PulseSmartAlert
         stalledCount={stalledDealsCount}
         stalledAmountRub={stalledAmountRub}
@@ -537,7 +534,7 @@ export function PulsePage() {
         }}
       />
 
-      {/* MPSTATS Master Economics 3-Column Card */}
+      {/* Master Economics 3-Column Card */}
       <BusinessEconomicsCard
         revenueRub={revenue}
         pipelineRub={pipelineSum}
@@ -615,7 +612,7 @@ export function PulsePage() {
         />
       </div>
 
-      {/* MPSTATS Status Segmented Bars Grid */}
+      {/* Status Segmented Bars Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <StatusSegmentedBar
           title="Распределение звонков по стандартам РОПа"
@@ -765,7 +762,7 @@ export function PulsePage() {
         </div>
       </div>
 
-      {/* MPSTATS-style Daily Heatmap Matrix with Sparklines */}
+      {/* Daily Heatmap Matrix with Sparklines */}
       <DailyPulseMatrix calls={calls} managers={settings?.managers || []} loading={isLoading} />
 
       {/* 8:00 – 20:00 Hourly Call & Dial Intensity Heatmap (наборы / от 1 мин) */}
