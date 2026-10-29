@@ -30,7 +30,9 @@ import {
   Snowflake,
   Sparkles,
   Stethoscope,
+  Trash2,
   Wrench,
+  X,
 } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import { TenantEditModal } from './TenantEditModal';
@@ -76,6 +78,10 @@ export function AdminClientsTab() {
 
   // Edit & Integration Modal State
   const [editingTenant, setEditingTenant] = React.useState<TenantLifecycleRecord | null>(null);
+
+  // Cascade Deletion Confirmation Modal State
+  const [deletingTenant, setDeletingTenant] = React.useState<TenantLifecycleRecord | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = React.useState('');
 
   // Form State for 1-Click Onboarding
   const [companyName, setCompanyName] = React.useState('');
@@ -139,6 +145,19 @@ export function AdminClientsTab() {
     },
     onError: (err: Error) => {
       setActionAlert({ text: `Ошибка восстановления формул: ${err.message}`, type: 'error' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => adminApi.deleteTenant(id),
+    onSuccess: (res) => {
+      setActionAlert({ text: res.message || 'Организация успешно удалена', type: 'success' });
+      setDeletingTenant(null);
+      setDeleteConfirmText('');
+      queryClient.invalidateQueries({ queryKey: ['admin-tenants-list'] });
+    },
+    onError: (err: Error) => {
+      setActionAlert({ text: `Ошибка удаления контура: ${err.message}`, type: 'error' });
     },
   });
 
@@ -578,6 +597,26 @@ export function AdminClientsTab() {
                           >
                             <Snowflake className="h-3 w-3" />
                           </Button>
+
+                          {/* Cascade Delete Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setDeletingTenant(t);
+                              setDeleteConfirmText('');
+                            }}
+                            disabled={t.tenant_id.toUpperCase() === 'TNT-001'}
+                            className="h-7 px-1.5 text-[11px] text-zinc-500 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:hover:text-zinc-500 transition-colors"
+                            title={
+                              t.tenant_id.toUpperCase() === 'TNT-001'
+                                ? 'Удаление мастер-контура TNT-001 запрещено'
+                                : `Удалить контур ${t.tenant_id} навсегда (каскадное удаление данных)`
+                            }
+                            data-testid={`btn-delete-tenant-${t.tenant_id}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -886,6 +925,96 @@ export function AdminClientsTab() {
           setActionAlert({ text: msg, type: 'success' });
         }}
       />
+
+      {/* 6. Cascade Delete Confirmation Modal */}
+      {deletingTenant && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-md border-red-500/40 bg-surface shadow-2xl">
+            <CardHeader className="pb-3 border-b border-subtle">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-red-400">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
+                    <Trash2 className="h-4 w-4" />
+                  </div>
+                  <CardTitle className="text-base font-semibold text-foreground">
+                    Удаление клиентского контура
+                  </CardTitle>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletingTenant(null);
+                    setDeleteConfirmText('');
+                  }}
+                  className="rounded-lg p-1 text-zinc-400 hover:bg-subtle hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300 leading-relaxed">
+                <p className="font-semibold text-red-200 mb-1">⚠️ Внимание! Это действие необратимо.</p>
+                Будут <strong>безвозвратно удалены</strong> все звонки, стенограммы, аналитические метрики, сделки воронки и привязанные пользователи организации:
+                <div className="mt-2 font-mono font-bold text-foreground text-sm">
+                  {deletingTenant.tenant_name} ({deletingTenant.tenant_id})
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-tertiary">
+                  Для подтверждения введите <span className="font-mono font-bold text-foreground">{deletingTenant.tenant_id}</span>:
+                </label>
+                <Input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder={deletingTenant.tenant_id}
+                  className="font-mono text-xs uppercase"
+                  data-testid="input-delete-confirm-tenant-id"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-subtle">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setDeletingTenant(null);
+                    setDeleteConfirmText('');
+                  }}
+                  disabled={deleteMutation.isPending}
+                >
+                  Отмена
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => deleteMutation.mutate(deletingTenant.tenant_id)}
+                  disabled={
+                    deleteConfirmText.trim().toUpperCase() !== deletingTenant.tenant_id.toUpperCase() ||
+                    deleteMutation.isPending
+                  }
+                  className="gap-1.5 bg-red-600 hover:bg-red-700 text-white font-medium"
+                  data-testid="btn-confirm-delete-tenant"
+                >
+                  {deleteMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span>Удаление...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-3 w-3" />
+                      <span>Удалить навсегда</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

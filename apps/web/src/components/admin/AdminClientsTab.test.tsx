@@ -52,9 +52,23 @@ const mockTenantsData = {
         },
       ],
     },
+    {
+      tenant_id: 'TNT-002',
+      tenant_name: 'Тест Клиент',
+      effective_status: 'active',
+      crm_type: 'amocrm',
+      spreadsheet_id: '1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A',
+      spreadsheet_url: 'https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A',
+      niche_name: 'Универсальный B2B',
+      avg_deal_check: 150000,
+      minutes_used: 100,
+      minutes_quota: 1000,
+      spent_rub: 500,
+      connected_clients: [],
+    },
   ],
   archived: [],
-  total_active: 1,
+  total_active: 2,
   total_frozen: 0,
   total_archived: 0,
 };
@@ -98,8 +112,8 @@ describe('AdminClientsTab', () => {
 
     renderWithClient(<AdminClientsTab />);
 
-    const repairBtn = await screen.findByTitle(/🩺 Починить формулы таблицы/);
-    fireEvent.click(repairBtn);
+    const repairBtns = await screen.findAllByTitle(/🩺 Починить формулы таблицы/);
+    fireEvent.click(repairBtns[0]);
 
     await waitFor(() => {
       expect(adminApi.repairTenantSheet).toHaveBeenCalledWith('1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk');
@@ -172,6 +186,41 @@ describe('AdminClientsTab', () => {
           crm_webhook_url: 'https://new-b24.bitrix24.ru/rest/1/new_token/',
         })
       );
+    });
+  });
+
+  it('disables delete button for master tenant TNT-001 and executes cascade deletion for TNT-002 upon confirmation', async () => {
+    vi.mocked(adminApi.deleteTenant).mockResolvedValue({
+      success: true,
+      message: 'Организация TNT-002 полностью удалена',
+    });
+
+    renderWithClient(<AdminClientsTab />);
+
+    // TNT-001 delete button is disabled
+    const deleteBtnMaster = await screen.findByTestId('btn-delete-tenant-TNT-001');
+    expect(deleteBtnMaster).toBeDisabled();
+
+    // TNT-002 delete button is enabled
+    const deleteBtn = await screen.findByTestId('btn-delete-tenant-TNT-002');
+    expect(deleteBtn).not.toBeDisabled();
+    fireEvent.click(deleteBtn);
+
+    // Modal opens
+    expect(screen.getByText(/Удаление клиентского контура/)).toBeInTheDocument();
+    const confirmBtn = screen.getByTestId('btn-confirm-delete-tenant');
+    expect(confirmBtn).toBeDisabled();
+
+    // Enter matching tenant ID
+    const input = screen.getByTestId('input-delete-confirm-tenant-id');
+    fireEvent.change(input, { target: { value: 'TNT-002' } });
+    expect(confirmBtn).not.toBeDisabled();
+
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(adminApi.deleteTenant).toHaveBeenCalledWith('TNT-002');
+      expect(screen.getByText(/Организация TNT-002 полностью удалена/)).toBeInTheDocument();
     });
   });
 });
