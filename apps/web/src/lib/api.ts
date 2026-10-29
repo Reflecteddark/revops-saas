@@ -586,50 +586,33 @@ export const insightsApi = {
   },
 
   chat: async (payload: AnalystChatPayload): Promise<AnalystChatResponse> => {
-    try {
-      const res = await api.post<AnalystChatResponse>(
-        '/insights/analyst/chat',
-        payload
-      );
-      return res.data;
-    } catch {
-      // Offline fallback synthesis based on context
-      const { message, context } = payload;
-      const leak = context?.leak_rub
-        ? `${context.leak_rub.toLocaleString('ru-RU')} ₽`
-        : '3.2M ₽';
-      const pct = context?.next_step_pct ?? 48;
-      const avg = context?.avg_score ?? 8.4;
-
-      return {
-        reply:
-          `### Экспресс-аудит CCO / Agent 2\n\n` +
-          `По вопросу: **«${message}»**\n\n` +
-          `- **Утечка выручки в воронке**: выявлено сливов на **${leak}** из-за отсутствия точного дедлайна.\n` +
-          `- **Дисциплина Next Step**: зафиксирована только в **${pct}%** диалогов (критический разрыв воронки).\n` +
-          `- **Средний балл стандартов ОП**: **${avg} / 13**.\n\n` +
-          `> **Директива CCO РОПу**: запретить перевод сделок на этап «КП отправлено» без согласованного слота Zoom. Всех зависших клиентов со статусом «Подумаю» передать старшему менеджеру на дожим с оффером ограниченного действия.`,
-      };
-    }
+    const res = await api.post<AnalystChatResponse>(
+      '/insights/analyst/chat',
+      payload
+    );
+    return res.data;
   },
 };
+
+function getAdminKey(): string {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('revops_admin_key') || '';
+  }
+  return '';
+}
 
 export const integrationsApi = {
   getHealth: async (
     tenantId = 'TNT-001'
   ): Promise<IntegrationsHealthResponse> => {
-    const adminKey =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('revops_admin_key') ||
-          'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1'
-        : 'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1';
+    const adminKey = getAdminKey();
 
     const res = await api.get<IntegrationsHealthResponse>(
       '/integrations/health',
       {
         params: { tenant_id: tenantId },
         headers: {
-          'X-Admin-Key': adminKey,
+          ...(adminKey ? { 'X-Admin-Key': adminKey } : {}),
         },
       }
     );
@@ -640,11 +623,7 @@ export const integrationsApi = {
     tenantId = 'TNT-001',
     dlqId?: string
   ): Promise<DlqRetryResponse> => {
-    const adminKey =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('revops_admin_key') ||
-          'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1'
-        : 'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1';
+    const adminKey = getAdminKey();
 
     const res = await api.post<DlqRetryResponse>(
       '/integrations/dlq/retry',
@@ -652,7 +631,7 @@ export const integrationsApi = {
       {
         params: { tenant_id: tenantId, ...(dlqId ? { dlq_id: dlqId } : {}) },
         headers: {
-          'X-Admin-Key': adminKey,
+          ...(adminKey ? { 'X-Admin-Key': adminKey } : {}),
         },
       }
     );
@@ -662,11 +641,7 @@ export const integrationsApi = {
   sendTelegramReport: async (
     tenantId = 'TNT-001'
   ): Promise<TelegramReportResponse> => {
-    const adminKey =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('revops_admin_key') ||
-          'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1'
-        : 'a4b193da5546c6fc975da937e0db02b0375b10c2a9ee86f6816516f0b844b6f1';
+    const adminKey = getAdminKey();
 
     const res = await api.post<TelegramReportResponse>(
       '/integrations/report/telegram',
@@ -674,7 +649,7 @@ export const integrationsApi = {
       {
         params: { tenant_id: tenantId },
         headers: {
-          'X-Admin-Key': adminKey,
+          ...(adminKey ? { 'X-Admin-Key': adminKey } : {}),
         },
       }
     );
