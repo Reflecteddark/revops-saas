@@ -45,3 +45,10 @@ test_vps_gemini.py
 scratch_test_live.py
 preview_*.html
 
+
+# Audio files & test uploads
+*.mp3
+*.wav
+*.ogg
+*.m4a
+calls_to_upload/
