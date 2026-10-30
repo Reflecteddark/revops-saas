@@ -420,8 +420,16 @@ if LANDING_HTML.exists():
         with open(LANDING_HTML, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
 
-    for folder in ["css", "images", "fonts", "audio", "samples", "webfonts"]:
+    for folder in ["css", "images", "fonts", "samples", "webfonts"]:
         sub_dir = LANDING_DIR / folder
         if sub_dir.exists():
             app.mount(f"/{folder}", StaticFiles(directory=str(sub_dir)), name=f"landing_{folder}")
+
+# Public Audio Storage Mount for amoCRM Telephony & n8n Gemini Scoring
+AUDIO_DATA_DIR = Path("/app/data/audio")
+if not AUDIO_DATA_DIR.exists():
+    AUDIO_DATA_DIR = BASE_DIR / "data" / "audio"
+AUDIO_DATA_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/audio", StaticFiles(directory=str(AUDIO_DATA_DIR)), name="public_audio")
+
 

@@ -7,12 +7,15 @@ import os
 import re
 import secrets
 import time
+import uuid
+import requests
 from datetime import datetime
 from ipaddress import ip_address, ip_network
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -936,3 +939,170 @@ def list_calls(
         }
         for c in calls
     ]
+
+# ==========================================================================
+
+# ==========================================================================
+# AUDIO SERVING & DIRECT AMOCRM TELEPHONY INJECTION
+# ==========================================================================
+
+AUDIO_STORAGE_DIR = Path("/app/data/audio")
+if not AUDIO_STORAGE_DIR.exists():
+    AUDIO_STORAGE_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "audio"
+AUDIO_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@router.get("/audio/{filename}", include_in_schema=False)
+def serve_audio_file(filename: str):
+    """Public audio file serving for n8n and telephony players."""
+    safe_name = os.path.basename(filename)
+    audio_path = AUDIO_STORAGE_DIR / safe_name
+    if not audio_path.exists() or not audio_path.is_file():
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    media_type = "audio/mpeg"
+    if safe_name.lower().endswith(".wav"):
+        media_type = "audio/wav"
+    elif safe_name.lower().endswith(".ogg"):
+        media_type = "audio/ogg"
+    elif safe_name.lower().endswith(".m4a"):
+        media_type = "audio/mp4"
+    return FileResponse(audio_path, media_type=media_type)
+
+
+@router.post("/inject-amocrm")
+async def inject_call_to_amocrm(
+    request: Request,
+    tenant_id: str = Query("TNT-004"),
+    lead_id: int | None = Query(None),
+    filename: str = Query("call.mp3"),
+    phone: str = Query("+79990001122"),
+    duration: int | None = Query(None),
+    call_direction: str = Query("call_in"),
+):
+    """
+    Uploads raw audio stream (or JSON payload) and registers it as a telephony call note in amoCRM.
+    Triggers n8n -> Gemini AI audit -> Google Sheets sync without requiring python-multipart.
+    """
+    clean_tenant = (tenant_id or "TNT-004").strip().upper()
+    cfg = get_tenant_config(clean_tenant)
+    if not cfg:
+        raise HTTPException(status_code=404, detail=f"Tenant '{clean_tenant}' not found")
+
+    amo_domain = (cfg.get("amo_domain") or "").rstrip("/")
+    amo_token = cfg.get("amo_token") or ""
+    if not amo_domain or not amo_token:
+        raise HTTPException(status_code=400, detail=f"Tenant '{clean_tenant}' does not have amoCRM credentials")
+
+    # Read audio bytes from raw body or JSON
+    ct = request.headers.get("content-type", "")
+    if "application/json" in ct:
+        try:
+            body_json = await request.json()
+        except Exception:
+            body_json = {}
+        import base64
+        b64 = body_json.get("audio_b64") or ""
+        audio_bytes = base64.b64decode(b64) if b64 else b""
+        filename = body_json.get("filename") or filename
+        phone = body_json.get("phone") or phone
+        duration = body_json.get("duration") or duration
+        lead_id = body_json.get("lead_id") or lead_id
+        call_direction = body_json.get("call_direction") or call_direction
+    else:
+        audio_bytes = await request.body()
+
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Audio body is empty")
+
+    file_ext = os.path.splitext(filename)[1] or ".mp3"
+    safe_filename = f"{clean_tenant.lower()}_{int(time.time())}_{uuid.uuid4().hex[:6]}{file_ext}"
+    target_path = AUDIO_STORAGE_DIR / safe_filename
+    with open(target_path, "wb") as f_out:
+        f_out.write(audio_bytes)
+
+    # Estimate duration if not provided (assume ~128kbps = 16000 bytes/sec)
+    dur = duration
+    if not dur or dur <= 0:
+        dur = max(25, int(len(audio_bytes) / 16000))
+
+    headers = {"Authorization": f"Bearer {amo_token}"}
+    target_lead_id = lead_id
+
+    # If lead_id not supplied, fetch the most recent active lead from amoCRM
+    if not target_lead_id:
+        try:
+            leads_resp = requests.get(
+                f"{amo_domain}/api/v4/leads?limit=1&order[updated_at]=desc",
+                headers=headers,
+                timeout=10
+            )
+            if leads_resp.status_code == 200:
+                leads_data = leads_resp.json().get("_embedded", {}).get("leads", [])
+                if leads_data:
+                    target_lead_id = leads_data[0]["id"]
+        except Exception as e:
+            logger.warning(f"Could not auto-fetch lead from amoCRM: {e}")
+
+    # Fallback: create lead if none found
+    if not target_lead_id:
+        try:
+            create_lead_resp = requests.post(
+                f"{amo_domain}/api/v4/leads",
+                headers=headers,
+                json=[{"name": f"RevOps Звонок {datetime.now().strftime('%d.%m %H:%M')}", "price": 300000}],
+                timeout=10
+            )
+            if create_lead_resp.status_code in (200, 201):
+                leads_data = create_lead_resp.json().get("_embedded", {}).get("leads", [])
+                if leads_data:
+                    target_lead_id = leads_data[0]["id"]
+        except Exception as e:
+            logger.error(f"Failed to create fallback lead in amoCRM: {e}")
+
+    if not target_lead_id:
+        raise HTTPException(status_code=400, detail="Could not resolve or create lead in amoCRM")
+
+    public_url = f"https://report.ai-rop.ru/api/v1/calls/audio/{safe_filename}"
+    call_uniq = f"call_{clean_tenant.lower()}_{target_lead_id}_{int(time.time())}_{uuid.uuid4().hex[:4]}"
+
+    note_payload: Any = [
+        {
+            "note_type": call_direction if call_direction in ("call_in", "call_out") else "call_in",
+            "params": {
+                "uniq": call_uniq,
+                "duration": dur,
+                "source": "sip",
+                "link": public_url,
+                "phone": phone
+            }
+        }
+    ]
+
+    try:
+        note_resp = requests.post(
+            f"{amo_domain}/api/v4/leads/{target_lead_id}/notes",
+            headers=headers,
+            json=note_payload,  # type: ignore[arg-type]
+            timeout=15
+        )
+        if note_resp.status_code not in (200, 201):
+            raise HTTPException(status_code=502, detail=f"amoCRM API error {note_resp.status_code}: {note_resp.text}")
+
+        note_json = note_resp.json()
+        notes_created = note_json.get("_embedded", {}).get("notes", [])
+        created_note_id = notes_created[0]["id"] if notes_created else None
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create call note in amoCRM: {e}")
+
+    return {
+        "status": "success",
+        "tenant_id": clean_tenant,
+        "lead_id": target_lead_id,
+        "note_id": created_note_id,
+        "call_id": call_uniq,
+        "duration_sec": dur,
+        "audio_url": public_url,
+        "message": f"Звонок успешно зарегистрирован в сделке #{target_lead_id}. n8n обработает его и отправит в Gemini AI."
+    }
