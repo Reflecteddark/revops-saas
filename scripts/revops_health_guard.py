@@ -134,27 +134,37 @@ def get_disk_info():
 
 
 def get_ram_info():
-    """Get RAM info from /proc/meminfo."""
+    """Get RAM info from /proc/meminfo with psutil cross-platform fallback."""
     try:
-        meminfo = {}
-        with open("/proc/meminfo", "r", encoding="utf-8") as f:
-            for line in f:
-                parts = line.split(":")
-                if len(parts) == 2:
-                    key = parts[0].strip()
-                    val = parts[1].strip().split()[0]
-                    meminfo[key] = int(val)
-        total_mb = meminfo.get("MemTotal", 0) / 1024
-        avail_mb = meminfo.get("MemAvailable", 0) / 1024
-        used_mb = total_mb - avail_mb
-        return {
-            "total_mb": round(total_mb, 1),
-            "used_mb": round(used_mb, 1),
-            "available_mb": round(avail_mb, 1),
-            "percent_used": round((used_mb / total_mb) * 100, 1) if total_mb else 0,
-        }
+        if os.path.exists("/proc/meminfo"):
+            meminfo = {}
+            with open("/proc/meminfo", "r", encoding="utf-8") as f:
+                for line in f:
+                    parts = line.split(":")
+                    if len(parts) == 2:
+                        key = parts[0].strip()
+                        val = parts[1].strip().split()[0]
+                        meminfo[key] = int(val)
+            total_mb = meminfo.get("MemTotal", 0) / 1024
+            avail_mb = meminfo.get("MemAvailable", 0) / 1024
+            used_mb = total_mb - avail_mb
+            return {
+                "total_mb": round(total_mb, 1),
+                "used_mb": round(used_mb, 1),
+                "available_mb": round(avail_mb, 1),
+                "percent_used": round((used_mb / total_mb) * 100, 1) if total_mb else 0,
+            }
+        else:
+            import psutil
+            vm = psutil.virtual_memory()
+            return {
+                "total_mb": round(vm.total / (1024 * 1024), 1),
+                "used_mb": round(vm.used / (1024 * 1024), 1),
+                "available_mb": round(vm.available / (1024 * 1024), 1),
+                "percent_used": round(vm.percent, 1),
+            }
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": str(e), "total_mb": 0, "available_mb": 0, "percent_used": 0}
 
 
 def perform_disk_emergency_cleanup():

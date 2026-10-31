@@ -299,3 +299,13 @@ def test_admin_delete_tenant_returns_404_on_missing():
 
 
 
+
+
+def test_admin_health_guard_endpoint():
+    """Verifies that GET /admin/health-guard returns a valid diagnostic report."""
+    resp = client.get("/api/v1/admin/health-guard")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "status" in data
+    assert "disk" in data
+    assert "ram" in data
