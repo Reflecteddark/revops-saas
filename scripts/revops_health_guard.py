@@ -29,9 +29,6 @@ SERVICES_TO_MONITOR = [
 
 DOCKER_CONTAINERS_TO_MONITOR = [
     "revops-api",
-    "revops-postgres",
-    "revops-redis",
-    "revops-celery-calls",
     "n8n",
     "caddy-n8n",
 ]
