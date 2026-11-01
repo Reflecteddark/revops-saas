@@ -199,18 +199,55 @@ class IntentValidator:
         return ValidationResult(violations)
 
     @classmethod
+    def _detect_commercial_claims(cls, text: str) -> bool:
+        """Detects commercial promises (discounts, deferments, financial terms) in text."""
+        if not text:
+            return False
+        commercial_patterns = [
+            re.compile(r"\d+\s*%", re.IGNORECASE),
+            re.compile(r"процент", re.IGNORECASE),
+            re.compile(r"скидк\w*", re.IGNORECASE),
+            re.compile(r"дисконт\w*", re.IGNORECASE),
+            re.compile(r"\d+\s*(?:дн|day)", re.IGNORECASE),
+            re.compile(r"отсрочк\w*", re.IGNORECASE),
+            re.compile(r"рассрочк\w*", re.IGNORECASE),
+            re.compile(r"\d+\s*(?:₽|руб)", re.IGNORECASE),
+            re.compile(r"бонус\w*", re.IGNORECASE),
+            re.compile(r"подарок\w*", re.IGNORECASE),
+            re.compile(r"бюджет\w*", re.IGNORECASE),
+            re.compile(r"стоимост\w*", re.IGNORECASE),
+            re.compile(r"цен[ауые]", re.IGNORECASE),
+        ]
+        text_lower = text.lower()
+        return any(p.search(text_lower) for p in commercial_patterns)
+
+    @classmethod
     def validate_used_facts_against_context(
         cls,
         cited_facts: list[str],
         trusted_context: Any,
+        reply_text: Optional[str] = None,
     ) -> ValidationResult:
         """
         Validates that every citation in 'used_facts' strictly matches
         the canonical ground-truth facts from TrustedContext.
+        Blocks empty used_facts when commercial claims are made in reply_text (GR-03).
         Blocks hallucinated keys, corrupted values, and malformed citations (GR-03).
         """
         violations: list[str] = []
-        if not cited_facts or trusted_context is None:
+        if trusted_context is None:
+            return ValidationResult(violations, blocked=False)
+
+        # 0. Check for missing used_facts when commercial claims are made in reply text
+        if reply_text:
+            has_commercial_claims = cls._detect_commercial_claims(reply_text)
+            if has_commercial_claims and not cited_facts:
+                violations.append(
+                    "Missing used_facts — commercial claims made without citing trusted context facts (GR-03)"
+                )
+                return ValidationResult(violations)
+
+        if not cited_facts:
             return ValidationResult(violations, blocked=False)
 
         if not hasattr(trusted_context, "to_flat_dict"):
@@ -234,11 +271,19 @@ class IntentValidator:
 
             ctx_val = context_facts[key]
 
-            # Normalize numeric comparison vs string comparison
+            # Strict integer vs float vs bool vs None vs string comparison
             is_match = False
             try:
-                if isinstance(ctx_val, (int, float)):
-                    is_match = abs(float(ctx_val) - float(value)) < 1e-4
+                if isinstance(ctx_val, bool):
+                    is_match = str(value).strip().lower() in ("true", "1") if ctx_val else str(value).strip().lower() in ("false", "0")
+                elif isinstance(ctx_val, int):
+                    # Strict integer check: 14 vs "14" or "14.0", but NOT "14.0001"
+                    val_f = float(value)
+                    is_match = val_f.is_integer() and int(val_f) == ctx_val
+                elif isinstance(ctx_val, float):
+                    is_match = abs(ctx_val - float(value)) < 1e-4
+                elif ctx_val is None:
+                    is_match = str(value).strip().lower() in ("none", "null", "")
                 else:
                     is_match = str(ctx_val).strip().lower() == value.lower()
             except (ValueError, TypeError):
@@ -279,15 +324,19 @@ class IntentValidator:
                 f"Context hash mismatch: intent signed with '{claimed_hash}', but active context is '{expected_hash}' (GR-03)"
             )
 
-        # 2. Check cited used_facts against ground truth facts
+        # 2. Check cited used_facts against ground truth facts with reply text inspection
         import os
         is_used_facts_enabled = os.getenv("ENABLE_USED_FACTS_VALIDATION", "1") in ("1", "true", "True")
-        if is_used_facts_enabled:
+        if is_used_facts_enabled and (require_hash or getattr(intent, "context_hash", None)):
             cited_facts = getattr(intent, "used_facts", None) or []
-            if cited_facts:
-                facts_result = cls.validate_used_facts_against_context(cited_facts, trusted_context)
-                if facts_result.blocked:
-                    violations.extend(facts_result.violations)
+            reply_text = getattr(intent.proposed_client_reply, "text", None) if intent.proposed_client_reply else None
+            facts_result = cls.validate_used_facts_against_context(
+                cited_facts=cited_facts,
+                trusted_context=trusted_context,
+                reply_text=reply_text,
+            )
+            if facts_result.blocked:
+                violations.extend(facts_result.violations)
 
         # 3. Check reply text via standalone validate_reply_text
         if intent.proposed_client_reply and intent.proposed_client_reply.text:

@@ -598,3 +598,67 @@ def test_used_facts_misquote_blocked(dynamic_tenant_id, dynamic_deal_id):
     assert result.blocked is True
     assert "misquoted" in result.reason
     assert any("GR-03" in v for v in result)
+
+
+
+def test_empty_used_facts_with_commercial_claims_blocked(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 20: Empty used_facts when proposed reply contains commercial claims
+    (discounts, payment deferments, bonuses) is strictly blocked under GR-03.
+    """
+    trusted_ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"budget": 250000.0},
+        allowed_discount_max=5.0,
+        allowed_deferment_days=14,
+    )
+    reply_with_claims = "Даём вам скидку 15% и отсрочку 45 дней!"
+    result = validate_used_facts_against_context([], trusted_ctx, reply_text=reply_with_claims)
+    assert result.blocked is True
+    assert "Missing used_facts" in result.reason
+    assert any("GR-03" in v for v in result)
+
+
+def test_integer_strict_comparison(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 21: Integer business attributes (e.g. allowed_deferment_days = 14)
+    require strict integer matching and reject fractional approximations like 14.0001.
+    """
+    trusted_ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"budget": 250000.0},
+        allowed_deferment_days=14,
+    )
+    # 1. Fractional distortion -> blocked
+    result_invalid = validate_used_facts_against_context(["allowed_deferment_days: 14.0001"], trusted_ctx)
+    assert result_invalid.blocked is True
+    assert "misquoted" in result_invalid.reason
+
+    # 2. Exact integer -> passed
+    result_exact = validate_used_facts_against_context(["allowed_deferment_days: 14"], trusted_ctx)
+    assert result_exact.blocked is False
+    assert len(result_exact) == 0
+
+
+def test_bool_and_none_values_in_context():
+    """
+    Case 22: Correctly matches boolean and None attributes from context facts.
+    """
+    class MockContext:
+        def to_flat_dict(self):
+            return {
+                "requires_approval": True,
+                "external_notes": None,
+                "deal_stage": "WON",
+            }
+
+    ctx = MockContext()
+    res_valid = validate_used_facts_against_context(
+        ["requires_approval: true", "external_notes: null", "deal_stage: WON"], ctx
+    )
+    assert res_valid.blocked is False
+    assert len(res_valid) == 0

@@ -88,6 +88,17 @@ class RiskScorer:
             score += 0.20
             reasons.append(f"Low agent confidence score: {intent.confidence_score:.2f}")
 
+        # 5. Unverified assumptions / Fact citation risk
+        unverified = getattr(intent, "unverified_assumptions", None) or []
+        if unverified:
+            score += min(0.30, len(unverified) * 0.10)
+            reasons.append(f"Unverified factual assumptions: {len(unverified)}")
+
+        fact_violations = deal.get("fact_violations") or []
+        if fact_violations:
+            score += 0.35
+            reasons.append(f"Fact-check violations flagged: {len(fact_violations)}")
+
         # Clamp score between 0.0 and 1.0
         final_score = min(1.0, max(0.0, score))
 
