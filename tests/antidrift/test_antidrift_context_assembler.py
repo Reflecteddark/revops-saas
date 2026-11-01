@@ -27,8 +27,17 @@ from packages.antidrift.contracts.intent import (
     VerifiedIntentProposal,
     ProposedClientReply,
 )
-from packages.antidrift.barrier.validator import IntentValidator
-from packages.antidrift.context.context_assembler import TrustedContext, assemble_trusted_context
+from packages.antidrift.barrier.validator import (
+    IntentValidator,
+    validate_against_trusted_context,
+    validate_reply_text,
+)
+from packages.antidrift.context.context_assembler import (
+    ContextUnavailableError,
+    TrustedContext,
+    assemble_trusted_context,
+    build_grounded_system_prompt,
+)
 from packages.antidrift.models import AgentIncident, AgentTrace
 
 client = TestClient(app)
@@ -404,3 +413,119 @@ def test_trusted_context_serialization_and_immutability(dynamic_tenant_id, dynam
     ctx_rebuilt = TrustedContext(**d)
     assert ctx_rebuilt.calculate_hash() == ctx.context_hash
 
+
+
+
+def test_missing_context_hash_blocked(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 12: Request without context_hash must be blocked when fact-check is enforced
+    to prevent zero-bypass circumvention.
+    """
+    trusted_ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"budget": 100000.0},
+    )
+    proposal = VerifiedIntentProposal(
+        session_id="ses_missing_hash",
+        tenant_id=dynamic_tenant_id,
+        agent_id="agent_sales",
+        harness_version="v1.0.0",
+        source_event_id="evt_missing_hash",
+        intent="OFFER_DISCOUNT",
+        context_hash=None,  # Intentionally missing to test zero-bypass
+        proposed_client_reply=ProposedClientReply(
+            text="Добрый день! Согласовываем предложение.",
+            tone="business",
+        ),
+    )
+    result = validate_against_trusted_context(proposal, trusted_ctx, require_hash=True)
+    assert result.blocked is True
+    assert "Missing context_hash" in result.reason
+
+
+def test_database_unavailable_blocks_request(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 13: If database connection fails during context assembly,
+    the request must be blocked (fail-closed) by raising ContextUnavailableError.
+    """
+    class FailingDBSession:
+        def query(self, *args, **kwargs):
+            raise RuntimeError("Database connection refused: host unreachable")
+
+    failing_db = FailingDBSession()
+    with pytest.raises(ContextUnavailableError) as exc_info:
+        assemble_trusted_context(
+            db=failing_db,  # type: ignore
+            tenant_id=dynamic_tenant_id,
+            deal_id=dynamic_deal_id,
+        )
+    assert "database unavailable" in str(exc_info.value)
+
+
+def test_reply_text_discount_check(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 14: Client reply text is post-validated for unauthorized discounts
+    regardless of proposed_actions content.
+    """
+    trusted_ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"budget": 200000.0},
+        allowed_discount_max=5.0,
+    )
+    reply = "Даём вам персональную скидку 40%!"
+    result = validate_reply_text(reply, trusted_ctx)
+    assert result.blocked is True
+    assert any("GR-03" in v for v in result)
+
+
+def test_trusted_context_to_markdown_and_grounded_system_prompt(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 15: Verifies that to_markdown() and build_grounded_system_prompt()
+    render strict anti-drift facts and execution invariants into the LLM prompt.
+    """
+    ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"title": "Cloud Migration", "budget": 500000.0, "stage": "Переговоры"},
+        allowed_discount_max=7.0,
+        allowed_deferment_days=10,
+    )
+    md = ctx.to_markdown()
+    assert "ДОВЕРЕННЫЙ БИЗНЕС-КОНТЕКСТ СДЕЛКИ" in md
+    assert "500,000.00 ₽" in md
+    assert "7.0%" in md
+    assert ctx.context_hash in md
+
+    base_prompt = "Ты — помощник менеджера."
+    system_prompt = build_grounded_system_prompt(base_prompt, ctx)
+    assert "СТРОГИЕ ИНВАРИАНТЫ ГЕНЕРАЦИИ (ANTI-DRIFT GUARD)" in system_prompt
+    assert ctx.context_hash in system_prompt
+    assert "used_facts" in system_prompt
+
+
+def test_assemble_context_endpoint_http(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 16: Verifies POST /api/v1/agents/context/assemble HTTP endpoint
+    returns grounded system prompt and signed context hash for n8n/orchestrator.
+    """
+    payload = {
+        "tenant_id": dynamic_tenant_id,
+        "deal_id": dynamic_deal_id,
+        "base_system_prompt": "Ты — RevOps агент.",
+        "deal_context": {"title": "SaaS Platform", "budget": 300000.0, "stage": "Встреча"},
+        "allowed_discount_max": 5.0,
+        "allowed_deferment_days": 14,
+    }
+    response = client.post("/api/v1/agents/context/assemble", json=payload)
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["tenant_id"] == dynamic_tenant_id
+    assert data["deal_id"] == dynamic_deal_id
+    assert len(data["context_hash"]) == 64
+    assert "grounded_system_prompt" in data
+    assert "ДОВЕРЕННЫЙ БИЗНЕС-КОНТЕКСТ СДЕЛКИ" in data["markdown"]

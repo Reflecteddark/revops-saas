@@ -3,13 +3,14 @@ packages/antidrift/barrier/validator.py
 
 Intent & Action Validator.
 Inspects AgentIntentPayload before any policy or execution step.
-Enforces capability scopes, sanitizes reasoning, and blocks code injection.
+Enforces capability scopes, sanitizes reasoning, blocks code injection,
+and performs Layer 1.5 Fact-Checking against TrustedContext.
 """
 
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Optional
 from packages.antidrift.contracts.intent import AgentIntentPayload, ActionItem
 
 
@@ -17,6 +18,31 @@ class IntentValidationError(Exception):
     def __init__(self, message: str, violations: list[str] | None = None):
         super().__init__(message)
         self.violations = violations or [message]
+
+
+class ValidationResult(list):
+    """
+    Dual-interface validation result:
+    - Behaves as list[str] for backward compatibility with len(), iter, truthiness
+    - Exposes object properties: .blocked (bool), .reason (str), .violations (list[str])
+    """
+    def __init__(
+        self,
+        violations: list[str] | None = None,
+        blocked: Optional[bool] = None,
+        reason: Optional[str] = None,
+    ):
+        items: list[str] = list(violations or [])
+        if reason and reason not in items:
+            items.append(reason)
+        super().__init__(items)
+        self.blocked: bool = blocked if blocked is not None else (len(items) > 0)
+        self.reason: str = reason or ("; ".join(items) if items else "")
+        self.violations: list[str] = list(items)
+
+    @property
+    def is_valid(self) -> bool:
+        return not self.blocked
 
 
 # Dangerous substrings that must never appear in agent reasoning or parameters
@@ -119,65 +145,95 @@ class IntentValidator:
             for i, v in enumerate(obj):
                 cls._scan_payload_recursively(v, f"{path}[{i}]", violations)
 
+    @classmethod
+    def validate_reply_text(
+        cls,
+        reply_text: str,
+        trusted_context: Any,
+    ) -> ValidationResult:
+        """
+        Post-validation of generated agent communication text.
+        Extracts financial concessions, discounts, and payment deferments,
+        verifying they comply with TrustedContext constraints.
+        """
+        violations: list[str] = []
+        if not reply_text or trusted_context is None:
+            return ValidationResult(violations, blocked=False)
+
+        text = reply_text.strip()
+
+        # 1. Discount verification
+        max_allowed_discount = float(getattr(trusted_context, "allowed_discount_max", 0.0) or 0.0)
+        discount_patterns = [
+            re.compile(r"(\d+(?:\.\d+)?)\s*%", re.IGNORECASE),
+            re.compile(r"(?:скидк\w*|дисконт\w*)\s+(?:в\s+)?(\d+(?:\.\d+)?)", re.IGNORECASE),
+        ]
+        for pattern in discount_patterns:
+            for match in pattern.finditer(text):
+                try:
+                    discount_val = float(match.group(1))
+                    if discount_val > max_allowed_discount:
+                        violations.append(
+                            f"Proposed discount {discount_val}% exceeds maximum authorized limit "
+                            f"{max_allowed_discount}% from trusted context (GR-03)"
+                        )
+                except (ValueError, IndexError):
+                    pass
+
+        # 2. Payment deferment verification
+        deferment_pattern = re.compile(
+            r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?(\d+)\s*(?:дн|day)", re.IGNORECASE
+        )
+        max_allowed_deferment = int(getattr(trusted_context, "allowed_deferment_days", 14) or 14)
+        for match in deferment_pattern.finditer(text):
+            try:
+                days_val = int(match.group(1))
+                if days_val > max_allowed_deferment:
+                    violations.append(
+                        f"Proposed deferment {days_val} days exceeds maximum authorized limit "
+                        f"{max_allowed_deferment} days from trusted context"
+                    )
+            except (ValueError, IndexError):
+                pass
+
+        return ValidationResult(violations)
 
     @classmethod
     def validate_against_trusted_context(
         cls,
         intent: AgentIntentPayload,
         trusted_context: Any,
-    ) -> list[str]:
+        require_hash: bool = False,
+    ) -> ValidationResult:
         """
         Layer 1.5 Fact-Check:
         Verifies agent statements against the cryptographically signed TrustedContext.
         Detects hallucinated discounts, unauthorized payment deferments, and context hash mismatches.
+        If require_hash is True, missing context_hash is treated as a bypass attempt (GR-03).
         """
         violations: list[str] = []
         if trusted_context is None:
-            return violations
+            return ValidationResult(violations, blocked=False)
 
-        # 1. Verify Context Hash if intent carries context_hash
+        # 1. Verify Context Hash (with zero-bypass protection)
         claimed_hash = getattr(intent, "context_hash", None)
         expected_hash = getattr(trusted_context, "context_hash", None)
-        if claimed_hash and expected_hash and claimed_hash != expected_hash:
+
+        if require_hash and not claimed_hash:
+            violations.append("Missing context_hash — fact-check bypass attempt (GR-03)")
+        elif claimed_hash and expected_hash and claimed_hash != expected_hash:
             violations.append(
-                f"Context hash mismatch: intent signed with '{claimed_hash}', but active context is '{expected_hash}'"
+                f"Context hash mismatch: intent signed with '{claimed_hash}', but active context is '{expected_hash}' (GR-03)"
             )
 
-        # 2. Check reply text for unverified discount claims
-        if intent.proposed_client_reply:
-            text = intent.proposed_client_reply.text
-            discount_patterns = [
-                re.compile(r"(\d+(?:\.\d+)?)\s*%", re.IGNORECASE),
-                re.compile(r"(?:скидк\w*|дисконт\w*)\s+(?:в\s+)?(\d+(?:\.\d+)?)", re.IGNORECASE),
-            ]
-            max_allowed_discount = float(getattr(trusted_context, "allowed_discount_max", 0.0) or 0.0)
+        # 2. Check reply text via standalone validate_reply_text
+        if intent.proposed_client_reply and intent.proposed_client_reply.text:
+            text_result = cls.validate_reply_text(intent.proposed_client_reply.text, trusted_context)
+            violations.extend(text_result.violations)
 
-            for pattern in discount_patterns:
-                for match in pattern.finditer(text):
-                    try:
-                        discount_val = float(match.group(1))
-                        if discount_val > max_allowed_discount:
-                            violations.append(
-                                f"Proposed discount {discount_val}% exceeds maximum authorized limit "
-                                f"{max_allowed_discount}% from trusted context (GR-03)"
-                            )
-                    except (ValueError, IndexError):
-                        pass
+        return ValidationResult(violations)
 
-            # Scan for payment deferment claims
-            deferment_pattern = re.compile(
-                r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?(\d+)\s*(?:дн|day)", re.IGNORECASE
-            )
-            max_allowed_deferment = int(getattr(trusted_context, "allowed_deferment_days", 14) or 14)
-            for match in deferment_pattern.finditer(text):
-                try:
-                    days_val = int(match.group(1))
-                    if days_val > max_allowed_deferment:
-                        violations.append(
-                            f"Proposed deferment {days_val} days exceeds maximum authorized limit "
-                            f"{max_allowed_deferment} days from trusted context"
-                        )
-                except (ValueError, IndexError):
-                    pass
 
-        return violations
+# Convenient module-level aliases
+validate_against_trusted_context = IntentValidator.validate_against_trusted_context
+validate_reply_text = IntentValidator.validate_reply_text

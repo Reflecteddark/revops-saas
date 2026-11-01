@@ -4,6 +4,7 @@ packages/antidrift/context/context_assembler.py
 Trusted Context Assembler (Layer 0 Fact-Plane & Anti-Hallucination Barrier).
 Assembles signed, deterministic fact-packages before LLM invocation or intent verification.
 Zero hardcoding: dynamic multi-tenant isolation.
+Fail-closed: raises ContextUnavailableError when DB mirror or CRM connection fails.
 """
 
 from __future__ import annotations
@@ -20,6 +21,14 @@ from sqlalchemy.orm import Session
 from packages.database.models import Deal
 
 logger = logging.getLogger("antidrift_context_assembler")
+
+
+class ContextUnavailableError(RuntimeError):
+    """
+    Raised when TrustedContext cannot be reliably assembled
+    due to database/CRM connection failure. Fail-closed security.
+    """
+    pass
 
 
 class TrustedContext(BaseModel):
@@ -59,9 +68,40 @@ class TrustedContext(BaseModel):
         """Serializes TrustedContext to standard dictionary."""
         return self.model_dump()
 
+    def to_markdown(self) -> str:
+        """Renders canonical ground-truth facts for LLM injection."""
+        return (
+            f"### ДОВЕРЕННЫЙ БИЗНЕС-КОНТЕКСТ СДЕЛКИ (ИСТОЧНИК ИСТИНЫ)\n"
+            f"- Идентификатор клиента / арендатора: {self.tenant_id}\n"
+            f"- Сделка: ID {self.deal_id} ({self.deal_title or 'Без названия'})\n"
+            f"- Бюджет / сумма сделки: {self.deal_amount:,.2f} ₽\n"
+            f"- Текущий этап: {self.deal_stage or 'Не указан'}\n"
+            f"- ЖЁСТКИЙ ПОТОЛОК СКИДКИ: {self.allowed_discount_max}%\n"
+            f"- МАКСИМАЛЬНАЯ ОТСРОЧКА ПЛАТЕЖА: {self.allowed_deferment_days} дн.\n"
+            f"- Порог обязательного согласования человеком (РОП): {self.requires_human_above:,.2f} ₽\n"
+            f"- Контрольная подпись контекста (context_hash): {self.context_hash}\n"
+        )
+
     def model_post_init(self, __context: Any) -> None:
         if not self.context_hash:
             self.context_hash = self.calculate_hash()
+
+
+def build_grounded_system_prompt(base_prompt: str, trusted_context: TrustedContext) -> str:
+    """
+    Injects immutable ground-truth facts and strict operational guardrails
+    into the agent's system prompt prior to generation.
+    """
+    return f"""{base_prompt.strip()}
+
+{trusted_context.to_markdown()}
+СТРОГИЕ ИНВАРИАНТЫ ГЕНЕРАЦИИ (ANTI-DRIFT GUARD):
+1. Используй ТОЛЬКО факты из блока 'ДОВЕРЕННЫЙ БИЗНЕС-КОНТЕКСТ СДЕЛКИ'.
+2. Любые скидки выше {trusted_context.allowed_discount_max}% или отсрочки более {trusted_context.allowed_deferment_days} дней ЗАПРЕЩЕНЫ.
+3. Обязательно передай 'context_hash': '{trusted_context.context_hash}' в итоговом ответе.
+4. В поле 'used_facts' явно перечисли факты из контекста, на которые опирался ответ.
+5. Если клиент запрашивает условия, которых нет в контексте — НЕ ВЫДУМЫВАЙ! Установи requires_approval: true и зафиксируй вопрос в 'unverified_assumptions'.
+"""
 
 
 def assemble_trusted_context(
@@ -77,6 +117,7 @@ def assemble_trusted_context(
     """
     Assembles a verified TrustedContext for a given tenant and deal.
     Queries the database mirror if available, or extracts from deal_context.
+    Raises ContextUnavailableError if the database mirror query fails.
     """
     clean_tenant_id = tenant_id.strip()
     clean_deal_id = str(deal_id).strip()
@@ -85,7 +126,7 @@ def assemble_trusted_context(
     deal_amount = 0.0
     deal_stage = ""
 
-    # 1. Attempt lookup in DB mirror
+    # 1. Attempt lookup in DB mirror with fail-closed security
     if db is not None and clean_deal_id:
         try:
             deal = (
@@ -101,9 +142,12 @@ def assemble_trusted_context(
                 deal_amount = float(getattr(deal, "budget", 0.0) or 0.0)
                 deal_stage = str(getattr(deal, "stage_name", "") or getattr(deal, "stage", "") or "")
         except Exception as e:
-            logger.warning(f"Could not load deal {clean_deal_id} from DB mirror: {e}")
+            logger.error(f"Database error during trusted context assembly for deal {clean_deal_id}: {e}")
+            raise ContextUnavailableError(
+                f"Cannot assemble trusted context — database unavailable: {e}. Request blocked for safety."
+            ) from e
 
-    # 2. Fallback to passed deal_context
+    # 2. Fallback to passed deal_context (when DB query was successful or db is None)
     if deal_context:
         if not deal_title:
             deal_title = str(deal_context.get("title", "") or "")

@@ -19,8 +19,14 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 import os
-from packages.antidrift.contracts.intent import AgentIntentPayload, VerifiedIntentProposal
-from packages.antidrift.context.context_assembler import assemble_trusted_context
+from packages.antidrift.contracts.intent import AgentIntentPayload, ExecutionMode, VerifiedIntentProposal
+from packages.antidrift.diff.diff_engine import DiffEngine
+from packages.antidrift.context.context_assembler import (
+    ContextUnavailableError,
+    TrustedContext,
+    assemble_trusted_context,
+    build_grounded_system_prompt,
+)
 from packages.antidrift.contracts.decisions import DriftSeverity
 from packages.antidrift.barrier.validator import IntentValidator
 from packages.antidrift.barrier.policy_engine import PolicyEngine
@@ -40,6 +46,53 @@ from packages.database.session import get_db
 logger = logging.getLogger("agents_router")
 
 router = APIRouter(prefix="/agents", tags=["AgentOps & Anti-Drift Engine"])
+
+
+class AssembleContextRequest(BaseModel):
+    tenant_id: str
+    deal_id: str
+    base_system_prompt: Optional[str] = None
+    deal_context: Optional[dict[str, Any]] = None
+    allowed_discount_max: Optional[float] = None
+    allowed_deferment_days: Optional[int] = None
+
+
+@router.post("/context/assemble")
+def assemble_context_endpoint(
+    req: AssembleContextRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Explicit Trusted Context Assembler Endpoint:
+    Called by n8n, microservices, or frontend prior to agent prompt dispatch.
+    Returns signed facts package, markdown representation, and grounded system prompt.
+    """
+    try:
+        ctx = assemble_trusted_context(
+            db=db,
+            tenant_id=req.tenant_id,
+            deal_id=req.deal_id,
+            deal_context=req.deal_context,
+            allowed_discount_max=req.allowed_discount_max,
+            allowed_deferment_days=req.allowed_deferment_days,
+        )
+    except ContextUnavailableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"error": "Database unavailable for trusted context", "message": str(e)},
+        )
+
+    base_prompt = req.base_system_prompt or "Ты — автономный RevOps AI-ассистент отдела продаж."
+    grounded_prompt = build_grounded_system_prompt(base_prompt, ctx)
+
+    return {
+        "tenant_id": ctx.tenant_id,
+        "deal_id": ctx.deal_id,
+        "context_hash": ctx.context_hash,
+        "trusted_context": ctx.to_dict(),
+        "markdown": ctx.to_markdown(),
+        "grounded_system_prompt": grounded_prompt,
+    }
 
 
 class ApprovalDecisionPayload(BaseModel):
@@ -65,6 +118,7 @@ class KillSwitchRequest(BaseModel):
 def execute_agent_intent(
     payload: VerifiedIntentProposal,
     client_message: str = Query("", description="Raw client inbound message for context"),
+    mode: Optional[ExecutionMode] = Query(None, description="Execution mode override: prod, shadow, dry_run"),
     db: Session = Depends(get_db),
 ):
     """
@@ -108,13 +162,27 @@ def execute_agent_intent(
     )
     if is_trusted_context_enabled:
         deal_id = str(payload.context_refs.get("deal_id") or "")
-        trusted_ctx = assemble_trusted_context(
-            db=db,
-            tenant_id=tenant_id,
-            deal_id=deal_id,
-            deal_context=payload.context_refs,
+        try:
+            trusted_ctx = assemble_trusted_context(
+                db=db,
+                tenant_id=tenant_id,
+                deal_id=deal_id,
+                deal_context=payload.context_refs,
+            )
+        except ContextUnavailableError as e:
+            logger.error(f"Execution blocked: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={"error": "Database unavailable for trusted context", "message": str(e)},
+            )
+
+        require_hash = (
+            os.getenv("ENABLE_TRUSTED_CONTEXT", "0") in ("1", "true", "True")
+            or bool(payload.context_hash)
         )
-        fact_violations = IntentValidator.validate_against_trusted_context(payload, trusted_ctx)
+        fact_violations = IntentValidator.validate_against_trusted_context(
+            payload, trusted_ctx, require_hash=require_hash
+        )
         if fact_violations:
             has_discount_breach = any("GR-03" in v for v in fact_violations)
             if has_discount_breach:
@@ -195,6 +263,96 @@ def execute_agent_intent(
         client_inbound_message=client_message,
         current_deal_context=payload.context_refs,
     )
+
+    # Sprint 2: Resolve Execution Mode (Prod, Shadow, Dry-Run)
+    resolved_mode = mode or payload.execution_mode or DiffEngine.resolve_traffic_mode(
+        db=db,
+        agent_id=payload.agent_id,
+        harness_version=payload.harness_version,
+        session_id=payload.session_id,
+    )
+
+    if resolved_mode == ExecutionMode.DRY_RUN:
+        trace = AgentTrace(
+            trace_id=payload.trace_id,
+            session_id=payload.session_id,
+            tenant_id=tenant_id,
+            agent_id=payload.agent_id,
+            harness_version=payload.harness_version,
+            policy_version=payload.policy_version,
+            channel=payload.channel,
+            source_event_id=payload.source_event_id,
+            execution_mode="dry_run",
+            input_payload_sanitized={"client_message": client_message},
+            raw_intent_json=payload.model_dump(mode="json"),
+            guardrail_result_json=policy_result.model_dump(mode="json"),
+            risk_score=payload.risk_score,
+            confidence_score=payload.confidence_score,
+            routing_decision="dry_run_simulator",
+            created_at=now,
+        )
+        db.add(trace)
+        db.commit()
+        return {
+            "status": "DRY_RUN",
+            "trace_id": payload.trace_id,
+            "expected_state_delta": payload.expected_state_delta,
+            "validation": {
+                "valid": policy_result.overall_verdict not in (DriftSeverity.HARD_FAILURE, DriftSeverity.REGRESSION),
+                "verdict": policy_result.overall_verdict.value,
+                "risk_score": payload.risk_score,
+                "risk_level": risk_result.risk_level,
+                "requires_hitl": policy_result.requires_hitl or risk_result.requires_hitl,
+                "violations": [v.model_dump(mode="json") for v in policy_result.violations],
+            },
+        }
+
+    if resolved_mode == ExecutionMode.SHADOW:
+        would_be_blocked = policy_result.overall_verdict in (DriftSeverity.HARD_FAILURE, DriftSeverity.REGRESSION)
+        prod_trace = (
+            db.query(AgentTrace)
+            .filter(
+                AgentTrace.source_event_id == payload.source_event_id,
+                AgentTrace.execution_mode != "shadow",
+            )
+            .first()
+        )
+        diff_metric = DiffEngine.compare_proposals(
+            prod_proposal=prod_trace.raw_intent_json if prod_trace else None,
+            shadow_proposal=payload,
+            shadow_would_be_blocked=would_be_blocked,
+        )
+
+        trace = AgentTrace(
+            trace_id=payload.trace_id,
+            session_id=payload.session_id,
+            tenant_id=tenant_id,
+            agent_id=payload.agent_id,
+            harness_version=payload.harness_version,
+            policy_version=payload.policy_version,
+            channel=payload.channel,
+            source_event_id=payload.source_event_id,
+            execution_mode="shadow",
+            input_payload_sanitized={"client_message": client_message},
+            raw_intent_json=payload.model_dump(mode="json"),
+            guardrail_result_json=policy_result.model_dump(mode="json"),
+            risk_score=payload.risk_score,
+            confidence_score=payload.confidence_score,
+            routing_decision="shadow_comparator",
+            error="Blocked by policy guardrails in shadow" if would_be_blocked else None,
+            created_at=now,
+        )
+        db.add(trace)
+        db.commit()
+
+        return {
+            "status": "SHADOW_EXECUTED",
+            "trace_id": payload.trace_id,
+            "execution_mode": "shadow",
+            "would_be_blocked": would_be_blocked,
+            "verdict": policy_result.overall_verdict.value,
+            "shadow_diff_vs_prod": diff_metric.model_dump(),
+        }
 
     # 4. Handle Hard Failure (Blocking policy breach)
     if policy_result.overall_verdict in (DriftSeverity.HARD_FAILURE, DriftSeverity.REGRESSION):
@@ -559,3 +717,21 @@ def emergency_kill_switch(
         "action": "All incoming events routed to human managers",
         "reason": payload.reason,
     }
+
+
+@router.get("/shadow/diff/{harness_version}")
+def get_shadow_diff_report(
+    harness_version: str,
+    lookback_limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns aggregated behavioral diff between shadow candidate traces
+    and production traces for the specified harness_version.
+    """
+    report = DiffEngine.compare_shadow_vs_prod_traces(
+        db=db,
+        harness_version=harness_version,
+        lookback_limit=lookback_limit,
+    )
+    return report

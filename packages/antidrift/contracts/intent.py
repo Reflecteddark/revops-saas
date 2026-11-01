@@ -22,6 +22,12 @@ class ActionRiskLevel(str, enum.Enum):
     CRITICAL = "critical"
 
 
+class ExecutionMode(str, enum.Enum):
+    PROD = "prod"        # Standard production execution committing to CRM via crm_gateway
+    SHADOW = "shadow"    # LLM executes, validates/scores, but CRM is NOT mutated; diff is computed
+    DRY_RUN = "dry_run"  # Zero LLM/CRM side-effects; fast deterministic invariant simulation
+
+
 class ActionType(str, enum.Enum):
     # Read-only actions
     CRM_GET_DEAL = "crm_get_deal"
@@ -143,3 +149,4 @@ class VerifiedIntentProposal(AgentIntentPayload):
     used_facts: list[str] = Field(default_factory=list, description="Ground truth facts extracted from TrustedContext")
     unverified_assumptions: list[str] = Field(default_factory=list, description="Assumptions lacking verified context facts")
     expected_state_delta: dict[str, Any] = Field(default_factory=dict, description="Expected state changes for Dry-Run")
+    execution_mode: Optional[ExecutionMode] = Field(default=None, description="Execution mode: prod, shadow, or dry_run")
