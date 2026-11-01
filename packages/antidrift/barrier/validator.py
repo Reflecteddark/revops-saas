@@ -118,3 +118,66 @@ class IntentValidator:
         elif isinstance(obj, list):
             for i, v in enumerate(obj):
                 cls._scan_payload_recursively(v, f"{path}[{i}]", violations)
+
+
+    @classmethod
+    def validate_against_trusted_context(
+        cls,
+        intent: AgentIntentPayload,
+        trusted_context: Any,
+    ) -> list[str]:
+        """
+        Layer 1.5 Fact-Check:
+        Verifies agent statements against the cryptographically signed TrustedContext.
+        Detects hallucinated discounts, unauthorized payment deferments, and context hash mismatches.
+        """
+        violations: list[str] = []
+        if trusted_context is None:
+            return violations
+
+        # 1. Verify Context Hash if intent carries context_hash
+        claimed_hash = getattr(intent, "context_hash", None)
+        expected_hash = getattr(trusted_context, "context_hash", None)
+        if claimed_hash and expected_hash and claimed_hash != expected_hash:
+            violations.append(
+                f"Context hash mismatch: intent signed with '{claimed_hash}', but active context is '{expected_hash}'"
+            )
+
+        # 2. Check reply text for unverified discount claims
+        if intent.proposed_client_reply:
+            text = intent.proposed_client_reply.text
+            discount_patterns = [
+                re.compile(r"(\d+(?:\.\d+)?)\s*%", re.IGNORECASE),
+                re.compile(r"(?:скидк\w*|дисконт\w*)\s+(?:в\s+)?(\d+(?:\.\d+)?)", re.IGNORECASE),
+            ]
+            max_allowed_discount = float(getattr(trusted_context, "allowed_discount_max", 0.0) or 0.0)
+
+            for pattern in discount_patterns:
+                for match in pattern.finditer(text):
+                    try:
+                        discount_val = float(match.group(1))
+                        if discount_val > max_allowed_discount:
+                            violations.append(
+                                f"Proposed discount {discount_val}% exceeds maximum authorized limit "
+                                f"{max_allowed_discount}% from trusted context (GR-03)"
+                            )
+                    except (ValueError, IndexError):
+                        pass
+
+            # Scan for payment deferment claims
+            deferment_pattern = re.compile(
+                r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?(\d+)\s*(?:дн|day)", re.IGNORECASE
+            )
+            max_allowed_deferment = int(getattr(trusted_context, "allowed_deferment_days", 14) or 14)
+            for match in deferment_pattern.finditer(text):
+                try:
+                    days_val = int(match.group(1))
+                    if days_val > max_allowed_deferment:
+                        violations.append(
+                            f"Proposed deferment {days_val} days exceeds maximum authorized limit "
+                            f"{max_allowed_deferment} days from trusted context"
+                        )
+                except (ValueError, IndexError):
+                    pass
+
+        return violations

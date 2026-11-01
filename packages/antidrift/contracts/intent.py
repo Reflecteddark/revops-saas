@@ -11,7 +11,7 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -130,3 +130,16 @@ class AgentIntentPayload(BaseModel):
     proposed_actions: list[ActionItem] = Field(default_factory=list)
     proposed_client_reply: ProposedClientReply | None = None
     escalation: EscalationPayload | None = None
+
+
+class VerifiedIntentProposal(AgentIntentPayload):
+    """
+    Zero-Trust Extension of AgentIntentPayload:
+    Binds intent to a cryptographically hashed TrustedContext,
+    enumerates exact facts used, records unverified assumptions,
+    and specifies expected state delta for dry-run validation.
+    """
+    context_hash: Optional[str] = Field(default=None, description="SHA-256 hash of ground-truth TrustedContext")
+    used_facts: list[str] = Field(default_factory=list, description="Ground truth facts extracted from TrustedContext")
+    unverified_assumptions: list[str] = Field(default_factory=list, description="Assumptions lacking verified context facts")
+    expected_state_delta: dict[str, Any] = Field(default_factory=dict, description="Expected state changes for Dry-Run")

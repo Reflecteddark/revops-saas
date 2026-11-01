@@ -18,7 +18,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from packages.antidrift.contracts.intent import AgentIntentPayload
+import os
+from packages.antidrift.contracts.intent import AgentIntentPayload, VerifiedIntentProposal
+from packages.antidrift.context.context_assembler import assemble_trusted_context
 from packages.antidrift.contracts.decisions import DriftSeverity
 from packages.antidrift.barrier.validator import IntentValidator
 from packages.antidrift.barrier.policy_engine import PolicyEngine
@@ -61,7 +63,7 @@ class KillSwitchRequest(BaseModel):
 
 @router.post("/execute")
 def execute_agent_intent(
-    payload: AgentIntentPayload,
+    payload: VerifiedIntentProposal,
     client_message: str = Query("", description="Raw client inbound message for context"),
     db: Session = Depends(get_db),
 ):
@@ -98,6 +100,86 @@ def execute_agent_intent(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"error": "Intent validation failed", "violations": validation_violations},
         )
+
+    # 1.5. Layer 1.5: Trusted Context & Anti-Hallucination Fact-Check (Sprint 1)
+    is_trusted_context_enabled = (
+        os.getenv("ENABLE_TRUSTED_CONTEXT", "0") in ("1", "true", "True")
+        or bool(payload.context_hash)
+    )
+    if is_trusted_context_enabled:
+        deal_id = str(payload.context_refs.get("deal_id") or "")
+        trusted_ctx = assemble_trusted_context(
+            db=db,
+            tenant_id=tenant_id,
+            deal_id=deal_id,
+            deal_context=payload.context_refs,
+        )
+        fact_violations = IntentValidator.validate_against_trusted_context(payload, trusted_ctx)
+        if fact_violations:
+            has_discount_breach = any("GR-03" in v for v in fact_violations)
+            if has_discount_breach:
+                incident = AgentIncident(
+                    trace_id=payload.trace_id,
+                    severity="P0",
+                    source="FACT_CHECK_GUARD",
+                    agent_id=payload.agent_id,
+                    harness_version=payload.harness_version,
+                    summary="Fact-check breach: unauthorized discount or terms hallucination",
+                    root_cause="; ".join(fact_violations),
+                    status="OPEN",
+                    created_at=now,
+                )
+                db.add(incident)
+                trace = AgentTrace(
+                    trace_id=payload.trace_id,
+                    session_id=payload.session_id,
+                    tenant_id=tenant_id,
+                    agent_id=payload.agent_id,
+                    harness_version=payload.harness_version,
+                    policy_version=payload.policy_version,
+                    channel=payload.channel,
+                    source_event_id=payload.source_event_id,
+                    execution_mode="blocked",
+                    input_payload_sanitized={"client_message": client_message},
+                    context_snapshot_json=trusted_ctx.model_dump(mode="json"),
+                    raw_intent_json=payload.model_dump(mode="json"),
+                    error="; ".join(fact_violations),
+                    created_at=now,
+                )
+                db.add(trace)
+                db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "status": "BLOCKED",
+                        "verdict": DriftSeverity.HARD_FAILURE.value,
+                        "violations": [{"rule_id": "GR-03_DISCOUNT_PROMISE_GUARD", "message": v} for v in fact_violations],
+                    },
+                )
+            else:
+                trace = AgentTrace(
+                    trace_id=payload.trace_id,
+                    session_id=payload.session_id,
+                    tenant_id=tenant_id,
+                    agent_id=payload.agent_id,
+                    harness_version=payload.harness_version,
+                    policy_version=payload.policy_version,
+                    channel=payload.channel,
+                    source_event_id=payload.source_event_id,
+                    execution_mode="rejected",
+                    input_payload_sanitized={"client_message": client_message},
+                    context_snapshot_json=trusted_ctx.model_dump(mode="json"),
+                    raw_intent_json=payload.model_dump(mode="json"),
+                    validation_result_json={"fact_violations": fact_violations},
+                    error="; ".join(fact_violations),
+                    created_at=now,
+                )
+                db.add(trace)
+                db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"error": "Fact-check validation failed", "violations": fact_violations},
+                )
 
     # 2. Multi-factor Risk Scoring
     risk_result = RiskScorer.calculate_risk(
