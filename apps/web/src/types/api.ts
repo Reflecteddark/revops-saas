@@ -873,10 +873,68 @@ export interface XRayResponse {
 export interface GatekeeperHook {
   hook_category: string;
   phrase: string;
+  gatekeeper_prompt?: string;
+  manager_speech?: string;
+  psychological_trigger?: string;
   success_rate_pct: number;
   uses_count: number;
   timestamp_sec: number;
   pattern_type: string;
+}
+
+export interface VersionComparisonMetrics {
+  total_calls: number;
+  script_calls: number;
+  ar_pct: number;
+  swr_pct: number;
+  fwr_pct: number;
+  lift_pct: number;
+  defect_rate_pct: number;
+}
+
+export type InterventionVerdict =
+  | 'IMPROVEMENT_CONFIRMED'
+  | 'SABOTAGE_NEW_VERSION'
+  | 'HYPOTHESIS_FAILED'
+  | 'STABLE_NEUTRAL'
+  | 'COLLECTING_DATA';
+
+export interface VersionComparisonRow {
+  criterion: string;
+  title: string;
+  stage: string;
+  v1_metrics: VersionComparisonMetrics;
+  v2_metrics: VersionComparisonMetrics;
+  delta_lift_pct: number;
+  delta_defect_rate_pct: number;
+  intervention_verdict: InterventionVerdict;
+  verdict_label: string;
+}
+
+export interface VersionComparisonResponse {
+  tenant_id: string;
+  v1: {
+    id: string;
+    version_tag: string;
+    title: string;
+    created_at?: string | null;
+  };
+  v2: {
+    id: string;
+    version_tag: string;
+    title: string;
+    created_at?: string | null;
+  };
+  comparison: VersionComparisonRow[];
+  summary: {
+    overall_status: string;
+    summary_verdict: string;
+    improved_criteria_count: number;
+    degraded_criteria_count: number;
+    neutral_criteria_count: number;
+    avg_lift_delta_pct: number;
+    avg_defect_reduction_pct: number;
+  };
 }
 
 export interface GatekeeperKillerPhrase {

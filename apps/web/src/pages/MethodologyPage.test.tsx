@@ -33,6 +33,55 @@ vi.mock('@/lib/api', () => ({
           },
         ],
       }),
+      compareVersions: vi.fn().mockResolvedValue({
+        tenant_id: 'TNT-001',
+        v1: {
+          id: 'ver-1',
+          version_tag: 'v1.0',
+          title: 'Базовый стандарт',
+        },
+        v2: {
+          id: 'ver-2',
+          version_tag: 'v2.0',
+          title: 'Усиленный скрипт',
+        },
+        summary: {
+          overall_status: 'IMPROVEMENT_CONFIRMED',
+          summary_verdict: 'Гипотеза подтверждена: чистый прирост конверсии +6.4%.',
+          improved_criteria_count: 8,
+          degraded_criteria_count: 1,
+          neutral_criteria_count: 4,
+          avg_lift_delta_pct: 6.4,
+          avg_defect_reduction_pct: 12.0,
+        },
+        comparison: [
+          {
+            criterion: 'cr6',
+            stage: 'Обход секретаря / Выход на ЛПР',
+            title: 'Схема принятия решений (ЛПР)',
+            v1_metrics: {
+              total_calls: 120,
+              ar_pct: 28.3,
+              swr_pct: 68.0,
+              fwr_pct: 19.0,
+              lift_pct: 49.0,
+              defect_rate_pct: 35.0,
+            },
+            v2_metrics: {
+              total_calls: 140,
+              ar_pct: 62.0,
+              swr_pct: 75.0,
+              fwr_pct: 20.0,
+              lift_pct: 55.0,
+              defect_rate_pct: 18.0,
+            },
+            delta_lift_pct: 6.0,
+            delta_defect_rate_pct: -17.0,
+            intervention_verdict: 'IMPROVEMENT_CONFIRMED',
+            verdict_label: 'Улучшение подтверждено',
+          },
+        ],
+      }),
       getHeatmap: vi.fn().mockResolvedValue({
         tenant_id: 'TNT-001',
         version_id: 'ver-1',
@@ -257,5 +306,21 @@ describe('MethodologyPage', () => {
     expect(screen.getByText('Эталонный речевой модуль (Скрипт для менеджера)')).toBeInTheDocument();
     expect(screen.getByText('Смысловые якоря (Semantic Anchors)')).toBeInTheDocument();
     expect(screen.getByText('Табу-фразы (Banned Triggers)')).toBeInTheDocument();
+  });
+
+  it('switches between heatmap matrix and version comparison view', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('view-matrix-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('view-compare-btn')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('view-compare-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('version-comparison-container')).toBeInTheDocument();
+      expect(screen.getByText(/Итоговый вердикт внедрения/i)).toBeInTheDocument();
+    });
   });
 });

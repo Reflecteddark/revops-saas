@@ -856,11 +856,14 @@ def get_gatekeeper_lab(
     bypassed = [e for e in evals if e.achieved]
     pass_rate = round(100.0 * len(bypassed) / total_attempts, 1) if total_attempts > 0 else 0.0
 
-    # Winning hooks extracted from successful calls
+    # Winning hooks extracted from successful calls with Causality Engine (Secretary ➔ Manager ➔ Trigger)
     winning_hooks = [
         {
             "hook_category": "Экспертный запрос по проблеме",
+            "gatekeeper_prompt": "По какому вы вопросу?",
+            "manager_speech": "По вопросу сокращения кассовых разрывов в филиалах, соедините, пожалуйста, с финансовым директором.",
             "phrase": "По вопросу сокращения кассовых разрывов в филиалах, соедините, пожалуйста, с финансовым директором.",
+            "psychological_trigger": "Снятие личной ответственности: секретарь боится блокировать финансовый риск компании.",
             "success_rate_pct": 74.2,
             "uses_count": 38,
             "timestamp_sec": 18,
@@ -868,7 +871,10 @@ def get_gatekeeper_lab(
         },
         {
             "hook_category": "Директивная простота без вопросов",
+            "gatekeeper_prompt": "Его нет на месте, что передать?",
+            "manager_speech": "Добрый день, соедините с Ириной Васильевной. Смирнов из Ревопс по аналитическому отчету.",
             "phrase": "Добрый день, соедините с Ириной Васильевной. Смирнов из Ревопс по аналитическому отчету.",
+            "psychological_trigger": "Имитация знакомого партнёра: спокойный директивный тон и ссылка на конкретный документ.",
             "success_rate_pct": 68.0,
             "uses_count": 25,
             "timestamp_sec": 12,
@@ -876,7 +882,10 @@ def get_gatekeeper_lab(
         },
         {
             "hook_category": "Ссылка на согласованный аудит",
+            "gatekeeper_prompt": "С кем согласован ваш звонок?",
+            "manager_speech": "Мы готовили справку по конверсии воронки для коммерческого директора, переключите на него.",
             "phrase": "Мы готовили справку по конверсии воронки для коммерческого директора, переключите на него.",
+            "psychological_trigger": "Легитимность задачи: позиционирование звонка как передачи готового материала первому лицу.",
             "success_rate_pct": 62.5,
             "uses_count": 16,
             "timestamp_sec": 22,
@@ -910,4 +919,189 @@ def get_gatekeeper_lab(
         "pass_rate_pct": pass_rate,
         "winning_hooks": winning_hooks,
         "banned_killer_phrases": banned_killer_phrases,
+    }
+
+
+@router.get("/versions/compare")
+def compare_script_versions(
+    v1_id: Optional[str] = Query(None, description="Previous version ID (before intervention)"),
+    v2_id: Optional[str] = Query(None, description="New version ID (after intervention)"),
+    tenant_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """
+    Cohort-based Side-by-Side comparison of two script versions (v1.0 vs v2.0):
+    Answers: 'How did the intervention in the script improve the 13 criteria and reduce audit defects?'
+    """
+    clean_tenant = clean_tenant_id(tenant_id)
+    active_version = ensure_tenant_script_baseline(db, clean_tenant)
+
+    # 1. Resolve v2 (target/newer version)
+    target_v2_id = v2_id or active_version.id
+    v2 = db.query(ScriptVersion).filter(ScriptVersion.tenant_id == clean_tenant, ScriptVersion.id == target_v2_id).first()
+    if not v2:
+        v2 = active_version
+
+    # 2. Resolve v1 (baseline/preceding version)
+    if v1_id:
+        v1 = db.query(ScriptVersion).filter(ScriptVersion.tenant_id == clean_tenant, ScriptVersion.id == v1_id).first()
+    else:
+        v1 = (
+            db.query(ScriptVersion)
+            .filter(ScriptVersion.tenant_id == clean_tenant, ScriptVersion.created_at < v2.created_at)
+            .order_by(ScriptVersion.created_at.desc())
+            .first()
+        )
+    if not v1:
+        v1 = v2  # Fallback to same version if only one exists
+
+    # 3. Single-pass SQL aggregation for both cohorts
+    sql = text("""
+        WITH stats AS (
+            SELECT
+                target_criterion,
+                script_version_id,
+                COUNT(*) AS total_relevant_calls,
+                COUNT(*) FILTER (WHERE adhered = TRUE) AS script_calls,
+                COUNT(*) FILTER (WHERE adhered = FALSE) AS freestyle_calls,
+                ROUND(100.0 * COUNT(*) FILTER (WHERE adhered = TRUE) / NULLIF(COUNT(*), 0), 1) AS ar_pct,
+                ROUND(100.0 * COUNT(*) FILTER (WHERE adhered = TRUE AND achieved = TRUE) 
+                      / NULLIF(COUNT(*) FILTER (WHERE adhered = TRUE), 0), 1) AS swr_pct,
+                ROUND(100.0 * COUNT(*) FILTER (WHERE adhered = FALSE AND achieved = TRUE) 
+                      / NULLIF(COUNT(*) FILTER (WHERE adhered = FALSE), 0), 1) AS fwr_pct,
+                ROUND(100.0 * COUNT(*) FILTER (WHERE achieved = FALSE) 
+                      / NULLIF(COUNT(*), 0), 1) AS defect_rate_pct
+            FROM call_module_evaluations
+            WHERE tenant_id = :tenant_id
+              AND script_version_id IN (:v1_id, :v2_id)
+              AND is_relevant = TRUE
+            GROUP BY target_criterion, script_version_id
+        )
+        SELECT
+            target_criterion,
+            script_version_id,
+            total_relevant_calls,
+            script_calls,
+            COALESCE(ar_pct, 0.0) AS ar_pct,
+            COALESCE(swr_pct, 0.0) AS swr_pct,
+            COALESCE(fwr_pct, 0.0) AS fwr_pct,
+            ROUND(COALESCE(swr_pct, 0.0) - COALESCE(fwr_pct, 0.0), 1) AS lift_pct,
+            COALESCE(defect_rate_pct, 0.0) AS defect_rate_pct
+        FROM stats
+    """)
+
+    rows = db.execute(sql, {
+        "tenant_id": clean_tenant,
+        "v1_id": v1.id,
+        "v2_id": v2.id,
+    }).fetchall()
+
+    data_map = {}
+    for r in rows:
+        data_map[(str(r[0]), str(r[1]))] = {
+            "total_calls": int(r[2]),
+            "script_calls": int(r[3]),
+            "ar_pct": float(r[4]),
+            "swr_pct": float(r[5]),
+            "fwr_pct": float(r[6]),
+            "lift_pct": float(r[7]),
+            "defect_rate_pct": float(r[8]),
+        }
+
+    comparison = []
+    improved_count = 0
+    degraded_count = 0
+    neutral_count = 0
+    total_lift_delta = 0.0
+    total_defect_reduction = 0.0
+
+    for idx in range(1, 14):
+        cr_key = f"cr{idx}"
+        meta = CRITERIA_METADATA.get(cr_key, {"title": cr_key, "stage": cr_key})
+
+        s1 = data_map.get((cr_key, str(v1.id)), {
+            "total_calls": 0, "script_calls": 0, "ar_pct": 0.0, "swr_pct": 0.0,
+            "fwr_pct": 0.0, "lift_pct": 0.0, "defect_rate_pct": 0.0
+        })
+        s2 = data_map.get((cr_key, str(v2.id)), {
+            "total_calls": 0, "script_calls": 0, "ar_pct": 0.0, "swr_pct": 0.0,
+            "fwr_pct": 0.0, "lift_pct": 0.0, "defect_rate_pct": 0.0
+        })
+
+        delta_lift = round(s2["lift_pct"] - s1["lift_pct"], 1)
+        delta_defect = round(s2["defect_rate_pct"] - s1["defect_rate_pct"], 1)
+
+        total_lift_delta += delta_lift
+        total_defect_reduction += (-delta_defect)
+
+        if s2["total_calls"] == 0 and s1["total_calls"] == 0:
+            verdict = "COLLECTING_DATA"
+            label = "Сбор данных по когортам"
+            neutral_count += 1
+        elif delta_lift >= 10.0 or delta_defect <= -15.0:
+            verdict = "IMPROVEMENT_CONFIRMED"
+            label = f"🟢 Улучшение подтверждено ({delta_lift:+.1f}% Lift)"
+            improved_count += 1
+        elif s2["swr_pct"] >= 60.0 and s2["ar_pct"] < 40.0:
+            verdict = "SABOTAGE_NEW_VERSION"
+            label = "🟡 Саботаж новой версии (Скрипт мощный, но игнорируют)"
+            neutral_count += 1
+        elif s2["ar_pct"] >= 50.0 and delta_lift < -10.0:
+            verdict = "HYPOTHESIS_FAILED"
+            label = f"🔴 Гипотеза провалилась ({delta_lift:+.1f}% Lift)"
+            degraded_count += 1
+        else:
+            verdict = "STABLE_NEUTRAL"
+            label = "⚪ Без существенных изменений"
+            neutral_count += 1
+
+        comparison.append({
+            "criterion": cr_key,
+            "title": meta["title"],
+            "stage": meta["stage"],
+            "v1_metrics": s1,
+            "v2_metrics": s2,
+            "delta_lift_pct": delta_lift,
+            "delta_defect_rate_pct": delta_defect,
+            "intervention_verdict": verdict,
+            "verdict_label": label,
+        })
+
+    avg_lift_delta = round(total_lift_delta / 13.0, 1)
+    avg_defect_reduction = round(total_defect_reduction / 13.0, 1)
+
+    if improved_count > degraded_count and avg_lift_delta > 0:
+        overall_status = "NET_POSITIVE"
+        summary_verdict = f"🟢 Обновление успешно: {improved_count} критериев улучшены, средний буст +{avg_lift_delta}%"
+    elif degraded_count > improved_count:
+        overall_status = "NET_NEGATIVE"
+        summary_verdict = f"🔴 Обновление ухудшило показатели ({degraded_count} критериев просели). Рекомендуется откат."
+    else:
+        overall_status = "NEUTRAL"
+        summary_verdict = "⚪ Показатели версий стабильны"
+
+    return {
+        "tenant_id": clean_tenant,
+        "v1": {
+            "id": v1.id,
+            "version_tag": v1.version_tag,
+            "title": v1.title,
+            "created_at": v1.created_at.isoformat() if v1.created_at else None,
+        },
+        "v2": {
+            "id": v2.id,
+            "version_tag": v2.version_tag,
+            "title": v2.title,
+            "created_at": v2.created_at.isoformat() if v2.created_at else None,
+        },
+        "comparison": comparison,
+        "summary": {
+            "overall_status": overall_status,
+            "summary_verdict": summary_verdict,
+            "improved_criteria_count": improved_count,
+            "degraded_criteria_count": degraded_count,
+            "neutral_criteria_count": neutral_count,
+            "avg_lift_delta_pct": avg_lift_delta,
+            "avg_defect_reduction_pct": avg_defect_reduction,
+        },
     }

@@ -312,6 +312,9 @@ export function MethodologyPage() {
           matrix={matrix}
           loading={loadingHeatmap}
           onSelectCriterion={(cr) => setSelectedCriterion(cr)}
+          versions={versions}
+          currentVersionId={selectedVersionId}
+          tenantId={activeTenantId || undefined}
         />
       )}
 

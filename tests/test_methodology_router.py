@@ -197,3 +197,100 @@ def test_update_module_and_clone_in_new_version():
     v2_cr9 = next(m for m in v2_modules_resp.json()["modules"] if m["target_criterion"] == "cr9")
     assert v2_cr9["recommended_speech"] == "Новый спич отработки возражения Дорого"
     assert "Якорь 1: Сравнение цены" in v2_cr9["semantic_anchors"]
+def test_methodology_gatekeeper_causality():
+    """Verify that Gatekeeper Lab returns causality fields (Prompt ➔ Speech ➔ Trigger)."""
+    resp = client.get(f"/api/v1/methodology/gatekeeper-lab?tenant_id={TEST_TENANT}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "winning_hooks" in data
+    assert len(data["winning_hooks"]) >= 1
+    hook = data["winning_hooks"][0]
+    assert "gatekeeper_prompt" in hook
+    assert "manager_speech" in hook
+    assert "psychological_trigger" in hook
+    assert "phrase" in hook
+    assert hook["gatekeeper_prompt"] != ""
+    assert hook["psychological_trigger"] != ""
+
+
+def test_methodology_versions_compare():
+    """Verify that /versions/compare accurately returns side-by-side delta metrics for 13 criteria."""
+    # 1. Initialize v1.0
+    v1_resp = client.get(f"/api/v1/methodology/versions?tenant_id={TEST_TENANT}")
+    assert v1_resp.status_code == 200
+    v1_id = v1_resp.json()["active_version_id"]
+
+    # 2. Seed v1 evaluations for cr6 and cr9
+    db = SessionLocal()
+    try:
+        # v1: 10 calls for cr6, 2 adhered & achieved, 8 freestyle & failed (AR=20%, SWR=100%, FWR=0%, Lift=+100%)
+        for i in range(10):
+            adhered = (i < 2)
+            achieved = (i < 2)
+            db.add(CallModuleEvaluation(
+                id=f"v1-cme-cr6-{i}",
+                call_id=f"v1-call-cr6-{i}",
+                tenant_id=TEST_TENANT,
+                script_version_id=v1_id,
+                target_criterion="cr6",
+                is_relevant=True,
+                adhered=adhered,
+                achieved=achieved,
+                matched_anchors=["Экспертный заход"] if adhered else [],
+                detected_banned=[],
+            ))
+        db.commit()
+    finally:
+        db.close()
+
+    # 3. Create v2.0
+    v2_resp = client.post(f"/api/v1/methodology/versions?tenant_id={TEST_TENANT}", json={
+        "version_tag": "v2.0",
+        "title": "Версия с откалиброванным обходом секретаря",
+        "hypothesis": "Поднимаем AR с 20% до 80%",
+        "set_active": True,
+    })
+    assert v2_resp.status_code == 200
+    v2_id = v2_resp.json()["version_id"]
+
+    # 4. Seed v2 evaluations for cr6: 10 calls, 8 adhered & achieved, 2 freestyle
+    db = SessionLocal()
+    try:
+        for i in range(10):
+            adhered = (i < 8)
+            achieved = (i < 8)
+            db.add(CallModuleEvaluation(
+                id=f"v2-cme-cr6-{i}",
+                call_id=f"v2-call-cr6-{i}",
+                tenant_id=TEST_TENANT,
+                script_version_id=v2_id,
+                target_criterion="cr6",
+                is_relevant=True,
+                adhered=adhered,
+                achieved=achieved,
+                matched_anchors=["Экспертный заход"] if adhered else [],
+                detected_banned=[],
+            ))
+        db.commit()
+    finally:
+        db.close()
+
+    # 5. Call compare endpoint
+    comp_resp = client.get(f"/api/v1/methodology/versions/compare?v1_id={v1_id}&v2_id={v2_id}&tenant_id={TEST_TENANT}")
+    assert comp_resp.status_code == 200
+    comp_data = comp_resp.json()
+    assert comp_data["v1"]["id"] == v1_id
+    assert comp_data["v2"]["id"] == v2_id
+    assert len(comp_data["comparison"]) == 13
+
+# Check cr6 comparison
+    cr6_row = next(r for r in comp_data["comparison"] if r["criterion"] == "cr6")
+    assert cr6_row["v1_metrics"]["total_calls"] >= 10
+    assert cr6_row["v2_metrics"]["total_calls"] == 10
+    assert cr6_row["v2_metrics"]["ar_pct"] == 80.0
+    assert cr6_row["v2_metrics"]["swr_pct"] == 100.0
+    assert cr6_row["intervention_verdict"] in ["IMPROVEMENT_CONFIRMED", "STABLE_NEUTRAL"]
+    assert "delta_lift_pct" in cr6_row
+    assert "delta_defect_rate_pct" in cr6_row
+    assert "summary" in comp_data
+    assert "overall_status" in comp_data["summary"]

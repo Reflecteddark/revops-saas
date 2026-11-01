@@ -47,6 +47,7 @@ import type {
   HeatmapResponse,
   XRayResponse,
   GatekeeperLabResponse,
+  VersionComparisonResponse,
   Tenant,
   TenantHealthDiagnostic,
   TenantProvisionPayload,
@@ -778,6 +779,22 @@ export const methodologyApi = {
       params: {
         tenant_id: effectiveTenant,
         ...(versionId ? { version_id: versionId } : {}),
+      },
+    });
+    return res.data;
+  },
+
+  compareVersions: async (
+    v1Id?: string,
+    v2Id?: string,
+    tenantId?: string
+  ): Promise<VersionComparisonResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.get<VersionComparisonResponse>('/methodology/versions/compare', {
+      params: {
+        tenant_id: effectiveTenant,
+        ...(v1Id ? { v1_id: v1Id } : {}),
+        ...(v2Id ? { v2_id: v2Id } : {}),
       },
     });
     return res.data;
