@@ -220,7 +220,7 @@ def ensure_tenant_script_baseline(db: Session, tenant_id: str) -> ScriptVersion:
         .count()
     )
     if eval_count == 0:
-        seed_realistic_evaluations(db, clean_tenant, version.id)
+        seed_realistic_evaluations(db, clean_tenant, str(version.id))
 
     return version
 
@@ -484,8 +484,8 @@ def activate_script_version(
     db.query(ScriptVersion).filter(ScriptVersion.tenant_id == clean_tenant).update(
         {"is_active": False}
     )
-    version.is_active = True
-    version.activated_at = datetime.now(timezone.utc)
+    setattr(version, "is_active", True)
+    setattr(version, "activated_at", datetime.now(timezone.utc))
     db.commit()
 
     return {"status": "activated", "version_id": version.id, "version_tag": version.version_tag}
@@ -522,7 +522,7 @@ def get_script_modules(
             {
                 "id": m.id,
                 "target_criterion": m.target_criterion,
-                "title": CRITERIA_METADATA.get(m.target_criterion, {}).get("title", m.target_criterion),
+                "title": CRITERIA_METADATA.get(str(m.target_criterion), {}).get("title", str(m.target_criterion)),
                 "stage_name": m.stage_name,
                 "recommended_speech": m.recommended_speech,
                 "semantic_anchors": m.semantic_anchors or [],
@@ -559,10 +559,10 @@ def update_script_module(
     if not module:
         raise HTTPException(status_code=404, detail=f"Module for {clean_cr} not found")
 
-    module.recommended_speech = payload.recommended_speech.strip()
-    module.semantic_anchors = [a.strip() for a in payload.semantic_anchors if a.strip()]
-    module.banned_triggers = [b.strip() for b in payload.banned_triggers if b.strip()]
-    module.min_anchors_required = max(1, payload.min_anchors_required)
+    setattr(module, "recommended_speech", payload.recommended_speech.strip())
+    setattr(module, "semantic_anchors", [a.strip() for a in payload.semantic_anchors if a.strip()])
+    setattr(module, "banned_triggers", [b.strip() for b in payload.banned_triggers if b.strip()])
+    setattr(module, "min_anchors_required", max(1, payload.min_anchors_required))
 
     db.commit()
     db.refresh(module)
@@ -756,25 +756,28 @@ def get_methodology_xray(
         verdict_label = "Сбор данных (Выборка накапливается)"
 
     # Managers breakdown
-    managers_map = {}
+    managers_map: dict[str, dict[str, int]] = {}
     for e in evals:
-        m_name = e.manager_name or "Неизвестный менеджер"
+        m_name = str(e.manager_name or "Неизвестный менеджер")
         if m_name not in managers_map:
-            managers_map[m_name] = {"name": m_name, "total": 0, "script": 0, "achieved": 0}
+            managers_map[m_name] = {"total": 0, "script": 0, "achieved": 0}
         managers_map[m_name]["total"] += 1
-        if e.adhered:
+        if bool(e.adhered):
             managers_map[m_name]["script"] += 1
-        if e.achieved:
+        if bool(e.achieved):
             managers_map[m_name]["achieved"] += 1
 
-    managers_list = []
-    for m in managers_map.values():
-        m_ar = round(100.0 * m["script"] / m["total"], 1) if m["total"] > 0 else 0.0
-        m_win = round(100.0 * m["achieved"] / m["total"], 1) if m["total"] > 0 else 0.0
+    managers_list: list[dict[str, Any]] = []
+    for name, m_stats in managers_map.items():
+        m_tot = m_stats["total"]
+        m_scr = m_stats["script"]
+        m_ach = m_stats["achieved"]
+        m_ar = round(100.0 * m_scr / m_tot, 1) if m_tot > 0 else 0.0
+        m_win = round(100.0 * m_ach / m_tot, 1) if m_tot > 0 else 0.0
         managers_list.append({
-            "name": m["name"],
-            "total_calls": m["total"],
-            "script_calls": m["script"],
+            "name": name,
+            "total_calls": m_tot,
+            "script_calls": m_scr,
             "ar_pct": m_ar,
             "win_pct": m_win,
             "is_saboteur": m_ar < 40.0,
@@ -784,14 +787,14 @@ def get_methodology_xray(
     managers_list.sort(key=lambda x: (not x["is_saboteur"], x["ar_pct"]))
 
     # 3 Golden quotes (adhered=True, achieved=True) with audio timestamps
-    golden_evals = [e for e in script_wins if e.evidence_quote and len(e.evidence_quote) > 10][:3]
-    quotes = [
+    golden_evals = [e for e in script_wins if e.evidence_quote and len(str(e.evidence_quote)) > 10][:3]
+    quotes: list[dict[str, Any]] = [
         {
-            "call_id": g.call_id,
-            "manager_name": g.manager_name,
-            "quote": g.evidence_quote,
-            "timestamp_sec": g.timestamp_sec or 15,
-            "matched_anchors": g.matched_anchors or [],
+            "call_id": str(g.call_id),
+            "manager_name": str(g.manager_name or ""),
+            "quote": str(g.evidence_quote or ""),
+            "timestamp_sec": int(g.timestamp_sec or 15),
+            "matched_anchors": list(g.matched_anchors or []),
         }
         for g in golden_evals
     ]
