@@ -82,13 +82,19 @@ def send_telegram_alert(text: str):
 
 
 def check_http_endpoint(url: str, timeout: int = 5) -> bool:
-    """Check if an HTTP endpoint returns 200 OK."""
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "RevOps-HealthGuard/1.0"})
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return 200 <= resp.status < 400
-    except Exception:
-        return False
+    """Check if an HTTP endpoint returns 200 OK (with container host fallback)."""
+    candidates = [url]
+    if "127.0.0.1:5678" in url:
+        candidates.append(url.replace("127.0.0.1:5678", "n8n:5678"))
+    for target in candidates:
+        try:
+            req = urllib.request.Request(target, headers={"User-Agent": "RevOps-HealthGuard/1.0"})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                if 200 <= resp.status < 400:
+                    return True
+        except Exception:
+            pass
+    return False
 
 
 def is_systemd_service_active(service_name: str) -> bool:
