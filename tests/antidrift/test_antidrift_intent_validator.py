@@ -1,5 +1,5 @@
 """
-tests/antidrift/test_intent_validator.py
+tests/antidrift/test_antidrift_intent_validator.py
 
 Tests for IntentValidator: capability scopes, payload sanitation, and injection defense.
 No hardcoded tenant IDs: dynamically generated per test.

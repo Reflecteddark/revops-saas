@@ -1,5 +1,5 @@
 """
-tests/antidrift/test_idempotency.py
+tests/antidrift/test_antidrift_idempotency.py
 
 Tests for IdempotencyManager: key determinism and database deduplication.
 Zero hardcoding: dynamic tenant IDs per scenario.

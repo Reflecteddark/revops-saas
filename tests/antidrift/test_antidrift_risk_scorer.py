@@ -1,5 +1,5 @@
 """
-tests/antidrift/test_risk_scorer.py
+tests/antidrift/test_antidrift_risk_scorer.py
 
 Tests for RiskScorer: deal amounts, conflict keywords, and canary eligibility.
 Zero hardcoding: dynamic tenant IDs per scenario.

@@ -1,5 +1,5 @@
 """
-tests/antidrift/test_policies.py
+tests/antidrift/test_antidrift_policies.py
 
 Tests for PolicyEngine: verification of GR-00..GR-05 guardrails and Decision Matrix.
 Zero hardcoding: dynamic tenant IDs per scenario.
