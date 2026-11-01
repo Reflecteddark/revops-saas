@@ -6,6 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { DealsPage } from './DealsPage';
 import { dealsApi } from '@/lib/api';
@@ -17,6 +18,7 @@ vi.mock('@/lib/api', () => ({
     list: vi.fn(),
     sync: vi.fn(),
     get: vi.fn(),
+    repPerformance: vi.fn(),
   },
 }));
 
@@ -53,6 +55,11 @@ const mockPipelines: Pipeline[] = [
     ],
   },
 ];
+
+function renderWithQuery(ui: React.ReactElement) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+}
 
 const mockDeals: Deal[] = [
   {
@@ -132,7 +139,7 @@ describe('DealsPage', () => {
   });
 
   it('renders page header, pipeline switcher and aggregate stats', async () => {
-    render(<DealsPage />);
+    renderWithQuery(<DealsPage />);
 
     expect(screen.getByText('Сделки и Воронка продаж')).toBeInTheDocument();
 
@@ -144,7 +151,7 @@ describe('DealsPage', () => {
   });
 
   it('renders Kanban board with stages and deal cards', async () => {
-    render(<DealsPage />);
+    renderWithQuery(<DealsPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Первичный контакт')).toBeInTheDocument();
@@ -155,7 +162,7 @@ describe('DealsPage', () => {
   });
 
   it('switches between Kanban and Table views', async () => {
-    render(<DealsPage />);
+    renderWithQuery(<DealsPage />);
 
     await waitFor(() => {
       expect(screen.getByText('АО ТехноПром')).toBeInTheDocument();
@@ -171,7 +178,7 @@ describe('DealsPage', () => {
   });
 
   it('filters by SLA risk', async () => {
-    render(<DealsPage />);
+    renderWithQuery(<DealsPage />);
 
     await waitFor(() => {
       expect(screen.getByText('АО ТехноПром')).toBeInTheDocument();
@@ -186,7 +193,7 @@ describe('DealsPage', () => {
   });
 
   it('opens deal slide-over drawer when a deal card is clicked', async () => {
-    render(<DealsPage />);
+    renderWithQuery(<DealsPage />);
 
     await waitFor(() => {
       expect(screen.getByText('АО ТехноПром')).toBeInTheDocument();
@@ -197,6 +204,99 @@ describe('DealsPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('deal-details-drawer')).toBeInTheDocument();
       expect(screen.getByText('Бюджет сделки')).toBeInTheDocument();
+    });
+  });
+
+  it('renders manager filter chips and filters deals when manager chip clicked', async () => {
+    renderWithQuery(<DealsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('АО ТехноПром')).toBeInTheDocument();
+      expect(screen.getByText('ООО Вектор Развития')).toBeInTheDocument();
+    });
+
+    // Check manager chips exist and click on Dmitry Fedotov chip
+    const dmitryChip = screen.getByRole('button', { name: /Дмитрий Федотов/i });
+    expect(dmitryChip).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Иван Менеджер/i })).toBeInTheDocument();
+
+    fireEvent.click(dmitryChip);
+
+    // Deals should be filtered to only Dmitry's deal
+    expect(screen.getByText('АО ТехноПром')).toBeInTheDocument();
+    expect(screen.queryByText('ООО Вектор Развития')).not.toBeInTheDocument();
+
+    // Click on "Все" chip
+    const allChip = screen.getByRole('button', { name: /^все \(/i });
+    fireEvent.click(allChip);
+
+    // Both deals should return
+    expect(screen.getByText('АО ТехноПром')).toBeInTheDocument();
+    expect(screen.getByText('ООО Вектор Развития')).toBeInTheDocument();
+  });
+
+  it('switches to Reps DNA Matrix view when tab clicked', async () => {
+    (dealsApi.repPerformance as any).mockResolvedValue({
+      status: 'ok',
+      tenant_id: 'TNT-002',
+      pipeline_id: null,
+      total_reps: 1,
+      team_benchmarks: {
+        total_won_amount: 1000000,
+        avg_deal_amount: 500000,
+        win_rate_pct: 50.0,
+        cycle_days_median: 10.0,
+        speech_score_avg: 9.0,
+      },
+      benchmark_leader: {
+        name: 'Дмитрий Федотов',
+        won_amount: 1000000,
+        won_count: 2,
+        avg_deal_amount: 500000,
+        win_rate_pct: 100.0,
+        cycle_days_median: 10.0,
+        speech_score_avg: 9.5,
+        aov_delta_pct: 0,
+        win_rate_delta: 50.0,
+        drivers: ['Высокая конверсия дожима'],
+        summary: 'Дмитрий Федотов лидирует в пайплайне.',
+      },
+      reps: [
+        {
+          manager_name: 'Дмитрий Федотов',
+          won_amount: 1000000,
+          won_count: 2,
+          lost_count: 0,
+          active_count: 1,
+          total_deals: 3,
+          avg_deal_amount: 500000,
+          win_rate_pct: 100.0,
+          gross_conversion_pct: 66.7,
+          cycle_days_median: 10.0,
+          sla_risk_amount: 0,
+          calls_count: 5,
+          speech_score_avg: 9.5,
+          next_step_pct: 80.0,
+          sample_size_ok: true,
+          success_driver: 'Высокая дожимаемость (Win Rate)',
+          weak_spot: '',
+        },
+      ],
+    });
+
+    renderWithQuery(<DealsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('АО ТехноПром')).toBeInTheDocument();
+    });
+
+    // Switch to reps tab
+    const repsTab = screen.getByRole('button', { name: /менеджеры \(днк\)/i });
+    fireEvent.click(repsTab);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('rep-performance-matrix')).toBeInTheDocument();
+      expect(screen.getByText('Лидер продаж воронки')).toBeInTheDocument();
     });
   });
 });

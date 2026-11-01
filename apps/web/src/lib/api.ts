@@ -25,6 +25,7 @@ import type {
   CrmStatusResponse,
   CrmSyncManagersResponse,
   Deal,
+  RepsPerformanceResponse,
   DlqRetryResponse,
   FleetActionRequest,
   FleetActionResponse,
@@ -156,6 +157,7 @@ export const authApi = {
     const res = await api.get<User>('/auth/me');
     return res.data;
   },
+
 };
 
 export const tenantsApi = {
@@ -240,6 +242,16 @@ export const dealsApi = {
   }> => {
     const res = await api.post('/deals/sync', null, {
       params: { tenant_id: tenantId },
+    });
+    return res.data;
+  },
+
+  repPerformance: async (params?: {
+    tenant_id?: string;
+    pipeline_id?: string;
+  }): Promise<RepsPerformanceResponse> => {
+    const res = await api.get<RepsPerformanceResponse>('/deals/performance/reps', {
+      params,
     });
     return res.data;
   },

@@ -122,6 +122,58 @@ export interface PipelinesResponse {
   total_pipelines: number;
 }
 
+export interface RepPerformanceMetric {
+  manager_name: string;
+  won_amount: number;
+  won_count: number;
+  lost_count: number;
+  active_count: number;
+  total_deals: number;
+  avg_deal_amount: number;
+  win_rate_pct: number;
+  gross_conversion_pct: number;
+  cycle_days_median: number | null;
+  sla_risk_amount: number;
+  calls_count: number;
+  speech_score_avg: number | null;
+  next_step_pct: number;
+  sample_size_ok: boolean;
+  success_driver: string;
+  weak_spot: string;
+}
+
+export interface RepBenchmarkLeader {
+  name: string;
+  won_amount: number;
+  won_count: number;
+  avg_deal_amount: number;
+  win_rate_pct: number;
+  cycle_days_median: number | null;
+  speech_score_avg: number | null;
+  aov_delta_pct: number;
+  win_rate_delta: number;
+  drivers: string[];
+  summary: string;
+}
+
+export interface TeamBenchmarks {
+  total_won_amount: number;
+  avg_deal_amount: number;
+  win_rate_pct: number;
+  cycle_days_median: number | null;
+  speech_score_avg: number | null;
+}
+
+export interface RepsPerformanceResponse {
+  status: string;
+  tenant_id: string;
+  pipeline_id: string | null;
+  total_reps: number;
+  reps: RepPerformanceMetric[];
+  team_benchmarks: TeamBenchmarks;
+  benchmark_leader: RepBenchmarkLeader | null;
+}
+
 export interface DealLinkedCall {
   id: string;
   external_call_id?: string | null;

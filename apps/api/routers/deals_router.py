@@ -664,6 +664,316 @@ async def list_deals(
     }
 
 
+SYSTEM_BOT_NAMES = {
+    "автоответчик", "недозвон", "не представился",
+    "неизвестный", "неизвестно", "менеджер", "-", ""
+}
+
+
+def is_system_rep_name(name: str | None) -> bool:
+    if not name:
+        return True
+    return name.strip().lower() in SYSTEM_BOT_NAMES
+
+
+@router.get("/performance/reps")
+async def get_reps_performance(
+    request: Request,
+    pipeline_id: str | None = None,
+    org_id: str | None = None,
+    tenant_id: str | None = None,
+    tenant: str | None = None,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Returns aggregated sales performance and speech DNA per sales rep.
+    Includes AOV, Win Rate, P50 Cycle Days, Speech Score, and Benchmark Leader analysis.
+    """
+    import statistics
+
+    requested = tenant_id or tenant or org_id
+    effective_tenant = get_authenticated_tenant_or_verify_admin(request, requested)
+
+    # 1. Query Deals
+    q = (
+        db.query(Deal)
+        .filter(
+            (Deal.tenant_id == effective_tenant)
+            | (Deal.tenant_id == effective_tenant.lower())
+            | (Deal.tenant_id == effective_tenant.upper())
+        )
+        .filter(Deal.is_deleted == False)
+    )
+    if pipeline_id and pipeline_id not in ("all", "*"):
+        q = q.filter(Deal.pipeline_id == pipeline_id)
+    db_deals = q.all()
+
+    deals_data: list[dict[str, Any]] = []
+    if db_deals:
+        for d in db_deals:
+            is_won = bool(d.stage == DealStage.WON or "успешно" in str(d.stage_name).lower())
+            is_lost = bool(d.stage == DealStage.LOST or "закрыто" in str(d.stage_name).lower() or "отказ" in str(d.stage_name).lower())
+            status = "won" if is_won else ("lost" if is_lost else "active")
+            mgr = (
+                d.assigned_user.full_name
+                if d.assigned_user
+                else ((d.custom_payload.get("manager_name") if isinstance(d.custom_payload, dict) else None)
+                      or (d.custom_payload.get("responsible_user") if isinstance(d.custom_payload, dict) else None)
+                      or "Менеджер")
+            )
+            deals_data.append({
+                "id": d.id,
+                "amount": float(d.budget or 0.0),
+                "status": status,
+                "manager": str(mgr).strip(),
+                "created_at": d.created_at,
+                "updated_at": d.updated_at,
+                "sla_risk": bool(d.is_at_risk) if status == "active" else False,
+            })
+    else:
+        is_demo_tenant = str(effective_tenant).lower().startswith("demo_") or str(effective_tenant).lower().startswith("demo-")
+        sheet_deals = [] if is_demo_tenant else fetch_deals_from_sheets(tenant_id=effective_tenant)
+        for sd in sheet_deals:
+            st = str(sd.get("status", "active")).lower()
+            amt = float(sd.get("amount", 0.0) or 0.0)
+            mgr = str(sd.get("responsible_user") or sd.get("manager_name") or "Менеджер").strip()
+            deals_data.append({
+                "id": str(sd.get("id", "")),
+                "amount": amt,
+                "status": st,
+                "manager": mgr,
+                "created_at": None,
+                "updated_at": None,
+                "sla_risk": bool(sd.get("sla_risk", False)) if st == "active" else False,
+            })
+
+    # 2. Query CallRecordings for Speech AI Correlation
+    call_q = (
+        db.query(CallRecording)
+        .filter(
+            (CallRecording.tenant_id == effective_tenant)
+            | (CallRecording.tenant_id == effective_tenant.lower())
+            | (CallRecording.tenant_id == effective_tenant.upper())
+        )
+    )
+    db_calls = call_q.all()
+
+    rep_calls_map: dict[str, list[dict[str, Any]]] = {}
+    for c in db_calls:
+        c_mgr = None
+        if c.manager_id and c.manager:
+            c_mgr = c.manager.full_name
+        elif c.ai_summary and isinstance(c.ai_summary, str) and "manager_name" in c.ai_summary:
+            try:
+                import json
+                summary_obj = json.loads(c.ai_summary)
+                c_mgr = summary_obj.get("manager_name")
+            except Exception:
+                pass
+        if not c_mgr or is_system_rep_name(c_mgr):
+            continue
+        c_mgr_clean = c_mgr.strip()
+        if c_mgr_clean not in rep_calls_map:
+            rep_calls_map[c_mgr_clean] = []
+
+        score_val = None
+        cr_arr = None
+        next_step_val = 0
+        if c.ai_summary:
+            try:
+                import json
+                sum_data = json.loads(c.ai_summary) if isinstance(c.ai_summary, str) else c.ai_summary
+                score_val = sum_data.get("score") or sum_data.get("overall_score")
+                cr_arr = sum_data.get("cr")
+                if sum_data.get("next_step") == 1 or sum_data.get("zoom_scheduled"):
+                    next_step_val = 1
+            except Exception:
+                pass
+        rep_calls_map[c_mgr_clean].append({
+            "score": score_val,
+            "cr": cr_arr,
+            "next_step": next_step_val,
+        })
+
+    # 3. Aggregate per Manager
+    all_managers = set()
+    for deal_item in deals_data:
+        mgr_name_str = str(deal_item.get("manager") or "")
+        if not is_system_rep_name(mgr_name_str):
+            all_managers.add(mgr_name_str)
+    for m in rep_calls_map.keys():
+        if not is_system_rep_name(m):
+            all_managers.add(m)
+
+    reps_list: list[dict[str, Any]] = []
+    total_team_won = 0.0
+    total_team_won_count = 0
+    total_team_lost_count = 0
+    all_cycle_days: list[float] = []
+
+    for mgr in sorted(all_managers):
+        m_deals = [di for di in deals_data if str(di.get("manager")) == mgr]
+        won_deals = [di for di in m_deals if str(di.get("status")) == "won"]
+        lost_deals = [di for di in m_deals if str(di.get("status")) == "lost"]
+        active_deals = [di for di in m_deals if str(di.get("status")) == "active"]
+
+        won_amount = sum(float(di.get("amount") or 0.0) for di in won_deals)
+        won_count = len(won_deals)
+        lost_count = len(lost_deals)
+        active_count = len(active_deals)
+        total_deals = len(m_deals)
+
+        total_team_won += won_amount
+        total_team_won_count += won_count
+        total_team_lost_count += lost_count
+
+        avg_deal_amount = round(won_amount / won_count, 2) if won_count > 0 else 0.0
+
+        closed_count = won_count + lost_count
+        win_rate_pct = round((won_count / closed_count) * 100, 1) if closed_count > 0 else 0.0
+        gross_conv_pct = round((won_count / total_deals) * 100, 1) if total_deals > 0 else 0.0
+
+        mgr_cycles: list[float] = []
+        for wd in won_deals:
+            c_at = wd.get("created_at")
+            u_at = wd.get("updated_at")
+            if isinstance(c_at, datetime) and isinstance(u_at, datetime):
+                try:
+                    delta_d = (u_at - c_at).total_seconds() / 86400.0
+                    if delta_d >= 0:
+                        mgr_cycles.append(round(delta_d, 1))
+                        all_cycle_days.append(round(delta_d, 1))
+                except Exception:
+                    pass
+        cycle_days_median = round(float(statistics.median(mgr_cycles)), 1) if mgr_cycles else None
+        sla_risk_amt = sum(float(di.get("amount") or 0.0) for di in active_deals if di.get("sla_risk"))
+
+        m_calls = rep_calls_map.get(mgr, [])
+        scored_calls = [c for c in m_calls if c.get("score") is not None]
+        speech_score_avg = (
+            round(sum(float(c.get("score") or 0.0) for c in scored_calls) / len(scored_calls), 1)
+            if scored_calls
+            else None
+        )
+        next_step_calls = [c for c in m_calls if c["next_step"] == 1]
+        next_step_pct = (
+            round((len(next_step_calls) / len(m_calls)) * 100, 1)
+            if m_calls
+            else 0.0
+        )
+
+        sample_size_ok = closed_count >= 3 or total_deals >= 5
+
+        reps_list.append({
+            "manager_name": mgr,
+            "won_amount": won_amount,
+            "won_count": won_count,
+            "lost_count": lost_count,
+            "active_count": active_count,
+            "total_deals": total_deals,
+            "avg_deal_amount": avg_deal_amount,
+            "win_rate_pct": win_rate_pct,
+            "gross_conversion_pct": gross_conv_pct,
+            "cycle_days_median": cycle_days_median,
+            "sla_risk_amount": sla_risk_amt,
+            "calls_count": len(m_calls),
+            "speech_score_avg": speech_score_avg,
+            "next_step_pct": next_step_pct,
+            "sample_size_ok": sample_size_ok,
+            "success_driver": "",
+            "weak_spot": "",
+        })
+
+    reps_list.sort(key=lambda r: (r["won_amount"], r["win_rate_pct"], r["won_count"]), reverse=True)
+
+    team_closed = total_team_won_count + total_team_lost_count
+    team_win_rate = round((total_team_won_count / team_closed) * 100, 1) if team_closed > 0 else 0.0
+    team_avg_check = round(total_team_won / total_team_won_count, 2) if total_team_won_count > 0 else 0.0
+    team_cycle_median = round(statistics.median(all_cycle_days), 1) if all_cycle_days else None
+
+    all_scores = [r["speech_score_avg"] for r in reps_list if r["speech_score_avg"] is not None]
+    team_avg_speech = round(sum(all_scores) / len(all_scores), 1) if all_scores else None
+
+    benchmark_leader = None
+    if reps_list:
+        candidates = [r for r in reps_list if r["won_count"] > 0]
+        leader = candidates[0] if candidates else reps_list[0]
+
+        aov_delta_pct = (
+            round(((leader["avg_deal_amount"] - team_avg_check) / team_avg_check) * 100)
+            if team_avg_check > 0
+            else 0
+        )
+        win_rate_delta = round(leader["win_rate_pct"] - team_win_rate, 1)
+
+        drivers = []
+        if aov_delta_pct > 0:
+            drivers.append(f"Средний чек выше нормы отдела (+{aov_delta_pct}%)")
+        if win_rate_delta > 0:
+            drivers.append(f"Высокая конверсия дожима ({leader['win_rate_pct']}% vs {team_win_rate}% по отделу)")
+        if leader["cycle_days_median"] and team_cycle_median and leader["cycle_days_median"] < team_cycle_median:
+            drivers.append(f"Быстрый цикл сделки ({leader['cycle_days_median']} дн. vs {team_cycle_median} дн.)")
+        if leader["next_step_pct"] >= 75:
+            drivers.append(f"Дисциплина закрытия на следующий шаг (Next Step {leader['next_step_pct']}%)")
+
+        benchmark_leader = {
+            "name": leader["manager_name"],
+            "won_amount": leader["won_amount"],
+            "won_count": leader["won_count"],
+            "avg_deal_amount": leader["avg_deal_amount"],
+            "win_rate_pct": leader["win_rate_pct"],
+            "cycle_days_median": leader["cycle_days_median"],
+            "speech_score_avg": leader["speech_score_avg"],
+            "aov_delta_pct": aov_delta_pct,
+            "win_rate_delta": win_rate_delta,
+            "drivers": drivers or ["Лидер по общему объёму поступлений в кассу"],
+            "summary": (
+                f"{leader['manager_name']} лидирует в пайплайне с выручкой {int(leader['won_amount']):,} ₽. "
+                + (f"Ключевой фактор — {drivers[0].lower()}." if drivers else "")
+            ).replace(",", " "),
+        }
+
+    for r in reps_list:
+        if r["sample_size_ok"]:
+            if r["win_rate_pct"] >= team_win_rate and r["win_rate_pct"] > 0:
+                r["success_driver"] = "Высокая дожимаемость (Win Rate)"
+            elif r["avg_deal_amount"] >= team_avg_check and r["avg_deal_amount"] > 0:
+                r["success_driver"] = "Крупный средний чек"
+            elif r["next_step_pct"] >= 80:
+                r["success_driver"] = "Эталонная фиксация Next Step"
+            else:
+                r["success_driver"] = "Стабильная работа по скрипту"
+
+            if r["sla_risk_amount"] > 0:
+                r["weak_spot"] = f"Зависание сделок в SLA ({int(r['sla_risk_amount']):,} ₽)".replace(",", " ")
+            elif r["next_step_pct"] < 60 and r["calls_count"] > 0:
+                r["weak_spot"] = "Потеря инициативы (Next Step < 60%)"
+            elif r["cycle_days_median"] and team_cycle_median and r["cycle_days_median"] > team_cycle_median * 1.5:
+                r["weak_spot"] = f"Затягивание цикла ({r['cycle_days_median']} дн.)"
+            elif r["win_rate_pct"] < team_win_rate and r["lost_count"] > 0:
+                r["weak_spot"] = "Сливы на этапе согласования"
+            else:
+                r["weak_spot"] = "Нормативный темп"
+        else:
+            r["success_driver"] = "Накопление статистики"
+            r["weak_spot"] = "Мало данных (n < 3)"
+
+    return {
+        "status": "ok",
+        "tenant_id": effective_tenant,
+        "total_reps": len(reps_list),
+        "reps": reps_list,
+        "team_benchmarks": {
+            "total_won_amount": total_team_won,
+            "avg_deal_amount": team_avg_check,
+            "win_rate_pct": team_win_rate,
+            "cycle_days_median": team_cycle_median,
+            "speech_score_avg": team_avg_speech,
+        },
+        "benchmark_leader": benchmark_leader,
+    }
+
+
 @router.get("/{deal_id}")
 async def get_deal_details(
     deal_id: str,

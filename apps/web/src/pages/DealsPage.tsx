@@ -29,7 +29,10 @@ import {
   Zap,
   ChevronRight,
   Layers,
+  Users,
 } from 'lucide-react';
+import { isSystemName } from '@/lib/systemNames';
+import { DealsRepMatrix } from '@/components/deals/DealsRepMatrix';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,7 +47,7 @@ import {
 } from '@/lib/dealHealth';
 import type { Deal, Pipeline } from '@/types/api';
 
-type ViewMode = 'kanban' | 'radar' | 'table';
+type ViewMode = 'kanban' | 'radar' | 'table' | 'reps';
 type QuickFilter = 'all' | 'risk' | 'stalled' | 'divergence' | 'sla';
 
 interface DealWithHealth extends Deal {
@@ -69,6 +72,7 @@ export function DealsPage() {
   const [lossReasonFilter, setLossReasonFilter] = React.useState<string>('all');
   const [selectedDeal, setSelectedDeal] = React.useState<Deal | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState<boolean>(false);
+  const [selectedManager, setSelectedManager] = React.useState<string>('all');
 
   // Request sequence ref to prevent out-of-order async race conditions
   const dealsReqSeq = React.useRef(0);
@@ -165,6 +169,20 @@ export function DealsPage() {
     }));
   }, [deals]);
 
+  // Extract unique active sales reps for quick filtering
+  const managersList = React.useMemo(() => {
+    const map = new Map<string, number>();
+    dealsWithHealth.forEach((d) => {
+      const m = (d.responsible_user || d.manager_name || '').trim();
+      if (m && !isSystemName(m)) {
+        map.set(m, (map.get(m) || 0) + 1);
+      }
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, count }));
+  }, [dealsWithHealth]);
+
   // Extract all unique loss reasons for filter dropdown
   const uniqueLossReasons = React.useMemo(() => {
     const reasons = new Set<string>();
@@ -210,6 +228,14 @@ export function DealsPage() {
         return false;
       }
 
+      // Manager filter
+      if (selectedManager !== 'all') {
+        const repName = (d.responsible_user || d.manager_name || '').trim().toLowerCase();
+        if (repName !== selectedManager.toLowerCase()) {
+          return false;
+        }
+      }
+
       // Search query
       if (search.trim()) {
         const s = search.trim().toLowerCase();
@@ -231,7 +257,7 @@ export function DealsPage() {
       }
       return true;
     });
-  }, [dealsWithHealth, activeFilter, search, slaRiskOnly, lossReasonFilter]);
+  }, [dealsWithHealth, activeFilter, search, slaRiskOnly, lossReasonFilter, selectedManager]);
 
   // Group deals into Kanban columns based on pipeline stages
   const kanbanColumns = React.useMemo(() => {
@@ -385,6 +411,18 @@ export function DealsPage() {
               <TableIcon className="h-3.5 w-3.5" />
               <span>Таблица</span>
             </button>
+            <button
+              onClick={() => setViewMode('reps')}
+              className={cn(
+                'flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
+                viewMode === 'reps'
+                  ? 'shadow-xs bg-indigo-500/15 font-semibold text-indigo-300'
+                  : 'text-tertiary hover:text-foreground'
+              )}
+            >
+              <Users className="h-3.5 w-3.5 text-indigo-400" />
+              <span>Менеджеры (ДНК)</span>
+            </button>
           </div>
 
           {/* Resync Button */}
@@ -529,6 +567,47 @@ export function DealsPage() {
           </div>
         </div>
 
+        {/* Manager Quick Filter Chips */}
+        {managersList.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-tertiary uppercase tracking-wider shrink-0">
+              <Users className="h-3 w-3" />
+              Менеджер:
+            </span>
+            <button
+              onClick={() => setSelectedManager('all')}
+              className={cn(
+                'h-6 px-2.5 rounded-md text-[11px] font-medium transition-all shrink-0',
+                selectedManager === 'all'
+                  ? 'bg-primary text-white font-semibold'
+                  : 'bg-surface border border-subtle text-secondary hover:text-foreground'
+              )}
+            >
+              Все ({dealsWithHealth.length})
+            </button>
+            {managersList.map(({ name, count }) => (
+              <button
+                key={name}
+                onClick={() => {
+                  setSelectedManager(name);
+                  if (viewMode === 'reps') {
+                    setViewMode('kanban');
+                  }
+                }}
+                className={cn(
+                  'flex items-center gap-1 h-6 px-2.5 rounded-md text-[11px] font-medium transition-all shrink-0',
+                  selectedManager.toLowerCase() === name.toLowerCase()
+                    ? 'bg-indigo-600 text-white font-semibold'
+                    : 'bg-surface border border-subtle text-secondary hover:text-foreground'
+                )}
+              >
+                <span>👤 {name}</span>
+                <span className="text-[10px] opacity-75">({count})</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Executive Quick Filter Pills */}
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -632,6 +711,15 @@ export function DealsPage() {
             Интеграции
           </Link>
         </div>
+      ) : viewMode === 'reps' ? (
+        <DealsRepMatrix
+          tenantId={activeTenantId}
+          pipelineId={selectedPipelineId}
+          onSelectManager={(mgrName) => {
+            setSelectedManager(mgrName);
+            setViewMode('kanban');
+          }}
+        />
       ) : viewMode === 'kanban' ? (
         /* ▦ Smart Kanban Board */
         <div className="flex gap-4 overflow-x-auto pb-4">
