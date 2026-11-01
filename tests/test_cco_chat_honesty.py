@@ -318,3 +318,17 @@ def test_insights_summary_empty_tenant_returns_no_data(monkeypatch):
     assert data.get("status") == "no_data"
     assert data.get("engine") == "no_data"
     assert "Нет данных" in data.get("message", "")
+
+
+def test_cco_snapshot_endpoints():
+    """Verifies that GET /cco/snapshot and POST /cco/refresh operate correctly."""
+    resp_snap = client.get("/api/v1/insights/cco/snapshot?tenant_id=TNT-001")
+    assert resp_snap.status_code == 200
+    data_snap = resp_snap.json()
+    assert data_snap.get("status") == "ok"
+    assert "data" in data_snap
+
+    resp_ref = client.post("/api/v1/insights/cco/refresh?tenant_id=TNT-001")
+    assert resp_ref.status_code == 200
+    data_ref = resp_ref.json()
+    assert data_ref.get("status") in ("queued", "completed_sync")
