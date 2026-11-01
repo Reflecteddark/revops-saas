@@ -36,13 +36,46 @@ class ShadowDivergenceMetric(BaseModel):
     reasons: list[str] = Field(default_factory=list)
 
 
+class DiffEngineConfig(BaseModel):
+    """Configurable thresholds for behavioral divergence and traffic splitting."""
+    amount_tolerance_percent: float = 0.05
+    max_discount_delta: float = 2.0
+    traffic_shadow_percent: int = 10
+    alert_divergence_threshold: float = 0.15
+
+    @classmethod
+    def load(cls, config_path: str = "config/antidrift.yaml") -> DiffEngineConfig:
+        import os
+        import yaml
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f) or {}
+                cfg_data = data.get("diff_engine", {})
+                return cls(**cfg_data)
+            except Exception as e:
+                logger.warning(f"Error loading {config_path}: {e}. Falling back to default DiffEngineConfig.")
+        return cls()
+
+
 class DiffEngine:
     """
     Evaluates behavioral delta between shadow candidate execution
     and baseline production traces.
     """
 
+    _config: Optional[DiffEngineConfig] = None
     MAX_ACCEPTABLE_DIVERGENCE_PCT: float = 15.0
+
+    @classmethod
+    def get_config(cls) -> DiffEngineConfig:
+        if cls._config is None:
+            cls._config = DiffEngineConfig.load()
+        return cls._config
+
+    @classmethod
+    def set_config(cls, cfg: DiffEngineConfig) -> None:
+        cls._config = cfg
 
     @classmethod
     def compare_proposals(
@@ -200,7 +233,17 @@ class DiffEngine:
             and hard_failures == 0
         )
 
-        status_str = "ACCEPTABLE" if is_acceptable else ("CRITICAL_DRIFT" if hard_failures > 0 else "DEGRADED")
+        if paired_count == 0 and total_shadow > 0:
+            status_str = "WARNING_NO_BASELINE"
+        else:
+            status_str = "ACCEPTABLE" if is_acceptable else ("CRITICAL_DRIFT" if hard_failures > 0 else "DEGRADED")
+
+        summary_msg = (
+            f"Shadow {harness_version}: Divergence={avg_divergence_pct}%, "
+            f"IntentMatch={intent_pct}%, HardFailures={hard_failures}, Status={status_str}"
+        )
+        if paired_count == 0 and total_shadow > 0:
+            summary_msg += " (Warning: No baseline production traces found for pairing)"
 
         return {
             "harness_version": harness_version,
@@ -213,10 +256,7 @@ class DiffEngine:
             "divergence_score_pct": avg_divergence_pct,
             "is_acceptable": is_acceptable,
             "status": status_str,
-            "summary": (
-                f"Shadow {harness_version}: Divergence={avg_divergence_pct}%, "
-                f"IntentMatch={intent_pct}%, HardFailures={hard_failures}, Status={status_str}"
-            ),
+            "summary": summary_msg,
         }
 
     @classmethod
@@ -246,9 +286,9 @@ class DiffEngine:
             return ExecutionMode.PROD
 
         if registry_entry.status == "SHADOW_RUNNING":
-            # 10% traffic routing deterministic on session_id
+            # Dynamic configurable traffic routing deterministic on session_id
             bucket = int(hashlib.sha256(session_id.encode("utf-8")).hexdigest()[:4], 16) % 100
-            if bucket < 10:
+            if bucket < cls.get_config().traffic_shadow_percent:
                 return ExecutionMode.SHADOW
             return ExecutionMode.PROD
 

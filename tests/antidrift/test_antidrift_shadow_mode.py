@@ -331,3 +331,102 @@ def test_smart_traffic_router_distribution():
         assert prod_count > 0, "Expected at least some traffic routed to PROD"
     finally:
         db.close()
+
+
+def test_diff_engine_config_yaml_loading():
+    """Task 7: DiffEngineConfig loads from YAML and falls back to safe defaults."""
+    from packages.antidrift.diff.diff_engine import DiffEngineConfig
+
+    # 1. Existing config/antidrift.yaml
+    cfg = DiffEngineConfig.load("config/antidrift.yaml")
+    assert cfg.amount_tolerance_percent == 0.05
+    assert cfg.max_discount_delta == 2.0
+    assert cfg.traffic_shadow_percent == 10
+    assert cfg.alert_divergence_threshold == 0.15
+
+    # 2. Missing config fallback
+    cfg_default = DiffEngineConfig.load("non_existent_config.yaml")
+    assert cfg_default.amount_tolerance_percent == 0.05
+    assert cfg_default.traffic_shadow_percent == 10
+
+
+def test_prometheus_metrics_registry():
+    """Task 8: Prometheus metrics recording and exposition text format."""
+    from packages.antidrift.observability.metrics import (
+        REGISTRY,
+        record_context_assembled,
+        record_validation_event,
+        set_shadow_divergence_ratio,
+        record_context_staleness,
+    )
+    REGISTRY.reset()
+
+    record_context_assembled("success", tenant_id="tenant_prom_1")
+    record_validation_event("GR-03", "blocked")
+    set_shadow_divergence_ratio("v1.5.0", 0.08)
+    record_context_staleness(14.2)
+
+    text = REGISTRY.generate_prometheus_text()
+    assert "antidrift_context_assembled_total" in text
+    assert 'status="success"' in text
+    assert "antidrift_validations_total" in text
+    assert 'guardrail="GR-03"' in text
+    assert "antidrift_shadow_divergence_ratio" in text
+    assert "0.08" in text
+    assert "antidrift_staleness_seconds_count" in text
+    assert "antidrift_staleness_seconds_sum" in text
+
+
+def test_shadow_diff_unknown_version_404():
+    """Task 9: GET /shadow/diff/{unknown_version} returns HTTP 404 Not Found."""
+    fake_ver = f"v_unknown_{uuid.uuid4().hex[:8]}"
+    res = client.get(f"/api/v1/agents/shadow/diff/{fake_ver}")
+    assert res.status_code == 404
+    assert "not found" in res.json()["detail"].lower()
+
+
+def test_shadow_diff_warning_no_baseline(dynamic_tenant_id):
+    """Task 9: Shadow traces with no paired production baseline return WARNING_NO_BASELINE."""
+    version = f"v_shadow_only_{uuid.uuid4().hex[:6]}"
+    trace_id = f"trc_shd_{uuid.uuid4().hex}"
+    source_evt = f"evt_orphan_{uuid.uuid4().hex}"
+
+    db = SessionLocal()
+    try:
+        # Register harness in registry so 404 is avoided
+        harness = HarnessRegistry(
+            agent_id="agent_orphan",
+            version=version,
+            model_name="gemini-2.5-flash",
+            system_prompt_hash="x" * 64,
+            tools_schema_hash="y" * 64,
+            status="SHADOW_RUNNING",
+        )
+        db.add(harness)
+
+        # Add single shadow trace without corresponding production trace
+        trace = AgentTrace(
+            trace_id=trace_id,
+            session_id="ses_orphan",
+            tenant_id=dynamic_tenant_id,
+            agent_id="agent_orphan",
+            harness_version=version,
+            policy_version="v1.0",
+            channel="api",
+            source_event_id=source_evt,
+            execution_mode="shadow",
+            raw_intent_json={"intent": "DISCUSS_PRICE"},
+            risk_score=0.1,
+            confidence_score=0.9,
+            routing_decision="shadow_comparator",
+        )
+        db.add(trace)
+        db.commit()
+
+        report = DiffEngine.compare_shadow_vs_prod_traces(db, version)
+        assert report["total_shadow_traces"] == 1
+        assert report["paired_prod_traces"] == 0
+        assert report["status"] == "WARNING_NO_BASELINE"
+        assert "Warning: No baseline" in report["summary"]
+    finally:
+        db.close()

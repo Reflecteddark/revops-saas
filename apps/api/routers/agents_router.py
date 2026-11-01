@@ -29,7 +29,7 @@ from packages.antidrift.context.context_assembler import (
 )
 from packages.antidrift.contracts.decisions import DriftSeverity
 from packages.antidrift.barrier.validator import IntentValidator
-from packages.antidrift.barrier.policy_engine import PolicyEngine
+from packages.antidrift.barrier.policy_engine import HardFailureRateLimiter, PolicyEngine
 from packages.antidrift.barrier.risk_scorer import RiskScorer
 from packages.antidrift.barrier.idempotency import IdempotencyManager
 from packages.antidrift.execution.crm_gateway import CRMExecutionGateway
@@ -51,10 +51,14 @@ router = APIRouter(prefix="/agents", tags=["AgentOps & Anti-Drift Engine"])
 class AssembleContextRequest(BaseModel):
     tenant_id: str
     deal_id: str
+    session_id: Optional[str] = None
     base_system_prompt: Optional[str] = None
     deal_context: Optional[dict[str, Any]] = None
     allowed_discount_max: Optional[float] = None
     allowed_deferment_days: Optional[int] = None
+    allowed_bonus_rub: Optional[float] = None
+    allow_bonuses: Optional[bool] = None
+    allowed_free_services: Optional[list[str]] = None
 
 
 @router.post("/context/assemble")
@@ -72,14 +76,25 @@ def assemble_context_endpoint(
             db=db,
             tenant_id=req.tenant_id,
             deal_id=req.deal_id,
+            session_id=req.session_id,
             deal_context=req.deal_context,
             allowed_discount_max=req.allowed_discount_max,
             allowed_deferment_days=req.allowed_deferment_days,
+            allowed_bonus_rub=req.allowed_bonus_rub,
+            allow_bonuses=req.allow_bonuses,
+            allowed_free_services=req.allowed_free_services,
         )
     except ContextUnavailableError as e:
+        logger.error(f"Context assemble error: {e}")
+        if getattr(e, "is_transient", False):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={"error": "Database temporarily unavailable for trusted context", "message": str(e)},
+                headers={"Retry-After": str(getattr(e, "retry_after", 5))},
+            )
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"error": "Database unavailable for trusted context", "message": str(e)},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Persistent database failure during trusted context assembly", "message": str(e)},
         )
 
     base_prompt = req.base_system_prompt or "Ты — автономный RevOps AI-ассистент отдела продаж."
@@ -167,13 +182,20 @@ def execute_agent_intent(
                 db=db,
                 tenant_id=tenant_id,
                 deal_id=deal_id,
+                session_id=payload.session_id,
                 deal_context=payload.context_refs,
             )
         except ContextUnavailableError as e:
             logger.error(f"Execution blocked: {e}")
+            if getattr(e, "is_transient", False):
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail={"error": "Database temporarily unavailable for trusted context", "message": str(e)},
+                    headers={"Retry-After": str(getattr(e, "retry_after", 5))},
+                )
             raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail={"error": "Database unavailable for trusted context", "message": str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={"error": "Persistent database failure during trusted context assembly", "message": str(e)},
             )
 
         require_hash = (
@@ -186,18 +208,19 @@ def execute_agent_intent(
         if fact_violations:
             has_discount_breach = any("GR-03" in v for v in fact_violations)
             if has_discount_breach:
-                incident = AgentIncident(
-                    trace_id=payload.trace_id,
-                    severity="P0",
-                    source="FACT_CHECK_GUARD",
-                    agent_id=payload.agent_id,
-                    harness_version=payload.harness_version,
-                    summary="Fact-check breach: unauthorized discount or terms hallucination",
-                    root_cause="; ".join(fact_violations),
-                    status="OPEN",
-                    created_at=now,
-                )
-                db.add(incident)
+                if HardFailureRateLimiter.should_record_scenario(payload.session_id):
+                    incident = AgentIncident(
+                        trace_id=payload.trace_id,
+                        severity="P0",
+                        source="FACT_CHECK_GUARD",
+                        agent_id=payload.agent_id,
+                        harness_version=payload.harness_version,
+                        summary="Fact-check breach: unauthorized discount or terms hallucination",
+                        root_cause="; ".join(fact_violations),
+                        status="OPEN",
+                        created_at=now,
+                    )
+                    db.add(incident)
                 trace = AgentTrace(
                     trace_id=payload.trace_id,
                     session_id=payload.session_id,
@@ -356,19 +379,20 @@ def execute_agent_intent(
 
     # 4. Handle Hard Failure (Blocking policy breach)
     if policy_result.overall_verdict in (DriftSeverity.HARD_FAILURE, DriftSeverity.REGRESSION):
-        # Create P0 Incident
-        incident = AgentIncident(
-            trace_id=payload.trace_id,
-            severity="P0" if policy_result.overall_verdict == DriftSeverity.HARD_FAILURE else "P1",
-            source="POLICY_ENGINE_GUARD",
-            agent_id=payload.agent_id,
-            harness_version=payload.harness_version,
-            summary=f"Guardrail breach: {[v.rule_id for v in policy_result.violations]}",
-            root_cause="; ".join(v.message for v in policy_result.violations),
-            status="OPEN",
-            created_at=now,
-        )
-        db.add(incident)
+        # Create Incident if within rate limit
+        if HardFailureRateLimiter.should_record_scenario(payload.session_id):
+            incident = AgentIncident(
+                trace_id=payload.trace_id,
+                severity="P0" if policy_result.overall_verdict == DriftSeverity.HARD_FAILURE else "P1",
+                source="POLICY_ENGINE_GUARD",
+                agent_id=payload.agent_id,
+                harness_version=payload.harness_version,
+                summary=f"Guardrail breach: {[v.rule_id for v in policy_result.violations]}",
+                root_cause="; ".join(v.message for v in policy_result.violations),
+                status="OPEN",
+                created_at=now,
+            )
+            db.add(incident)
 
         # Record blocked trace
         trace = AgentTrace(
@@ -728,7 +752,24 @@ def get_shadow_diff_report(
     """
     Returns aggregated behavioral diff between shadow candidate traces
     and production traces for the specified harness_version.
+    Returns 404 if harness_version is completely unknown.
     """
+    registry_exists = (
+        db.query(HarnessRegistry)
+        .filter(HarnessRegistry.version == harness_version)
+        .first()
+    )
+    has_traces = (
+        db.query(AgentTrace)
+        .filter(AgentTrace.harness_version == harness_version)
+        .first()
+    )
+    if not registry_exists and not has_traces:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Harness version '{harness_version}' not found in registry or execution traces",
+        )
+
     report = DiffEngine.compare_shadow_vs_prod_traces(
         db=db,
         harness_version=harness_version,

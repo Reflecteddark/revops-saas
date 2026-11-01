@@ -8,8 +8,11 @@ Categorizes violations into Hard Failure, Regression, Warning, or Info.
 
 from __future__ import annotations
 
+import logging
 import re
-from typing import Any
+from typing import Any, Optional
+
+logger = logging.getLogger("antidrift_policy_engine")
 from packages.antidrift.contracts.intent import (
     ActionRiskLevel,
     ActionType,
@@ -203,3 +206,45 @@ class PolicyEngine:
             risk_score=intent.risk_score,
             requires_hitl=requires_hitl,
         )
+
+
+class HardFailureRateLimiter:
+    """
+    Rate-limits the generation/auto-capture of pending VCR scenarios
+    or incident creation on repeated HARD_FAILURE to prevent queue flooding / DoS attacks.
+    Default limit: max 5 captures per 60 seconds per session.
+    """
+    _history: dict[str, list[float]] = {}
+    _window_seconds: int = 60
+    _max_per_window: int = 5
+
+    @classmethod
+    def should_record_scenario(cls, session_id: str, now_ts: Optional[float] = None) -> bool:
+        """
+        Returns True if a scenario or incident may be generated for this session.
+        Returns False and logs warning if rate limit (5/min) is exceeded.
+        """
+        import time
+        t = now_ts if now_ts is not None else time.time()
+        cutoff = t - cls._window_seconds
+
+        session_timestamps = cls._history.get(session_id, [])
+        valid_timestamps = [ts for ts in session_timestamps if ts > cutoff]
+
+        if len(valid_timestamps) >= cls._max_per_window:
+            logger.warning(
+                f"Rate limit exceeded for HARD_FAILURE scenario capture on session '{session_id}' "
+                f"({len(valid_timestamps)}/{cls._max_per_window} in last {cls._window_seconds}s). "
+                f"Blocking verdict is enforced, but scenario capture is throttled."
+            )
+            cls._history[session_id] = valid_timestamps
+            return False
+
+        valid_timestamps.append(t)
+        cls._history[session_id] = valid_timestamps
+        return True
+
+    @classmethod
+    def reset(cls) -> None:
+        """Resets rate limiter state (useful in tests)."""
+        cls._history.clear()

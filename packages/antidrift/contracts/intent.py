@@ -146,6 +146,7 @@ class VerifiedIntentProposal(AgentIntentPayload):
     and specifies expected state delta for dry-run validation.
     """
     context_hash: Optional[str] = Field(default=None, description="SHA-256 hash of ground-truth TrustedContext")
+    context_assembled_at: Optional[datetime] = Field(default=None, description="Timestamp when the bound context was assembled")
     used_facts: list[str] = Field(default_factory=list, description="Ground truth facts extracted from TrustedContext")
     unverified_assumptions: list[str] = Field(default_factory=list, description="Assumptions lacking verified context facts")
     expected_state_delta: dict[str, Any] = Field(default_factory=dict, description="Expected state changes for Dry-Run")

@@ -1,0 +1,14 @@
+diff_engine:
+  amount_tolerance_percent: 0.05
+  max_discount_delta: 2.0
+  traffic_shadow_percent: 10
+  alert_divergence_threshold: 0.15
+
+trusted_context:
+  ttl_seconds: 60
+  enable_session_bound_hash: true
+  enable_extended_reply_checks: true
+
+barrier:
+  hard_failure_rate_limit: 5
+  hard_failure_window_seconds: 60

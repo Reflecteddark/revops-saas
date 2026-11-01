@@ -9,7 +9,9 @@ and performs Layer 1.5 Fact-Checking against TrustedContext.
 
 from __future__ import annotations
 
+import os
 import re
+from datetime import datetime, timezone
 from typing import Any, Optional
 from packages.antidrift.contracts.intent import AgentIntentPayload, ActionItem
 
@@ -146,27 +148,15 @@ class IntentValidator:
                 cls._scan_payload_recursively(v, f"{path}[{i}]", violations)
 
     @classmethod
-    def validate_reply_text(
-        cls,
-        reply_text: str,
-        trusted_context: Any,
-    ) -> ValidationResult:
-        """
-        Post-validation of generated agent communication text.
-        Extracts financial concessions, discounts, and payment deferments,
-        verifying they comply with TrustedContext constraints.
-        """
+    def _check_discount_claims(cls, text: str, trusted_context: Any) -> list[str]:
         violations: list[str] = []
-        if not reply_text or trusted_context is None:
-            return ValidationResult(violations, blocked=False)
-
-        text = reply_text.strip()
-
-        # 1. Discount verification
         max_allowed_discount = float(getattr(trusted_context, "allowed_discount_max", 0.0) or 0.0)
+
+        # 1. Numeric percentages
         discount_patterns = [
             re.compile(r"(\d+(?:\.\d+)?)\s*%", re.IGNORECASE),
             re.compile(r"(?:скидк\w*|дисконт\w*)\s+(?:в\s+)?(\d+(?:\.\d+)?)", re.IGNORECASE),
+            re.compile(r"(\d+(?:\.\d+)?)\s*процент\w*", re.IGNORECASE),
         ]
         for pattern in discount_patterns:
             for match in pattern.finditer(text):
@@ -180,21 +170,259 @@ class IntentValidator:
                 except (ValueError, IndexError):
                     pass
 
-        # 2. Payment deferment verification
+        # 2. Russian word numbers with percent
+        word_numbers = {
+            "ноль": 0, "один": 1, "два": 2, "три": 3, "четыре": 4, "пять": 5,
+            "шесть": 6, "семь": 7, "восемь": 8, "девять": 9, "десять": 10,
+            "одиннадцать": 11, "двенадцать": 12, "тринадцать": 13, "четырнадцать": 14, "пятнадцать": 15,
+            "шестнадцать": 16, "семнадцать": 17, "восемнадцать": 18, "девятнадцать": 19, "двадцать": 20,
+            "тридцать": 30, "сорок": 40, "пятьдесят": 50, "шестьдесят": 60, "семьдесят": 70,
+            "восемьдесят": 80, "девяносто": 90, "сто": 100
+        }
+        word_discount_pattern = re.compile(
+            r"(?:скидк\w*|дисконт\w*)\s+(?:в\s+)?([а-яё]+)\s*процент\w*", re.IGNORECASE
+        )
+        for match in word_discount_pattern.finditer(text):
+            word = match.group(1).lower()
+            if word in word_numbers:
+                discount_val = float(word_numbers[word])
+                if discount_val > max_allowed_discount:
+                    violations.append(
+                        f"Proposed discount {discount_val}% ({word}) exceeds maximum authorized limit "
+                        f"{max_allowed_discount}% from trusted context (GR-03)"
+                    )
+        return violations
+
+    @classmethod
+    def _check_deferment_claims(cls, text: str, trusted_context: Any) -> list[str]:
+        violations: list[str] = []
+        max_allowed_deferment = int(getattr(trusted_context, "allowed_deferment_days", 14) or 14)
+
+        # 1. Numeric days
         deferment_pattern = re.compile(
             r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?(\d+)\s*(?:дн|day)", re.IGNORECASE
         )
-        max_allowed_deferment = int(getattr(trusted_context, "allowed_deferment_days", 14) or 14)
         for match in deferment_pattern.finditer(text):
             try:
                 days_val = int(match.group(1))
                 if days_val > max_allowed_deferment:
                     violations.append(
                         f"Proposed deferment {days_val} days exceeds maximum authorized limit "
-                        f"{max_allowed_deferment} days from trusted context"
+                        f"{max_allowed_deferment} days from trusted context (GR-03)"
                     )
             except (ValueError, IndexError):
                 pass
+
+        # 2. Word-based durations
+        duration_phrases = [
+            (re.compile(r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?два\s+месяц\w*", re.IGNORECASE), 60),
+            (re.compile(r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?полгода", re.IGNORECASE), 180),
+            (re.compile(r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?месяц", re.IGNORECASE), 30),
+            (re.compile(r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?три\s+недел\w*", re.IGNORECASE), 21),
+            (re.compile(r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?две\s+недел\w*", re.IGNORECASE), 14),
+            (re.compile(r"(?:отсрочк\w*|рассрочк\w*)\s+(?:на\s+)?недел\w*", re.IGNORECASE), 7),
+        ]
+        for pattern, days_val in duration_phrases:
+            if pattern.search(text):
+                if days_val > max_allowed_deferment:
+                    violations.append(
+                        f"Proposed deferment {days_val} days exceeds maximum authorized limit "
+                        f"{max_allowed_deferment} days from trusted context (GR-03)"
+                    )
+                break
+        return violations
+
+    @classmethod
+    def _check_financial_bonuses(cls, text: str, trusted_context: Any) -> list[str]:
+        violations: list[str] = []
+        allowed_bonus = float(getattr(trusted_context, "allowed_bonus_rub", 0.0) or 0.0)
+        allow_bonuses = bool(getattr(trusted_context, "allow_bonuses", False))
+
+        bonus_patterns = [
+            re.compile(r"(?:бонус\w*|подар\w*|дарим)\s+(?:в\s+размере\s+)?(\d[\d\s]*)\s*(?:₽|руб)", re.IGNORECASE),
+            re.compile(r"(\d[\d\s]*)\s*(?:₽|руб)\s*(?:в\s+подарок|бонус\w*)", re.IGNORECASE),
+            re.compile(r"(?:бонус\w*|подарок)\s+(\d[\d\s]*)\s*(?:к|k|тыс)", re.IGNORECASE),
+            re.compile(r"(?:денежн\w*\s+компенсаци\w*|бесплатн\w*\s+месяц\s+подписк\w*)", re.IGNORECASE),
+        ]
+        for pat in bonus_patterns:
+            m = pat.search(text)
+            if m:
+                claimed_amount = 0.0
+                if m.groups() and m.group(1):
+                    raw_num = m.group(1).replace(" ", "")
+                    try:
+                        claimed_amount = float(raw_num)
+                        if any(k in m.group(0).lower() for k in ("к", "k", "тыс")):
+                            claimed_amount *= 1000.0
+                    except ValueError:
+                        claimed_amount = 0.0
+
+                if not allow_bonuses and allowed_bonus == 0.0:
+                    violations.append(
+                        f"Unauthorized financial bonus or gift promised in reply: '{m.group(0).strip()}' (GR-03)"
+                    )
+                    break
+                elif claimed_amount > 0 and claimed_amount > allowed_bonus:
+                    violations.append(
+                        f"Proposed bonus amount {claimed_amount:,.0f} ₽ exceeds authorized limit "
+                        f"{allowed_bonus:,.0f} ₽ from trusted context (GR-03)"
+                    )
+                    break
+        return violations
+
+    @classmethod
+    def _check_legal_guarantees(cls, text: str) -> list[str]:
+        violations: list[str] = []
+        guarantee_patterns = [
+            re.compile(r"гарантиру\w*\s+100%\s*возврат", re.IGNORECASE),
+            re.compile(r"гарантиру\w*\s+возврат\s+(?:денег|средств)", re.IGNORECASE),
+            re.compile(r"обязуемся\s+выплатить\s+(?:неустойку|штраф|компенсацию)", re.IGNORECASE),
+            re.compile(r"выплатим\s+неустойку", re.IGNORECASE),
+            re.compile(r"юридически\s+гарантиру\w*", re.IGNORECASE),
+            re.compile(r"гаранти\w*\s+результат\w*(?:\s+или\s+вернем\s+деньги)?", re.IGNORECASE),
+            re.compile(r"гарантируем\s+окупаемость", re.IGNORECASE),
+            re.compile(r"штрафн\w*\s+санкци\w*\s+(?:включим|гарантируем)", re.IGNORECASE),
+        ]
+        for pat in guarantee_patterns:
+            m = pat.search(text)
+            if m:
+                violations.append(
+                    f"Unauthorized legal or financial guarantee offered: '{m.group(0).strip()}' (GR-03)"
+                )
+        return violations
+
+    @classmethod
+    def _check_amount_misquotes(cls, text: str, trusted_context: Any) -> list[str]:
+        violations: list[str] = []
+        ctx_amount = getattr(trusted_context, "deal_amount", None)
+        if ctx_amount is None or float(ctx_amount) <= 0:
+            return violations
+
+        ctx_amount = float(ctx_amount)
+        misquote_pattern = re.compile(
+            r"(?:бюджет\w*|сумм\w*(?:\s+сделки|\s+договора)?|стоимост\w*)\s*(?:составляет|в)?\s*(\d[\d\s]*)\s*(?:[kк]|тыс(?:\.|яч)?)?\s*(?:₽|руб)?",
+            re.IGNORECASE,
+        )
+        for match in misquote_pattern.finditer(text):
+            raw_str = match.group(1).replace(" ", "")
+            try:
+                val = float(raw_str)
+                full_match = match.group(0).lower()
+                if "к" in full_match or "k" in full_match or "тыс" in full_match:
+                    val *= 1000.0
+
+                if val > 0 and abs(val - ctx_amount) / ctx_amount > 0.01:
+                    violations.append(
+                        f"Reply misquotes deal amount / budget: mentions {val:,.0f} ₽, "
+                        f"but trusted context deal_amount is {ctx_amount:,.0f} ₽ (GR-03)"
+                    )
+            except (ValueError, IndexError):
+                pass
+        return violations
+
+    @classmethod
+    def _check_unauthorized_services(cls, text: str, trusted_context: Any) -> list[str]:
+        violations: list[str] = []
+        allowed_services = [
+            str(s).strip().lower()
+            for s in (getattr(trusted_context, "allowed_free_services", []) or [])
+        ]
+        service_patterns = [
+            (re.compile(r"бесплатн\w*\s+доставк\w*", re.IGNORECASE), "доставка"),
+            (re.compile(r"бесплатн\w*\s+аудит\w*", re.IGNORECASE), "аудит"),
+            (re.compile(r"бесплатн\w*\s+интеграци\w*", re.IGNORECASE), "интеграция"),
+            (re.compile(r"бесплатн\w*\s+настройк\w*", re.IGNORECASE), "настройка"),
+            (re.compile(r"бесплатн\w*\s+внедрени\w*", re.IGNORECASE), "внедрение"),
+            (re.compile(r"бесплатн\w*\s+техподдержк\w*", re.IGNORECASE), "техподдержка"),
+            (re.compile(r"бесплатн\w*\s+перенос\w*\s+данных", re.IGNORECASE), "перенос данных"),
+        ]
+        for pat, key in service_patterns:
+            m = pat.search(text)
+            if m:
+                if not any(key in allowed for allowed in allowed_services):
+                    violations.append(
+                        f"Unauthorized free service promised: '{m.group(0).strip()}' (GR-03)"
+                    )
+        return violations
+
+    @classmethod
+    def validate_reply_text(
+        cls,
+        reply_text: str,
+        trusted_context: Any,
+    ) -> ValidationResult:
+        """
+        Post-validation of generated agent communication text across 6 categories:
+        1. Discounts (numeric and verbal)
+        2. Payment deferments (days and timeframes)
+        3. Financial bonuses and gifts
+        4. Legal / financial unconditional guarantees
+        5. Deal amount / budget misquotes
+        6. Unauthorized complimentary services
+        """
+        violations: list[str] = []
+        if not reply_text or trusted_context is None:
+            return ValidationResult(violations, blocked=False)
+
+        text = reply_text.strip()
+        is_extended_enabled = os.getenv("ENABLE_EXTENDED_REPLY_CHECKS", "1") in ("1", "true", "True")
+
+        # 1. Discount verification
+        violations.extend(cls._check_discount_claims(text, trusted_context))
+
+        # 2. Payment deferment verification
+        violations.extend(cls._check_deferment_claims(text, trusted_context))
+
+        if is_extended_enabled:
+            # 3. Financial bonuses
+            violations.extend(cls._check_financial_bonuses(text, trusted_context))
+
+            # 4. Legal guarantees
+            violations.extend(cls._check_legal_guarantees(text))
+
+            # 5. Amount misquotes
+            violations.extend(cls._check_amount_misquotes(text, trusted_context))
+
+            # 6. Unauthorized services
+            violations.extend(cls._check_unauthorized_services(text, trusted_context))
+
+        return ValidationResult(violations)
+
+    @classmethod
+    def validate_context_freshness(
+        cls,
+        proposal: Any,
+        trusted_context: Any,
+        ttl_seconds: int = 60,
+    ) -> ValidationResult:
+        """
+        Validates that the context bound to the intent proposal is sufficiently fresh (TTL).
+        Blocks stale context to prevent attacks or race conditions using outdated CRM data (GR-03).
+        """
+        violations: list[str] = []
+        if os.getenv("ENABLE_CONTEXT_TTL", "1") not in ("1", "true", "True"):
+            return ValidationResult(violations, blocked=False)
+
+        if trusted_context is None:
+            return ValidationResult(violations, blocked=False)
+
+        # Context assemble timestamp: either from proposal or from trusted_context
+        assembled_at = getattr(proposal, "context_assembled_at", None)
+        if assembled_at is None:
+            if getattr(proposal, "context_hash", None):
+                violations.append("Missing context_assembled_at timestamp (GR-03)")
+                return ValidationResult(violations)
+            assembled_at = getattr(trusted_context, "assembled_at", None)
+
+        if assembled_at:
+            now = datetime.now(timezone.utc)
+            if assembled_at.tzinfo is None:
+                assembled_at = assembled_at.replace(tzinfo=timezone.utc)
+            age = (now - assembled_at).total_seconds()
+            if age > ttl_seconds:
+                violations.append(
+                    f"Context is stale: assembled {age:.1f}s ago, TTL is {ttl_seconds}s (GR-03)"
+                )
 
         return ValidationResult(violations)
 
@@ -324,8 +552,24 @@ class IntentValidator:
                 f"Context hash mismatch: intent signed with '{claimed_hash}', but active context is '{expected_hash}' (GR-03)"
             )
 
+        # 1.1 Session-bound context verification (Task 4)
+        session_bound_enabled = os.getenv("ENABLE_SESSION_BOUND_HASH", "1") in ("1", "true", "True")
+        if session_bound_enabled:
+            ctx_session = getattr(trusted_context, "session_id", None)
+            intent_session = getattr(intent, "session_id", None)
+            if ctx_session and intent_session and ctx_session != intent_session:
+                violations.append(
+                    f"Cross-session replay detected: context session '{ctx_session}' does not match intent session '{intent_session}' (GR-03)"
+                )
+
+        # 1.2 Freshness & TTL check (Task 3)
+        is_ttl_enabled = os.getenv("ENABLE_CONTEXT_TTL", "1") in ("1", "true", "True")
+        if is_ttl_enabled and (require_hash or getattr(intent, "context_hash", None)):
+            freshness_result = cls.validate_context_freshness(intent, trusted_context)
+            if freshness_result.blocked:
+                violations.extend(freshness_result.violations)
+
         # 2. Check cited used_facts against ground truth facts with reply text inspection
-        import os
         is_used_facts_enabled = os.getenv("ENABLE_USED_FACTS_VALIDATION", "1") in ("1", "true", "True")
         if is_used_facts_enabled and (require_hash or getattr(intent, "context_hash", None)):
             cited_facts = getattr(intent, "used_facts", None) or []
@@ -350,3 +594,4 @@ class IntentValidator:
 validate_against_trusted_context = IntentValidator.validate_against_trusted_context
 validate_reply_text = IntentValidator.validate_reply_text
 validate_used_facts_against_context = IntentValidator.validate_used_facts_against_context
+validate_context_freshness = IntentValidator.validate_context_freshness
