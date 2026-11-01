@@ -14,10 +14,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   CheckCircle2,
-  Filter,
-  Flame,
   Minus,
-  Search,
   Skull,
   Sparkles,
 } from 'lucide-react';

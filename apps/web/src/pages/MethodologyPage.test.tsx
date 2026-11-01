@@ -15,8 +15,6 @@ import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MethodologyPage } from './MethodologyPage';
-import { apiClient } from '@/lib/api';
-
 vi.mock('@/lib/api', () => ({
   apiClient: {
     methodology: {

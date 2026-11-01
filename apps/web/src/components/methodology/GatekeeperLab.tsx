@@ -9,10 +9,8 @@
 
 import * as React from 'react';
 import {
-  AlertOctagon,
   Award,
   CheckCircle2,
-  Clock,
   DoorOpen,
   Play,
   ShieldAlert,

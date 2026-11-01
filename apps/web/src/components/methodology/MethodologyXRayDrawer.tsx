@@ -13,7 +13,6 @@
 import * as React from 'react';
 import {
   AlertTriangle,
-  Award,
   CheckCircle2,
   Clock,
   Copy,

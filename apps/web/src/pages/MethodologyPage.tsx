@@ -56,8 +56,7 @@ export function MethodologyPage() {
   // Versions state
   const [versions, setVersions] = React.useState<ScriptVersionItem[]>([]);
   const [selectedVersionId, setSelectedVersionId] = React.useState<string>('');
-  const [activeVersionId, setActiveVersionId] = React.useState<string>('');
-  const [isNewVersionOpen, setIsNewVersionOpen] = React.useState(false);
+    const [isNewVersionOpen, setIsNewVersionOpen] = React.useState(false);
 
   // Form state for creating new version
   const [newTag, setNewTag] = React.useState('');
@@ -79,10 +78,9 @@ export function MethodologyPage() {
   // 1. Fetch versions
   const loadVersions = React.useCallback(async () => {
     try {
-      const res = await apiClient.methodology.getVersions(activeTenantId);
+      const res = await apiClient.methodology.getVersions(activeTenantId || undefined);
       setVersions(res.versions);
-      setActiveVersionId(res.active_version_id);
-      if (!selectedVersionId && res.active_version_id) {
+            if (!selectedVersionId && res.active_version_id) {
         setSelectedVersionId(res.active_version_id);
       }
     } catch (err) {
@@ -94,7 +92,7 @@ export function MethodologyPage() {
   const loadHeatmap = React.useCallback(async (versionId?: string) => {
     setLoadingHeatmap(true);
     try {
-      const res = await apiClient.methodology.getHeatmap(versionId, activeTenantId);
+      const res = await apiClient.methodology.getHeatmap(versionId, activeTenantId || undefined);
       setMatrix(res.matrix);
     } catch (err) {
       console.error('Failed to load methodology heatmap:', err);
@@ -126,7 +124,7 @@ export function MethodologyPage() {
           hypothesis: newHypothesis.trim() || undefined,
           set_active: setNewActive,
         },
-        activeTenantId
+        (activeTenantId || undefined)
       );
 
       setIsNewVersionOpen(false);
@@ -146,7 +144,7 @@ export function MethodologyPage() {
 
   const handleActivateVersion = async (versionId: string) => {
     try {
-      await apiClient.methodology.activateVersion(versionId, activeTenantId);
+      await apiClient.methodology.activateVersion(versionId, activeTenantId || undefined);
       await loadVersions();
       setSelectedVersionId(versionId);
     } catch (err) {
@@ -229,6 +227,17 @@ export function MethodologyPage() {
           </DropdownMenu>
 
           {/* New Hypothesis / Version Button */}
+          {currentVersion && !currentVersion.is_active && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleActivateVersion(currentVersion.id)}
+              className="h-9 gap-1.5 text-xs text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+            >
+              <Check className="h-3.5 w-3.5" />
+              Сделать боевой
+            </Button>
+          )}
           <Button
             size="sm"
             onClick={() => setIsNewVersionOpen(true)}
@@ -309,14 +318,14 @@ export function MethodologyPage() {
       {activeTab === 'gatekeeper' && (
         <GatekeeperLab
           versionId={selectedVersionId}
-          tenantId={activeTenantId}
+          tenantId={activeTenantId || undefined}
         />
       )}
 
       {activeTab === 'editor' && (
         <ScriptModulesEditor
           versionId={selectedVersionId}
-          tenantId={activeTenantId}
+          tenantId={activeTenantId || undefined}
         />
       )}
 
@@ -324,7 +333,7 @@ export function MethodologyPage() {
       <MethodologyXRayDrawer
         criterion={selectedCriterion}
         versionId={selectedVersionId}
-        tenantId={activeTenantId}
+        tenantId={activeTenantId || undefined}
         isOpen={Boolean(selectedCriterion)}
         onClose={() => setSelectedCriterion(null)}
       />
