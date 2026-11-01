@@ -268,3 +268,70 @@ class RevokedToken(Base):
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
+
+
+class ScriptVersion(Base):
+    __tablename__ = 'script_versions'
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenant_id = Column(String(100), nullable=False, index=True)
+    version_tag = Column(String(50), nullable=False)
+    title = Column(String(255), nullable=False)
+    hypothesis = Column(Text, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=False)
+    activated_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index('idx_tenant_script_version', 'tenant_id', 'version_tag', unique=True),
+    )
+
+    modules = relationship('ScriptModule', back_populates='version', cascade='all, delete-orphan')
+    evaluations = relationship('CallModuleEvaluation', back_populates='version', cascade='all, delete-orphan')
+
+
+class ScriptModule(Base):
+    __tablename__ = 'script_modules'
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    script_version_id = Column(String(36), ForeignKey('script_versions.id', ondelete='CASCADE'), nullable=False, index=True)
+    target_criterion = Column(String(10), nullable=False)
+    stage_name = Column(String(255), nullable=False)
+    recommended_speech = Column(Text, nullable=False)
+    semantic_anchors = Column(JSON, default=list)
+    banned_triggers = Column(JSON, default=list)
+    min_anchors_required = Column(Integer, default=2)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index('idx_version_criterion_unique', 'script_version_id', 'target_criterion', unique=True),
+    )
+
+    version = relationship('ScriptVersion', back_populates='modules')
+
+
+class CallModuleEvaluation(Base):
+    __tablename__ = 'call_module_evaluations'
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    call_id = Column(String(36), nullable=False, index=True)
+    tenant_id = Column(String(100), nullable=False, index=True)
+    script_version_id = Column(String(36), ForeignKey('script_versions.id', ondelete='CASCADE'), nullable=False, index=True)
+    target_criterion = Column(String(10), nullable=False)
+    is_relevant = Column(Boolean, nullable=False, default=True)
+    adhered = Column(Boolean, nullable=False, default=False)
+    achieved = Column(Boolean, nullable=False, default=False)
+    matched_anchors = Column(JSON, default=list)
+    detected_banned = Column(JSON, default=list)
+    evidence_quote = Column(Text, nullable=True)
+    timestamp_sec = Column(Integer, nullable=True)
+    manager_id = Column(String(100), nullable=True)
+    manager_name = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index('idx_call_criterion_unique', 'call_id', 'target_criterion', unique=True),
+        Index('idx_cme_analytics', 'tenant_id', 'script_version_id', 'target_criterion'),
+    )
+
+    version = relationship('ScriptVersion', back_populates='evaluations')

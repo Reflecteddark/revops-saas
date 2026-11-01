@@ -42,6 +42,13 @@ import type {
   StageConfig,
   TelegramConfig,
   TelegramReportResponse,
+  ScriptVersionItem,
+  ScriptVersionsResponse,
+  ScriptModuleItem,
+  ScriptModulesResponse,
+  HeatmapResponse,
+  XRayResponse,
+  GatekeeperLabResponse,
   Tenant,
   TenantHealthDiagnostic,
   TenantProvisionPayload,
@@ -664,7 +671,123 @@ export const integrationsApi = {
   },
 };
 
+
+export const methodologyApi = {
+  getVersions: async (tenantId?: string): Promise<ScriptVersionsResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.get<ScriptVersionsResponse>('/methodology/versions', {
+      params: { tenant_id: effectiveTenant },
+    });
+    return res.data;
+  },
+
+  createVersion: async (
+    payload: { version_tag: string; title: string; hypothesis?: string; set_active?: boolean },
+    tenantId?: string
+  ): Promise<{ status: string; version_id: string; version_tag: string; is_active: boolean }> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.post('/methodology/versions', payload, {
+      params: { tenant_id: effectiveTenant },
+    });
+    return res.data;
+  },
+
+  activateVersion: async (
+    versionId: string,
+    tenantId?: string
+  ): Promise<{ status: string; version_id: string; version_tag: string }> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.put(
+      `/methodology/versions/${versionId}/activate`,
+      {},
+      {
+        params: { tenant_id: effectiveTenant },
+      }
+    );
+    return res.data;
+  },
+
+  getModules: async (
+    versionId?: string,
+    tenantId?: string
+  ): Promise<ScriptModulesResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.get<ScriptModulesResponse>('/methodology/modules', {
+      params: {
+        tenant_id: effectiveTenant,
+        ...(versionId ? { version_id: versionId } : {}),
+      },
+    });
+    return res.data;
+  },
+
+  updateModule: async (
+    criterion: string,
+    payload: {
+      recommended_speech: string;
+      semantic_anchors: string[];
+      banned_triggers: string[];
+      min_anchors_required: number;
+    },
+    versionId?: string,
+    tenantId?: string
+  ): Promise<any> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.put(`/methodology/modules/${criterion}`, payload, {
+      params: {
+        tenant_id: effectiveTenant,
+        ...(versionId ? { version_id: versionId } : {}),
+      },
+    });
+    return res.data;
+  },
+
+  getHeatmap: async (
+    versionId?: string,
+    tenantId?: string
+  ): Promise<HeatmapResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.get<HeatmapResponse>('/methodology/heatmap', {
+      params: {
+        tenant_id: effectiveTenant,
+        ...(versionId ? { version_id: versionId } : {}),
+      },
+    });
+    return res.data;
+  },
+
+  getXRay: async (
+    criterion: string,
+    versionId?: string,
+    tenantId?: string
+  ): Promise<XRayResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.get<XRayResponse>(`/methodology/xray/${criterion}`, {
+      params: {
+        tenant_id: effectiveTenant,
+        ...(versionId ? { version_id: versionId } : {}),
+      },
+    });
+    return res.data;
+  },
+
+  getGatekeeperLab: async (
+    versionId?: string,
+    tenantId?: string
+  ): Promise<GatekeeperLabResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.get<GatekeeperLabResponse>('/methodology/gatekeeper-lab', {
+      params: {
+        tenant_id: effectiveTenant,
+        ...(versionId ? { version_id: versionId } : {}),
+      },
+    });
+    return res.data;
+  },
+};
+
 export const apiClient = {
+  methodology: methodologyApi,
   auth: authApi,
   tenants: tenantsApi,
   deals: dealsApi,

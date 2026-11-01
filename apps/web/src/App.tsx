@@ -35,6 +35,9 @@ const IntegrationsPage = lazy(() =>
     default: m.IntegrationsPage,
   }))
 );
+const MethodologyPage = lazy(() =>
+  import('@/pages/MethodologyPage').then((m) => ({ default: m.MethodologyPage }))
+);
 const AdminPage = lazy(() =>
   import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage }))
 );
@@ -96,6 +99,14 @@ export function App() {
               element={
                 <Suspense fallback={<PageFallback />}>
                   <AuditPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="methodology"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <MethodologyPage />
                 </Suspense>
               }
             />

@@ -10,7 +10,7 @@ import {
   Activity,
   ClipboardCheck,
   Columns,
-  Radio,
+  BrainCircuit,
   Settings,
   ShieldCheck,
 } from 'lucide-react';
@@ -34,7 +34,7 @@ const navItems: NavItem[] = [
   { title: 'Рука на пульсе', href: '/pulse', icon: Activity },
   { title: 'Сделки', href: '/deals', icon: Columns },
   { title: 'ИИ-Аудит', href: '/audit', icon: ClipboardCheck },
-  { title: 'Интеграции', href: '/integrations', icon: Radio },
+  { title: 'Методология', href: '/methodology', icon: BrainCircuit },
   { title: 'Настройки', href: '/settings', icon: Settings },
   { title: 'Админ-панель', href: '/admin', icon: ShieldCheck, adminOnly: true },
 ];

@@ -758,3 +758,139 @@ export interface TelegramReportResponse {
   chat_id: string;
   timestamp?: string;
 }
+
+
+// ==========================================
+// Methodology & Script Engineering Types
+// ==========================================
+
+export interface ScriptVersionItem {
+  id: string;
+  version_tag: string;
+  title: string;
+  hypothesis?: string | null;
+  is_active: boolean;
+  activated_at?: string | null;
+  created_at: string;
+}
+
+export interface ScriptVersionsResponse {
+  tenant_id: string;
+  active_version_id: string;
+  versions: ScriptVersionItem[];
+}
+
+export interface ScriptModuleItem {
+  id: string;
+  target_criterion: string;
+  title: string;
+  stage_name: string;
+  recommended_speech: string;
+  semantic_anchors: string[];
+  banned_triggers: string[];
+  min_anchors_required: number;
+}
+
+export interface ScriptModulesResponse {
+  version_id: string;
+  modules: ScriptModuleItem[];
+}
+
+export type MethodologyVerdict =
+  | 'WORKING_STANDARD'
+  | 'SABOTAGE_HIDDEN_GEM'
+  | 'HYPOTHESIS_FAILED'
+  | 'FREESTYLE_STRONGER'
+  | 'COLLECTING_DATA';
+
+export interface HeatmapMatrixRow {
+  criterion: string;
+  title: string;
+  stage: string;
+  total_relevant_calls: number;
+  script_calls: number;
+  freestyle_calls: number;
+  ar_pct: number;
+  swr_pct: number;
+  fwr_pct: number;
+  total_win_pct: number;
+  script_lift_pct: number;
+  verdict_status: MethodologyVerdict;
+  is_sabotage: boolean;
+  delta_pct: number;
+}
+
+export interface HeatmapResponse {
+  tenant_id: string;
+  version_id: string;
+  matrix: HeatmapMatrixRow[];
+}
+
+export interface XRayManager {
+  name: string;
+  total_calls: number;
+  script_calls: number;
+  ar_pct: number;
+  win_pct: number;
+  is_saboteur: boolean;
+  is_champion: boolean;
+}
+
+export interface XRayGoldenQuote {
+  call_id: string;
+  manager_name: string;
+  quote: string;
+  timestamp_sec: number;
+  matched_anchors: string[];
+}
+
+export interface XRayResponse {
+  criterion: string;
+  title: string;
+  stage: string;
+  verdict: MethodologyVerdict;
+  verdict_label: string;
+  module: {
+    recommended_speech: string;
+    semantic_anchors: string[];
+    banned_triggers: string[];
+  };
+  stats: {
+    total_calls: number;
+    script_calls: number;
+    freestyle_calls: number;
+    script_wins: number;
+    freestyle_wins: number;
+    ar_pct: number;
+    swr_pct: number;
+    fwr_pct: number;
+    script_lift_pct: number;
+  };
+  managers: XRayManager[];
+  golden_quotes: XRayGoldenQuote[];
+}
+
+export interface GatekeeperHook {
+  hook_category: string;
+  phrase: string;
+  success_rate_pct: number;
+  uses_count: number;
+  timestamp_sec: number;
+  pattern_type: string;
+}
+
+export interface GatekeeperKillerPhrase {
+  phrase: string;
+  drop_rate_pct: number;
+  reason: string;
+}
+
+export interface GatekeeperLabResponse {
+  tenant_id: string;
+  version_id: string;
+  total_attempts: number;
+  bypassed_count: number;
+  pass_rate_pct: number;
+  winning_hooks: GatekeeperHook[];
+  banned_killer_phrases: GatekeeperKillerPhrase[];
+}

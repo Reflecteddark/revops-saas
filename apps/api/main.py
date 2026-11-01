@@ -27,6 +27,7 @@ from .routers import (
     deals_router,
     diagnostics_router,
     insights_router,
+    methodology_router,
     metrics_router,
     monitoring_router,
     public_router,
@@ -234,6 +235,7 @@ app.include_router(auth_router.router, prefix="/api/v1")
 app.include_router(diagnostics_router.router, prefix="/api/v1")
 app.include_router(radar_router.router, prefix="/api/v1")
 app.include_router(calls_router.router, prefix="/api/v1")
+app.include_router(methodology_router.router, prefix="/api/v1")
 app.include_router(admin_router.router, prefix="/api/v1")
 app.include_router(settings_router.router, prefix="/api/v1")
 app.include_router(sheets_router.router, prefix="/api/v1")

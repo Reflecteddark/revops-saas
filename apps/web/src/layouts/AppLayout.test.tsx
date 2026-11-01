@@ -128,7 +128,7 @@ describe('AppLayout', () => {
 
     expect(screen.getByTestId('nav-link-pulse')).toBeInTheDocument();
     expect(screen.getByTestId('nav-link-audit')).toBeInTheDocument();
-    expect(screen.getByTestId('nav-link-integrations')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-methodology')).toBeInTheDocument();
     expect(screen.getByTestId('nav-link-settings')).toBeInTheDocument();
     expect(screen.getByTestId('nav-link-admin')).toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-fleet')).not.toBeInTheDocument();
@@ -154,7 +154,7 @@ describe('AppLayout', () => {
 
     expect(screen.getByTestId('nav-link-pulse')).toBeInTheDocument();
     expect(screen.getByTestId('nav-link-audit')).toBeInTheDocument();
-    expect(screen.getByTestId('nav-link-integrations')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-methodology')).toBeInTheDocument();
     expect(screen.getByTestId('nav-link-settings')).toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-admin')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-fleet')).not.toBeInTheDocument();
