@@ -31,6 +31,7 @@ from packages.antidrift.barrier.validator import (
     IntentValidator,
     validate_against_trusted_context,
     validate_reply_text,
+    validate_used_facts_against_context,
 )
 from packages.antidrift.context.context_assembler import (
     ContextUnavailableError,
@@ -529,3 +530,71 @@ def test_assemble_context_endpoint_http(dynamic_tenant_id, dynamic_deal_id):
     assert len(data["context_hash"]) == 64
     assert "grounded_system_prompt" in data
     assert "ДОВЕРЕННЫЙ БИЗНЕС-КОНТЕКСТ СДЕЛКИ" in data["markdown"]
+
+
+
+def test_used_facts_valid_citations_pass(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 17: Citations in used_facts strictly matching the TrustedContext facts
+    pass fact-check verification without blocking.
+    """
+    trusted_ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"title": "Enterprise Tier", "budget": 250000.0, "stage": "Квалификация"},
+        allowed_discount_max=5.0,
+        allowed_deferment_days=14,
+    )
+    valid_citations = [
+        "deal_amount: 250000",
+        "allowed_discount_max: 5.0",
+        "deal_stage: Квалификация",
+    ]
+    result = validate_used_facts_against_context(valid_citations, trusted_ctx)
+    assert result.blocked is False
+    assert len(result) == 0
+
+
+def test_used_facts_hallucination_blocked(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 18: Citations in used_facts referencing non-existent business attributes
+    are detected as hallucinations and blocked under GR-03.
+    """
+    trusted_ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"budget": 250000.0},
+        allowed_discount_max=5.0,
+    )
+    hallucinated_citations = [
+        "deal_amount: 250000",
+        "vip_unlimited_waiver: APPROVED_BY_DIRECTOR",
+    ]
+    result = validate_used_facts_against_context(hallucinated_citations, trusted_ctx)
+    assert result.blocked is True
+    assert "hallucinated citation" in result.reason
+    assert any("GR-03" in v for v in result)
+
+
+def test_used_facts_misquote_blocked(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 19: Distorted fact values in used_facts (e.g. claiming allowed discount is 15%
+    when real context ceiling is 5.0%) are blocked with misquote error (GR-03).
+    """
+    trusted_ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"budget": 250000.0},
+        allowed_discount_max=5.0,
+    )
+    misquoted_citations = [
+        "deal_amount: 250000",
+        "allowed_discount_max: 15.0",  # Distorted from 5.0
+    ]
+    result = validate_used_facts_against_context(misquoted_citations, trusted_ctx)
+    assert result.blocked is True
+    assert "misquoted" in result.reason
+    assert any("GR-03" in v for v in result)

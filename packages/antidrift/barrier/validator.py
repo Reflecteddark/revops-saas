@@ -199,6 +199,59 @@ class IntentValidator:
         return ValidationResult(violations)
 
     @classmethod
+    def validate_used_facts_against_context(
+        cls,
+        cited_facts: list[str],
+        trusted_context: Any,
+    ) -> ValidationResult:
+        """
+        Validates that every citation in 'used_facts' strictly matches
+        the canonical ground-truth facts from TrustedContext.
+        Blocks hallucinated keys, corrupted values, and malformed citations (GR-03).
+        """
+        violations: list[str] = []
+        if not cited_facts or trusted_context is None:
+            return ValidationResult(violations, blocked=False)
+
+        if not hasattr(trusted_context, "to_flat_dict"):
+            return ValidationResult(violations, blocked=False)
+
+        context_facts = trusted_context.to_flat_dict()
+
+        for cited in cited_facts:
+            if not isinstance(cited, str) or ":" not in cited:
+                violations.append(f"Malformed fact citation: '{cited}' (expected 'key: value')")
+                continue
+
+            key, value = cited.split(":", 1)
+            key, value = key.strip(), value.strip()
+
+            if key not in context_facts:
+                violations.append(
+                    f"LLM cited non-existent fact '{key}' (hallucinated citation, GR-03)"
+                )
+                continue
+
+            ctx_val = context_facts[key]
+
+            # Normalize numeric comparison vs string comparison
+            is_match = False
+            try:
+                if isinstance(ctx_val, (int, float)):
+                    is_match = abs(float(ctx_val) - float(value)) < 1e-4
+                else:
+                    is_match = str(ctx_val).strip().lower() == value.lower()
+            except (ValueError, TypeError):
+                is_match = str(ctx_val).strip().lower() == value.lower()
+
+            if not is_match:
+                violations.append(
+                    f"Fact '{key}' misquoted: context={ctx_val}, cited={value} (GR-03)"
+                )
+
+        return ValidationResult(violations)
+
+    @classmethod
     def validate_against_trusted_context(
         cls,
         intent: AgentIntentPayload,
@@ -226,7 +279,17 @@ class IntentValidator:
                 f"Context hash mismatch: intent signed with '{claimed_hash}', but active context is '{expected_hash}' (GR-03)"
             )
 
-        # 2. Check reply text via standalone validate_reply_text
+        # 2. Check cited used_facts against ground truth facts
+        import os
+        is_used_facts_enabled = os.getenv("ENABLE_USED_FACTS_VALIDATION", "1") in ("1", "true", "True")
+        if is_used_facts_enabled:
+            cited_facts = getattr(intent, "used_facts", None) or []
+            if cited_facts:
+                facts_result = cls.validate_used_facts_against_context(cited_facts, trusted_context)
+                if facts_result.blocked:
+                    violations.extend(facts_result.violations)
+
+        # 3. Check reply text via standalone validate_reply_text
         if intent.proposed_client_reply and intent.proposed_client_reply.text:
             text_result = cls.validate_reply_text(intent.proposed_client_reply.text, trusted_context)
             violations.extend(text_result.violations)
@@ -237,3 +300,4 @@ class IntentValidator:
 # Convenient module-level aliases
 validate_against_trusted_context = IntentValidator.validate_against_trusted_context
 validate_reply_text = IntentValidator.validate_reply_text
+validate_used_facts_against_context = IntentValidator.validate_used_facts_against_context

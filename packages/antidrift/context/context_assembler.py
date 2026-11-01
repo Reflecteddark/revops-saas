@@ -68,6 +68,20 @@ class TrustedContext(BaseModel):
         """Serializes TrustedContext to standard dictionary."""
         return self.model_dump()
 
+    def to_flat_dict(self) -> dict[str, Any]:
+        """Returns flat key-value pairs of business facts for strict citation checking."""
+        return {
+            "tenant_id": self.tenant_id,
+            "deal_id": str(self.deal_id),
+            "deal_title": self.deal_title,
+            "deal_amount": self.deal_amount,
+            "deal_stage": self.deal_stage,
+            "allowed_discount_max": self.allowed_discount_max,
+            "allowed_deferment_days": self.allowed_deferment_days,
+            "requires_human_above": self.requires_human_above,
+            "context_hash": self.context_hash,
+        }
+
     def to_markdown(self) -> str:
         """Renders canonical ground-truth facts for LLM injection."""
         return (

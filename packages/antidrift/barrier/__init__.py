@@ -8,6 +8,7 @@ from .validator import (
     ValidationResult,
     validate_against_trusted_context,
     validate_reply_text,
+    validate_used_facts_against_context,
 )
 from .policy_engine import PolicyEngine
 from .risk_scorer import RiskScorer, RiskScoringResult
@@ -19,6 +20,7 @@ __all__ = [
     "ValidationResult",
     "validate_against_trusted_context",
     "validate_reply_text",
+    "validate_used_facts_against_context",
     "PolicyEngine",
     "RiskScorer",
     "RiskScoringResult",
