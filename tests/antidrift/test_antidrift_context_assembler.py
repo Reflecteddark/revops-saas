@@ -270,3 +270,137 @@ def test_router_integration_with_trusted_context_flag(dynamic_tenant_id, dynamic
         assert incident.severity == "P0"
     finally:
         db.close()
+
+
+def test_layer_1_5_payment_deferment_breach(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 7: Verifies that Layer 1.5 Fact-Check detects unauthorized payment deferments
+    exceeding allowed_deferment_days.
+    """
+    trusted_ctx = TrustedContext(
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_amount=50000.0,
+        allowed_discount_max=10.0,
+        allowed_deferment_days=14,  # Max 14 days deferment authorized
+    )
+
+    intent_deferment_exceeded = AgentIntentPayload(
+        session_id="ses_defer",
+        tenant_id=dynamic_tenant_id,
+        agent_id="agent_sales",
+        harness_version="v1.0.0",
+        source_event_id="evt_defer",
+        intent="PAYMENT_TERMS",
+        proposed_client_reply=ProposedClientReply(
+            text="Мы предоставляем отсрочку 45 дней после поставки.",
+            tone="business",
+        ),
+    )
+    violations = IntentValidator.validate_against_trusted_context(intent_deferment_exceeded, trusted_ctx)
+    assert len(violations) >= 1
+    assert any("exceeds maximum authorized limit 14 days" in v for v in violations)
+
+
+def test_layer_1_5_context_hash_mismatch(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 8: Verifies that passing a fabricated or tampered context_hash
+    fails validation against the computed canonical hash of the TrustedContext.
+    """
+    trusted_ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"budget": 50000.0},
+    )
+
+    intent_tampered = VerifiedIntentProposal(
+        session_id="ses_tamp",
+        tenant_id=dynamic_tenant_id,
+        agent_id="agent_sales",
+        harness_version="v1.0.0",
+        source_event_id="evt_tamp",
+        intent="DISCUSS_PRICE",
+        context_hash="0000000000000000000000000000000000000000000000000000000000000000",
+        proposed_client_reply=ProposedClientReply(
+            text="Здравствуйте, подтверждаем сумму.",
+            tone="business",
+        ),
+    )
+    violations = IntentValidator.validate_against_trusted_context(intent_tampered, trusted_ctx)
+    assert any("Context hash mismatch" in v for v in violations)
+
+
+def test_verified_intent_proposal_unverified_assumptions():
+    """
+    Case 9: Verifies that VerifiedIntentProposal schema correctly accepts and validates
+    used_facts, unverified_assumptions, and expected_state_delta.
+    """
+    proposal = VerifiedIntentProposal(
+        session_id="ses_assump",
+        tenant_id=f"tenant_{uuid.uuid4().hex[:8]}",
+        agent_id="agent_cautious",
+        harness_version="v1.4.0",
+        source_event_id="evt_assump",
+        intent="PROPOSE_TERMS",
+        context_hash="a" * 64,
+        used_facts=["deal_amount: 120000", "stage: QUALIFICATION"],
+        unverified_assumptions=["Client VAT exemption eligibility pending certificate"],
+        expected_state_delta={"custom_fields": {"vat_pending": True}},
+        proposed_client_reply=ProposedClientReply(
+            text="Уточняем условия с учётом НДС.",
+            tone="business",
+        ),
+    )
+    assert len(proposal.used_facts) == 2
+    assert proposal.unverified_assumptions == ["Client VAT exemption eligibility pending certificate"]
+    assert proposal.expected_state_delta == {"custom_fields": {"vat_pending": True}}
+
+
+def test_backward_compatibility_intent_proposal():
+    """
+    Case 10: Verifies that an unadorned legacy payload works seamlessly with
+    VerifiedIntentProposal defaults (None/empty lists) without schema validation errors.
+    """
+    proposal = VerifiedIntentProposal(
+        session_id="ses_legacy",
+        tenant_id=f"tenant_{uuid.uuid4().hex[:8]}",
+        agent_id="agent_legacy",
+        harness_version="v1.0.0",
+        source_event_id="evt_legacy",
+        intent="GREETING",
+        proposed_client_reply=ProposedClientReply(
+            text="Добрый день!",
+            tone="business",
+        ),
+    )
+    assert proposal.context_hash is None
+    assert proposal.used_facts == []
+    assert proposal.unverified_assumptions == []
+    assert proposal.expected_state_delta == {}
+
+
+def test_trusted_context_serialization_and_immutability(dynamic_tenant_id, dynamic_deal_id):
+    """
+    Case 11: Verifies that TrustedContext serialization to dict retains all fields,
+    and recalculating hash on deserialized data preserves determinism.
+    """
+    ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=dynamic_tenant_id,
+        deal_id=dynamic_deal_id,
+        deal_context={"title": "Contract B", "budget": 350000.0, "stage": "Договор"},
+        allowed_discount_max=12.0,
+        allowed_deferment_days=30,
+        requires_human_above=500000.0,
+    )
+    d = ctx.to_dict()
+    assert d["tenant_id"] == dynamic_tenant_id
+    assert d["deal_amount"] == 350000.0
+    assert d["allowed_discount_max"] == 12.0
+    assert d["context_hash"] == ctx.context_hash
+
+    # Rebuilding another instance with the exact same data must yield identical hash
+    ctx_rebuilt = TrustedContext(**d)
+    assert ctx_rebuilt.calculate_hash() == ctx.context_hash
+

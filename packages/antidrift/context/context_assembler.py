@@ -55,6 +55,10 @@ class TrustedContext(BaseModel):
         canonical_str = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         return hashlib.sha256(canonical_str.encode("utf-8")).hexdigest()
 
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes TrustedContext to standard dictionary."""
+        return self.model_dump()
+
     def model_post_init(self, __context: Any) -> None:
         if not self.context_hash:
             self.context_hash = self.calculate_hash()
