@@ -943,6 +943,14 @@ if not AUDIO_STORAGE_DIR.exists():
 AUDIO_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def new_audio_filename(tenant_id: str, file_ext: str) -> str:
+    """
+    Recording URLs are capability URLs: amoCRM's player and n8n fetch them without our auth,
+    so the file name itself must be unguessable (128-bit random, no timestamp).
+    """
+    return f"{tenant_id.strip().lower()}_{uuid.uuid4().hex}{file_ext}"
+
+
 @router.get("/audio/{filename}", include_in_schema=False)
 def serve_audio_file(filename: str):
     """Public audio file serving for n8n and telephony players."""
@@ -1006,7 +1014,7 @@ async def inject_call_to_amocrm(
         raise HTTPException(status_code=400, detail="Audio body is empty")
 
     file_ext = os.path.splitext(filename)[1] or ".mp3"
-    safe_filename = f"{clean_tenant.lower()}_{int(time.time())}_{uuid.uuid4().hex[:6]}{file_ext}"
+    safe_filename = new_audio_filename(clean_tenant, file_ext)
     target_path = AUDIO_STORAGE_DIR / safe_filename
     with open(target_path, "wb") as f_out:
         f_out.write(audio_bytes)

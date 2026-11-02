@@ -115,6 +115,12 @@ def test_simulator_run_and_caching(client):
 
 
 def test_websocket_connection(client):
+    # The live stream requires a JWT for the same tenant (anonymous access is rejected, see
+    # tests/test_ws_and_audio_security.py); the browser sends it as the access_token cookie.
+    from apps.api.auth import create_access_token
+    client.cookies.set("access_token", create_access_token(
+        {"sub": "usr-org-test", "tenant_id": "org_test_123", "role": "РОП"}
+    ))
     with client.websocket_connect("/ws/org/org_test_123") as websocket:
         websocket.send_text("ping")
         data = websocket.receive_json()

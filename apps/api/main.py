@@ -248,9 +248,51 @@ app.include_router(public_router.router, prefix="/api/v1/public")
 app.include_router(public_router.router, prefix="/api/v1")
 
 
+# Browser origins allowed to open the live stream (cookies are SameSite=None, so without an
+# Origin check any third-party page could open the stream with the victim's cookies).
+WS_ALLOWED_ORIGINS = {
+    "https://ai-rop.ru",
+    "https://app.ai-rop.ru",
+    "https://report.ai-rop.ru",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+}
+
+
+def _ws_is_authorized(websocket: WebSocket, org_id: str) -> bool:
+    """Admin cookie, or a valid access_token JWT whose tenant matches org_id (admins: any tenant)."""
+    origin = websocket.headers.get("origin")
+    if origin and origin.rstrip("/") not in WS_ALLOWED_ORIGINS:
+        return False
+
+    admin_cookie = websocket.cookies.get(COOKIE_ADMIN_AUTH_NAME)
+    if admin_cookie and verify_admin_cookie_token(admin_cookie):
+        return True
+
+    token = websocket.cookies.get("access_token")
+    if not token:
+        return False
+    try:
+        import jwt
+
+        from .auth import ALGORITHM, SECRET_KEY
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception:
+        return False
+    role = str(payload.get("role") or "").lower()
+    if payload.get("is_admin") or "admin" in role or "супервайзер" in role:
+        return True
+    return str(payload.get("tenant_id") or "").strip().upper() == org_id.strip().upper()
+
+
 # Real-time WebSocket Endpoint
 @app.websocket("/ws/org/{org_id}")
 async def websocket_endpoint(websocket: WebSocket, org_id: str):
+    if not _ws_is_authorized(websocket, org_id):
+        # 1008 = policy violation; closing before accept rejects the handshake.
+        await websocket.close(code=1008)
+        return
     await manager.connect(org_id, websocket)
     try:
         while True:
