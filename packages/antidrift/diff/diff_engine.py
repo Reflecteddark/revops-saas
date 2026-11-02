@@ -183,18 +183,21 @@ class DiffEngine:
         db: Session,
         harness_version: str,
         lookback_limit: int = 100,
+        tenant_id: Optional[str] = None,
     ) -> dict[str, Any]:
         """
         Aggregates divergence report comparing recent shadow traces for harness_version
-        against baseline production traces.
+        against baseline production traces with strict multi-tenant isolation.
         """
+        query = db.query(AgentTrace).filter(
+            AgentTrace.harness_version == harness_version,
+            AgentTrace.execution_mode == "shadow",
+        )
+        if tenant_id:
+            query = query.filter(AgentTrace.tenant_id == tenant_id)
+
         shadow_traces = (
-            db.query(AgentTrace)
-            .filter(
-                AgentTrace.harness_version == harness_version,
-                AgentTrace.execution_mode == "shadow",
-            )
-            .order_by(AgentTrace.created_at.desc())
+            query.order_by(AgentTrace.created_at.desc())
             .limit(lookback_limit)
             .all()
         )
@@ -226,12 +229,13 @@ class DiffEngine:
             if st.execution_mode == "blocked" or (st.guardrail_result_json and st.guardrail_result_json.get("overall_verdict") == "HARD_FAILURE"):
                 hard_failures += 1
 
-            # Match production trace by source_event_id or session_id
+            # Match production trace strictly for the SAME tenant (Audit 2.3)
             prod_trace = (
                 db.query(AgentTrace)
                 .filter(
                     AgentTrace.source_event_id == st.source_event_id,
                     AgentTrace.execution_mode != "shadow",
+                    AgentTrace.tenant_id == st.tenant_id,
                 )
                 .first()
             )
@@ -300,10 +304,11 @@ class DiffEngine:
         session_id: str,
     ) -> ExecutionMode:
         """
-        Smart Traffic Router:
-        Inspects harness registry. If candidate version is in 'SHADOW_RUNNING',
-        routes 10% deterministically based on session_id hash.
-        Otherwise adheres to harness status.
+        Smart Traffic Router (Audit 2.1 & 2.2):
+        - SHADOW_RUNNING, SHADOW_ONLY: strictly 100% ExecutionMode.SHADOW (Zero prod leakage).
+        - PAUSED, KILLED, ROLLED_BACK: ExecutionMode.BLOCKED (fail-closed).
+        - ACTIVE: ExecutionMode.PROD.
+        - Unregistered version of managed agent: ExecutionMode.BLOCKED.
         """
         registry_entry = (
             db.query(HarnessRegistry)
@@ -315,19 +320,19 @@ class DiffEngine:
         )
 
         if not registry_entry:
+            # If agent has other harnesses registered, an unregistered version is rejected
+            existing_for_agent = db.query(HarnessRegistry).filter(HarnessRegistry.agent_id == agent_id).first()
+            if existing_for_agent:
+                return ExecutionMode.BLOCKED
             return ExecutionMode.PROD
 
-        if registry_entry.status == "SHADOW_RUNNING":
-            # Dynamic configurable traffic routing deterministic on session_id
-            bucket = int(hashlib.sha256(session_id.encode("utf-8")).hexdigest()[:4], 16) % 100
-            if bucket < cls.get_config().traffic_shadow_percent:
-                return ExecutionMode.SHADOW
-            return ExecutionMode.PROD
+        if registry_entry.status in ("PAUSED", "KILLED", "ROLLED_BACK"):
+            return ExecutionMode.BLOCKED
+
+        if registry_entry.status in ("SHADOW_RUNNING", "SHADOW_ONLY", "SHADOW"):
+            return ExecutionMode.SHADOW
 
         if registry_entry.status == "ACTIVE":
             return ExecutionMode.PROD
 
-        if registry_entry.status == "SHADOW_ONLY":
-            return ExecutionMode.SHADOW
-
-        return ExecutionMode.PROD
+        return ExecutionMode.BLOCKED

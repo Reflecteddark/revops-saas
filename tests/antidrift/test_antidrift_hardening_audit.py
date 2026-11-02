@@ -34,7 +34,16 @@ from packages.antidrift.contracts.intent import ActionType, ExecutionMode, Verif
 from packages.antidrift.contracts.policy_config import TenantPolicyConfig, TenantPolicyRegistry
 from packages.antidrift.diff.diff_engine import DiffEngine
 from packages.antidrift.golden_set.vcr_scenario_generator import VCRScenarioGenerator
-from packages.antidrift.models import AgentIncident, AgentIntent, AgentTrace, HITLApproval, IdempotencyKeyRecord, PendingVCRScenario
+from packages.antidrift.models import (
+    ActionExecution,
+    AgentIncident,
+    AgentIntent,
+    AgentTrace,
+    HITLApproval,
+    HarnessRegistry,
+    IdempotencyKeyRecord,
+    PendingVCRScenario,
+)
 from packages.antidrift.policy_autotune import PolicyAutoTuner, SAFETY_FLOOR_RULES
 from packages.antidrift.telemetry.metrics import antidrift_metrics
 from packages.database.models import Base
@@ -766,3 +775,150 @@ def test_1_5_caller_cannot_expand_policy_ceiling_in_context_assembler():
     assert ctx_tighter.allowed_discount_max == 2.0
     assert ctx_tighter.allowed_deferment_days == 7
     assert ctx_tighter.requires_human_above == 100000.0
+
+
+def test_2_1_shadow_candidate_never_mutates_prod_crm():
+    """Audit 2.1: An agent harness in SHADOW_RUNNING status executes strictly in shadow mode (0% prod leakage)."""
+    client = TestClient(app)
+    db = SessionLocal()
+    agent_id = f"agent_cand_{uuid.uuid4().hex[:6]}"
+    version = "v2.0-shadow-candidate"
+    tenant_id = f"tnt_{uuid.uuid4().hex[:6]}"
+    deal_id = f"deal_{uuid.uuid4().hex[:6]}"
+
+    try:
+        h = HarnessRegistry(
+            agent_id=agent_id,
+            version=version,
+            model_name="gemini-2.5-flash",
+            system_prompt_hash="h" * 64,
+            tools_schema_hash="s" * 64,
+            status="SHADOW_RUNNING",
+        )
+        db.add(h)
+        db.commit()
+
+        # Execute 20 requests with diverse session IDs: ALL must execute in shadow mode
+        for i in range(20):
+            proposal = {
+                "trace_id": f"trc_cand_{uuid.uuid4().hex[:6]}",
+                "session_id": f"ses_cand_{i}_{uuid.uuid4().hex[:4]}",
+                "tenant_id": tenant_id,
+                "agent_id": agent_id,
+                "harness_version": version,
+                "policy_version": "v1.0",
+                "channel": "api",
+                "source_event_id": f"evt_cand_{i}_{uuid.uuid4().hex[:4]}",
+                "intent": "QUALIFY_LEAD",
+                "context_refs": {"deal_id": deal_id},
+                "capability_scopes": ["crm.read", "crm.set_field"],
+                "proposed_actions": [
+                    {
+                        "action_type": "crm_set_field",
+                        "target_type": "deal",
+                        "target_id": deal_id,
+                        "payload": {"status": "qualified"},
+                    }
+                ],
+            }
+            res = client.post("/api/v1/agents/execute", json=proposal)
+            assert res.status_code == 200
+            assert res.json()["status"] == "SHADOW_EXECUTED"
+            assert res.json()["execution_mode"] == "shadow"
+
+        # Verify ZERO mutations in ActionExecution
+        executions = db.query(ActionExecution).filter(ActionExecution.agent_id == agent_id).all()
+        assert len(executions) == 0
+    finally:
+        db.close()
+
+
+def test_2_2_paused_agent_returns_503_agent_paused():
+    """Audit 2.2: A paused or killed agent harness rejects execution with 503 AGENT_PAUSED."""
+    client = TestClient(app)
+    db = SessionLocal()
+    agent_id = f"agent_killed_{uuid.uuid4().hex[:6]}"
+    version = "v1.0-killed"
+    tenant_id = f"tnt_{uuid.uuid4().hex[:6]}"
+
+    try:
+        h = HarnessRegistry(
+            agent_id=agent_id,
+            version=version,
+            model_name="gemini-2.5-flash",
+            system_prompt_hash="k" * 64,
+            tools_schema_hash="t" * 64,
+            status="PAUSED",
+        )
+        db.add(h)
+        db.commit()
+
+        proposal = {
+            "trace_id": f"trc_k_{uuid.uuid4().hex[:6]}",
+            "session_id": f"ses_k_{uuid.uuid4().hex[:6]}",
+            "tenant_id": tenant_id,
+            "agent_id": agent_id,
+            "harness_version": version,
+            "policy_version": "v1.0",
+            "channel": "api",
+            "source_event_id": f"evt_k_{uuid.uuid4().hex[:6]}",
+            "intent": "QUALIFY_LEAD",
+            "context_refs": {"deal_id": "d1"},
+            "capability_scopes": ["crm.read"],
+            "proposed_actions": [],
+        }
+        res = client.post("/api/v1/agents/execute", json=proposal)
+        assert res.status_code == 503
+        assert res.json()["detail"]["error"] == "AGENT_PAUSED"
+    finally:
+        db.close()
+
+
+def test_2_3_shadow_diff_enforces_tenant_isolation():
+    """Audit 2.3: Shadow traces are strictly paired ONLY with production traces of the SAME tenant."""
+    db = SessionLocal()
+    tenant_a = f"tnt_a_{uuid.uuid4().hex[:6]}"
+    tenant_b = f"tnt_b_{uuid.uuid4().hex[:6]}"
+    harness_ver = f"v_cand_{uuid.uuid4().hex[:6]}"
+    common_source_event_id = f"evt_shared_{uuid.uuid4().hex[:6]}"
+
+    try:
+        # Tenant A: shadow trace
+        tr_shadow_a = AgentTrace(
+            trace_id=str(uuid.uuid4()),
+            session_id="ses_a",
+            tenant_id=tenant_a,
+            agent_id="sales_bot",
+            harness_version=harness_ver,
+            policy_version="v1.0",
+            channel="api",
+            source_event_id=common_source_event_id,
+            execution_mode="shadow",
+            raw_intent_json={"intent": "GREETING", "proposed_actions": []},
+        )
+        # Tenant B: production trace with identical source_event_id
+        tr_prod_b = AgentTrace(
+            trace_id=str(uuid.uuid4()),
+            session_id="ses_b",
+            tenant_id=tenant_b,
+            agent_id="sales_bot",
+            harness_version="v1.0-prod",
+            policy_version="v1.0",
+            channel="api",
+            source_event_id=common_source_event_id,
+            execution_mode="prod",
+            raw_intent_json={"intent": "GREETING", "proposed_actions": []},
+        )
+        db.add_all([tr_shadow_a, tr_prod_b])
+        db.commit()
+
+        # Comparing for Tenant A must NOT pair with Tenant B's trace
+        report_a = DiffEngine.compare_shadow_vs_prod_traces(
+            db=db,
+            harness_version=harness_ver,
+            tenant_id=tenant_a,
+        )
+        assert report_a["total_shadow_traces"] == 1
+        assert report_a["paired_prod_traces"] == 0, "Cross-tenant trace was paired incorrectly!"
+    finally:
+        db.close()

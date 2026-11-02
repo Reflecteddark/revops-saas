@@ -27,6 +27,7 @@ class ExecutionMode(str, enum.Enum):
     SHADOW = "shadow"    # LLM executes, validates/scores, but CRM is NOT mutated; diff is computed
     DRY_RUN = "dry_run"  # Zero LLM/CRM side-effects; fast deterministic invariant simulation
     CANARY = "canary"    # Progressive rollout with automated rollback circuit breaker
+    BLOCKED = "blocked"  # Execution halted (PAUSED, KILLED, ROLLED_BACK, or unregistered version)
 
 
 class ActionType(str, enum.Enum):

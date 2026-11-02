@@ -316,19 +316,22 @@ def test_smart_traffic_router_distribution():
         mode_active = DiffEngine.resolve_traffic_mode(db, agent_id, "v1.0.0", "session_123")
         assert mode_active == ExecutionMode.PROD
 
-        # Non-existent version -> defaults to PROD
+        # Non-existent version of a managed agent -> fail-closed to BLOCKED (Audit 2.2)
         mode_missing = DiffEngine.resolve_traffic_mode(db, agent_id, "v999.0.0", "session_123")
-        assert mode_missing == ExecutionMode.PROD
+        assert mode_missing == ExecutionMode.BLOCKED
 
-        # SHADOW_RUNNING -> deterministic split
+        # SHADOW_RUNNING -> 100% SHADOW (Audit 2.1: zero prod leakage)
         modes = [
             DiffEngine.resolve_traffic_mode(db, agent_id, "v2.0.0-cand", f"session_probe_{i}")
             for i in range(100)
         ]
         shadow_count = sum(1 for m in modes if m == ExecutionMode.SHADOW)
-        prod_count = sum(1 for m in modes if m == ExecutionMode.PROD)
-        assert shadow_count > 0, "Expected at least some traffic routed to SHADOW"
-        assert prod_count > 0, "Expected at least some traffic routed to PROD"
+        assert shadow_count == 100, "SHADOW_RUNNING candidate must strictly route 100% to SHADOW"
+
+        # PAUSED / KILLED -> fail-closed to BLOCKED (Audit 2.2)
+        setattr(harness_shadow, "status", "PAUSED")
+        db.commit()
+        assert DiffEngine.resolve_traffic_mode(db, agent_id, "v2.0.0-cand", "session_123") == ExecutionMode.BLOCKED
     finally:
         db.close()
 

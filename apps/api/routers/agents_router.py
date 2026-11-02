@@ -232,7 +232,18 @@ def execute_agent_intent(
                 harness_version=payload.harness_version,
                 session_id=payload.session_id,
             )
+
+    if resolved_mode == ExecutionMode.BLOCKED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "AGENT_PAUSED",
+                "message": f"Agent harness '{payload.harness_version}' is paused, killed, rolled back or inactive.",
+            },
+        )
+
     is_shadow_or_dry_run = resolved_mode in (ExecutionMode.SHADOW, ExecutionMode.DRY_RUN)
+    shadow_would_be_blocked = False
 
     # 1.5. Layer 1.5: Trusted Context & Anti-Hallucination Fact-Check (Sprint 1 & Audit 1.2)
     # Three-mode feature flag: off | monitor | enforce (default: monitor)
@@ -317,7 +328,9 @@ def execute_agent_intent(
             has_discount_breach = any("GR-03" in v for v in fact_violations)
             # 1.2: Enforce blocks immediately; Monitor logs and only blocks hard commercial breach
             if is_enforcing or has_discount_breach:
-                if has_discount_breach:
+                if is_shadow_or_dry_run:
+                    shadow_would_be_blocked = True
+                elif has_discount_breach:
                     trace = AgentTrace(
                         trace_id=payload.trace_id,
                         session_id=payload.session_id,
@@ -424,12 +437,13 @@ def execute_agent_intent(
         }
 
     if resolved_mode == ExecutionMode.SHADOW:
-        would_be_blocked = policy_result.overall_verdict in (DriftSeverity.HARD_FAILURE, DriftSeverity.REGRESSION)
+        would_be_blocked = shadow_would_be_blocked or (policy_result.overall_verdict in (DriftSeverity.HARD_FAILURE, DriftSeverity.REGRESSION))
         prod_trace = (
             db.query(AgentTrace)
             .filter(
                 AgentTrace.source_event_id == payload.source_event_id,
                 AgentTrace.execution_mode != "shadow",
+                AgentTrace.tenant_id == tenant_id,
             )
             .first()
         )
@@ -1059,6 +1073,7 @@ def emergency_kill_switch(
 def get_shadow_diff_report(
     harness_version: str,
     lookback_limit: int = Query(100, ge=1, le=500),
+    tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     """
@@ -1086,6 +1101,7 @@ def get_shadow_diff_report(
         db=db,
         harness_version=harness_version,
         lookback_limit=lookback_limit,
+        tenant_id=tenant_id,
     )
     return report
 
