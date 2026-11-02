@@ -140,14 +140,13 @@ def sync_git(local_path: Path, commit_msg: str) -> str:
     
     has_changes = bool(status_cmd.stdout.strip())
     if has_changes:
-        log(f"Обнаружены изменения в {local_path.name}. Коммит: '{commit_msg}'", symbol="[+]")
-        subprocess.run(["git", "add", "-A"], cwd=str(local_path), check=True)
-        res_commit = subprocess.run(["git", "commit", "-m", commit_msg], cwd=str(local_path))
-        if res_commit.returncode != 0:
-            log(f"❌ Коммит в {local_path.name} заблокирован pre-commit хуком (тесты провалены). Деплой ОТМЕНЁН. Прод не тронут.", symbol="[-]")
-            sys.exit(1)
-    else:
-        log(f"Рабочая копия {local_path.name} чиста.", symbol="[i]")
+        # Never auto-commit with `git add -A`: tests and runtime write tracked data files
+        # (e.g. apps/api/data/registered_clients.json) that must not reach GitHub or the image.
+        log(f"❌ Рабочая копия {local_path.name} не чиста. Деплой ОТМЕНЁН, прод не тронут.", symbol="[-]")
+        log("Закоммитьте нужные файлы вручную (поимённо), остальное уберите, и повторите деплой:", symbol="[i]")
+        print(status_cmd.stdout.rstrip())
+        sys.exit(1)
+    log(f"Рабочая копия {local_path.name} чиста.", symbol="[i]")
 
     cherry_cmd = subprocess.run(
         ["git", "cherry", "-v"],
@@ -743,7 +742,13 @@ def list_versions(repo: str, vps_path: str):
         log(f"[-] Не удалось получить список коммитов: {e}", symbol="[-]")
 
 
-def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str, commit_full_hash: str | None = None) -> bool:
+def deploy_via_docker_compose(
+    local_path: Path,
+    vps_path: str,
+    commit_hash: str,
+    commit_full_hash: str | None = None,
+    previous_sha: str | None = None,
+) -> bool:
     """
     Копирует docker-compose.yml на VPS и запускает контейнеры через Docker Compose.
     Создает необходимые директории (data, logs) заранее на VPS.
@@ -755,9 +760,15 @@ def deploy_via_docker_compose(local_path: Path, vps_path: str, commit_hash: str,
         log(f"VPS {VPS_HOST} недоступен по SSH. Проверьте сервер в панели Aeza.", symbol="[-]")
         return False
 
-    # 1. Читаем старый .deploy_info.json для фиксации previous_sha
-    old_info = get_vps_deploy_info(vps_path)
-    old_sha = old_info.get("current_sha") or old_info.get("commit") or ""
+    # 1. previous_sha must be captured by the caller BEFORE stream_to_vps(), which overwrites
+    #    .deploy_info.json with the new commit. Reading it here would yield the new sha.
+    if previous_sha is None:
+        old_info = get_vps_deploy_info(vps_path)
+        previous_sha = old_info.get("current_sha") or old_info.get("commit") or ""
+    old_sha = previous_sha or ""
+    if old_sha[:7] == (commit_hash or "")[:7]:
+        # Redeploy of the same commit: keep the older rollback target instead of pointing at itself.
+        old_sha = get_vps_deploy_info(vps_path).get("previous_sha") or ""
 
     # 2. Заранее создаем директории data/ и logs/ на хосте, чтобы избежать создания с правами root-only
     init_dirs_cmd = f"mkdir -p {vps_path}/data {vps_path}/logs"
@@ -848,10 +859,12 @@ def run_smoke_test(timeout_sec: int = 20) -> bool:
     all_active = False
     statuses = []
     while time.time() - t0 < timeout_sec:
+        # Only what the SaaS public path depends on: the API container and the Cloudflare tunnel.
+        # (revops-healer / revops-tgbot belong to the "crew" project and must not fail a saas deploy.)
         check_cmd = (
             "docker inspect -f '{{.State.Status}}' revops-api 2>/dev/null || "
             "systemctl is-active revops-api 2>/dev/null || echo inactive; "
-            "systemctl is-active revops-healer revops-tgbot cloudflared 2>/dev/null || true"
+            "systemctl is-active cloudflared 2>/dev/null || true"
         )
         units_cmd = subprocess.run(
             [
@@ -877,20 +890,21 @@ def run_smoke_test(timeout_sec: int = 20) -> bool:
     else:
         log(f"Внимание: статус служб: {statuses}", symbol="[!]")
 
-    # 2. Ожидание ответа HTTP 200 от публичного API (/api/v1/health)
+    # 2. Ожидание HTTP 200 от публичного API (/api/v1/health).
+    # The request is made FROM the VPS over SSH: the public domain is not always reachable from the
+    # operator's workstation, which used to produce false smoke failures. It still exercises the full
+    # public path (DNS -> Cloudflare -> tunnel -> API).
     api_ready = False
-    req = urllib.request.Request(
-        "https://report.ai-rop.ru/api/v1/health",
-        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) RevOps-Deploy/1.0"}
-    )
+    health_cmd = "curl -s -o /dev/null -w '%{http_code}' --max-time 5 https://report.ai-rop.ru/api/v1/health"
     while time.time() - t0 < timeout_sec:
-        try:
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                if resp.getcode() == 200:
-                    api_ready = True
-                    break
-        except Exception:
-            time.sleep(1.0)
+        res = subprocess.run(
+            ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", health_cmd],
+            capture_output=True, text=True, encoding="utf-8", errors="ignore"
+        )
+        if res.stdout.strip() == "200":
+            api_ready = True
+            break
+        time.sleep(1.0)
             
     if api_ready:
         log("Публичный API шлюз https://report.ai-rop.ru/api/v1/health готов (HTTP 200 OK).", symbol="[+]")
@@ -1014,8 +1028,14 @@ def main():
             commit_h = hashes.get(t, "unknown")
             
             if deploy_mode == "docker":
+                # Capture the running version before stream_to_vps() overwrites .deploy_info.json
+                pre_info = get_vps_deploy_info(proj["vps_path"])
+                running_sha = pre_info.get("current_sha") or pre_info.get("commit") or ""
                 stream_to_vps(proj["local_path"], proj["vps_path"], commit_h)
-                success = deploy_via_docker_compose(proj["local_path"], proj["vps_path"], commit_h, full_hashes.get(t))
+                success = deploy_via_docker_compose(
+                    proj["local_path"], proj["vps_path"], commit_h, full_hashes.get(t),
+                    previous_sha=running_sha,
+                )
             else:
                 success = stream_to_vps(proj["local_path"], proj["vps_path"], commit_h)
                 
@@ -1038,6 +1058,11 @@ def main():
                 vps_p = PROJECTS["saas"]["vps_path"]
                 info = get_vps_deploy_info(vps_p)
                 prev = info.get("previous_sha")
+                new_short = str(hashes.get("saas", ""))[:7]
+                if prev and prev[:7] == new_short:
+                    log(f"[-] previous_sha ({prev}) совпадает с новой версией — автооткат невозможен. "
+                        f"Откатите вручную: python deploy_to_vps.py saas --rollback <sha>", symbol="[-]")
+                    prev = None
                 if prev:
                     log(f"[!] Смоук-тест провален. Автоматический откат на previous_sha ({prev})...", symbol="[!]")
                     rb_ok = rollback_docker(vps_p, target_sha=prev)
