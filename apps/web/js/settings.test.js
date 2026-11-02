@@ -47,4 +47,37 @@ describe('getMonthlyTarget', () => {
     mod.SYSTEM_SETTINGS = { general: { monthly_target: '3000000' } };
     expect(mod.getMonthlyTarget()).toBe(3000000);
   });
+
+  it('updateAutonomyUIState корректно переключает бейдж пассивного и автономного режима', async () => {
+    const mockElements = {
+      autonomyCrmMutations: { checked: false },
+      autonomyTelegramNotifications: { checked: false },
+      autonomyClientCommunication: { checked: false },
+      autonomyModeBadge: { textContent: '', className: '', style: {} },
+      autonomyCrmMutationsDesc: { textContent: '', style: {} },
+      autonomyTelegramNotificationsDesc: { textContent: '', style: {} },
+      autonomyClientCommunicationDesc: { textContent: '', style: {} },
+    };
+
+    const windowObj = {};
+    vi.stubGlobal('window', windowObj);
+    vi.stubGlobal('document', {
+      getElementById: (id) => mockElements[id] || null,
+    });
+
+    await import('./settings.js?t=' + (Date.now() + 1));
+    expect(typeof windowObj.updateAutonomyUIState).toBe('function');
+
+    // 1. По умолчанию: безопасный пассивный режим
+    mockElements.autonomyCrmMutations.checked = false;
+    windowObj.updateAutonomyUIState();
+    expect(mockElements.autonomyModeBadge.textContent).toContain('БЕЗОПАСНЫЙ ПАССИВНЫЙ РЕЖИМ');
+    expect(mockElements.autonomyCrmMutationsDesc.textContent).toContain('ВЫКЛЮЧЕНО (По умолчанию)');
+
+    // 2. Включение мутаций CRM
+    mockElements.autonomyCrmMutations.checked = true;
+    windowObj.updateAutonomyUIState();
+    expect(mockElements.autonomyModeBadge.textContent).toContain('АВТОНОМНЫЙ РЕЖИМ');
+    expect(mockElements.autonomyCrmMutationsDesc.textContent).toContain('ВКЛЮЧЕНО: ИИ разрешено');
+  });
 });

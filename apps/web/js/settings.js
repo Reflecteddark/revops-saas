@@ -38,6 +38,7 @@ async function fetchAndPopulateSettings(forceToast = false) {
 
     // Load account and CRM settings for active tenant
     loadTenantAccountSettings(tenantId);
+    loadTenantAutonomySettings(tenantId);
 
     // 1. General & Period
     const g = data.general || {};
@@ -527,6 +528,117 @@ function downloadTenantDataArchive() {
   document.body.removeChild(a);
 }
 
+
+// ==========================================================================
+// ZERO-TOUCH AUTONOMY & PER-TENANT INTERVENTION POLICY HANDLERS (0D)
+// ==========================================================================
+
+function updateAutonomyUIState() {
+  const crmToggle = document.getElementById('autonomyCrmMutations');
+  const tgToggle = document.getElementById('autonomyTelegramNotifications');
+  const commToggle = document.getElementById('autonomyClientCommunication');
+  const badge = document.getElementById('autonomyModeBadge');
+
+  const crmDesc = document.getElementById('autonomyCrmMutationsDesc');
+  const tgDesc = document.getElementById('autonomyTelegramNotificationsDesc');
+  const commDesc = document.getElementById('autonomyClientCommunicationDesc');
+
+  if (crmToggle && badge) {
+    if (crmToggle.checked) {
+      badge.textContent = '🟢 АВТОНОМНЫЙ РЕЖИМ';
+      badge.className = 'badge-won';
+      badge.style.background = 'rgba(16, 185, 129, 0.2)';
+      badge.style.borderColor = '#10b981';
+      badge.style.color = '#34d399';
+    } else {
+      badge.textContent = '🔒 БЕЗОПАСНЫЙ ПАССИВНЫЙ РЕЖИМ';
+      badge.className = 'badge-won';
+      badge.style.background = 'rgba(255, 255, 255, 0.05)';
+      badge.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      badge.style.color = '#e2e8f0';
+    }
+  }
+
+  if (crmDesc && crmToggle) {
+    crmDesc.textContent = crmToggle.checked
+      ? '⚠️ ВКЛЮЧЕНО: ИИ разрешено менять поля, двигать этапы сделок и ставить задачи в вашей CRM.'
+      : '🔒 ВЫКЛЮЧЕНО (По умолчанию): ИИ работает строго в режиме чтения. Все действия формируются как рекомендации в ЛК без изменений в вашей CRM.';
+    crmDesc.style.color = crmToggle.checked ? '#34d399' : 'var(--text-muted)';
+  }
+
+  if (tgDesc && tgToggle) {
+    tgDesc.textContent = tgToggle.checked
+      ? '🔔 ВКЛЮЧЕНО: Карточки подтверждения рискованных действий отправляются РОПу в Telegram-канал.'
+      : '🔕 ВЫКЛЮЧЕНО (Тихий режим): Никаких сообщений в Telegram не отправляется. Согласования отображаются только в веб-очереди ЛК.';
+    tgDesc.style.color = tgToggle.checked ? '#38bdf8' : 'var(--text-muted)';
+  }
+
+  if (commDesc && commToggle) {
+    commDesc.textContent = commToggle.checked
+      ? '⚠️ ВКЛЮЧЕНО: ИИ разрешено отправлять согласованные сообщения клиентам.'
+      : '🛑 ВЫКЛЮЧЕНО (По умолчанию): ИИ генерирует только черновики ответов для менеджера в ЛК. Прямая отправка во внешние чаты заблокирована.';
+    commDesc.style.color = commToggle.checked ? '#f87171' : 'var(--text-muted)';
+  }
+}
+
+async function loadTenantAutonomySettings(tId = null) {
+  const tenantId = tId || getActiveTenantId();
+  try {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/settings/autonomy?tenant_id=${encodeURIComponent(tenantId)}`, {
+      credentials: 'include'
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const crmToggle = document.getElementById('autonomyCrmMutations');
+    const tgToggle = document.getElementById('autonomyTelegramNotifications');
+    const commToggle = document.getElementById('autonomyClientCommunication');
+
+    if (crmToggle) crmToggle.checked = Boolean(data.allow_crm_mutations);
+    if (tgToggle) tgToggle.checked = Boolean(data.enable_telegram_notifications);
+    if (commToggle) commToggle.checked = Boolean(data.allow_client_communication);
+
+    updateAutonomyUIState();
+  } catch (err) {
+    console.warn('Could not load autonomy settings:', err);
+  }
+}
+
+async function submitUpdateAutonomySettings() {
+  const tenantId = getActiveTenantId();
+  const crmToggle = document.getElementById('autonomyCrmMutations');
+  const tgToggle = document.getElementById('autonomyTelegramNotifications');
+  const commToggle = document.getElementById('autonomyClientCommunication');
+
+  const payload = {
+    allow_crm_mutations: Boolean(crmToggle?.checked),
+    enable_telegram_notifications: Boolean(tgToggle?.checked),
+    allow_client_communication: Boolean(commToggle?.checked)
+  };
+
+  try {
+    const res = await fetch(`${REVOPS_API_BASE}/api/v1/settings/autonomy?tenant_id=${encodeURIComponent(tenantId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+
+    showToast(
+      'Параметры автономии',
+      payload.allow_crm_mutations
+        ? '⚠️ Автономный режим активирован: разрешены мутации в CRM.'
+        : '🔒 Пассивный режим сохранён: CRM и переписка защищены от вмешательства ИИ.'
+    );
+    updateAutonomyUIState();
+  } catch (err) {
+    showToast('Ошибка сохранения', err.message);
+  }
+}
+
+
 function copyTelephonyWebhookUrl() {
   const el = document.getElementById('clientTelephonyWebhookUrl');
   if (el) {
@@ -558,6 +670,9 @@ window.submitUpdateCrmSettings = submitUpdateCrmSettings;
 window.testClientCrmLive = testClientCrmLive;
 window.downloadTenantDataArchive = downloadTenantDataArchive;
 window.copyTelephonyWebhookUrl = copyTelephonyWebhookUrl;
+window.updateAutonomyUIState = updateAutonomyUIState;
+window.loadTenantAutonomySettings = loadTenantAutonomySettings;
+window.submitUpdateAutonomySettings = submitUpdateAutonomySettings;
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
