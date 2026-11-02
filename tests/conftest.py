@@ -11,7 +11,26 @@ os.environ["DISABLE_TELEGRAM_ALERTS"] = "true"
 os.environ.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long-abc-xyz")
 os.environ.setdefault("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
 
+from pathlib import Path
+
 from packages.database.session import Base, engine, init_db
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+# Tracked files that application code rewrites at runtime (client registry, webhook DLQ).
+# Tests exercise those code paths, so restore the committed bytes after the session to keep
+# the working tree clean (the deploy script refuses to run on a dirty tree).
+_RUNTIME_WRITTEN_TRACKED_FILES = [
+    _REPO_ROOT / "apps" / "api" / "data" / "registered_clients.json",
+    _REPO_ROOT / "logs" / "webhooks_dlq_snapshot.json",
+]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _restore_runtime_written_files():
+    saved = {p: p.read_bytes() for p in _RUNTIME_WRITTEN_TRACKED_FILES if p.exists()}
+    yield
+    for p, data in saved.items():
+        p.write_bytes(data)
 
 
 @pytest.fixture(scope="session", autouse=True)
