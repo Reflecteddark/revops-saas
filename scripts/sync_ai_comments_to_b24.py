@@ -9,7 +9,7 @@ import urllib.request
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-WEBHOOK_B24 = os.getenv("B24_WEBHOOK_URL", "https://b24-1tuuth.bitrix24.ru/rest/1/70u1duarlao06zau/")
+WEBHOOK_B24 = os.environ["B24_WEBHOOK_URL"]
 API_CALLS_URL = "https://report.ai-rop.ru/api/v1/calls/data"
 
 def b24_post(method, payload):

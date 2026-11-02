@@ -1,3 +1,4 @@
+import os
 import json
 import subprocess
 import sys
@@ -11,7 +12,7 @@ if res.returncode != 0:
 data = json.loads(res.stdout)
 wf = data[0] if isinstance(data, list) else data
 
-new_b24_url = "https://b24-1tuuth.bitrix24.ru/rest/1/70u1duarlao06zau/"
+new_b24_url = os.environ["B24_WEBHOOK_URL"]
 modified = False
 
 for n in wf.get('nodes', []):

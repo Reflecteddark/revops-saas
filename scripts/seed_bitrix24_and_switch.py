@@ -2,6 +2,7 @@
 RevOps Enterprise OS - Populate Bitrix24 with 10 Real Deals & Calls, Sync Google Sheets & ЛК
 """
 
+import os
 import json
 import sys
 import time
@@ -15,7 +16,7 @@ import gspread
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-B24_WEBHOOK = "https://b24-1tuuth.bitrix24.ru/rest/1/70u1duarlao06zau/"
+B24_WEBHOOK = os.environ["B24_WEBHOOK_URL"]
 TENANT_ID = "TNT-001"
 SPREADSHEET_ID = "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk"
 

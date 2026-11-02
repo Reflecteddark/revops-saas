@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-WEBHOOK_B24 = os.getenv("B24_WEBHOOK_URL", "https://b24-1tuuth.bitrix24.ru/rest/1/70u1duarlao06zau/")
+WEBHOOK_B24 = os.environ["B24_WEBHOOK_URL"]
 N8N_WEBHOOK = os.getenv("N8N_WEBHOOK_URL", "https://webhook.ai-rop.ru/webhook/bitrix24-call?tenant=TNT-001")
 BASE_AUDIO_DIR = Path(__file__).parent.parent / "apps" / "landing" / "audio"
 PUBLIC_AUDIO_BASE = os.getenv("PUBLIC_AUDIO_BASE", "https://report.ai-rop.ru/audio")

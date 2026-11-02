@@ -6,11 +6,12 @@ Systemic hardening for all n8n workflows:
 - Ensures all Bitrix24 endpoints resolve dynamically from tenant registry
 """
 
+import os
 import json
 import subprocess
 import sys
 
-ACTIVE_B24_URL = "https://b24-1tuuth.bitrix24.ru/rest/1/70u1duarlao06zau/"
+ACTIVE_B24_URL = os.environ["B24_WEBHOOK_URL"]
 OLD_B24_DOMAIN = "b24-8dmblj.bitrix24.ru"
 OLD_B24_TOKEN = "azekoswdul7y2cpi"
 

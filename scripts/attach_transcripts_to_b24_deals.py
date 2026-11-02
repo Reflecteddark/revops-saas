@@ -3,6 +3,7 @@ RevOps Enterprise OS - Attach Rich Dialogue Transcripts & AI Audits to Bitrix24 
 Posts to both Timeline Comments (Лента истории справа) and Deal Field Comments (Карточка слева).
 """
 
+import os
 import json
 import sys
 import time
@@ -11,7 +12,7 @@ import urllib.request
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-B24_WEBHOOK = "https://b24-1tuuth.bitrix24.ru/rest/1/70u1duarlao06zau/"
+B24_WEBHOOK = os.environ["B24_WEBHOOK_URL"]
 
 DEALS_DATA = [
     {
