@@ -10,6 +10,7 @@ from .vcr_engine import (
     SuiteBenchmarkReport,
     ScenarioResult,
 )
+from .vcr_scenario_generator import VCRScenarioGenerator
 
 __all__ = [
     "PIISanitizer",
@@ -19,4 +20,5 @@ __all__ = [
     "seed_canonical_scenarios",
     "SuiteBenchmarkReport",
     "ScenarioResult",
+    "VCRScenarioGenerator",
 ]

@@ -52,3 +52,7 @@ preview_*.html
 *.ogg
 *.m4a
 calls_to_upload/
+
+# Auto-generated VCR test artifacts from local test runs
+fixtures/vcr/auto_*
+tests/golden_set/*/auto_*

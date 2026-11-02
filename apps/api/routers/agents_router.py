@@ -40,7 +40,9 @@ from packages.antidrift.models import (
     AgentTrace,
     HarnessRegistry,
     HITLApproval,
+    PendingVCRScenario,
 )
+from packages.antidrift.golden_set.vcr_scenario_generator import VCRScenarioGenerator
 from packages.database.session import get_db
 
 logger = logging.getLogger("agents_router")
@@ -221,6 +223,13 @@ def execute_agent_intent(
                         created_at=now,
                     )
                     db.add(incident)
+                    VCRScenarioGenerator.capture_incident_as_pending(
+                        db=db,
+                        trace_id=payload.trace_id,
+                        source_policy="GR-03",
+                        raw_trace=payload.model_dump(mode="json"),
+                        error_summary="; ".join(fact_violations),
+                    )
                 trace = AgentTrace(
                     trace_id=payload.trace_id,
                     session_id=payload.session_id,
@@ -393,6 +402,14 @@ def execute_agent_intent(
                 created_at=now,
             )
             db.add(incident)
+            source_rule = policy_result.violations[0].rule_id if policy_result.violations else "HARD_FAILURE"
+            VCRScenarioGenerator.capture_incident_as_pending(
+                db=db,
+                trace_id=payload.trace_id,
+                source_policy=source_rule,
+                raw_trace=payload.model_dump(mode="json"),
+                error_summary="; ".join(v.message for v in policy_result.violations),
+            )
 
         # Record blocked trace
         trace = AgentTrace(
@@ -776,3 +793,70 @@ def get_shadow_diff_report(
         lookback_limit=lookback_limit,
     )
     return report
+
+
+class ReviewVCRScenarioRequest(BaseModel):
+    scenario_id: str
+    decision: Literal["APPROVE", "REJECT"]
+
+
+@router.get("/vcr/pending")
+def list_pending_vcr_scenarios(
+    limit: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """Returns candidate test scenarios captured from production HARD_FAILURE incidents."""
+    items = (
+        db.query(PendingVCRScenario)
+        .filter(PendingVCRScenario.status == "PENDING")
+        .order_by(PendingVCRScenario.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "id": sc.id,
+            "trace_id": sc.trace_id,
+            "source_policy": sc.source_policy,
+            "cohort": sc.cohort,
+            "status": sc.status,
+            "error_summary": sc.error_summary,
+            "created_at": sc.created_at.isoformat() if sc.created_at else None,
+            "pii_sanitized_trace": sc.pii_sanitized_trace,
+        }
+        for sc in items
+    ]
+
+
+@router.post("/vcr/generate/{scenario_id}")
+def generate_vcr_test_endpoint(
+    scenario_id: str,
+    db: Session = Depends(get_db),
+):
+    """Converts a pending scenario into Golden Set test and VCR cassette files."""
+    try:
+        result = VCRScenarioGenerator.generate_test_artifacts(db, scenario_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.post("/vcr/review")
+def review_vcr_scenario_endpoint(
+    req: ReviewVCRScenarioRequest,
+    db: Session = Depends(get_db),
+):
+    """Processes ROP approval or rejection of an auto-generated test scenario."""
+    try:
+        result = VCRScenarioGenerator.review_pending_scenario(db, req.scenario_id, req.decision)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get("/vcr/stats")
+def get_vcr_stats_endpoint(
+    db: Session = Depends(get_db),
+):
+    """Returns aggregated metrics on auto-captured tests for /golden_stats."""
+    return VCRScenarioGenerator.get_golden_stats(db)

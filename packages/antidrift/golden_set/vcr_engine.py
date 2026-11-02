@@ -36,7 +36,10 @@ logger = logging.getLogger("antidrift_vcr_engine")
 class PIISanitizer:
     """Sanitizes PII and sensitive credentials from Golden Traces and Cassettes."""
 
-    TOKEN_REGEX = re.compile(r"\b(eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}|AIzaSy[a-zA-Z0-9_-]{30,35}|ghp_[a-zA-Z0-9]{20,})\b")
+    TOKEN_REGEX = re.compile(
+        r"\b(eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}|AIzaSy[a-zA-Z0-9_-]{30,35}|ghp_[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,}|bearer\s+[a-zA-Z0-9_\-\.]{15,})\b",
+        re.IGNORECASE,
+    )
     EMAIL_REGEX = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
     PHONE_REGEX = re.compile(r"(?:\+7|8)[\s\(-]*\d{3}[\s\)-]*\d{3}[\s-]*\d{2}[\s-]*\d{2}")
 
@@ -143,6 +146,36 @@ class VCREngine:
             .order_by(VCRCassette.recorded_at.desc())
             .first()
         )
+
+    @classmethod
+    def check_cassette_freshness(
+        cls,
+        cassette: VCRCassette,
+        current_crm_schema_hash: str,
+        current_policy_version: str = "v1.0",
+    ) -> bool:
+        """
+        Freshness Engine:
+        Validates that a recorded VCR cassette was frozen against matching
+        CRM schema hash and policy version. If mismatched, flags STALE_MOCK_ERROR.
+        """
+        if not cassette:
+            return False
+        if cassette.crm_schema_hash and current_crm_schema_hash and cassette.crm_schema_hash != current_crm_schema_hash:
+            logger.warning(
+                f"STALE_MOCK_ERROR: Cassette '{cassette.cassette_id}' recorded with CRM schema hash "
+                f"'{cassette.crm_schema_hash}', but active CRM schema is '{current_crm_schema_hash}'."
+            )
+            setattr(cassette, "status", "STALE_MOCK_ERROR")
+            return False
+        if cassette.policy_version and current_policy_version and cassette.policy_version != current_policy_version:
+            logger.warning(
+                f"STALE_MOCK_ERROR: Cassette '{cassette.cassette_id}' policy '{cassette.policy_version}' "
+                f"mismatches active policy '{current_policy_version}'."
+            )
+            setattr(cassette, "status", "STALE_MOCK_ERROR")
+            return False
+        return True
 
 
 # =====================================================================

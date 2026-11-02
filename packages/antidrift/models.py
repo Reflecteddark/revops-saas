@@ -300,3 +300,21 @@ class BusinessMetricEvent(Base):
     __table_args__ = (
         Index("idx_bme_tenant_metric_created", "tenant_id", "metric_name", "created_at"),
     )
+
+
+class PendingVCRScenario(Base):
+    """
+    Staging table for candidate Golden Set scenarios generated automatically
+    from production HARD_FAILURE incidents (Sprint 3: Incident-to-VCR Loop).
+    """
+    __tablename__ = "pending_vcr_scenarios"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    trace_id = Column(String(36), nullable=False, index=True)
+    source_policy = Column(String(50), nullable=False)
+    cohort = Column(String(50), nullable=False, index=True)
+    raw_trace = Column(JSON, nullable=False, default=dict)
+    pii_sanitized_trace = Column(JSON, nullable=False, default=dict)
+    status = Column(String(20), nullable=False, default="PENDING", index=True)
+    error_summary = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
