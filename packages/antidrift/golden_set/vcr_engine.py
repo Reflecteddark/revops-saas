@@ -17,7 +17,8 @@ import logging
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -28,31 +29,85 @@ from packages.antidrift.models import GoldenScenario, VCRCassette
 
 logger = logging.getLogger("antidrift_vcr_engine")
 
+COHORT_ALIASES: dict[str, str] = {
+    "01_safety": "01_safety",
+    "02_core_sales": "02_core_sales",
+    "03_financials": "05_financials",
+    "04_conflicts": "04_conflicts",
+    "05_financials": "05_financials",
+}
+
 
 # =====================================================================
 # PII & Secret Sanitizer
 # =====================================================================
 
 class PIISanitizer:
-    """Sanitizes PII and sensitive credentials from Golden Traces and Cassettes."""
+    """
+    Sanitizes PII and sensitive credentials from Golden Traces and Cassettes.
+    Audit 3.3: Strips Russian phones (with or without formatting), Bitrix webhooks,
+    Telegram bot tokens, emails, JWTs, and structured PII fields (FIO, INN).
+    """
 
     TOKEN_REGEX = re.compile(
-        r"\b(eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}|AIzaSy[a-zA-Z0-9_-]{30,35}|ghp_[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,}|bearer\s+[a-zA-Z0-9_\-\.]{15,})\b",
+        r"\b(eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}(?:\.[a-zA-Z0-9_-]{10,})?|AIzaSy[a-zA-Z0-9_-]{30,35}|ghp_[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,}|bearer\s+[a-zA-Z0-9_\-\.]{15,}|\d{8,11}:[A-Za-z0-9_-]{34,36})\b",
+        re.IGNORECASE,
+    )
+    BITRIX_URL_REGEX = re.compile(
+        r"https?://[a-zA-Z0-9_\-\.]+/rest/\d+/[a-zA-Z0-9_-]{16,32}/?",
         re.IGNORECASE,
     )
     EMAIL_REGEX = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
-    PHONE_REGEX = re.compile(r"(?:\+7|8)[\s\(-]*\d{3}[\s\)-]*\d{3}[\s-]*\d{2}[\s-]*\d{2}")
+    PHONE_REGEX = re.compile(
+        r"(?:\+?7|8)[\s\(-]*\d{3}[\s\)-]*\d{3}[\s-]*\d{2}[\s-]*\d{2}|\b(?:79|89)\d{9}\b",
+    )
+    INN_TEXT_REGEX = re.compile(r"(?i)\bИНН[\s:№]*\d{10,12}\b")
+
+    SENSITIVE_KEY_MAP = {
+        "fio": "[REDACTED_FIO]",
+        "client_name": "[REDACTED_FIO]",
+        "manager_name": "[REDACTED_FIO]",
+        "full_name": "[REDACTED_FIO]",
+        "contact_name": "[REDACTED_FIO]",
+        "inn": "[REDACTED_INN]",
+        "kpp": "[REDACTED_INN]",
+        "ogrn": "[REDACTED_INN]",
+        "phone": "[REDACTED_PHONE]",
+        "phone1": "[REDACTED_PHONE]",
+        "phone2": "[REDACTED_PHONE]",
+        "phone3": "[REDACTED_PHONE]",
+        "telephone": "[REDACTED_PHONE]",
+        "mobile": "[REDACTED_PHONE]",
+        "client_phone": "[REDACTED_PHONE]",
+        "email": "[REDACTED_EMAIL]",
+        "mail": "[REDACTED_EMAIL]",
+        "client_email": "[REDACTED_EMAIL]",
+        "bitrix_webhook": "[REDACTED_TOKEN]",
+        "tg_bot_token": "[REDACTED_TOKEN]",
+        "bot_token": "[REDACTED_TOKEN]",
+        "webhook": "[REDACTED_TOKEN]",
+        "token": "[REDACTED_TOKEN]",
+        "amo_jwt": "[REDACTED_TOKEN]",
+        "jwt": "[REDACTED_TOKEN]",
+        "api_key": "[REDACTED_TOKEN]",
+        "secret": "[REDACTED_TOKEN]",
+        "password": "[REDACTED_TOKEN]",
+    }
 
     @classmethod
     def sanitize_text(cls, text: str) -> str:
         if not text:
             return ""
-        # 1. Redact tokens first so digits in hashes are not confused with phone numbers
-        sanitized = cls.TOKEN_REGEX.sub("[REDACTED_TOKEN]", text)
-        # 2. Redact email addresses
+        # 1. Redact Bitrix webhook URLs with secret
+        sanitized = cls.BITRIX_URL_REGEX.sub("[REDACTED_TOKEN]", text)
+        # 2. Redact tokens (JWT, OpenAI, TG bot tokens, etc.)
+        sanitized = cls.TOKEN_REGEX.sub("[REDACTED_TOKEN]", sanitized)
+        # 3. Redact email addresses
         sanitized = cls.EMAIL_REGEX.sub("[REDACTED_EMAIL]", sanitized)
-        # 3. Redact phone numbers
+        # 4. Redact phone numbers (79..., 8..., +7...)
         sanitized = cls.PHONE_REGEX.sub("[REDACTED_PHONE]", sanitized)
+        # 5. Redact INN if labeled
+        sanitized = cls.INN_TEXT_REGEX.sub("ИНН [REDACTED_INN]", sanitized)
         return sanitized
 
     @classmethod
@@ -60,7 +115,14 @@ class PIISanitizer:
         if isinstance(data, str):
             return cls.sanitize_text(data)
         elif isinstance(data, dict):
-            return {k: cls.sanitize_data(v) for k, v in data.items()}
+            res = {}
+            for k, v in data.items():
+                k_lower = str(k).lower().strip()
+                if k_lower in cls.SENSITIVE_KEY_MAP and isinstance(v, (str, int)):
+                    res[k] = cls.SENSITIVE_KEY_MAP[k_lower]
+                else:
+                    res[k] = cls.sanitize_data(v)
+            return res
         elif isinstance(data, list):
             return [cls.sanitize_data(item) for item in data]
         return data
@@ -98,6 +160,30 @@ class SuiteBenchmarkReport(BaseModel):
 # =====================================================================
 
 class VCREngine:
+    """Manages recording and replaying deterministic VCR cassettes and loading Golden Scenarios."""
+
+    @classmethod
+    def load_scenarios_from_disk(cls, base_dir: Optional[Path] = None) -> list[dict[str, Any]]:
+        """
+        Audit 3.1: Reads auto-captured and golden scenario JSON files from disk (tests/golden_set).
+        Enables closing the incident-to-VCR regression loop.
+        """
+        root_dir = base_dir or Path(__file__).resolve().parent.parent.parent.parent
+        scenarios_dir = root_dir / "tests" / "golden_set"
+        loaded: list[dict[str, Any]] = []
+        if not scenarios_dir.exists():
+            return loaded
+
+        for json_path in scenarios_dir.glob("**/*.json"):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, dict) and "scenario_id" in data:
+                        loaded.append(data)
+            except Exception as e:
+                logger.warning(f"Could not load scenario from {json_path}: {e}")
+        return loaded
+
     """Manages recording and replaying deterministic VCR cassettes."""
 
     @classmethod

@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -87,6 +88,17 @@ class VCRScenarioGenerator:
         # 2. M7 Deduplication Guard: Check if identical policy + error occurred for this tenant in last 24h
         norm_rule = str(source_policy or "HARD_FAILURE").strip()
         tenant_id = (raw_trace or {}).get("tenant_id")
+
+        # Normalize root cause by stripping dynamic numbers/percentages (Audit 3.4)
+        def _norm_root(msg: str) -> str:
+            if not msg:
+                return ""
+            c = re.sub(r"\b\d+([.,]\d+)?%?", "<NUM>", msg)
+            c = re.sub(r"[a-f0-9]{12,64}", "<HASH>", c)
+            return " ".join(c.split()).lower()
+
+        norm_input_err = _norm_root(error_summary)
+
         candidates = (
             db.query(PendingVCRScenario)
             .filter(
@@ -97,9 +109,10 @@ class VCRScenarioGenerator:
             .all()
         )
         for existing_dup in candidates:
-            dup_tenant = (existing_dup.raw_trace or {}).get("tenant_id")
+            dup_tenant = (existing_dup.pii_sanitized_trace or {}).get("tenant_id")
+            existing_clean = _norm_root(existing_dup.error_summary or "")
             if (not tenant_id or dup_tenant == tenant_id) and (
-                existing_dup.error_summary == error_summary or not error_summary
+                existing_clean == norm_input_err or not error_summary
             ):
                 logger.info(
                     f"Auto-VCR capture deduplicated: matching scenario '{existing_dup.id}' already logged for rule '{norm_rule}'."
@@ -108,16 +121,18 @@ class VCRScenarioGenerator:
 
         cohort = cls.map_policy_to_cohort(source_policy)
         sanitized_trace = PIISanitizer.sanitize_data(raw_trace)
+        sanitized_error = PIISanitizer.sanitize_text(error_summary)
 
+        # Audit 3.2: Store sanitized copy ONLY in raw_trace as well to prevent DB PII bypass
         pending = PendingVCRScenario(
             id=str(uuid.uuid4()),
             trace_id=trace_id,
             source_policy=source_policy or "HARD_FAILURE",
             cohort=cohort,
-            raw_trace=raw_trace,
+            raw_trace=sanitized_trace,
             pii_sanitized_trace=sanitized_trace,
             status="PENDING",
-            error_summary=error_summary,
+            error_summary=sanitized_error,
             created_at=datetime.now(timezone.utc),
         )
 
@@ -148,6 +163,8 @@ class VCRScenarioGenerator:
         )
         if not pending:
             raise ValueError(f"PendingVCRScenario '{scenario_id}' not found")
+        if pending.status == "REJECTED":
+            raise ValueError(f"Cannot generate test artifacts from REJECTED scenario '{scenario_id}'")
 
         root_dir = base_dir or Path(__file__).resolve().parent.parent.parent.parent
         short_id = pending.id[:8]

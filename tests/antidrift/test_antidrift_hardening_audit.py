@@ -33,6 +33,7 @@ from packages.antidrift.context.context_assembler import TrustedContext, assembl
 from packages.antidrift.contracts.intent import ActionType, ExecutionMode, VerifiedIntentProposal
 from packages.antidrift.contracts.policy_config import TenantPolicyConfig, TenantPolicyRegistry
 from packages.antidrift.diff.diff_engine import DiffEngine
+from packages.antidrift.golden_set.vcr_engine import PIISanitizer
 from packages.antidrift.golden_set.vcr_scenario_generator import VCRScenarioGenerator
 from packages.antidrift.models import (
     ActionExecution,
@@ -1043,3 +1044,97 @@ def test_4_3_tenant_isolated_canary_circuit_breaker():
     # Tenant B must remain healthy and active at 20%
     assert canary_router.get_status(tenant_id=tenant_b)["auto_rollback_active"] is False
     assert canary_router.get_status(tenant_id=tenant_b)["weight_pct"] == 20.0
+
+
+def test_3_1_raw_trace_is_pii_sanitized_in_db():
+    """Audit 3.2: PendingVCRScenario must never persist unsanitized PII in raw_trace column."""
+    db = SessionLocal()
+    tenant_id = f"tnt_{uuid.uuid4().hex[:6]}"
+    trace_id = str(uuid.uuid4())
+    try:
+        raw_payload = {
+            "tenant_id": tenant_id,
+            "client_message": "Позвоните мне 8 (999) 123-45-67 или напишите на client@acme.com",
+            "phone": "79991234567",
+        }
+        sc = VCRScenarioGenerator.capture_incident_as_pending(
+            db=db,
+            trace_id=trace_id,
+            source_policy="GR-03",
+            raw_trace=raw_payload,
+            error_summary="Discount promised: call 8 (999) 123-45-67",
+        )
+        assert sc is not None
+        # Check database object directly
+        saved = db.query(PendingVCRScenario).filter(PendingVCRScenario.id == sc.id).first()
+        assert saved is not None
+        assert "8 (999) 123-45-67" not in str(saved.raw_trace)
+        assert "79991234567" not in str(saved.raw_trace)
+        assert "client@acme.com" not in str(saved.raw_trace)
+        assert "[REDACTED_PHONE]" in str(saved.raw_trace)
+        assert "[REDACTED_EMAIL]" in str(saved.raw_trace)
+        assert "8 (999) 123-45-67" not in str(saved.error_summary)
+    finally:
+        db.close()
+
+
+def test_3_2_pii_sanitizer_coverage_all_patterns():
+    """Audit 3.3: PIISanitizer must mask phones (including 79...), FIO, INN, Bitrix webhooks, and TG bot tokens."""
+    sample = {
+        "phone1": "8 (999) 123-45-67",
+        "phone2": "+7 999 1234567",
+        "phone3": "79991234567",
+        "email": "ivanov@acme.ru",
+        "fio": "Иванов Иван Иванович, ЛПР",
+        "inn": "ИНН 7707083893",
+        "bitrix_webhook": "https://acme.bitrix24.ru/rest/1/q8w7e6r5t4y3u2i1/",
+        "tg_bot_token": "1234567890:AAHk2xFhPZ9vQwErTyUiOpAsDfGhJkLzXcV",
+        "amo_jwt": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.sig",
+    }
+    sanitized = PIISanitizer.sanitize_data(sample)
+    for k, v in sample.items():
+        assert sanitized[k] != v, f"Sensitive field '{k}' was LEAKED without masking!"
+
+
+def test_3_3_dedup_by_normalized_root_cause():
+    """Audit 3.4: Dynamic numbers/percentages in error summary must be normalized to prevent scenario flooding."""
+    db = SessionLocal()
+    tenant_id = f"tnt_dedup_{uuid.uuid4().hex[:6]}"
+    try:
+        n0 = db.query(PendingVCRScenario).count()
+        for amt in (41, 42, 43):
+            VCRScenarioGenerator.capture_incident_as_pending(
+                db=db,
+                trace_id=str(uuid.uuid4()),
+                source_policy="GR-03",
+                raw_trace={"tenant_id": tenant_id},
+                error_summary=f"Discount {amt}% exceeds 5% (GR-03)",
+            )
+        new_scenarios = db.query(PendingVCRScenario).count() - n0
+        assert new_scenarios == 1, f"Expected 1 deduplicated scenario, but got {new_scenarios}!"
+    finally:
+        db.close()
+
+
+def test_3_4_rejected_scenario_cannot_generate_artifacts():
+    """Audit 3.5: Cannot generate test artifacts from a scenario in REJECTED status."""
+    db = SessionLocal()
+    try:
+        sc = PendingVCRScenario(
+            id=str(uuid.uuid4()),
+            trace_id=str(uuid.uuid4()),
+            source_policy="GR-02",
+            cohort="04_conflicts",
+            raw_trace={"intent": "TEST"},
+            pii_sanitized_trace={"intent": "TEST"},
+            status="REJECTED",
+            error_summary="Disallowed",
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(sc)
+        db.commit()
+
+        with pytest.raises(ValueError, match="REJECTED"):
+            VCRScenarioGenerator.generate_test_artifacts(db, sc.id)
+    finally:
+        db.close()

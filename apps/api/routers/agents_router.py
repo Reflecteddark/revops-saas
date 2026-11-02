@@ -324,7 +324,8 @@ def execute_agent_intent(
                             raw_trace=payload.model_dump(mode="json"),
                             error_summary="; ".join(fact_violations),
                         )
-                        antidrift_metrics.record_auto_vcr_generated(cohort="03_financials", source_policy="GR-03")
+                        cohort_gr03 = VCRScenarioGenerator.map_policy_to_cohort("GR-03")
+                        antidrift_metrics.record_auto_vcr_generated(cohort=cohort_gr03, source_policy="GR-03")
 
             has_discount_breach = any("GR-03" in v for v in fact_violations)
             # 1.2: Enforce blocks immediately; Monitor logs and only blocks hard commercial breach
