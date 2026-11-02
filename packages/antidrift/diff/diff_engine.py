@@ -122,8 +122,16 @@ class DiffEngine:
                 reasons=reasons,
             )
 
-        prod_dict = prod_proposal if isinstance(prod_proposal, dict) else (prod_proposal.model_dump() if prod_proposal else {})
-        shadow_dict = shadow_proposal if isinstance(shadow_proposal, dict) else shadow_proposal.model_dump()
+        prod_dict = prod_proposal if isinstance(prod_proposal, dict) else (prod_proposal.model_dump(mode="json") if prod_proposal else {})
+        shadow_dict = shadow_proposal if isinstance(shadow_proposal, dict) else shadow_proposal.model_dump(mode="json")
+
+        def _action_sig(a: Any) -> str:
+            if not isinstance(a, dict):
+                return str(a)
+            act_type = a.get("action_type")
+            if act_type is not None and hasattr(act_type, "value"):
+                act_type = getattr(act_type, "value")
+            return f"{act_type}:{a.get('target_type')}:{a.get('target_id')}"
 
         # 1. Intent Semantic Alignment (Weight: 35%)
         prod_intent = prod_dict.get("intent")
@@ -136,8 +144,8 @@ class DiffEngine:
         # 2. Proposed Actions Delta (Weight: 35%)
         prod_actions = prod_dict.get("proposed_actions", [])
         shadow_actions = shadow_dict.get("proposed_actions", [])
-        prod_action_sigs = sorted([f"{a.get('action_type')}:{a.get('target_type')}:{a.get('target_id')}" for a in prod_actions])
-        shadow_action_sigs = sorted([f"{a.get('action_type')}:{a.get('target_type')}:{a.get('target_id')}" for a in shadow_actions])
+        prod_action_sigs = sorted([_action_sig(a) for a in prod_actions])
+        shadow_action_sigs = sorted([_action_sig(a) for a in shadow_actions])
         actions_delta_count = abs(len(prod_action_sigs) - len(shadow_action_sigs))
         if prod_action_sigs != shadow_action_sigs:
             divergence += min(0.35, 0.15 * max(1, actions_delta_count))

@@ -922,3 +922,124 @@ def test_2_3_shadow_diff_enforces_tenant_isolation():
         assert report_a["paired_prod_traces"] == 0, "Cross-tenant trace was paired incorrectly!"
     finally:
         db.close()
+
+
+def test_4_1_canary_routing_resolve_pre_execution():
+    """Audit 4.2: Pre-execution traffic resolver enables genuine canary before LLM invocation."""
+    client = TestClient(app)
+    db = SessionLocal()
+    agent_id = f"agent_canary_{uuid.uuid4().hex[:6]}"
+    tenant_id = f"tnt_canary_{uuid.uuid4().hex[:6]}"
+
+    try:
+        # Register PROD harness
+        h_prod = HarnessRegistry(
+            agent_id=agent_id,
+            version="v1.0-prod",
+            model_name="gemini-2.0-flash",
+            system_prompt_hash="p" * 64,
+            tools_schema_hash="t" * 64,
+            status="ACTIVE",
+        )
+        # Register Canary candidate harness
+        h_canary = HarnessRegistry(
+            agent_id=agent_id,
+            version="v2.0-canary",
+            model_name="gemini-2.5-flash",
+            system_prompt_hash="c" * 64,
+            tools_schema_hash="s" * 64,
+            status="CANARY_RUNNING",
+        )
+        db.add_all([h_prod, h_canary])
+        db.commit()
+
+        # At default 0% canary weight: must resolve to PROD harness
+        canary_router.configure(weight_pct=0.0, enabled=True, reset_rollback=True)
+        res_zero = client.post(
+            "/api/v1/agents/routing/resolve",
+            json={"tenant_id": tenant_id, "agent_id": agent_id, "session_id": "sess_1"},
+        )
+        assert res_zero.status_code == 200
+        data_zero = res_zero.json()
+        assert data_zero["execution_mode"] == "prod"
+        assert data_zero["harness_version"] == "v1.0-prod"
+        assert data_zero["model_name"] == "gemini-2.0-flash"
+        assert data_zero["is_canary"] is False
+
+        # At 100% canary weight: must resolve to CANARY harness
+        canary_router.configure(weight_pct=100.0, enabled=True, reset_rollback=True)
+        res_full = client.post(
+            "/api/v1/agents/routing/resolve",
+            json={"tenant_id": tenant_id, "agent_id": agent_id, "session_id": "sess_2"},
+        )
+        assert res_full.status_code == 200
+        data_full = res_full.json()
+        assert data_full["execution_mode"] == "canary"
+        assert data_full["harness_version"] == "v2.0-canary"
+        assert data_full["model_name"] == "gemini-2.5-flash"
+        assert data_full["is_canary"] is True
+    finally:
+        db.close()
+
+
+def test_4_2_prod_failure_does_not_trip_canary_auto_rollback():
+    """Audit 4.3: A production failure must never increment canary counts or trip canary auto-rollback."""
+    client = TestClient(app)
+    tenant_id = f"tnt_cb_{uuid.uuid4().hex[:6]}"
+    canary_router.reset()
+    canary_router.configure(weight_pct=10.0, enabled=True, reset_rollback=True)
+
+    # 1. Simulate PROD failure (e.g., unauthorized discount breach)
+    proposal_prod = {
+        "trace_id": str(uuid.uuid4()),
+        "session_id": f"ses_prod_{uuid.uuid4().hex[:6]}",
+        "tenant_id": tenant_id,
+        "agent_id": "sales_bot",
+        "harness_version": "v1.0",
+        "policy_version": "v1.0",
+        "execution_mode": "prod",
+        "channel": "api",
+        "source_event_id": f"evt_prod_{uuid.uuid4().hex[:6]}",
+        "intent": "CLOSE_DEAL",
+        "context_refs": {"deal_id": "d1"},
+        "capability_scopes": ["crm.read", "crm.change_budget"],
+        "proposed_actions": [],
+        "proposed_client_reply": {
+            "channel": "chat",
+            "recipient_id": "cli_1",
+            "text": "Мы дадим вам скидку 25% на всё!",
+        },
+    }
+    res_prod = client.post("/api/v1/agents/execute", json=proposal_prod)
+    assert res_prod.status_code == 403
+
+    status_after_prod = canary_router.get_status(tenant_id=tenant_id)
+    assert status_after_prod["auto_rollback_active"] is False, "PROD failure tripped canary rollback!"
+    assert status_after_prod["canary_sessions_count"] == 0, "PROD session was counted as canary!"
+
+    # 2. Direct canary failure must trip the circuit breaker
+    canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=True, execution_mode="canary")
+    status_after_canary = canary_router.get_status(tenant_id=tenant_id)
+    assert status_after_canary["auto_rollback_active"] is True
+    assert status_after_canary["weight_pct"] == 0.0
+
+
+def test_4_3_tenant_isolated_canary_circuit_breaker():
+    """Audit 4.3: Canary circuit breaker trips ONLY for the affected tenant, isolating other tenants."""
+    canary_router.reset()
+    tenant_a = f"tnt_a_{uuid.uuid4().hex[:6]}"
+    tenant_b = f"tnt_b_{uuid.uuid4().hex[:6]}"
+
+    # Configure both tenants with 20% canary
+    canary_router.configure(tenant_id=tenant_a, weight_pct=20.0, enabled=True, reset_rollback=True)
+    canary_router.configure(tenant_id=tenant_b, weight_pct=20.0, enabled=True, reset_rollback=True)
+
+    # Trip canary for Tenant A
+    canary_router.record_canary_execution(tenant_id=tenant_a, is_hard_failure=True, execution_mode="canary")
+
+    assert canary_router.get_status(tenant_id=tenant_a)["auto_rollback_active"] is True
+    assert canary_router.get_status(tenant_id=tenant_a)["weight_pct"] == 0.0
+
+    # Tenant B must remain healthy and active at 20%
+    assert canary_router.get_status(tenant_id=tenant_b)["auto_rollback_active"] is False
+    assert canary_router.get_status(tenant_id=tenant_b)["weight_pct"] == 20.0

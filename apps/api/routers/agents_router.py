@@ -298,9 +298,10 @@ def execute_agent_intent(
                 policy="GR-03" if any("GR-03" in v for v in fact_violations) else "FACT_CHECK",
                 reason="; ".join(fact_violations),
             )
-            # B2: Shadow execution never triggers canary auto-rollback or P0 incidents
+            # B2 & Audit 4.3: Only actual canary executions trigger canary auto-rollback
+            if resolved_mode in (ExecutionMode.CANARY, "canary"):
+                canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=True, execution_mode="canary")
             if not is_shadow_or_dry_run:
-                canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=True)
                 has_discount_breach = any("GR-03" in v for v in fact_violations)
                 if has_discount_breach:
                     if HardFailureRateLimiter.should_record_scenario(payload.session_id):
@@ -453,7 +454,6 @@ def execute_agent_intent(
             shadow_would_be_blocked=would_be_blocked,
         )
         antidrift_metrics.record_shadow_comparison(tenant_id, is_divergent=diff_metric.has_divergence)
-        canary_router.record_canary_execution(tenant_id, is_hard_failure=False, is_divergent=diff_metric.has_divergence)
 
         trace = AgentTrace(
             trace_id=payload.trace_id,
@@ -512,7 +512,8 @@ def execute_agent_intent(
             )
             cohort = VCRScenarioGenerator.map_policy_to_cohort(source_rule)
             antidrift_metrics.record_auto_vcr_generated(cohort=cohort, source_policy=source_rule)
-            canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=True)
+            if resolved_mode in (ExecutionMode.CANARY, "canary"):
+                canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=True, execution_mode="canary")
 
         # Record blocked trace
         trace = AgentTrace(
@@ -790,7 +791,8 @@ def execute_agent_intent(
 
     db.commit()
 
-    canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=False)
+    if resolved_mode in (ExecutionMode.CANARY, "canary"):
+        canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=False, execution_mode="canary")
     return {
         "status": "EXECUTED",
         "trace_id": payload.trace_id,
@@ -1182,6 +1184,7 @@ class CanaryConfigureRequest(BaseModel):
     reset_rollback: bool = False
     divergence_threshold_pct: Optional[float] = Field(None, ge=0.0, le=100.0)
     enabled: Optional[bool] = None
+    tenant_id: Optional[str] = None
 
 
 @router.get("/metrics")
@@ -1219,9 +1222,11 @@ def get_antidrift_metrics_endpoint(request: Request):
 
 
 @router.get("/canary/status")
-def get_canary_status_endpoint():
+def get_canary_status_endpoint(
+    tenant_id: Optional[str] = Query(None, description="Optional tenant filter"),
+):
     """Returns the current status of the Canary Traffic Router & Auto-Rollback circuit breaker."""
-    return canary_router.get_status()
+    return canary_router.get_status(tenant_id=tenant_id)
 
 
 @router.post("/canary/configure")
@@ -1237,6 +1242,104 @@ def configure_canary_endpoint(
         reset_rollback=req.reset_rollback,
         divergence_threshold_pct=req.divergence_threshold_pct,
         enabled=req.enabled,
+        tenant_id=req.tenant_id,
+    )
+
+
+
+
+class ResolveRoutingRequest(BaseModel):
+    tenant_id: str = Field(..., min_length=1)
+    agent_id: str = Field(..., min_length=1)
+    session_id: str = Field(..., min_length=1)
+    channel: Optional[str] = "api"
+
+
+class ResolveRoutingResponse(BaseModel):
+    tenant_id: str
+    agent_id: str
+    session_id: str
+    execution_mode: str
+    harness_version: str
+    model_name: str
+    temperature: float
+    system_prompt_hash: str
+    tools_schema_hash: str
+    policy_version: str
+    is_canary: bool
+
+
+@router.post("/routing/resolve", response_model=ResolveRoutingResponse)
+def resolve_agent_routing(
+    req: ResolveRoutingRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Pre-execution traffic router (Audit 4.2).
+    Determines harness version and LLM configuration BEFORE model invocation,
+    enabling authentic canary deployments and immediate rollback.
+    """
+    prod_harness = (
+        db.query(HarnessRegistry)
+        .filter(
+            HarnessRegistry.agent_id == req.agent_id,
+            HarnessRegistry.status.in_(["ACTIVE", "PROD", "CANARY_ELIGIBLE"]),
+        )
+        .order_by(HarnessRegistry.created_at.desc())
+        .first()
+    )
+    if not prod_harness:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error": "NO_ACTIVE_HARNESS",
+                "message": f"No active production harness found for agent '{req.agent_id}'",
+            },
+        )
+
+    canary_harness = (
+        db.query(HarnessRegistry)
+        .filter(
+            HarnessRegistry.agent_id == req.agent_id,
+            HarnessRegistry.status == "CANARY_RUNNING",
+        )
+        .order_by(HarnessRegistry.created_at.desc())
+        .first()
+    )
+
+    if not canary_harness:
+        return ResolveRoutingResponse(
+            tenant_id=req.tenant_id,
+            agent_id=req.agent_id,
+            session_id=req.session_id,
+            execution_mode="prod",
+            harness_version=str(prod_harness.version),
+            model_name=str(prod_harness.model_name),
+            temperature=float(prod_harness.temperature),
+            system_prompt_hash=str(prod_harness.system_prompt_hash),
+            tools_schema_hash=str(prod_harness.tools_schema_hash),
+            policy_version=str(prod_harness.policy_version),
+            is_canary=False,
+        )
+
+    mode = canary_router.decide_execution_mode(
+        tenant_id=req.tenant_id,
+        session_id=req.session_id,
+    )
+
+    chosen = canary_harness if mode == "canary" else prod_harness
+    return ResolveRoutingResponse(
+        tenant_id=req.tenant_id,
+        agent_id=req.agent_id,
+        session_id=req.session_id,
+        execution_mode=mode,
+        harness_version=str(chosen.version),
+        model_name=str(chosen.model_name),
+        temperature=float(chosen.temperature),
+        system_prompt_hash=str(chosen.system_prompt_hash),
+        tools_schema_hash=str(chosen.tools_schema_hash),
+        policy_version=str(chosen.policy_version),
+        is_canary=(mode == "canary"),
     )
 
 
