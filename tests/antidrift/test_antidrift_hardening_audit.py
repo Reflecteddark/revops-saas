@@ -1138,3 +1138,171 @@ def test_3_4_rejected_scenario_cannot_generate_artifacts():
             VCRScenarioGenerator.generate_test_artifacts(db, sc.id)
     finally:
         db.close()
+
+
+def test_4_4_autotune_extracts_deal_amount_from_context_refs_and_calibrates():
+    """Audit 4.4: PolicyAutoTuner detects deal amounts inside context_refs.budget and emits recommendation."""
+    db = SessionLocal()
+    tenant_id = f"tnt_tune_{uuid.uuid4().hex[:6]}"
+    try:
+        # Register 6 approved HITL requests for 500k deals via context_refs
+        for _ in range(6):
+            iid = str(uuid.uuid4())
+            db.add(AgentIntent(
+                intent_id=iid,
+                trace_id=str(uuid.uuid4()),
+                session_id="ses_tune",
+                tenant_id=tenant_id,
+                agent_id="closer_bot",
+                harness_version="v1.0",
+                intent_name="approve_budget",
+                risk_score=0.5,
+                confidence_score=0.9,
+                payload_json={"context_refs": {"budget": 500000}},
+                validation_status="VALID",
+                policy_status="REQUIRES_APPROVAL",
+                requires_approval=True,
+            ))
+            db.add(HITLApproval(
+                trace_id=str(uuid.uuid4()),
+                intent_id=iid,
+                tenant_id=tenant_id,
+                agent_id="closer_bot",
+                harness_version="v1.0",
+                risk_level="HIGH",
+                status="APPROVED",
+                decision="APPROVE",
+                expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
+            ))
+        db.commit()
+
+        recs = PolicyAutoTuner.analyze_tuning_opportunities(db=db, tenant_id=tenant_id, min_samples=3)
+        assert len(recs) == 1
+        assert recs[0].parameter_name == "requires_human_above"
+        assert recs[0].recommended_threshold == 360000.0  # +20% from 300,000 safety base
+    finally:
+        db.close()
+
+
+def test_4_5_risk_scorer_honors_tenant_calibrated_requires_human_above():
+    """Audit 4.5: RiskScorer uses per-tenant requires_human_above to calculate risk and HITL eligibility."""
+    from packages.antidrift.barrier.risk_scorer import RiskScorer
+    from packages.antidrift.contracts.intent import AgentIntentPayload
+
+    tenant_tight = f"tnt_tight_{uuid.uuid4().hex[:6]}"
+    tenant_relaxed = f"tnt_relaxed_{uuid.uuid4().hex[:6]}"
+
+    TenantPolicyRegistry.register_config(TenantPolicyConfig(
+        tenant_id=tenant_tight,
+        requires_human_above=100000.0,
+    ))
+    TenantPolicyRegistry.register_config(TenantPolicyConfig(
+        tenant_id=tenant_relaxed,
+        requires_human_above=500000.0,
+    ))
+
+    # A deal of 250,000 ₽:
+    payload = AgentIntentPayload(
+        session_id="ses_test",
+        tenant_id=tenant_tight,
+        source_event_id="evt_test",
+        intent="QUALIFY",
+        agent_id="test_agent",
+        harness_version="v1.0",
+        proposed_actions=[],
+    )
+
+    # Tight tenant (threshold 100k): 250k is large deal -> requires HITL
+    res_tight = RiskScorer.calculate_risk(
+        intent=payload,
+        deal_context={"budget": 250000.0},
+        tenant_id=tenant_tight,
+    )
+    assert res_tight.requires_hitl is True
+    assert "Large deal amount" in str(res_tight.reasons)
+
+    # Relaxed tenant (threshold 500k): 250k is below threshold -> no HITL required
+    res_relaxed = RiskScorer.calculate_risk(
+        intent=payload,
+        deal_context={"budget": 250000.0},
+        tenant_id=tenant_relaxed,
+    )
+    assert res_relaxed.requires_hitl is False
+
+
+def test_x5_crm_gateway_budget_change_uses_payload_value():
+    """Audit X5: CRMExecutionGateway correctly extracts amount from payload['value'] without zeroing budget."""
+    from packages.antidrift.execution.crm_gateway import CRMExecutionGateway
+    from packages.antidrift.contracts.intent import ActionItem, ActionType
+    from packages.database.models import Deal, DealStage
+
+    db = SessionLocal()
+    tenant_id = f"tnt_gw_{uuid.uuid4().hex[:6]}"
+    deal_id = f"deal_gw_{uuid.uuid4().hex[:6]}"
+    try:
+        # Create Deal with initial budget 100k
+        deal = Deal(
+            id=deal_id,
+            tenant_id=tenant_id,
+            workspace_id=tenant_id,
+            title="Initial Deal",
+            budget=100000.0,
+            stage=DealStage.QUALIFICATION.value,
+        )
+        db.add(deal)
+        db.commit()
+
+        # Action emitted by HITL approval with field/value format
+        action = ActionItem(
+            action_id="act_change_budget",
+            action_type=ActionType.CRM_CHANGE_BUDGET,
+            target_type="deal",
+            target_id=deal_id,
+            payload={"field": "budget", "value": 750000.0},
+        )
+        exec_record = CRMExecutionGateway.execute_action(
+            db=db,
+            action=action,
+            intent_id="intent_test",
+            trace_id="trace_test",
+            tenant_id=tenant_id,
+            agent_id="agent_test",
+            harness_version="v1.0",
+            idempotency_key="key_test_gw",
+        )
+        assert exec_record.status == "EXECUTED"
+        db.refresh(deal)
+        assert deal.budget == 750000.0, f"Expected 750,000 ₽ but got {deal.budget} (zeroed!)"
+    finally:
+        db.close()
+
+
+def test_x3_tenant_policy_registry_resolves_slug_without_db():
+    """Audit X3: TenantPolicyRegistry.get_config resolves slug even if db is None via internal session."""
+    from packages.database.models import Tenant
+
+    db = SessionLocal()
+    tenant_id = f"tnt_slug_{uuid.uuid4().hex[:6]}"
+    slug = f"acme-slug-{uuid.uuid4().hex[:6]}"
+    try:
+        t = Tenant(
+            id=tenant_id,
+            name="Acme Slug Corp",
+            slug=slug,
+            settings={
+                "allow_crm_mutations": True,
+                "enable_telegram_notifications": True,
+            },
+        )
+        db.add(t)
+        db.commit()
+
+        # Clear in-memory config cache
+        TenantPolicyRegistry._configs.clear()
+
+        # Query using slug without passing db:
+        cfg = TenantPolicyRegistry.get_config(slug)
+        assert cfg.allow_crm_mutations is True
+        assert cfg.enable_telegram_notifications is True
+    finally:
+        db.close()

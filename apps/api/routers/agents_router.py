@@ -388,11 +388,12 @@ def execute_agent_intent(
                     f"[TRUSTED_CONTEXT_MONITOR] Fact-check violations observed in monitor mode: {fact_violations}"
                 )
 
-    # 2. Multi-factor Risk Scoring
+    # 2. Multi-factor Risk Scoring (Audit 4.5: Calibrated per-tenant requires_human_above)
     risk_result = RiskScorer.calculate_risk(
         intent=payload,
         client_message=client_message,
         deal_context=payload.context_refs,
+        tenant_id=tenant_id,
     )
     payload.risk_score = risk_result.risk_score
 

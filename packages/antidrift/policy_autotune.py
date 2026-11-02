@@ -65,8 +65,17 @@ class PolicyAutoTuner:
         if not approvals or len(approvals) < min_samples:
             return recommendations
 
-        # Analyze requires_human_above operational threshold
-        human_above_rec = cls._analyze_requires_human_above(db, approvals, min_samples)
+        # Analyze requires_human_above operational threshold with calibrated base
+        base_thresh = 300000.0
+        if tenant_id:
+            try:
+                from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
+                t_cfg = TenantPolicyRegistry.get_config(tenant_id, db=db)
+                base_thresh = float(t_cfg.requires_human_above)
+            except Exception:
+                pass
+
+        human_above_rec = cls._analyze_requires_human_above(db, approvals, min_samples, base_threshold=base_thresh)
         if human_above_rec:
             recommendations.append(human_above_rec)
 
@@ -83,6 +92,7 @@ class PolicyAutoTuner:
         """
         Examines deals requiring approval solely due to deal amount exceeding requires_human_above.
         If operator approval rate is >= 85% without edits, proposes relaxing by at most +20%.
+        Audit 4.4: Extracts amount from payload, context_refs.budget, and proposed actions.
         """
         amounts_approved: List[float] = []
         total_amount_samples = 0
@@ -93,8 +103,34 @@ class PolicyAutoTuner:
                 continue
 
             payload = getattr(intent, "payload_json", None) or getattr(intent, "proposed_payload_json", None) or {}
-            # Context references or payload with amount
-            amount_val = payload.get("deal_amount") or payload.get("amount")
+            amount_val = None
+            if isinstance(payload, dict):
+                # 1. Direct deal_amount, amount, budget
+                for k in ("deal_amount", "amount", "budget"):
+                    if payload.get(k) is not None:
+                        amount_val = payload.get(k)
+                        break
+                # 2. Context references (e.g. {"context_refs": {"budget": 500000}})
+                if amount_val is None:
+                    ctx = payload.get("context_refs")
+                    if isinstance(ctx, dict):
+                        for k in ("budget", "deal_amount", "amount"):
+                            if ctx.get(k) is not None:
+                                amount_val = ctx.get(k)
+                                break
+                # 3. Actions payload (e.g. proposed_actions: [{"action_type": "crm_change_budget", "payload": {"value": 750000}}])
+                if amount_val is None:
+                    actions = payload.get("proposed_actions")
+                    if isinstance(actions, list):
+                        for act in actions:
+                            if isinstance(act, dict):
+                                act_p = act.get("payload")
+                                if isinstance(act_p, dict):
+                                    for k in ("value", "budget", "amount"):
+                                        if act_p.get(k) is not None:
+                                            amount_val = act_p.get(k)
+                                            break
+
             if amount_val is not None:
                 try:
                     val = float(amount_val)

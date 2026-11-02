@@ -108,7 +108,8 @@ class CRMExecutionGateway:
                 state_after["mutation_applied"] = f"stage_changed_to_{new_stage}"
 
             elif action.action_type == ActionType.CRM_CHANGE_BUDGET:
-                new_budget = float(action.payload.get("budget", 0))
+                raw_val = action.payload.get("value") if action.payload.get("value") is not None else action.payload.get("budget", 0)
+                new_budget = float(raw_val or 0.0)
                 if target_deal:
                     setattr(target_deal, "budget", new_budget)
                     state_after["budget"] = new_budget

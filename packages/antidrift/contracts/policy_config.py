@@ -64,12 +64,22 @@ class TenantPolicyRegistry:
         tid = str(tenant_id or "default").strip()
         canonical_id = tid
 
-        # Check in DB if session provided (support both UUID id and slug)
+        # Check in DB (support both UUID id and slug, opening local session if db is None - Audit X3)
         db_autonomy: dict[str, bool] = {}
-        if db is not None:
+        target_db = db
+        close_session = False
+        if target_db is None:
+            try:
+                from packages.database.session import SessionLocal
+                target_db = SessionLocal()
+                close_session = True
+            except Exception:
+                target_db = None
+
+        if target_db is not None:
             try:
                 from packages.database.models import Tenant
-                t = db.query(Tenant).filter((Tenant.id == tid) | (Tenant.slug == tid)).first()
+                t = target_db.query(Tenant).filter((Tenant.id == tid) | (Tenant.slug == tid)).first()
                 if t:
                     canonical_id = str(t.id)
                     if t.settings and isinstance(t.settings, dict):
@@ -82,6 +92,9 @@ class TenantPolicyRegistry:
                         }
             except Exception as e:
                 logger.debug(f"Could not load tenant settings from DB: {e}")
+            finally:
+                if close_session and target_db is not None:
+                    target_db.close()
 
         cached_cfg = cls._configs.get(canonical_id) or cls._configs.get(tid)
         if cached_cfg:

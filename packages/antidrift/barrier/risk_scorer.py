@@ -49,19 +49,32 @@ class RiskScorer:
         intent: AgentIntentPayload,
         client_message: str = "",
         deal_context: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
+        requires_human_above: float | None = None,
     ) -> RiskScoringResult:
         score = 0.0
         reasons: list[str] = []
         deal = deal_context or {}
 
-        # 1. Financial volume check
-        deal_amount = float(deal.get("budget") or deal.get("amount") or 0.0)
+        # 1. Financial volume check with per-tenant calibrated threshold (Audit 4.5)
+        large_threshold = requires_human_above
+        if large_threshold is None and tenant_id:
+            try:
+                from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
+                cfg = TenantPolicyRegistry.get_config(tenant_id)
+                large_threshold = float(cfg.requires_human_above)
+            except Exception:
+                pass
+        if large_threshold is None:
+            large_threshold = cls.LARGE_DEAL_THRESHOLD
+
+        deal_amount = float(deal.get("budget") or deal.get("amount") or deal.get("deal_amount") or 0.0)
         if deal_amount >= cls.ENTERPRISE_DEAL_THRESHOLD:
             score += 0.75
             reasons.append(f"Enterprise deal amount: {deal_amount:,.0f} ₽ (≥ {cls.ENTERPRISE_DEAL_THRESHOLD:,.0f} ₽)")
-        elif deal_amount >= cls.LARGE_DEAL_THRESHOLD:
+        elif deal_amount >= large_threshold:
             score += 0.50
-            reasons.append(f"Large deal amount: {deal_amount:,.0f} ₽ (≥ {cls.LARGE_DEAL_THRESHOLD:,.0f} ₽)")
+            reasons.append(f"Large deal amount: {deal_amount:,.0f} ₽ (≥ {large_threshold:,.0f} ₽)")
 
         # 2. Conflict & Legal keywords in client message
         if client_message:
