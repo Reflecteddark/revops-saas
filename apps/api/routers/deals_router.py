@@ -1425,18 +1425,20 @@ async def ingest_deal(
 
 async def fix_next_step(
     deal_id: str,
+    request: Request,
     payload: FixNextStepPayload | None = None,
     next_step_date_iso: str | None = Query(None),
-    org_id: str = "TNT-001"
+    org_id: str | None = None
 ):
     """Fixes the next step date, clears the SLA risk, and broadcasts real-time WebSocket update."""
+    # Tenant comes from auth context; a non-admin cannot target (or broadcast into) another tenant.
+    org_id = get_authenticated_tenant_or_verify_admin(request, org_id)
     target_date = next_step_date_iso or (payload.next_step_date if payload else None)
     if not target_date:
         target_date = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat().split("T")[0]
 
-    deals = fetch_deals_from_sheets()
     found = None
-    lookup = get_deals_lookup()
+    lookup = get_deals_lookup(tenant_id=org_id)
     clean_id = deal_id.upper().strip()
     if clean_id in lookup:
         found = lookup[clean_id]

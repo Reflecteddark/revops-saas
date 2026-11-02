@@ -683,8 +683,15 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
 # ENDPOINTS
 # ============================================================================
 
+def _authorized_tenant(request: Request, requested: str | None) -> str:
+    """Tenant from JWT (Bearer/cookie) or admin auth; 401/403 for anonymous or cross-tenant callers."""
+    from .deals_router import get_authenticated_tenant_or_verify_admin
+    return get_authenticated_tenant_or_verify_admin(request, requested)
+
+
 @router.get("")
 async def get_settings(
+    request: Request,
     tenant_id: str | None = None,
     tenant: str | None = None,
     auto_sync: bool = False,
@@ -693,7 +700,7 @@ async def get_settings(
     Returns 28 business configuration parameters from Google Sheets (⚙️ Настройки) for given tenant.
     Optionally triggers auto-sync from CRM if auto_sync=True.
     """
-    clean_tenant = (tenant_id or tenant or "TNT-001").strip().upper()
+    clean_tenant = _authorized_tenant(request, tenant_id or tenant)
     if auto_sync:
         try:
             from ..services.crm_users_sync import sync_tenant_crm_managers
@@ -706,6 +713,7 @@ async def get_settings(
 
 @router.post("/managers/sync")
 async def sync_managers(
+    request: Request,
     tenant_id: str | None = Query(None),
     tenant: str | None = Query(None),
 ):
@@ -714,7 +722,7 @@ async def sync_managers(
     Safe non-destructive sync: preserves existing manager targets and plans,
     adds new team members with standard RevOps presets.
     """
-    clean_tenant = (tenant_id or tenant or "TNT-001").strip().upper()
+    clean_tenant = _authorized_tenant(request, tenant_id or tenant)
     from ..services.crm_users_sync import sync_tenant_crm_managers
     res = await sync_tenant_crm_managers(clean_tenant)
 
@@ -734,18 +742,20 @@ async def sync_managers(
 
 
 @router.post("/tenants/{tenant_id}/managers/sync")
-async def sync_tenant_managers_route(tenant_id: str):
-    return await sync_managers(tenant_id=tenant_id)
+async def sync_tenant_managers_route(tenant_id: str, request: Request):
+    return await sync_managers(request=request, tenant_id=tenant_id)
 
 
 @router.post("")
 async def save_settings(
+    request: Request,
     payload: SettingsPayload
 ):
     """
     Updates business settings in Google Sheets (⚙️ Настройки and ⚙️ Модули_Интеграции)
     and broadcasts the update to all active web clients via WebSocket.
     """
+    payload.tenant_id = _authorized_tenant(request, payload.tenant_id)
     success = save_settings_to_sheets(payload)
     fresh_settings = fetch_settings_from_sheets(tenant_id=payload.tenant_id)
 
@@ -767,7 +777,8 @@ async def save_settings(
 async def patch_manager_kpis(
     manager_id: str,
     payload: ManagerKpiPatch,
-    tenant_id: str = Query("TNT-001"),
+    request: Request,
+    tenant_id: str | None = Query(None),
 ):
     """
     Granular update of manager personal KPI targets:
@@ -794,7 +805,7 @@ async def patch_manager_kpis(
     if payload.next_step_target_pct is not None and not (0 <= payload.next_step_target_pct <= 100):
         raise HTTPException(status_code=422, detail="Next Step % должен быть в диапазоне 0..100%")
 
-    clean_tenant = tenant_id.strip().upper()
+    clean_tenant = _authorized_tenant(request, tenant_id)
     from ..tenant_registry import load_tenants_registry, save_tenants_registry
     reg = load_tenants_registry()
     target_tenant = None
@@ -856,8 +867,9 @@ async def patch_tenant_manager_kpis(
     tenant_id: str,
     manager_id: str,
     payload: ManagerKpiPatch,
+    request: Request,
 ):
-    return await patch_manager_kpis(manager_id=manager_id, payload=payload, tenant_id=tenant_id)
+    return await patch_manager_kpis(manager_id=manager_id, payload=payload, request=request, tenant_id=tenant_id)
 
 def get_current_user_or_admin(
     request: Request,
