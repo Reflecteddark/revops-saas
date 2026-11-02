@@ -8,7 +8,7 @@
  */
 
 import * as React from 'react';
-import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
+import { CALL_SCORE_THRESHOLDS, getCallScoreBand } from '@/lib/thresholds';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -104,31 +104,36 @@ const callColumns: ColumnDef<Call, unknown>[] = [
     accessorKey: 'status',
     header: 'Статус',
     cell: ({ row }) => {
-      const status = row.original.status || 'unknown';
-      const label = row.original.status_label || status;
+      const call = row.original;
+      const rawScore = call.score ?? (call as any)?.overall_score;
 
-      if (status === 'won') {
-        return (
-          <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            {label}
-          </span>
-        );
-      }
-
-      if (status === 'lost' || status === 'fake_yes') {
-        return (
-          <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 ring-1 ring-inset ring-rose-500/20">
-            <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-            {label}
-          </span>
-        );
-      }
+      // The badge is derived from the score with the same thresholds as the score colour
+      // (lib/thresholds.ts). The backend status_label uses its own cut-off (>=10 AND next step),
+      // which used to paint a "СЛИВ" badge next to a green 9-12 score.
+      const band = call.status === 'fake_yes' ? 'fake_yes' : getCallScoreBand(rawScore);
+      const BADGES = {
+        high: { cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-500/20', dot: 'bg-emerald-500', text: CALL_SCORE_THRESHOLDS.high.label },
+        mid: { cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-500/20', dot: 'bg-amber-500', text: CALL_SCORE_THRESHOLDS.mid.label },
+        low: { cls: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 ring-rose-500/20', dot: 'bg-rose-500', text: CALL_SCORE_THRESHOLDS.low.label },
+        fake_yes: { cls: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 ring-rose-500/20', dot: 'bg-rose-500', text: call.status_label || 'Фейковое «да»' },
+        unrated: { cls: 'bg-hover text-secondary ring-border-subtle', dot: 'bg-tertiary', text: 'Не оценён' },
+      } as const;
+      const badge = BADGES[band];
 
       return (
-        <span className="inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium bg-hover text-secondary ring-1 ring-inset ring-border-subtle">
-          <span className="h-1.5 w-1.5 rounded-full bg-tertiary" />
-          {label}
+        <span className="inline-flex items-center gap-2">
+          <span
+            data-testid="call-status-badge"
+            className={`inline-flex h-5 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium ring-1 ring-inset ${badge.cls}`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+            {badge.text}
+          </span>
+          {band !== 'unrated' && call.next_step === 0 && (
+            <span className="text-[11px] text-tertiary" data-testid="call-no-next-step">
+              нет Next Step
+            </span>
+          )}
         </span>
       );
     },
