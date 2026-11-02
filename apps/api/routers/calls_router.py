@@ -104,16 +104,7 @@ def get_calls_data_user(
         except Exception:
             pass
 
-    if request.cookies.get("revops_client_auth"):
-        return User(
-            id="client-demo",
-            tenant_id="TNT-001",
-            email="demo_test@ai-rop.ru",
-            full_name="Демо-Клиент",
-            role=UserRole.KAM,
-            is_active=True
-        )
-
+    # The `revops_client_auth` cookie is an opaque, unvalidated string and must never grant tenant access.
     return None
 
 
