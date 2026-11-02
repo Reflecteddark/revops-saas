@@ -530,6 +530,8 @@ def sync_deals_to_database(
             "weighted_amount": norm.get("weighted_amount"),
             "client_grade": norm.get("client_grade", "B"),
             "source": crm_source,
+            # CRM last modification date (YYYY-MM-DD); for won deals ≈ close date. Used for month revenue KPI.
+            "last_stage_change": norm.get("last_stage_change"),
         }
 
         db_deal = db.query(Deal).filter(Deal.id == deal_id).first()

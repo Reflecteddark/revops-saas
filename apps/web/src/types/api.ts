@@ -427,7 +427,13 @@ export interface KpiSummary {
   confidence_score?: number;
   synthesis?: string;
   recommendations?: RecommendationItem[];
+  /** Revenue of deals won in the current month (backend insights.kpi). */
   revenue?: number;
+  won_count?: number;
+  /** YYYY-MM the revenue refers to. */
+  period?: string;
+  /** 'crm_last_stage_change' or 'updated_at_fallback' (won date approximated). */
+  revenue_basis?: string;
   revenue_trend?: number;
   calls_total?: number;
   sla_risk_count?: number;

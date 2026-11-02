@@ -263,6 +263,25 @@ describe('PulsePage', () => {
     expect(await screen.findByText(/план 8\.0M ₽/i)).toBeInTheDocument();
   });
 
+  it('shows month revenue from insights.kpi, not all-time won deals', async () => {
+    vi.mocked(insightsApi.summary).mockResolvedValue({
+      ...mockInsights,
+      kpi: { revenue: 1200000, won_count: 1, period: '2026-11', revenue_basis: 'crm_last_stage_change' },
+    });
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    // An old won deal from a previous month must NOT be counted as this month's revenue.
+    vi.mocked(dealsApi.list).mockResolvedValue([
+      { id: 'D-OLD', title: 'Старая сделка', amount: 9000000, status: 'won', stage: 'Успешно реализовано' } as any,
+    ]);
+
+    renderWithClient(<PulsePage />);
+
+    expect(await screen.findByText('Выручка за месяц')).toBeInTheDocument();
+    const text = document.body.textContent?.replace(/\s/g, '') ?? '';
+    await waitFor(() => expect(document.body.textContent?.replace(/\s/g, '')).toContain('1200000'));
+    expect(text).not.toContain('9000000');
+  });
+
   it('renders pacing indicator and allows switching between department tabs', async () => {
     vi.mocked(insightsApi.summary).mockResolvedValue(mockInsights);
     vi.mocked(callsApi.list).mockResolvedValue(mockCalls);

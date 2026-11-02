@@ -208,13 +208,6 @@ export function PulsePage() {
     return st.includes('закрыт') || st.includes('отказ') || st.includes('не реализован') || String(d.stage_id) === '143' || String(d.stage_id) === '7';
   }, []);
 
-  // Deals won amount strictly from factual CRM deals
-  const dealsWonAmount = React.useMemo(() => {
-    return deals
-      .filter(isWonDeal)
-      .reduce((acc, d) => acc + (d.amount || 0), 0);
-  }, [deals, isWonDeal]);
-
   // Active open deals strictly in progress (excludes won and lost)
   const openDeals = React.useMemo(() => {
     return deals.filter((d) => !isWonDeal(d) && !isLostDeal(d));
@@ -222,9 +215,9 @@ export function PulsePage() {
 
   // SSOT KPIs calculations (Strictly factual, Zero Mock)
   const kpi = insights?.kpi;
-  const revenue = Number(
-    kpi?.revenue && kpi.revenue > 0 ? kpi.revenue : (dealsWonAmount || 0)
-  );
+  // Month-to-date revenue from the backend only (deals won in the current month).
+  // The deals list is all-time, so summing it here would compare all-time revenue to a monthly plan.
+  const revenue = Number(kpi?.revenue ?? 0);
   const slaRiskCount = kpi?.sla_risk_count ?? kpi?.sla_at_risk_count ?? 0;
 
   // Active open pipeline sum in progress (excludes won revenue and lost deals)
@@ -549,7 +542,7 @@ export function PulsePage() {
       {/* 5 Primary KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         <KpiCard
-          title="Выручка факт"
+          title="Выручка за месяц"
           value={isLoading ? 0 : revenue.toLocaleString('ru-RU')}
           unit="₽"
           trend={kpi?.revenue_trend ? { direction: kpi.revenue_trend > 0 ? 'up' : 'down', value: Math.abs(kpi.revenue_trend), label: 'vs прошлый период' } : undefined}
