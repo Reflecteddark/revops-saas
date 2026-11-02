@@ -103,6 +103,18 @@ class ModuleToggle(BaseModel):
     description: str | None = ""
 
 
+class AutonomySettings(BaseModel):
+    allow_crm_mutations: bool = False
+    enable_telegram_notifications: bool = False
+    allow_client_communication: bool = False
+
+
+class AutonomyPatchPayload(BaseModel):
+    allow_crm_mutations: bool | None = None
+    enable_telegram_notifications: bool | None = None
+    allow_client_communication: bool | None = None
+
+
 class SettingsPayload(BaseModel):
     tenant_id: str = "TNT-001"
     general: GeneralSettings | None = None
@@ -111,6 +123,7 @@ class SettingsPayload(BaseModel):
     loss_reasons: list[LossReason] | None = None
     telegram: TelegramSettings | None = None
     modules: list[ModuleToggle] | None = None
+    autonomy: AutonomySettings | None = None
 
 
 def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool = False) -> dict[str, Any]:
@@ -404,6 +417,11 @@ def get_fallback_settings() -> dict[str, Any]:
             "dispatcher_schedule": "Каждый час (L1/L2/L3) + 09:15",
             "dispatcher_status": True
         },
+        "autonomy": {
+            "allow_crm_mutations": False,
+            "enable_telegram_notifications": False,
+            "allow_client_communication": False
+        },
         "modules": [
             {"code": "1.1", "name": "Развернутое примечание-аудит (13 стандартов)", "category": "Аудит", "status": True, "description": "Формирует структурированное примечание в сделку"},
             {"code": "1.2", "name": "Числовое поле «Оценка ИИ (0–100)»", "category": "Аудит", "status": True, "description": "Записывает балл качества речи в поле сделки"},
@@ -493,7 +511,12 @@ def get_tenant_settings_or_fallback(tenant_id: str = "TNT-001") -> dict[str, Any
         "managers": managers,
         "loss_reasons": loss_reasons,
         "telegram": telegram,
-        "modules": modules
+        "modules": modules,
+        "autonomy": {
+            "allow_crm_mutations": bool((cfg.get("autonomy") or {}).get("allow_crm_mutations", cfg.get("allow_crm_mutations", False))),
+            "enable_telegram_notifications": bool((cfg.get("autonomy") or {}).get("enable_telegram_notifications", cfg.get("enable_telegram_notifications", False))),
+            "allow_client_communication": bool((cfg.get("autonomy") or {}).get("allow_client_communication", cfg.get("allow_client_communication", False)))
+        }
     }
 
 
@@ -829,4 +852,84 @@ async def patch_tenant_manager_kpis(
     payload: ManagerKpiPatch,
 ):
     return await patch_manager_kpis(manager_id=manager_id, payload=payload, tenant_id=tenant_id)
+
+@router.get("/autonomy")
+def get_autonomy_settings(tenant_id: str = Query("TNT-001")):
+    """Returns autonomy and intervention levels for the tenant (Passive Advisor by default)."""
+    clean_tenant = (tenant_id or "TNT-001").strip()
+    from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
+    from packages.database.session import SessionLocal
+    db = SessionLocal()
+    try:
+        cfg = TenantPolicyRegistry.get_config(clean_tenant, db=db)
+        return {
+            "tenant_id": clean_tenant,
+            "allow_crm_mutations": cfg.allow_crm_mutations,
+            "enable_telegram_notifications": cfg.enable_telegram_notifications,
+            "allow_client_communication": cfg.allow_client_communication,
+            "mode": "autonomous" if cfg.allow_crm_mutations else "passive_advisor",
+        }
+    finally:
+        db.close()
+
+
+@router.patch("/autonomy")
+def patch_autonomy_settings(
+    payload: AutonomyPatchPayload,
+    tenant_id: str = Query("TNT-001"),
+):
+    """Updates AI autonomy permissions in the tenant's Personal Cabinet (LK)."""
+    clean_tenant = (tenant_id or "TNT-001").strip()
+    from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
+    from packages.database.models import Tenant
+    from packages.database.session import SessionLocal
+
+    db = SessionLocal()
+    try:
+        tenant_obj = db.query(Tenant).filter((Tenant.id == clean_tenant) | (Tenant.slug == clean_tenant)).first()
+        st = dict(tenant_obj.settings or {}) if tenant_obj and tenant_obj.settings else {}
+        auto_block = dict(st.get("autonomy") or {})
+
+        if payload.allow_crm_mutations is not None:
+            auto_block["allow_crm_mutations"] = payload.allow_crm_mutations
+            st["allow_crm_mutations"] = payload.allow_crm_mutations
+        if payload.enable_telegram_notifications is not None:
+            auto_block["enable_telegram_notifications"] = payload.enable_telegram_notifications
+            st["enable_telegram_notifications"] = payload.enable_telegram_notifications
+        if payload.allow_client_communication is not None:
+            auto_block["allow_client_communication"] = payload.allow_client_communication
+            st["allow_client_communication"] = payload.allow_client_communication
+
+        st["autonomy"] = auto_block
+        if tenant_obj:
+            setattr(tenant_obj, 'settings', st)
+            db.commit()
+
+        cfg = TenantPolicyRegistry.get_config(clean_tenant)
+        if payload.allow_crm_mutations is not None:
+            cfg.allow_crm_mutations = payload.allow_crm_mutations
+        if payload.enable_telegram_notifications is not None:
+            cfg.enable_telegram_notifications = payload.enable_telegram_notifications
+        if payload.allow_client_communication is not None:
+            cfg.allow_client_communication = payload.allow_client_communication
+        TenantPolicyRegistry.register_config(cfg)
+
+        return {
+            "status": "UPDATED",
+            "tenant_id": clean_tenant,
+            "allow_crm_mutations": cfg.allow_crm_mutations,
+            "enable_telegram_notifications": cfg.enable_telegram_notifications,
+            "allow_client_communication": cfg.allow_client_communication,
+            "mode": "autonomous" if cfg.allow_crm_mutations else "passive_advisor",
+        }
+    finally:
+        db.close()
+
+
+@router.patch("/tenants/{tenant_id}/autonomy")
+def patch_tenant_autonomy(
+    tenant_id: str,
+    payload: AutonomyPatchPayload,
+):
+    return patch_autonomy_settings(payload=payload, tenant_id=tenant_id)
 

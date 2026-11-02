@@ -44,6 +44,7 @@ from packages.antidrift.models import (
 )
 from packages.antidrift.golden_set.vcr_scenario_generator import VCRScenarioGenerator
 from packages.antidrift.canary.canary_router import canary_router
+from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
 from packages.antidrift.policy_autotune import PolicyAutoTuner
 from packages.antidrift.telemetry.metrics import antidrift_metrics
 from packages.database.session import get_db
@@ -564,28 +565,37 @@ def execute_agent_intent(
             )
             .first()
         )
-        if not active_pending_card:
-            try:
-                dispatch_hitl_approval_card(
-                    approval_id=str(approval.approval_id),
-                    tenant_id=tenant_id,
-                    agent_id=payload.agent_id,
-                    harness_version=payload.harness_version,
-                    intent_name=payload.intent,
-                    risk_level=risk_result.risk_level,
-                    risk_score=payload.risk_score,
-                    reasons=risk_result.reasons,
-                    proposed_actions=[a.model_dump(mode="json") for a in payload.proposed_actions],
-                    client_reply_text=payload.proposed_client_reply.text if payload.proposed_client_reply else None,
-                    client_message=client_message,
-                )
-            except Exception as e:
-                logger.error(f"Error dispatching HITL Telegram card: {e}")
-        else:
+
+        # Opt-In Guard: Do NOT dispatch Telegram cards if disabled in tenant settings (Silent by default)
+        tenant_cfg = TenantPolicyRegistry.get_config(tenant_id, db=db)
+        if not tenant_cfg.enable_telegram_notifications:
             logger.info(
-                f"[HITL_DEDUPLICATED] Session '{payload.session_id}' already has active approval card "
-                f"'{active_pending_card.approval_id}'. Suppressed duplicate Telegram dispatch."
+                f"[HITL_TELEGRAM_SUPPRESSED] Tenant '{tenant_id}' has Telegram alerts disabled in settings. "
+                f"Approval card '{approval.approval_id}' registered in web LK queue only."
             )
+        else:
+            if not active_pending_card:
+                try:
+                    dispatch_hitl_approval_card(
+                        approval_id=str(approval.approval_id),
+                        tenant_id=tenant_id,
+                        agent_id=payload.agent_id,
+                        harness_version=payload.harness_version,
+                        intent_name=payload.intent,
+                        risk_level=risk_result.risk_level,
+                        risk_score=payload.risk_score,
+                        reasons=risk_result.reasons,
+                        proposed_actions=[a.model_dump(mode="json") for a in payload.proposed_actions],
+                        client_reply_text=payload.proposed_client_reply.text if payload.proposed_client_reply else None,
+                        client_message=client_message,
+                    )
+                except Exception as e:
+                    logger.error(f"Error dispatching HITL Telegram card: {e}")
+            else:
+                logger.info(
+                    f"[HITL_DEDUPLICATED] Session '{payload.session_id}' already has active approval card "
+                    f"'{active_pending_card.approval_id}'. Suppressed duplicate Telegram dispatch."
+                )
 
         return {
             "status": "AWAITING_APPROVAL",
@@ -638,6 +648,46 @@ def execute_agent_intent(
     db.flush()
 
     executed_actions: list[dict[str, Any]] = []
+
+    # 6. Approved Path: Check Tenant Autonomy Level (Passive Read-Only by Default)
+    tenant_cfg = TenantPolicyRegistry.get_config(tenant_id, db=db)
+    is_crm_mutation_allowed = tenant_cfg.allow_crm_mutations
+    is_client_comm_allowed = tenant_cfg.allow_client_communication
+
+    if not is_crm_mutation_allowed:
+        logger.info(
+            f"[PASSIVE_ADVISOR_MODE] Tenant '{tenant_id}' has CRM mutations disabled (allow_crm_mutations=False). "
+            f"Actions for trace '{payload.trace_id}' saved as recommendations only without touching CRM."
+        )
+        for action in payload.proposed_actions:
+            if policy_result.action_decisions.get(action.action_id) == "BLOCK":
+                continue
+            executed_actions.append({
+                "action_id": action.action_id,
+                "status": "RECOMMENDED_ONLY",
+                "target_type": action.target_type,
+                "target_id": action.target_id,
+                "payload": action.payload,
+                "notice": "CRM mutation skipped: tenant is in Passive Read-Only mode. Enable 'allow_crm_mutations' in Settings to execute.",
+            })
+        db.commit()
+        return {
+            "status": "RECOMMENDED_ONLY",
+            "trace_id": payload.trace_id,
+            "execution_mode": "passive_advisor",
+            "intent": payload.intent,
+            "actions_executed": executed_actions,
+            "approved_client_reply": (
+                payload.proposed_client_reply.text
+                if (payload.proposed_client_reply and is_client_comm_allowed)
+                else None
+            ),
+            "client_reply_draft": (
+                payload.proposed_client_reply.text
+                if (payload.proposed_client_reply and not is_client_comm_allowed)
+                else None
+            ),
+        }
 
     for action in payload.proposed_actions:
         # Check action decision from policy engine
@@ -700,7 +750,16 @@ def execute_agent_intent(
         "execution_mode": resolved_mode.value if isinstance(resolved_mode, ExecutionMode) else (resolved_mode or "prod"),
         "intent": payload.intent,
         "actions_executed": executed_actions,
-        "approved_client_reply": payload.proposed_client_reply.text if payload.proposed_client_reply else None,
+        "approved_client_reply": (
+            payload.proposed_client_reply.text
+            if (payload.proposed_client_reply and is_client_comm_allowed)
+            else None
+        ),
+        "client_reply_draft": (
+            payload.proposed_client_reply.text
+            if (payload.proposed_client_reply and not is_client_comm_allowed)
+            else None
+        ),
     }
 
 

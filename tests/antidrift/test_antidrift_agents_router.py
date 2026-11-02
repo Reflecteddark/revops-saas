@@ -39,8 +39,18 @@ client = TestClient(app)
 
 @pytest.fixture
 def dynamic_tenant_id():
-    """Generates an isolated dynamic tenant ID to guarantee multi-tenant safety."""
-    return f"tenant_{uuid.uuid4().hex[:8]}"
+    """Generates an isolated dynamic tenant ID configured for full execution tests."""
+    t_id = f"tenant_{uuid.uuid4().hex[:8]}"
+    from packages.antidrift.contracts.policy_config import TenantPolicyConfig, TenantPolicyRegistry
+    TenantPolicyRegistry.register_config(
+        TenantPolicyConfig(
+            tenant_id=t_id,
+            allow_crm_mutations=True,
+            allow_client_communication=True,
+            enable_telegram_notifications=True,
+        )
+    )
+    return t_id
 
 
 @pytest.fixture

@@ -343,6 +343,37 @@ export const settingsApi = {
     return settingsApi.update({ tenant_id: tenantId, modules });
   },
 
+  getAutonomy: async (
+    tenantId: string
+  ): Promise<{
+    tenant_id: string;
+    allow_crm_mutations: boolean;
+    enable_telegram_notifications: boolean;
+    allow_client_communication: boolean;
+    mode: string;
+  }> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.get('/settings/autonomy', {
+      params: { tenant_id: effectiveTenant },
+    });
+    return res.data;
+  },
+
+  updateAutonomy: async (
+    tenantId: string,
+    autonomy: {
+      allow_crm_mutations?: boolean;
+      enable_telegram_notifications?: boolean;
+      allow_client_communication?: boolean;
+    }
+  ): Promise<any> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.patch('/settings/autonomy', autonomy, {
+      params: { tenant_id: effectiveTenant },
+    });
+    return res.data;
+  },
+
   patchManagerKpi: async (
     tenantId: string,
     managerId: string,

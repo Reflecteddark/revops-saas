@@ -96,6 +96,27 @@ class Tenant(Base):
             return self.settings.get("status", "active")
         return "active"
 
+    @property
+    def allow_crm_mutations(self) -> bool:
+        """Opt-In: AI CRM writes are strictly disabled by default (Passive Read-Only mode)."""
+        if self.settings and isinstance(self.settings, dict):
+            return bool(self.settings.get("allow_crm_mutations", False))
+        return False
+
+    @property
+    def enable_telegram_notifications(self) -> bool:
+        """Opt-In: Telegram proactive push notifications are strictly disabled by default."""
+        if self.settings and isinstance(self.settings, dict):
+            return bool(self.settings.get("enable_telegram_notifications", False))
+        return False
+
+    @property
+    def allow_client_communication(self) -> bool:
+        """Opt-In: Outbound messaging to customers is strictly disabled by default (drafts only)."""
+        if self.settings and isinstance(self.settings, dict):
+            return bool(self.settings.get("allow_client_communication", False))
+        return False
+
     def to_registry_dict(self) -> dict:
         st: dict = self.settings if isinstance(self.settings, dict) else {}
         res = {

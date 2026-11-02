@@ -39,6 +39,10 @@ class TenantPolicyConfig(BaseModel):
     requires_human_above: float = 300000.0         # Deal amount requiring HITL
     deferment_whitelist_clients: List[str] = Field(default_factory=list) # e.g. ["client_enterprise_99"] (30-45 days)
     whitelist_deferment_days: int = 45
+    # Opt-In Autonomy Guards: All false by default (Passive Advisor Mode)
+    allow_crm_mutations: bool = False              # Must be explicitly enabled in LK to mutate CRM
+    enable_telegram_notifications: bool = False    # Must be explicitly enabled in LK to send Telegram alerts
+    allow_client_communication: bool = False       # Must be explicitly enabled in LK to send messages to clients
     changelog: List[PolicyChangelogEntry] = Field(default_factory=list)
 
     def get_effective_deferment_days(self, client_id: Optional[str] = None) -> int:
@@ -55,11 +59,34 @@ class TenantPolicyRegistry:
     _configs: Dict[str, TenantPolicyConfig] = {}
 
     @classmethod
-    def get_config(cls, tenant_id: str) -> TenantPolicyConfig:
+    def get_config(cls, tenant_id: str, db: Optional[Any] = None) -> TenantPolicyConfig:
         """Retrieves tenant-specific policy configuration or returns safe calibrated defaults."""
         tid = str(tenant_id or "default").strip()
+
+        # Check in DB if session provided
+        db_autonomy: dict[str, bool] = {}
+        if db is not None:
+            try:
+                from packages.database.models import Tenant
+                t = db.query(Tenant).filter(Tenant.id == tid).first()
+                if t and t.settings and isinstance(t.settings, dict):
+                    st = t.settings
+                    auto_block = st.get("autonomy", {}) if isinstance(st.get("autonomy"), dict) else {}
+                    db_autonomy = {
+                        "allow_crm_mutations": bool(st.get("allow_crm_mutations", auto_block.get("allow_crm_mutations", False))),
+                        "enable_telegram_notifications": bool(st.get("enable_telegram_notifications", auto_block.get("enable_telegram_notifications", False))),
+                        "allow_client_communication": bool(st.get("allow_client_communication", auto_block.get("allow_client_communication", False))),
+                    }
+            except Exception as e:
+                logger.debug(f"Could not load tenant settings from DB: {e}")
+
         if tid in cls._configs:
-            return cls._configs[tid]
+            cfg = cls._configs[tid]
+            if db_autonomy:
+                cfg.allow_crm_mutations = db_autonomy["allow_crm_mutations"]
+                cfg.enable_telegram_notifications = db_autonomy["enable_telegram_notifications"]
+                cfg.allow_client_communication = db_autonomy["allow_client_communication"]
+            return cfg
 
         # Check tenant policy JSON file if exists
         cfg_path = Path("config") / f"tenant_policy_{tid}.json"
@@ -67,24 +94,31 @@ class TenantPolicyRegistry:
             try:
                 data = json.loads(cfg_path.read_text(encoding="utf-8"))
                 cfg = TenantPolicyConfig(**data)
+                if db_autonomy:
+                    cfg.allow_crm_mutations = db_autonomy["allow_crm_mutations"]
+                    cfg.enable_telegram_notifications = db_autonomy["enable_telegram_notifications"]
+                    cfg.allow_client_communication = db_autonomy["allow_client_communication"]
                 cls._configs[tid] = cfg
                 return cfg
             except Exception as e:
                 logger.warning(f"Could not load tenant policy from {cfg_path}: {e}")
 
-        # Default calibrated configuration
+        # Default calibrated configuration (Strictly passive / safe by default)
         default_cfg = TenantPolicyConfig(
             tenant_id=tid,
             version="v1.0-default",
             allowed_discount_max=5.0,
             allowed_deferment_days=14,
             requires_human_above=300000.0,
+            allow_crm_mutations=db_autonomy.get("allow_crm_mutations", False),
+            enable_telegram_notifications=db_autonomy.get("enable_telegram_notifications", False),
+            allow_client_communication=db_autonomy.get("allow_client_communication", False),
             changelog=[
                 PolicyChangelogEntry(
                     version="v1.0",
                     changed_at=datetime.now(timezone.utc).isoformat(),
                     author="System Default",
-                    reason="Initial calibrated baseline",
+                    reason="Initial calibrated baseline (Passive Advisor Mode)",
                     diff={"allowed_discount_max": 5.0, "allowed_deferment_days": 14, "requires_human_above": 300000.0},
                 )
             ],

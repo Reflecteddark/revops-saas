@@ -505,3 +505,116 @@ def test_1_3_hitl_approval_role_matrix_guard():
         assert res_rop.json()["status"] == "DECIDED"
     finally:
         db.close()
+
+
+def test_opt_in_autonomy_passive_mode_by_default():
+    """Opt-In: By default, AI is strictly in Passive Advisor Mode (Zero CRM mutations, 0 direct messaging)."""
+    client = TestClient(app)
+    tenant_id = f"tnt_passive_{uuid.uuid4().hex[:6]}"
+
+    proposal = {
+        "trace_id": f"trc_passive_{uuid.uuid4().hex[:6]}",
+        "session_id": f"ses_passive_{uuid.uuid4().hex[:6]}",
+        "tenant_id": tenant_id,
+        "agent_id": "sales_advisor",
+        "harness_version": "v1.0",
+        "policy_version": "v1.0",
+        "channel": "api",
+        "source_event_id": f"evt_passive_{uuid.uuid4().hex[:6]}",
+        "intent": "UPDATE_DEAL_NEXT_STEP",
+        "context_refs": {"deal_id": "deal_passive_1"},
+        "capability_scopes": ["crm.read", "crm.set_field"],
+        "proposed_actions": [
+            {
+                "action_type": "crm_set_field",
+                "target_type": "deal",
+                "target_id": "deal_passive_1",
+                "payload": {"next_step": "Отправить КП повторно"},
+            }
+        ],
+        "proposed_client_reply": {"text": "Отправляю вам обновленное коммерческое предложение.", "tone": "business"},
+    }
+
+    # Execute intent with passive default
+    resp = client.post("/api/v1/agents/execute", json=proposal)
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # 1. Action is marked as RECOMMENDATION ONLY without mutating CRM
+    assert data["status"] == "RECOMMENDED_ONLY"
+    assert data["execution_mode"] == "passive_advisor"
+    assert len(data["actions_executed"]) == 1
+    assert data["actions_executed"][0]["status"] == "RECOMMENDED_ONLY"
+    assert "Passive Read-Only mode" in data["actions_executed"][0]["notice"]
+
+    # 2. Client communication is kept as DRAFT ONLY, not sent to customer channel
+    assert data["approved_client_reply"] is None
+    assert data["client_reply_draft"] == "Отправляю вам обновленное коммерческое предложение."
+
+
+def test_opt_in_autonomy_multi_tenant_isolation():
+    """Opt-In Multi-Tenant Isolation: Tenant B enabling mutations NEVER affects Tenant A (remains passive)."""
+    client = TestClient(app)
+    tenant_a = f"tnt_a_{uuid.uuid4().hex[:6]}"
+    tenant_b = f"tnt_b_{uuid.uuid4().hex[:6]}"
+
+    # 1. Enable mutations only for Tenant B via LK Settings API
+    patch_res = client.patch(
+        f"/api/v1/settings/autonomy?tenant_id={tenant_b}",
+        json={
+            "allow_crm_mutations": True,
+            "enable_telegram_notifications": True,
+            "allow_client_communication": True,
+        },
+    )
+    assert patch_res.status_code == 200
+    assert patch_res.json()["allow_crm_mutations"] is True
+    assert patch_res.json()["mode"] == "autonomous"
+
+    # 2. Verify Tenant A settings remain strictly passive
+    get_a = client.get(f"/api/v1/settings/autonomy?tenant_id={tenant_a}")
+    assert get_a.status_code == 200
+    assert get_a.json()["allow_crm_mutations"] is False
+    assert get_a.json()["mode"] == "passive_advisor"
+
+    # 3. Tenant B execution performs mutations
+    proposal_b = {
+        "trace_id": f"trc_b_{uuid.uuid4().hex[:6]}",
+        "session_id": f"ses_b_{uuid.uuid4().hex[:6]}",
+        "tenant_id": tenant_b,
+        "agent_id": "sales_bot",
+        "harness_version": "v1.0",
+        "policy_version": "v1.0",
+        "channel": "api",
+        "source_event_id": f"evt_b_{uuid.uuid4().hex[:6]}",
+        "intent": "UPDATE_DEAL_NEXT_STEP",
+        "context_refs": {"deal_id": "deal_b_1"},
+        "capability_scopes": ["crm.read", "crm.set_field"],
+        "proposed_actions": [
+            {
+                "action_type": "crm_set_field",
+                "target_type": "deal",
+                "target_id": "deal_b_1",
+                "payload": {"next_step": "Звонок клиенту"},
+            }
+        ],
+        "proposed_client_reply": {"text": "Добрый день, связался с вами.", "tone": "business"},
+    }
+    resp_b = client.post("/api/v1/agents/execute", json=proposal_b)
+    assert resp_b.status_code == 200
+    assert resp_b.json()["status"] == "EXECUTED"
+    assert resp_b.json()["approved_client_reply"] == "Добрый день, связался с вами."
+
+    # 4. Tenant A execution strictly remains in passive advisor mode
+    proposal_a = dict(proposal_b)
+    proposal_a["tenant_id"] = tenant_a
+    proposal_a["trace_id"] = f"trc_a_{uuid.uuid4().hex[:6]}"
+    proposal_a["session_id"] = f"ses_a_{uuid.uuid4().hex[:6]}"
+    proposal_a["source_event_id"] = f"evt_a_{uuid.uuid4().hex[:6]}"
+
+    resp_a = client.post("/api/v1/agents/execute", json=proposal_a)
+    assert resp_a.status_code == 200
+    assert resp_a.json()["status"] == "RECOMMENDED_ONLY"
+    assert resp_a.json()["execution_mode"] == "passive_advisor"
+    assert resp_a.json()["approved_client_reply"] is None
+    assert resp_a.json()["client_reply_draft"] == "Добрый день, связался с вами."

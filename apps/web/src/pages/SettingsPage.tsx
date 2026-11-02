@@ -28,6 +28,7 @@ import {
   Trash2,
   UserPlus,
   X,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   Card,
@@ -97,6 +98,9 @@ export function SettingsPage() {
   const [ceoChatId, setCeoChatId] = useState<string>('');
   const [teamChatId, setTeamChatId] = useState<string>('');
   const [dispatcherStatus, setDispatcherStatus] = useState<boolean>(true);
+  const [allowCrmMutations, setAllowCrmMutations] = useState<boolean>(false);
+  const [enableTelegramNotifications, setEnableTelegramNotifications] = useState<boolean>(false);
+  const [allowClientCommunication, setAllowClientCommunication] = useState<boolean>(false);
   const [editableModules, setEditableModules] = useState<ModuleFlag[]>([]);
   const [hasAutoSynced, setHasAutoSynced] = useState<boolean>(false);
 
@@ -136,6 +140,11 @@ export function SettingsPage() {
       }
       if (settings.modules && settings.modules.length > 0) {
         setEditableModules(settings.modules);
+      }
+      if (settings.autonomy) {
+        setAllowCrmMutations(Boolean(settings.autonomy.allow_crm_mutations));
+        setEnableTelegramNotifications(Boolean(settings.autonomy.enable_telegram_notifications));
+        setAllowClientCommunication(Boolean(settings.autonomy.allow_client_communication));
       }
     }
   }, [settings]);
@@ -266,6 +275,28 @@ export function SettingsPage() {
     onError: (err: Error) => {
       setSaveStatus({
         text: `Ошибка сохранения настроек Telegram: ${err.message}`,
+        type: 'error',
+      });
+    },
+  });
+
+  const saveAutonomyMutation = useMutation({
+    mutationFn: (autonomyPayload: {
+      allow_crm_mutations: boolean;
+      enable_telegram_notifications: boolean;
+      allow_client_communication: boolean;
+    }) => settingsApi.updateAutonomy(tenantId!, autonomyPayload),
+    onSuccess: () => {
+      setSaveStatus({
+        text: '✓ Параметры автономии и вмешательства ИИ успешно сохранены!',
+        type: 'success',
+      });
+      queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
+      setTimeout(() => setSaveStatus(null), 4000);
+    },
+    onError: (err: Error) => {
+      setSaveStatus({
+        text: `Ошибка сохранения параметров автономии: ${err.message}`,
         type: 'error',
       });
     },
@@ -552,13 +583,20 @@ export function SettingsPage() {
       )}
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid h-auto w-full grid-cols-2 p-1 sm:w-auto sm:grid-cols-5">
+        <TabsList className="grid h-auto w-full grid-cols-2 p-1 sm:w-auto sm:grid-cols-6">
           <TabsTrigger
             value="general"
             data-testid="tab-general"
             className="text-xs"
           >
             Общие
+          </TabsTrigger>
+          <TabsTrigger
+            value="autonomy"
+            data-testid="tab-autonomy"
+            className="text-xs"
+          >
+            Автономия ИИ
           </TabsTrigger>
           <TabsTrigger
             value="stages"
@@ -774,6 +812,115 @@ export function SettingsPage() {
         {/* ========================================================================= */}
         {/* 2. Stages Tab */}
         {/* ========================================================================= */}
+        <TabsContent value="autonomy" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <span>Автономия ИИ & Режим вмешательства в CRM (Zero-Touch Policy)</span>
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Управление правами доступа ИИ-ревизора. По умолчанию включен безопасный пассивный режим (только аудит и рекомендации).
+                  </CardDescription>
+                </div>
+                <Badge
+                  variant={allowCrmMutations ? "default" : "outline"}
+                  className="w-fit text-xs"
+                >
+                  {allowCrmMutations ? "🟢 Автономный режим" : "🔒 Безопасный пассивный режим"}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-2">
+              <div className="space-y-4 rounded-lg border border-subtle bg-muted/20 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="crm-mutations-toggle" className="text-sm font-semibold cursor-pointer">
+                      1. Запись и мутации в CRM (amoCRM / Bitrix24)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {allowCrmMutations
+                        ? "ВКЛЮЧЕНО: ИИ разрешено менять поля, двигать этапы сделок и ставить задачи в CRM."
+                        : "🔒 ВЫКЛЮЧЕНО (По умолчанию): ИИ работает строго в режиме чтения. Все действия формируются как рекомендации в ЛК без изменений в CRM."}
+                    </p>
+                  </div>
+                  <input
+                    id="crm-mutations-toggle"
+                    data-testid="crm-mutations-toggle"
+                    type="checkbox"
+                    checked={allowCrmMutations}
+                    onChange={(e) => setAllowCrmMutations(e.target.checked)}
+                    className="h-5 w-5 rounded border-subtle text-primary cursor-pointer accent-primary"
+                  />
+                </div>
+
+                <div className="border-t border-subtle pt-4 flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="telegram-notifications-toggle" className="text-sm font-semibold cursor-pointer">
+                      2. Оповещения и согласования в Telegram (HITL)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {enableTelegramNotifications
+                        ? "ВКЛЮЧЕНО: Карточки подтверждения рискованных действий отправляются РОПу в Telegram."
+                        : "🔕 ВЫКЛЮЧЕНО (Тихий режим): Никаких сообщений в Telegram не отправляется. Согласования отображаются только в веб-очереди ЛК."}
+                    </p>
+                  </div>
+                  <input
+                    id="telegram-notifications-toggle"
+                    data-testid="telegram-notifications-toggle"
+                    type="checkbox"
+                    checked={enableTelegramNotifications}
+                    onChange={(e) => setEnableTelegramNotifications(e.target.checked)}
+                    className="h-5 w-5 rounded border-subtle text-primary cursor-pointer accent-primary"
+                  />
+                </div>
+
+                <div className="border-t border-subtle pt-4 flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="client-communication-toggle" className="text-sm font-semibold cursor-pointer">
+                      3. Прямая коммуникация с клиентами
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {allowClientCommunication
+                        ? "ВКЛЮЧЕНО: ИИ разрешено отправлять согласованные сообщения клиентам."
+                        : "🛑 ВЫКЛЮЧЕНО (По умолчанию): ИИ генерирует только черновики ответов для менеджера. Прямая отправка во внешние чаты заблокирована."}
+                    </p>
+                  </div>
+                  <input
+                    id="client-communication-toggle"
+                    data-testid="client-communication-toggle"
+                    type="checkbox"
+                    checked={allowClientCommunication}
+                    onChange={(e) => setAllowClientCommunication(e.target.checked)}
+                    className="h-5 w-5 rounded border-subtle text-primary cursor-pointer accent-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  data-testid="save-autonomy-btn"
+                  size="sm"
+                  disabled={saveAutonomyMutation.isPending}
+                  onClick={() =>
+                    saveAutonomyMutation.mutate({
+                      allow_crm_mutations: allowCrmMutations,
+                      enable_telegram_notifications: enableTelegramNotifications,
+                      allow_client_communication: allowClientCommunication,
+                    })
+                  }
+                  className="gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Сохранить параметры автономии</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="stages" className="mt-4 space-y-4">
           <Card>
             <CardHeader className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">

@@ -366,6 +366,12 @@ export interface ModuleFlag {
   description: string;
 }
 
+export interface AutonomyConfig {
+  allow_crm_mutations: boolean;
+  enable_telegram_notifications: boolean;
+  allow_client_communication: boolean;
+}
+
 export interface Settings {
   status: string;
   source: string;
@@ -377,6 +383,7 @@ export interface Settings {
   loss_reasons: LossReason[];
   telegram: TelegramConfig;
   modules: ModuleFlag[];
+  autonomy?: AutonomyConfig;
 }
 
 export interface CrmSyncManagersResponse {
