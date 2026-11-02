@@ -56,3 +56,6 @@ calls_to_upload/
 # Auto-generated VCR test artifacts from local test runs
 fixtures/vcr/auto_*
 tests/golden_set/*/auto_*
+
+# Runtime client accounts (login hashes) - never commit
+apps/api/data/registered_clients.json
