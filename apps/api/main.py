@@ -147,6 +147,20 @@ async def get_protected_openapi(request: Request):
         )
     return response
 
+# Baseline security headers. Framing is restricted only for HTML (clickjacking target);
+# JSON and call recordings stay embeddable (amoCRM plays recordings by URL).
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    if response.headers.get("content-type", "").startswith("text/html"):
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault("Content-Security-Policy", "frame-ancestors 'self'")
+    return response
+
+
 # Latency & Telemetry Middleware (Prometheus & Sentry Observability)
 @app.middleware("http")
 async def track_latency_middleware(request: Request, call_next):
