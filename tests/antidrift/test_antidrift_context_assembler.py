@@ -575,7 +575,7 @@ def test_used_facts_hallucination_blocked(dynamic_tenant_id, dynamic_deal_id):
     result = validate_used_facts_against_context(hallucinated_citations, trusted_ctx)
     assert result.blocked is True
     assert "hallucinated citation" in result.reason
-    assert any("GR-03" in v for v in result)
+    assert any("FACT_HALLUCINATION" in v or "GR-03" in v for v in result)
 
 
 def test_used_facts_misquote_blocked(dynamic_tenant_id, dynamic_deal_id):
@@ -597,7 +597,7 @@ def test_used_facts_misquote_blocked(dynamic_tenant_id, dynamic_deal_id):
     result = validate_used_facts_against_context(misquoted_citations, trusted_ctx)
     assert result.blocked is True
     assert "misquoted" in result.reason
-    assert any("GR-03" in v for v in result)
+    assert any("FACT_MISQUOTE" in v or "GR-03" in v for v in result)
 
 
 
@@ -815,7 +815,7 @@ def test_context_freshness_ttl(dynamic_tenant_id, dynamic_deal_id):
     assert res_stale.blocked is True
     assert "Context is stale" in res_stale.reason
     assert "TTL is 60s" in res_stale.reason
-    assert "GR-03" in res_stale.reason
+    assert ("CTX_STALE" in res_stale.reason or "STALE_CONTEXT" in res_stale.reason or "GR-03" in res_stale.reason)
 
 
 def test_missing_context_assembled_at_blocked(dynamic_tenant_id, dynamic_deal_id):
@@ -880,7 +880,7 @@ def test_cross_session_replay_blocked(dynamic_tenant_id, dynamic_deal_id):
     res = IntentValidator.validate_against_trusted_context(attacker_intent, ctx)
     assert res.blocked is True
     assert "Cross-session replay detected" in res.reason
-    assert "GR-03" in res.reason
+    assert ("CTX_REPLAY" in res.reason or "GR-03" in res.reason)
 
 
 def test_hard_failure_rate_limiter():

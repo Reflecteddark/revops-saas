@@ -127,6 +127,7 @@ def assemble_context_endpoint(
             allowed_bonus_rub=req.allowed_bonus_rub,
             allow_bonuses=req.allow_bonuses,
             allowed_free_services=req.allowed_free_services,
+            enforce_policy_ceilings=True,
         )
     except ContextUnavailableError as e:
         logger.error(f"Context assemble error: {e}")
@@ -235,15 +236,9 @@ def execute_agent_intent(
 
     # 1.5. Layer 1.5: Trusted Context & Anti-Hallucination Fact-Check (Sprint 1 & Audit 1.2)
     # Three-mode feature flag: off | monitor | enforce (default: monitor)
-    tc_env = os.getenv("ENABLE_TRUSTED_CONTEXT", "monitor").lower()
-    is_trusted_context_enabled = (
-        tc_env in ("monitor", "enforce", "1", "true")
-        or bool(payload.context_hash)
-    )
-    is_enforcing = (
-        tc_env in ("enforce", "1", "true")
-        or bool(payload.context_hash)
-    )
+    tc_env = os.getenv("ENABLE_TRUSTED_CONTEXT", "monitor").lower().strip()
+    is_trusted_context_enabled = tc_env not in ("0", "false", "off")
+    is_enforcing = tc_env in ("enforce", "1", "true")
     if is_trusted_context_enabled:
         deal_id = str(payload.context_refs.get("deal_id") or "")
         try:

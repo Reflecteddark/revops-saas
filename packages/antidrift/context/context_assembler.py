@@ -170,6 +170,7 @@ def assemble_trusted_context(
     allowed_free_services: Optional[list[str]] = None,
     requires_human_above: Optional[float] = None,
     knowledge_refs: Optional[list[dict[str, Any]]] = None,
+    enforce_policy_ceilings: bool = False,
 ) -> TrustedContext:
     """
     Assembles a verified TrustedContext for a given tenant, deal, and session.
@@ -232,9 +233,19 @@ def assemble_trusted_context(
     if deal_context:
         client_ref = str(deal_context.get("client_id") or deal_context.get("client_name") or deal_context.get("contact_phone") or "")
 
+    effective_max_defer = tenant_cfg.get_effective_deferment_days(client_ref)
     disc_max = allowed_discount_max if allowed_discount_max is not None else tenant_cfg.allowed_discount_max
-    defer_days = allowed_deferment_days if allowed_deferment_days is not None else tenant_cfg.get_effective_deferment_days(client_ref)
+    defer_days = allowed_deferment_days if allowed_deferment_days is not None else effective_max_defer
     human_thresh = requires_human_above if requires_human_above is not None else tenant_cfg.requires_human_above
+
+    # Audit 1.5: Caller inputs can only restrict, NEVER expand beyond tenant policy ceiling
+    if enforce_policy_ceilings:
+        if allowed_discount_max is not None:
+            disc_max = min(float(allowed_discount_max), float(tenant_cfg.allowed_discount_max))
+        if allowed_deferment_days is not None:
+            defer_days = min(int(allowed_deferment_days), int(effective_max_defer))
+        if requires_human_above is not None:
+            human_thresh = min(float(requires_human_above), float(tenant_cfg.requires_human_above))
 
     ctx = TrustedContext(
         tenant_id=clean_tenant_id,

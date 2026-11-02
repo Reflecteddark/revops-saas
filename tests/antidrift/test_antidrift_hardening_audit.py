@@ -29,7 +29,7 @@ from packages.database.session import SessionLocal
 from packages.antidrift.barrier.idempotency import IdempotencyManager
 from packages.antidrift.barrier.validator import IntentValidator
 from packages.antidrift.canary.canary_router import canary_router
-from packages.antidrift.context.context_assembler import TrustedContext
+from packages.antidrift.context.context_assembler import TrustedContext, assemble_trusted_context
 from packages.antidrift.contracts.intent import ActionType, ExecutionMode, VerifiedIntentProposal
 from packages.antidrift.contracts.policy_config import TenantPolicyConfig, TenantPolicyRegistry
 from packages.antidrift.diff.diff_engine import DiffEngine
@@ -667,3 +667,102 @@ def test_audit_x3_endpoints_require_authentication():
     # 5. /agents/approvals without auth -> 401
     res_approvals = client.get("/api/v1/agents/approvals?tenant_id=TNT-001")
     assert res_approvals.status_code == 401
+
+
+def test_1_2_three_mode_trusted_context_governance(monkeypatch):
+    """1.2: monitor mode passes technical context drift with warning; enforce mode blocks immediately; commercial discount blocks in both."""
+    client = TestClient(app)
+    tenant_id = f"tnt_mode_{uuid.uuid4().hex[:6]}"
+
+    # Setup tenant in DB so it's a known tenant
+    db = SessionLocal()
+    from packages.database.models import Tenant
+    try:
+        t = Tenant(id=tenant_id, name=f"Company {tenant_id}", slug=tenant_id, is_active=True, settings={"allow_crm_mutations": True})
+        db.add(t)
+        db.commit()
+    finally:
+        db.close()
+
+    # 1. MONITOR MODE: Technical context mismatch (e.g. invalid context_hash) DOES NOT BLOCK
+    monkeypatch.setenv("ENABLE_TRUSTED_CONTEXT", "monitor")
+    proposal_tech_drift = {
+        "trace_id": f"trc_mon_{uuid.uuid4().hex[:6]}",
+        "session_id": f"ses_mon_{uuid.uuid4().hex[:6]}",
+        "tenant_id": tenant_id,
+        "agent_id": "sales_bot",
+        "harness_version": "v1.0",
+        "policy_version": "v1.0",
+        "channel": "api",
+        "source_event_id": f"evt_mon_{uuid.uuid4().hex[:6]}",
+        "intent": "UPDATE_DEAL_NEXT_STEP",
+        "context_hash": "fabricated_or_mismatched_hash_12345",
+        "context_assembled_at": datetime.now(timezone.utc).isoformat(),
+        "context_refs": {"deal_id": "deal_mon_1"},
+        "capability_scopes": ["crm.read", "crm.set_field"],
+        "proposed_actions": [
+            {
+                "action_type": "crm_set_field",
+                "target_type": "deal",
+                "target_id": "deal_mon_1",
+                "payload": {"next_step": "Отправить презентацию"},
+            }
+        ],
+        "proposed_client_reply": {"text": "Добрый день, направил презентацию на почту.", "tone": "business"},
+    }
+    resp_mon_tech = client.post("/api/v1/agents/execute", json=proposal_tech_drift)
+    assert resp_mon_tech.status_code == 200
+    assert resp_mon_tech.json()["status"] == "EXECUTED"
+
+    # 2. MONITOR MODE: Hard commercial breach (35% unauthorized discount) STILL BLOCKS (safety floor)
+    proposal_mon_discount = dict(proposal_tech_drift)
+    proposal_mon_discount["trace_id"] = f"trc_disc_{uuid.uuid4().hex[:6]}"
+    proposal_mon_discount["source_event_id"] = f"evt_disc_{uuid.uuid4().hex[:6]}"
+    proposal_mon_discount["proposed_client_reply"] = {
+        "text": "Согласовал для вас эксклюзивную скидку 35% от прайса!",
+        "tone": "business",
+    }
+    resp_mon_disc = client.post("/api/v1/agents/execute", json=proposal_mon_discount)
+    assert resp_mon_disc.status_code == 403
+    assert resp_mon_disc.json()["detail"]["verdict"] == "HARD_FAILURE"
+
+    # 3. ENFORCE MODE: Technical context mismatch IS BLOCKED with 422
+    monkeypatch.setenv("ENABLE_TRUSTED_CONTEXT", "enforce")
+    proposal_enforce_drift = dict(proposal_tech_drift)
+    proposal_enforce_drift["trace_id"] = f"trc_enf_{uuid.uuid4().hex[:6]}"
+    proposal_enforce_drift["source_event_id"] = f"evt_enf_{uuid.uuid4().hex[:6]}"
+    resp_enf = client.post("/api/v1/agents/execute", json=proposal_enforce_drift)
+    assert resp_enf.status_code == 422
+
+
+def test_1_5_caller_cannot_expand_policy_ceiling_in_context_assembler():
+    """1.5: Caller input can only tighten constraints, NEVER expand beyond tenant policy ceiling."""
+    tenant_id = f"tnt_ceiling_{uuid.uuid4().hex[:6]}"
+    # Tenant default policy is 5.0% discount and 14 days deferment
+    ctx = assemble_trusted_context(
+        db=None,
+        tenant_id=tenant_id,
+        deal_id="deal_test_123",
+        allowed_discount_max=50.0,     # Attempting to escalate to 50%
+        allowed_deferment_days=90,     # Attempting to escalate to 90 days
+        requires_human_above=1000000.0, # Attempting to escalate threshold to 1M
+        enforce_policy_ceilings=True,
+    )
+    # Must be clamped down to tenant defaults
+    assert ctx.allowed_discount_max == 5.0
+    assert ctx.allowed_deferment_days == 14
+    assert ctx.requires_human_above == 300000.0
+
+    # But tighter constraints ARE respected
+    ctx_tighter = assemble_trusted_context(
+        db=None,
+        tenant_id=tenant_id,
+        deal_id="deal_test_123",
+        allowed_discount_max=2.0,
+        allowed_deferment_days=7,
+        requires_human_above=100000.0,
+        enforce_policy_ceilings=True,
+    )
+    assert ctx_tighter.allowed_discount_max == 2.0
+    assert ctx_tighter.allowed_deferment_days == 7
+    assert ctx_tighter.requires_human_above == 100000.0

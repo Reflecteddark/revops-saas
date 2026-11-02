@@ -407,23 +407,27 @@ class IntentValidator:
         if trusted_context is None:
             return ValidationResult(violations, blocked=False)
 
-        # Context assemble timestamp: either from proposal or from trusted_context
-        assembled_at = getattr(proposal, "context_assembled_at", None)
-        if assembled_at is None:
-            if getattr(proposal, "context_hash", None):
-                violations.append("STALE_CONTEXT: Missing context_assembled_at timestamp")
-                return ValidationResult(violations)
-            assembled_at = getattr(trusted_context, "assembled_at", None)
+        # If intent proposal is signed with context_hash, it MUST specify context_assembled_at
+        prop_ts = getattr(proposal, "context_assembled_at", None)
+        has_hash = bool(getattr(proposal, "context_hash", None))
+        if has_hash and prop_ts is None:
+            violations.append("STALE_CONTEXT: Missing context_assembled_at timestamp (CTX_STALE)")
+            return ValidationResult(violations)
 
-        if assembled_at:
-            now = datetime.now(timezone.utc)
-            if assembled_at.tzinfo is None:
-                assembled_at = assembled_at.replace(tzinfo=timezone.utc)
-            age = (now - assembled_at).total_seconds()
-            if age > ttl_seconds:
-                violations.append(
-                    f"Context is stale: STALE_CONTEXT signature expired ({age:.1f}s ago, TTL is {ttl_seconds}s, freshness limit {ttl_seconds}s) (GR-03). Re-assemble context."
-                )
+        ctx_ts = getattr(trusted_context, "assembled_at", None)
+        valid_ts = [t for t in (prop_ts, ctx_ts) if t is not None]
+        if not valid_ts:
+            return ValidationResult(violations, blocked=False)
+
+        assembled_at = min(valid_ts)
+        now = datetime.now(timezone.utc)
+        if assembled_at.tzinfo is None:
+            assembled_at = assembled_at.replace(tzinfo=timezone.utc)
+        age = (now - assembled_at).total_seconds()
+        if age > ttl_seconds:
+            violations.append(
+                f"Context is stale: STALE_CONTEXT signature expired ({age:.1f}s ago, TTL is {ttl_seconds}s, freshness limit {ttl_seconds}s) (CTX_STALE). Re-assemble context."
+            )
 
         return ValidationResult(violations)
 
@@ -494,7 +498,7 @@ class IntentValidator:
 
             if key not in context_facts:
                 violations.append(
-                    f"LLM cited non-existent fact '{key}' (hallucinated citation, GR-03)"
+                    f"LLM cited non-existent fact '{key}' (hallucinated citation, FACT_HALLUCINATION)"
                 )
                 continue
 
@@ -520,7 +524,7 @@ class IntentValidator:
 
             if not is_match:
                 violations.append(
-                    f"Fact '{key}' misquoted: context={ctx_val}, cited={value} (GR-03)"
+                    f"Fact '{key}' misquoted: context={ctx_val}, cited={value} (FACT_MISQUOTE)"
                 )
 
         return ValidationResult(violations)
@@ -547,10 +551,10 @@ class IntentValidator:
         expected_hash = getattr(trusted_context, "context_hash", None)
 
         if require_hash and not claimed_hash:
-            violations.append("Missing context_hash — fact-check bypass attempt (GR-03)")
+            violations.append("Missing context_hash — fact-check bypass attempt (CTX_HASH_MISSING)")
         elif claimed_hash and expected_hash and claimed_hash != expected_hash:
             violations.append(
-                f"Context hash mismatch: intent signed with '{claimed_hash}', but active context is '{expected_hash}' (GR-03)"
+                f"Context hash mismatch: intent signed with '{claimed_hash}', but active context is '{expected_hash}' (CTX_HASH_MISMATCH)"
             )
 
         # 1.1 Session-bound context verification (Task 4)
@@ -560,7 +564,7 @@ class IntentValidator:
             intent_session = getattr(intent, "session_id", None)
             if ctx_session and intent_session and ctx_session != intent_session:
                 violations.append(
-                    f"Cross-session replay detected: context session '{ctx_session}' does not match intent session '{intent_session}' (GR-03)"
+                    f"Cross-session replay detected: context session '{ctx_session}' does not match intent session '{intent_session}' (CTX_REPLAY)"
                 )
 
         # 1.2 Freshness & TTL check (Task 3)
