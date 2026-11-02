@@ -21,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.main import app
@@ -52,7 +53,7 @@ def setup_test_environment():
 
 def test_b1_shadow_does_not_consume_idempotency_key():
     """B1: Shadow/Dry-Run modes must NEVER register or lock idempotency keys."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(bind=engine)
     TestingSession = sessionmaker(bind=engine)
     db = TestingSession()
@@ -147,7 +148,7 @@ def test_b2_hitl_card_deduplication_by_session():
 
 def test_b3_policy_autotune_never_modifies_safety_floor():
     """B3: PolicyAutoTuner strictly forbids relaxing GR-00..GR-05 & allowed_discount_max."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(bind=engine)
     TestingSession = sessionmaker(bind=engine)
     db = TestingSession()
@@ -231,7 +232,7 @@ def test_m2_diff_engine_no_baseline_does_not_trigger_divergence():
 
 def test_m6_fail_closed_idempotency_postgres_unique_index():
     """M6: In-flight race conditions safely fail-closed via database unique constraint."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(bind=engine)
     TestingSession = sessionmaker(bind=engine)
     db = TestingSession()
@@ -268,7 +269,7 @@ def test_m6_fail_closed_idempotency_postgres_unique_index():
 
 def test_m7_auto_vcr_deduplication_and_daily_quota():
     """M7: Duplicate incidents are deduplicated and daily limit of 10 tests is enforced."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(bind=engine)
     TestingSession = sessionmaker(bind=engine)
     db = TestingSession()
@@ -493,8 +494,11 @@ def test_1_3_hitl_approval_role_matrix_guard():
         assert res_manager.json()["detail"]["error"] == "INSUFFICIENT_PERMISSIONS"
 
         # 2. ROP is authorized and succeeds
+        admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
+        auth_headers = {"x-admin-key": admin_key}
         res_rop = client.post(
             f"/api/v1/agents/approvals/{approval_id}/decide?tenant_id={tenant_id}",
+            headers=auth_headers,
             json={
                 "decision": "APPROVE",
                 "approver_id": "rop_alice",
@@ -555,12 +559,27 @@ def test_opt_in_autonomy_passive_mode_by_default():
 def test_opt_in_autonomy_multi_tenant_isolation():
     """Opt-In Multi-Tenant Isolation: Tenant B enabling mutations NEVER affects Tenant A (remains passive)."""
     client = TestClient(app)
+    admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
+    os.environ["REVOPS_ADMIN_KEY"] = admin_key
+    auth_headers = {"x-admin-key": admin_key}
+
     tenant_a = f"tnt_a_{uuid.uuid4().hex[:6]}"
     tenant_b = f"tnt_b_{uuid.uuid4().hex[:6]}"
+
+    from packages.database.models import Tenant
+    db = SessionLocal()
+    try:
+        t_a = Tenant(id=tenant_a, name=f"Company {tenant_a}", slug=tenant_a, is_active=True, settings={})
+        t_b = Tenant(id=tenant_b, name=f"Company {tenant_b}", slug=tenant_b, is_active=True, settings={})
+        db.add_all([t_a, t_b])
+        db.commit()
+    finally:
+        db.close()
 
     # 1. Enable mutations only for Tenant B via LK Settings API
     patch_res = client.patch(
         f"/api/v1/settings/autonomy?tenant_id={tenant_b}",
+        headers=auth_headers,
         json={
             "allow_crm_mutations": True,
             "enable_telegram_notifications": True,
@@ -572,10 +591,12 @@ def test_opt_in_autonomy_multi_tenant_isolation():
     assert patch_res.json()["mode"] == "autonomous"
 
     # 2. Verify Tenant A settings remain strictly passive
-    get_a = client.get(f"/api/v1/settings/autonomy?tenant_id={tenant_a}")
+    get_a = client.get(f"/api/v1/settings/autonomy?tenant_id={tenant_a}", headers=auth_headers)
     assert get_a.status_code == 200
     assert get_a.json()["allow_crm_mutations"] is False
     assert get_a.json()["mode"] == "passive_advisor"
+
+
 
     # 3. Tenant B execution performs mutations
     proposal_b = {
@@ -618,3 +639,31 @@ def test_opt_in_autonomy_multi_tenant_isolation():
     assert resp_a.json()["execution_mode"] == "passive_advisor"
     assert resp_a.json()["approved_client_reply"] is None
     assert resp_a.json()["client_reply_draft"] == "Добрый день, связался с вами."
+
+
+def test_audit_x3_endpoints_require_authentication():
+    """Audit X3: Autonomy and agent control endpoints must strictly reject unauthenticated requests."""
+    client = TestClient(app)
+
+    # 1. /settings/autonomy without auth -> 401
+    res_get = client.get("/api/v1/settings/autonomy?tenant_id=TNT-001")
+    assert res_get.status_code == 401
+
+    res_patch = client.patch("/api/v1/settings/autonomy?tenant_id=TNT-001", json={"allow_crm_mutations": True})
+    assert res_patch.status_code == 401
+
+    # 2. /agents/rollback without auth -> 401
+    res_rollback = client.post("/api/v1/agents/rollback?tenant_id=TNT-001", json={"agent_id": "sales_bot", "target_version": "v1.0", "reason": "test"})
+    assert res_rollback.status_code == 401
+
+    # 3. /agents/kill-switch without auth -> 401
+    res_kill = client.post("/api/v1/agents/kill-switch?tenant_id=TNT-001", json={"agent_id": "sales_bot", "reason": "test"})
+    assert res_kill.status_code == 401
+
+    # 4. /agents/canary/configure without auth -> 401
+    res_canary = client.post("/api/v1/agents/canary/configure?tenant_id=TNT-001", json={"traffic_pct": 10.0})
+    assert res_canary.status_code == 401
+
+    # 5. /agents/approvals without auth -> 401
+    res_approvals = client.get("/api/v1/agents/approvals?tenant_id=TNT-001")
+    assert res_approvals.status_code == 401

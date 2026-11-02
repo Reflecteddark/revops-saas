@@ -28,8 +28,9 @@ def generate_hitl_signature(action: str, approval_id: str) -> str:
     secret = (
         os.environ.get("SECRET_KEY")
         or os.environ.get("REVOPS_ADMIN_KEY")
-        or "antidrift_hitl_hmac_secret_fallback_2026"
     )
+    if not secret or len(secret) < 32:
+        raise RuntimeError("SECRET_KEY or REVOPS_ADMIN_KEY (min 32 characters) is required for HITL HMAC signatures")
     raw = f"{action}:{approval_id}".encode("utf-8")
     return hmac.new(secret.encode("utf-8"), raw, hashlib.sha256).hexdigest()[:8]
 
@@ -38,8 +39,11 @@ def verify_hitl_signature(action: str, approval_id: str, signature: str) -> bool
     """Audit 1.3: Cryptographically verifies callback button HMAC signature."""
     if not signature:
         return False
-    expected = generate_hitl_signature(action, approval_id)
-    return hmac.compare_digest(expected, signature)
+    try:
+        expected = generate_hitl_signature(action, approval_id)
+        return hmac.compare_digest(expected, signature)
+    except Exception:
+        return False
 
 
 def format_amount_bracket(amount: float) -> str:

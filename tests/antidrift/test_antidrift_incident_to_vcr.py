@@ -282,7 +282,9 @@ def test_vcr_rest_endpoints_pending_generate_review_stats(dynamic_tenant_id):
         db.commit()
 
         # 2. List pending
-        resp = client.get("/api/v1/agents/vcr/pending")
+        admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
+        auth_headers = {"x-admin-key": admin_key}
+        resp = client.get("/api/v1/agents/vcr/pending", headers=auth_headers)
         assert resp.status_code == 200
         items = resp.json()
         assert any(item["id"] == pending.id for item in items)
@@ -291,12 +293,13 @@ def test_vcr_rest_endpoints_pending_generate_review_stats(dynamic_tenant_id):
         review_resp = client.post(
             "/api/v1/agents/vcr/review",
             json={"scenario_id": pending.id, "decision": "APPROVE"},
+            headers=auth_headers,
         )
         assert review_resp.status_code == 200
         assert review_resp.json()["status"] == "APPROVED"
 
         # 4. Stats endpoint
-        stats_resp = client.get("/api/v1/agents/vcr/stats")
+        stats_resp = client.get("/api/v1/agents/vcr/stats", headers=auth_headers)
         assert stats_resp.status_code == 200
         stats = stats_resp.json()
         assert stats["auto_tests_total"] >= 1

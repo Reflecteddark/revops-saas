@@ -10,6 +10,7 @@ Integration tests for the Anti-Drift Mission Control & Guarded Execution API Rou
 Zero hardcoding: all tests generate dynamic UUID tenant and agent IDs.
 """
 
+import os
 import uuid
 from datetime import datetime, timezone
 import pytest
@@ -294,7 +295,9 @@ def test_execute_agent_intent_hitl_queue_and_decide(dynamic_tenant_id, dynamic_a
     assert approval_id is not None
 
     # 2. List pending approvals
-    list_res = client.get(f"/api/v1/agents/approvals?tenant_id={dynamic_tenant_id}")
+    admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
+    auth_headers = {"x-admin-key": admin_key}
+    list_res = client.get(f"/api/v1/agents/approvals?tenant_id={dynamic_tenant_id}", headers=auth_headers)
     assert list_res.status_code == 200
     approvals_list = list_res.json()
     assert approvals_list["pending_count"] >= 1
@@ -311,6 +314,7 @@ def test_execute_agent_intent_hitl_queue_and_decide(dynamic_tenant_id, dynamic_a
     decide_res = client.post(
         f"/api/v1/agents/approvals/{approval_id}/decide?tenant_id={dynamic_tenant_id}",
         json=decision_payload,
+        headers=auth_headers,
     )
     assert decide_res.status_code == 200
     decide_data = decide_res.json()
@@ -364,9 +368,12 @@ def test_rollback_and_kill_switch_lifecycle(dynamic_tenant_id, dynamic_agent_id)
         db.close()
 
     # 1. Rollback
+    admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
+    auth_headers = {"x-admin-key": admin_key}
     rollback_res = client.post(
         "/api/v1/agents/rollback",
         json={"agent_id": dynamic_agent_id, "reason": "High drift score detected"},
+        headers=auth_headers,
     )
     assert rollback_res.status_code == 200
     assert rollback_res.json()["status"] == "ROLLED_BACK"
@@ -386,6 +393,7 @@ def test_rollback_and_kill_switch_lifecycle(dynamic_tenant_id, dynamic_agent_id)
     kill_res = client.post(
         "/api/v1/agents/kill-switch",
         json={"agent_id": dynamic_agent_id, "reason": "Emergency maintenance"},
+        headers=auth_headers,
     )
     assert kill_res.status_code == 200
     assert kill_res.json()["status"] == "KILLED"

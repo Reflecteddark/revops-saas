@@ -62,31 +62,36 @@ class TenantPolicyRegistry:
     def get_config(cls, tenant_id: str, db: Optional[Any] = None) -> TenantPolicyConfig:
         """Retrieves tenant-specific policy configuration or returns safe calibrated defaults."""
         tid = str(tenant_id or "default").strip()
+        canonical_id = tid
 
-        # Check in DB if session provided
+        # Check in DB if session provided (support both UUID id and slug)
         db_autonomy: dict[str, bool] = {}
         if db is not None:
             try:
                 from packages.database.models import Tenant
-                t = db.query(Tenant).filter(Tenant.id == tid).first()
-                if t and t.settings and isinstance(t.settings, dict):
-                    st = t.settings
-                    auto_block = st.get("autonomy", {}) if isinstance(st.get("autonomy"), dict) else {}
-                    db_autonomy = {
-                        "allow_crm_mutations": bool(st.get("allow_crm_mutations", auto_block.get("allow_crm_mutations", False))),
-                        "enable_telegram_notifications": bool(st.get("enable_telegram_notifications", auto_block.get("enable_telegram_notifications", False))),
-                        "allow_client_communication": bool(st.get("allow_client_communication", auto_block.get("allow_client_communication", False))),
-                    }
+                t = db.query(Tenant).filter((Tenant.id == tid) | (Tenant.slug == tid)).first()
+                if t:
+                    canonical_id = str(t.id)
+                    if t.settings and isinstance(t.settings, dict):
+                        st = t.settings
+                        auto_block = st.get("autonomy", {}) if isinstance(st.get("autonomy"), dict) else {}
+                        db_autonomy = {
+                            "allow_crm_mutations": bool(st.get("allow_crm_mutations", auto_block.get("allow_crm_mutations", False))),
+                            "enable_telegram_notifications": bool(st.get("enable_telegram_notifications", auto_block.get("enable_telegram_notifications", False))),
+                            "allow_client_communication": bool(st.get("allow_client_communication", auto_block.get("allow_client_communication", False))),
+                        }
             except Exception as e:
                 logger.debug(f"Could not load tenant settings from DB: {e}")
 
-        if tid in cls._configs:
-            cfg = cls._configs[tid]
+        cached_cfg = cls._configs.get(canonical_id) or cls._configs.get(tid)
+        if cached_cfg:
             if db_autonomy:
-                cfg.allow_crm_mutations = db_autonomy["allow_crm_mutations"]
-                cfg.enable_telegram_notifications = db_autonomy["enable_telegram_notifications"]
-                cfg.allow_client_communication = db_autonomy["allow_client_communication"]
-            return cfg
+                cached_cfg.allow_crm_mutations = db_autonomy["allow_crm_mutations"]
+                cached_cfg.enable_telegram_notifications = db_autonomy["enable_telegram_notifications"]
+                cached_cfg.allow_client_communication = db_autonomy["allow_client_communication"]
+            cls._configs[canonical_id] = cached_cfg
+            cls._configs[tid] = cached_cfg
+            return cached_cfg
 
         # Check tenant policy JSON file if exists
         cfg_path = Path("config") / f"tenant_policy_{tid}.json"
@@ -123,6 +128,7 @@ class TenantPolicyRegistry:
                 )
             ],
         )
+        cls._configs[canonical_id] = default_cfg
         cls._configs[tid] = default_cfg
         return default_cfg
 

@@ -10,11 +10,13 @@ Verification suite for Sprint 4 (Observability, Canary Traffic Router & Auto-Tun
 6. REST API endpoints (/metrics, /canary/status, /canary/configure, /policy/recommendations).
 """
 
+import os
 import uuid
 from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.main import app
@@ -141,7 +143,7 @@ def test_canary_auto_rollback_on_hard_failure():
 
 def test_policy_auto_tuner_recommendations():
     """Verify data-driven threshold calibration for operational limits (B3 Safety Floor)."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(bind=engine)
     TestingSession = sessionmaker(bind=engine)
     db = TestingSession()
@@ -213,9 +215,12 @@ def test_phase4_api_endpoints():
     assert "auto_rollback_active" in data
 
     # 3. /api/v1/agents/canary/configure
+    admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
+    auth_headers = {"x-admin-key": admin_key}
     res_config = client.post(
         "/api/v1/agents/canary/configure",
         json={"weight_pct": 12.5, "reset_rollback": True},
+        headers=auth_headers,
     )
     assert res_config.status_code == 200
     cfg = res_config.json()
@@ -223,7 +228,7 @@ def test_phase4_api_endpoints():
     assert cfg["auto_rollback_active"] is False
 
     # 4. /api/v1/agents/policy/recommendations
-    res_recs = client.get("/api/v1/agents/policy/recommendations")
+    res_recs = client.get("/api/v1/agents/policy/recommendations", headers=auth_headers)
     assert res_recs.status_code == 200
     assert isinstance(res_recs.json(), list)
 

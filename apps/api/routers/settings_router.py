@@ -9,8 +9,14 @@ import os
 import time
 from pathlib import Path
 from typing import Any
+from sqlalchemy.orm import Session
 
-from fastapi import APIRouter, HTTPException, Query
+import secrets
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.security import HTTPAuthorizationCredentials
+from packages.database.session import get_db
+from packages.database.models import Tenant, User, UserRole
+from ..auth import get_current_user, security
 from pydantic import BaseModel, Field
 
 from ..tenant_registry import get_tenant_spreadsheet_id
@@ -853,83 +859,141 @@ async def patch_tenant_manager_kpis(
 ):
     return await patch_manager_kpis(manager_id=manager_id, payload=payload, tenant_id=tenant_id)
 
+def get_current_user_or_admin(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    db: Session = Depends(get_db),
+) -> User:
+    admin_key = (
+        request.headers.get("x-admin-key")
+        or request.headers.get("x-revops-admin-key")
+        or request.headers.get("x-revops-secret")
+    )
+    revops_admin_key = os.getenv("REVOPS_ADMIN_KEY")
+    if admin_key and revops_admin_key and secrets.compare_digest(admin_key, revops_admin_key):
+        return User(
+            id="admin-sys",
+            tenant_id="*",
+            email="admin@revops.io",
+            full_name="System Administrator",
+            role=UserRole.ADMIN,
+            is_active=True,
+        )
+
+    if credentials or (request and request.cookies.get("access_token")):
+        return get_current_user(credentials=credentials, db=db, request=request)
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Требуется авторизация (Bearer токен или Admin-ключ)",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
 @router.get("/autonomy")
-def get_autonomy_settings(tenant_id: str = Query("TNT-001")):
+def get_autonomy_settings(
+    tenant_id: str = Query("TNT-001"),
+    current_user: User = Depends(get_current_user_or_admin),
+    db: Session = Depends(get_db),
+):
     """Returns autonomy and intervention levels for the tenant (Passive Advisor by default)."""
     clean_tenant = (tenant_id or "TNT-001").strip()
     from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
-    from packages.database.session import SessionLocal
-    db = SessionLocal()
-    try:
-        cfg = TenantPolicyRegistry.get_config(clean_tenant, db=db)
-        return {
-            "tenant_id": clean_tenant,
-            "allow_crm_mutations": cfg.allow_crm_mutations,
-            "enable_telegram_notifications": cfg.enable_telegram_notifications,
-            "allow_client_communication": cfg.allow_client_communication,
-            "mode": "autonomous" if cfg.allow_crm_mutations else "passive_advisor",
-        }
-    finally:
-        db.close()
+
+    # Cross-tenant permission check
+    if current_user.role not in (UserRole.ADMIN, UserRole.CEO):
+        t_user = db.query(Tenant).filter(Tenant.id == current_user.tenant_id).first()
+        allowed_tids = {current_user.tenant_id, "*"}
+        if t_user:
+            allowed_tids.add(t_user.id)
+            if t_user.slug:
+                allowed_tids.add(t_user.slug)
+        if clean_tenant not in allowed_tids:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ к настройкам другого тенанта запрещён")
+
+    cfg = TenantPolicyRegistry.get_config(clean_tenant, db=db)
+    return {
+        "tenant_id": clean_tenant,
+        "allow_crm_mutations": cfg.allow_crm_mutations,
+        "enable_telegram_notifications": cfg.enable_telegram_notifications,
+        "allow_client_communication": cfg.allow_client_communication,
+        "mode": "autonomous" if cfg.allow_crm_mutations else "passive_advisor",
+    }
 
 
 @router.patch("/autonomy")
 def patch_autonomy_settings(
     payload: AutonomyPatchPayload,
     tenant_id: str = Query("TNT-001"),
+    current_user: User = Depends(get_current_user_or_admin),
+    db: Session = Depends(get_db),
 ):
     """Updates AI autonomy permissions in the tenant's Personal Cabinet (LK)."""
     clean_tenant = (tenant_id or "TNT-001").strip()
     from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
-    from packages.database.models import Tenant
-    from packages.database.session import SessionLocal
 
-    db = SessionLocal()
-    try:
-        tenant_obj = db.query(Tenant).filter((Tenant.id == clean_tenant) | (Tenant.slug == clean_tenant)).first()
-        st = dict(tenant_obj.settings or {}) if tenant_obj and tenant_obj.settings else {}
-        auto_block = dict(st.get("autonomy") or {})
+    tenant_obj = db.query(Tenant).filter((Tenant.id == clean_tenant) | (Tenant.slug == clean_tenant)).first()
+    if not tenant_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tenant '{clean_tenant}' not found in database",
+        )
 
-        if payload.allow_crm_mutations is not None:
-            auto_block["allow_crm_mutations"] = payload.allow_crm_mutations
-            st["allow_crm_mutations"] = payload.allow_crm_mutations
-        if payload.enable_telegram_notifications is not None:
-            auto_block["enable_telegram_notifications"] = payload.enable_telegram_notifications
-            st["enable_telegram_notifications"] = payload.enable_telegram_notifications
-        if payload.allow_client_communication is not None:
-            auto_block["allow_client_communication"] = payload.allow_client_communication
-            st["allow_client_communication"] = payload.allow_client_communication
+    # Cross-tenant permission check
+    if current_user.role not in (UserRole.ADMIN, UserRole.CEO):
+        allowed_tids = {tenant_obj.id, "*"}
+        if tenant_obj.slug:
+            allowed_tids.add(tenant_obj.slug)
+        if current_user.tenant_id not in allowed_tids:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Изменение настроек другого тенанта запрещено")
 
-        st["autonomy"] = auto_block
-        if tenant_obj:
-            setattr(tenant_obj, 'settings', st)
-            db.commit()
+    st = dict(tenant_obj.settings or {}) if tenant_obj.settings else {}
+    auto_block = dict(st.get("autonomy") or {})
 
-        cfg = TenantPolicyRegistry.get_config(clean_tenant)
-        if payload.allow_crm_mutations is not None:
-            cfg.allow_crm_mutations = payload.allow_crm_mutations
-        if payload.enable_telegram_notifications is not None:
-            cfg.enable_telegram_notifications = payload.enable_telegram_notifications
-        if payload.allow_client_communication is not None:
-            cfg.allow_client_communication = payload.allow_client_communication
-        TenantPolicyRegistry.register_config(cfg)
+    if payload.allow_crm_mutations is not None:
+        auto_block["allow_crm_mutations"] = payload.allow_crm_mutations
+        st["allow_crm_mutations"] = payload.allow_crm_mutations
+    if payload.enable_telegram_notifications is not None:
+        auto_block["enable_telegram_notifications"] = payload.enable_telegram_notifications
+        st["enable_telegram_notifications"] = payload.enable_telegram_notifications
+    if payload.allow_client_communication is not None:
+        auto_block["allow_client_communication"] = payload.allow_client_communication
+        st["allow_client_communication"] = payload.allow_client_communication
 
-        return {
-            "status": "UPDATED",
-            "tenant_id": clean_tenant,
-            "allow_crm_mutations": cfg.allow_crm_mutations,
-            "enable_telegram_notifications": cfg.enable_telegram_notifications,
-            "allow_client_communication": cfg.allow_client_communication,
-            "mode": "autonomous" if cfg.allow_crm_mutations else "passive_advisor",
-        }
-    finally:
-        db.close()
+    st["autonomy"] = auto_block
+    setattr(tenant_obj, 'settings', st)
+    db.commit()
+
+    t_id_str = str(tenant_obj.id)
+    cfg = TenantPolicyRegistry.get_config(t_id_str, db=db)
+    if payload.allow_crm_mutations is not None:
+        cfg.allow_crm_mutations = payload.allow_crm_mutations
+    if payload.enable_telegram_notifications is not None:
+        cfg.enable_telegram_notifications = payload.enable_telegram_notifications
+    if payload.allow_client_communication is not None:
+        cfg.allow_client_communication = payload.allow_client_communication
+    TenantPolicyRegistry.register_config(cfg)
+    TenantPolicyRegistry._configs[clean_tenant] = cfg
+    TenantPolicyRegistry._configs[t_id_str] = cfg
+    if tenant_obj.slug:
+        TenantPolicyRegistry._configs[str(tenant_obj.slug)] = cfg
+
+    return {
+        "status": "UPDATED",
+        "tenant_id": clean_tenant,
+        "allow_crm_mutations": cfg.allow_crm_mutations,
+        "enable_telegram_notifications": cfg.enable_telegram_notifications,
+        "allow_client_communication": cfg.allow_client_communication,
+        "mode": "autonomous" if cfg.allow_crm_mutations else "passive_advisor",
+    }
 
 
 @router.patch("/tenants/{tenant_id}/autonomy")
 def patch_tenant_autonomy(
     tenant_id: str,
     payload: AutonomyPatchPayload,
+    current_user: User = Depends(get_current_user_or_admin),
+    db: Session = Depends(get_db),
 ):
-    return patch_autonomy_settings(payload=payload, tenant_id=tenant_id)
+    return patch_autonomy_settings(payload=payload, tenant_id=tenant_id, current_user=current_user, db=db)
 

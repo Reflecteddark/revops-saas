@@ -35,7 +35,7 @@ class CanaryRouter:
     def _init_state(self) -> None:
         self._state_lock = threading.Lock()
         self.enabled: bool = os.getenv("ENABLE_CANARY_ROUTING", "1") == "1"
-        self.weight_pct: float = float(os.getenv("DEFAULT_CANARY_WEIGHT_PCT", "5.0"))
+        self.weight_pct: float = float(os.getenv("DEFAULT_CANARY_WEIGHT_PCT", "0.0"))
         self.divergence_threshold_pct: float = float(os.getenv("CANARY_DIVERGENCE_THRESHOLD_PCT", "2.0"))
         self.min_sessions_for_divergence_rollback: int = int(os.getenv("CANARY_MIN_SESSIONS_ROLLBACK", "200"))
         self.canary_sessions_count: int = 0
@@ -51,13 +51,13 @@ class CanaryRouter:
         """Reset canary router to initial state (for testing)."""
         with self._state_lock:
             self.enabled = True
-            self.weight_pct = 5.0
+            self.weight_pct = 0.0
             self.divergence_threshold_pct = 2.0
             self.auto_rollback_active = False
             self.rollback_reason = None
             self.consecutive_hard_failures = 0
             self.max_hard_failures = 1
-            antidrift_metrics.set_canary_weight(0.05)
+            antidrift_metrics.set_canary_weight(0.0)
 
     def decide_execution_mode(
         self,
