@@ -92,16 +92,29 @@ def get_current_tenant_user_or_admin(
             is_active=True
         )
 
-    # 2. Check Bearer JWT token
-    if not credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Требуется авторизация (Bearer токен отсутствует)",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    # 2. Bearer JWT or HttpOnly access_token cookie (get_current_user raises 401 if neither is valid)
+    return get_current_user(credentials=credentials, db=db, request=request)
 
-    user = get_current_user(credentials=credentials, db=db)
-    return user
+
+def require_admin_user(current_user: Any = Depends(get_current_tenant_user_or_admin)) -> Any:
+    """Fleet-level operations (register / offboard tenants) are admin-only."""
+    if not getattr(current_user, "is_admin", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Операция доступна только администратору",
+        )
+    return current_user
+
+
+_SENSITIVE_KEY_PARTS = ("token", "secret", "password", "webhook_url", "api_key", "credential")
+
+
+def _redact_tenant_config(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Drops CRM tokens / webhook URLs / secrets before a config is returned to a tenant user."""
+    return {
+        k: v for k, v in cfg.items()
+        if not any(part in str(k).lower() for part in _SENSITIVE_KEY_PARTS)
+    }
 
 
 def verify_tenant_access(target_tenant_id: str, current_user: Any):
@@ -217,7 +230,10 @@ def get_niche_catalog():
 
 
 @router.post("/niches/dynamic")
-def generate_dynamic_niche(req: DynamicNicheRequest):
+def generate_dynamic_niche(
+    req: DynamicNicheRequest,
+    current_user: Any = Depends(get_current_tenant_user_or_admin),
+):
     """Uses AI heuristics to build a customized niche profile for any non-standard industry."""
     profile = create_dynamic_niche_profile(req.niche_title)
     return {"profile": profile}
@@ -314,12 +330,18 @@ def get_tenant_passport(
 
 
 @router.get("/{tenant_id}")
-def get_tenant_details(tenant_id: str):
-    """Get single tenant metadata and configuration."""
+def get_tenant_details(
+    tenant_id: str,
+    current_user: Any = Depends(get_current_tenant_user_or_admin),
+):
+    """Get single tenant metadata and configuration (credentials are visible to admins only)."""
+    verify_tenant_access(tenant_id, current_user)
     cfg = get_tenant_config(tenant_id)
     if not cfg:
         raise HTTPException(status_code=404, detail=f"Tenant '{tenant_id}' not found in registry")
-    return cfg
+    if getattr(current_user, "is_admin", False):
+        return cfg
+    return _redact_tenant_config(cfg)
 
 
 # ============================================================================
@@ -369,11 +391,15 @@ def update_tenant_crm(
 
 
 @router.post("/{tenant_id}/test-crm")
-def test_tenant_crm_connection(tenant_id: str):
+def test_tenant_crm_connection(
+    tenant_id: str,
+    current_user: Any = Depends(get_current_tenant_user_or_admin),
+):
     """
     Performs a live connectivity test to the client's configured CRM.
     Returns HTTP status, response latency, and diagnostics.
     """
+    verify_tenant_access(tenant_id, current_user)
     cfg = get_tenant_config(tenant_id)
     if not cfg:
         raise HTTPException(status_code=404, detail=f"Tenant '{tenant_id}' not found")
@@ -466,7 +492,10 @@ def test_tenant_crm_connection(tenant_id: str):
 # ============================================================================
 
 @router.get("/{tenant_id}/export-archive")
-def export_tenant_data_archive(tenant_id: str):
+def export_tenant_data_archive(
+    tenant_id: str,
+    current_user: Any = Depends(get_current_tenant_user_or_admin),
+):
     """
     Builds and streams a complete ZIP data backup archive for the specified client:
     - calls.json & calls.csv (13 criteria, audio ratings, transcripts)
@@ -475,6 +504,7 @@ def export_tenant_data_archive(tenant_id: str):
     - passport.json (system passport)
     Ensures complete data portability upon contract conclusion or churn (152-ФЗ / GDPR compliance).
     """
+    verify_tenant_access(tenant_id, current_user)
     clean_id = tenant_id.strip().upper()
     cfg = get_tenant_config(clean_id)
     if not cfg:
@@ -487,7 +517,7 @@ def export_tenant_data_archive(tenant_id: str):
     calls_data = fetch_calls_from_sheets(clean_id, limit=500)
     deals_data = fetch_deals_from_sheets(clean_id, limit=500)
     settings_data = fetch_settings_from_sheets(clean_id)
-    passport_data = get_tenant_passport(clean_id)
+    passport_data = get_tenant_passport(clean_id, current_user)
 
     # In-memory ZIP construction
     zip_buffer = io.BytesIO()
@@ -538,7 +568,10 @@ def export_tenant_data_archive(tenant_id: str):
 
 
 @router.post("/{tenant_id}/offboard")
-def offboard_tenant(tenant_id: str):
+def offboard_tenant(
+    tenant_id: str,
+    current_user: Any = Depends(require_admin_user),
+):
     """
     Performs client contract termination (Churn/Offboarding):
     - Marks tenant as archived
@@ -577,7 +610,10 @@ def offboard_tenant(tenant_id: str):
 # ============================================================================
 
 @router.post("")
-def register_tenant(req: RegisterTenantRequest):
+def register_tenant(
+    req: RegisterTenantRequest,
+    current_user: Any = Depends(require_admin_user),
+):
     """
     Register a newly onboarded client tenant into tenants_registry.json.
     Ensures zero downtime and immediate availability in UI and API.
