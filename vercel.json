@@ -7,7 +7,8 @@
     { "source": "/app/:path*", "destination": "https://app.ai-rop.ru/:path*", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/tg-proxy/:path*", "destination": "https://api.telegram.org/:path*" },
+    { "source": "/tg-proxy/:bot(bot8950801302:[A-Za-z0-9_-]+)/:path*", "destination": "https://api.telegram.org/:bot/:path*" },
+    { "source": "/tg-proxy/file/:bot(bot8950801302:[A-Za-z0-9_-]+)/:path*", "destination": "https://api.telegram.org/file/:bot/:path*" },
     { "source": "/api/:path*", "destination": "https://report.ai-rop.ru/api/:path*" },
     { "source": "/", "destination": "/apps/landing" },
     { "source": "/css/:path*", "destination": "/apps/landing/css/:path*" },
