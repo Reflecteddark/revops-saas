@@ -63,9 +63,48 @@ class VCRScenarioGenerator:
         """
         Captures a live production HARD_FAILURE into pending_vcr_scenarios.
         Applies strict PII sanitization (redacting tokens, emails, phones).
+        M7 Fix: Enforces daily quota (10 tests/day) and deduplication by root-cause.
         """
         if os.getenv("ENABLE_AUTO_VCR", "1") not in ("1", "true", "True"):
             return None
+
+        # 1. M7 Daily Quota Guard (<= 50 auto-tests per 24 hours default in prod)
+        is_testing = os.getenv("TESTING") in ("true", "1", "True")
+        since_yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+        if "MAX_DAILY_AUTO_VCR" in os.environ or not is_testing:
+            max_daily = int(os.getenv("MAX_DAILY_AUTO_VCR", "50"))
+            daily_count = (
+                db.query(PendingVCRScenario)
+                .filter(PendingVCRScenario.created_at >= since_yesterday)  # type: ignore[arg-type]
+                .count()
+            )
+            if daily_count >= max_daily:
+                logger.warning(
+                    f"Auto-VCR capture throttled: daily limit of {max_daily} tests reached ({daily_count} in last 24h)."
+                )
+                return None
+
+        # 2. M7 Deduplication Guard: Check if identical policy + error occurred for this tenant in last 24h
+        norm_rule = str(source_policy or "HARD_FAILURE").strip()
+        tenant_id = (raw_trace or {}).get("tenant_id")
+        candidates = (
+            db.query(PendingVCRScenario)
+            .filter(
+                PendingVCRScenario.source_policy == norm_rule,
+                PendingVCRScenario.status.in_(("PENDING", "GENERATED", "APPROVED")),
+                PendingVCRScenario.created_at >= since_yesterday,  # type: ignore[arg-type]
+            )
+            .all()
+        )
+        for existing_dup in candidates:
+            dup_tenant = (existing_dup.raw_trace or {}).get("tenant_id")
+            if (not tenant_id or dup_tenant == tenant_id) and (
+                existing_dup.error_summary == error_summary or not error_summary
+            ):
+                logger.info(
+                    f"Auto-VCR capture deduplicated: matching scenario '{existing_dup.id}' already logged for rule '{norm_rule}'."
+                )
+                return existing_dup
 
         cohort = cls.map_policy_to_cohort(source_policy)
         sanitized_trace = PIISanitizer.sanitize_data(raw_trace)

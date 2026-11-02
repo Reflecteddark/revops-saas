@@ -70,6 +70,8 @@ class AgentTrace(Base):
     source_event_id = Column(String(100), nullable=False)
     
     execution_mode = Column(String(20), nullable=False, default="prod")  # prod, shadow, canary, replay, test
+    context_hash = Column(String(64), nullable=True, index=True)
+    auto_vcr_generated = Column(Boolean, default=False, nullable=False)
     input_payload_sanitized = Column(JSON, default=dict)
     context_snapshot_json = Column(JSON, default=dict)
     model_request_hash = Column(String(64), nullable=True)

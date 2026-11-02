@@ -26,6 +26,7 @@ class ExecutionMode(str, enum.Enum):
     PROD = "prod"        # Standard production execution committing to CRM via crm_gateway
     SHADOW = "shadow"    # LLM executes, validates/scores, but CRM is NOT mutated; diff is computed
     DRY_RUN = "dry_run"  # Zero LLM/CRM side-effects; fast deterministic invariant simulation
+    CANARY = "canary"    # Progressive rollout with automated rollback circuit breaker
 
 
 class ActionType(str, enum.Enum):

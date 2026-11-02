@@ -69,11 +69,16 @@ SessionRead = sessionmaker(autocommit=False, autoflush=False, bind=engine_read)
 
 def init_db():
     """Initializes all database tables safely and ensures schema columns and unique indexes exist."""
+    try:
+        import packages.antidrift.models  # noqa: F401
+    except Exception:
+        pass
     Base.metadata.create_all(bind=engine)
     try:
         from sqlalchemy import inspect, text
         inspector = inspect(engine)
         deal_cols = [c["name"] for c in inspector.get_columns("deals")]
+        tables = inspector.get_table_names()
         with engine.begin() as conn:
             if "custom_payload" not in deal_cols:
                 conn.execute(text("ALTER TABLE deals ADD COLUMN custom_payload JSON;"))
@@ -95,6 +100,15 @@ def init_db():
                 conn.execute(text("ALTER TABLE deals ADD COLUMN loss_reason VARCHAR(255);"))
             if "loss_reason_code" not in deal_cols:
                 conn.execute(text("ALTER TABLE deals ADD COLUMN loss_reason_code VARCHAR(50);"))
+
+            if "agent_traces" in tables:
+                trace_cols = [c["name"] for c in inspector.get_columns("agent_traces")]
+                if "context_hash" not in trace_cols:
+                    conn.execute(text("ALTER TABLE agent_traces ADD COLUMN context_hash VARCHAR(64);"))
+                if "auto_vcr_generated" not in trace_cols:
+                    conn.execute(text("ALTER TABLE agent_traces ADD COLUMN auto_vcr_generated BOOLEAN DEFAULT 0;"))
+                if "execution_mode" not in trace_cols:
+                    conn.execute(text("ALTER TABLE agent_traces ADD COLUMN execution_mode VARCHAR(20) DEFAULT 'prod';"))
 
             conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_deal_external_crm_id ON deals (tenant_id, external_crm_id);"))
             conn.execute(text("CREATE INDEX IF NOT EXISTS idx_deals_pipeline_id ON deals (pipeline_id);"))

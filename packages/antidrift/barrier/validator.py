@@ -393,11 +393,12 @@ class IntentValidator:
         cls,
         proposal: Any,
         trusted_context: Any,
-        ttl_seconds: int = 60,
+        ttl_seconds: int = 120,
     ) -> ValidationResult:
         """
         Validates that the context bound to the intent proposal is sufficiently fresh (TTL).
-        Blocks stale context to prevent attacks or race conditions using outdated CRM data (GR-03).
+        M1 Fix: Execution freshness TTL is 90-120s. Stale context indicates a CRM race condition,
+        flagged as STALE_CONTEXT for transparent re-assembly rather than a hard attack.
         """
         violations: list[str] = []
         if os.getenv("ENABLE_CONTEXT_TTL", "1") not in ("1", "true", "True"):
@@ -410,7 +411,7 @@ class IntentValidator:
         assembled_at = getattr(proposal, "context_assembled_at", None)
         if assembled_at is None:
             if getattr(proposal, "context_hash", None):
-                violations.append("Missing context_assembled_at timestamp (GR-03)")
+                violations.append("STALE_CONTEXT: Missing context_assembled_at timestamp")
                 return ValidationResult(violations)
             assembled_at = getattr(trusted_context, "assembled_at", None)
 
@@ -421,7 +422,7 @@ class IntentValidator:
             age = (now - assembled_at).total_seconds()
             if age > ttl_seconds:
                 violations.append(
-                    f"Context is stale: assembled {age:.1f}s ago, TTL is {ttl_seconds}s (GR-03)"
+                    f"Context is stale: STALE_CONTEXT signature expired ({age:.1f}s ago, TTL is {ttl_seconds}s, freshness limit {ttl_seconds}s) (GR-03). Re-assemble context."
                 )
 
         return ValidationResult(violations)

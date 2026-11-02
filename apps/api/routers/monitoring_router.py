@@ -7,6 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Response
 
+from packages.antidrift.telemetry.metrics import antidrift_metrics
 from packages.monitoring.metrics import telemetry
 
 router = APIRouter(tags=["Monitoring & Observability"])
@@ -28,7 +29,8 @@ def prometheus_metrics():
         f"revops_api_error_rate_pct {stats['error_rate_pct']}\n\n"
         f"# HELP revops_crm_sync_failures_hourly Failures per hour syncing with CRM\n"
         f"# TYPE revops_crm_sync_failures_hourly gauge\n"
-        f"revops_crm_sync_failures_hourly {stats['crm_sync_failures_last_hour']}\n"
+        f"revops_crm_sync_failures_hourly {stats['crm_sync_failures_last_hour']}\n\n"
+        + antidrift_metrics.to_prometheus_format()
     )
     return Response(content=body, media_type="text/plain; version=0.0.4")
 

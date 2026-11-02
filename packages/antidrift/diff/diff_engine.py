@@ -33,7 +33,20 @@ class ShadowDivergenceMetric(BaseModel):
     risk_score_delta: float = 0.0
     is_hard_failure: bool = False
     divergence_score: float = 0.0
+    no_baseline: bool = False
     reasons: list[str] = Field(default_factory=list)
+
+    @property
+    def has_divergence(self) -> bool:
+        if self.no_baseline:
+            return False
+        return (
+            self.divergence_score > 0.0
+            or self.state_delta_divergence
+            or not self.intent_match
+            or self.is_hard_failure
+            or self.actions_delta_count > 0
+        )
 
 
 class DiffEngineConfig(BaseModel):
@@ -89,6 +102,25 @@ class DiffEngine:
         """
         reasons: list[str] = []
         divergence = 0.0
+
+        if not prod_proposal:
+            # M2 Fix: Fallback when production baseline is absent
+            # Do NOT treat missing baseline as divergence (prevents false rollback)
+            # Unless shadow candidate itself triggered a hard failure
+            reasons.append("Skipped diff comparison: No production baseline trace found for source event")
+            div = 0.40 if shadow_would_be_blocked else 0.0
+            if shadow_would_be_blocked:
+                reasons.append("Shadow proposal triggered HARD_FAILURE guardrail breach")
+            return ShadowDivergenceMetric(
+                intent_match=True,
+                actions_delta_count=0,
+                state_delta_divergence=False,
+                risk_score_delta=0.0,
+                is_hard_failure=shadow_would_be_blocked,
+                divergence_score=div,
+                no_baseline=True,
+                reasons=reasons,
+            )
 
         prod_dict = prod_proposal if isinstance(prod_proposal, dict) else (prod_proposal.model_dump() if prod_proposal else {})
         shadow_dict = shadow_proposal if isinstance(shadow_proposal, dict) else shadow_proposal.model_dump()

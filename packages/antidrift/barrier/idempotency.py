@@ -13,6 +13,7 @@ import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from packages.antidrift.models import IdempotencyKeyRecord
 
@@ -47,14 +48,23 @@ class IdempotencyManager:
         source_event_id: str,
         payload: dict[str, Any] | None = None,
         ttl_minutes: int = 60,
-    ) -> tuple[bool, IdempotencyKeyRecord]:
+        execution_mode: str = "prod",
+    ) -> tuple[bool, IdempotencyKeyRecord | None]:
         """
         Atomically checks if the key already exists in PostgreSQL.
+        B1 Fix: Shadow and Dry-Run modes NEVER consume or lock idempotency keys.
+        M6 Fix: Fail-closed fallback to Postgres unique index on concurrency or Redis failure.
+
         Returns:
             (is_new, record)
             If is_new is False: this action is a DUPLICATE, do not re-execute!
-            If is_new is True: key is successfully reserved.
+            If is_new is True: key is successfully reserved (or simulated in non-prod).
         """
+        mode = (execution_mode or "prod").lower()
+        if mode in ("shadow", "dry_run"):
+            # Non-prod execution must not consume real idempotency slots
+            return True, None
+
         now = datetime.now(timezone.utc)
         record = (
             db.query(IdempotencyKeyRecord)
@@ -84,10 +94,22 @@ class IdempotencyManager:
             first_seen_at=now,
             expires_at=expires_at,
         )
-        db.add(new_record)
-        db.flush()
-
-        return True, new_record
+        try:
+            db.add(new_record)
+            db.flush()
+            return True, new_record
+        except IntegrityError:
+            # M6: Concurrent insert or race condition - Postgres unique index caught duplicate
+            db.rollback()
+            existing = (
+                db.query(IdempotencyKeyRecord)
+                .filter(
+                    IdempotencyKeyRecord.tenant_id == tenant_id,
+                    IdempotencyKeyRecord.idempotency_key == idempotency_key,
+                )
+                .first()
+            )
+            return False, existing
 
     @classmethod
     def mark_completed_db(

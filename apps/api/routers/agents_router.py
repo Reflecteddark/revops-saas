@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -43,6 +43,9 @@ from packages.antidrift.models import (
     PendingVCRScenario,
 )
 from packages.antidrift.golden_set.vcr_scenario_generator import VCRScenarioGenerator
+from packages.antidrift.canary.canary_router import canary_router
+from packages.antidrift.policy_autotune import PolicyAutoTuner
+from packages.antidrift.telemetry.metrics import antidrift_metrics
 from packages.database.session import get_db
 
 logger = logging.getLogger("agents_router")
@@ -115,9 +118,10 @@ def assemble_context_endpoint(
 class ApprovalDecisionPayload(BaseModel):
     decision: Literal["APPROVE", "REJECT", "EDIT", "TAKEOVER"]
     approver_id: str
-    approver_role: Literal["rop", "engineer", "admin", "manager"] = "rop"
+    approver_role: Literal["rop", "engineer", "admin", "manager", "head_of_sales"] = "rop"
     comment: Optional[str] = None
     edited_reply_text: Optional[str] = None
+    signature: Optional[str] = None
 
 
 class RollbackRequest(BaseModel):
@@ -172,9 +176,33 @@ def execute_agent_intent(
             detail={"error": "Intent validation failed", "violations": validation_violations},
         )
 
-    # 1.5. Layer 1.5: Trusted Context & Anti-Hallucination Fact-Check (Sprint 1)
+    # Sprint 2 & 4: Early Resolve Execution Mode (Prod, Shadow, Dry-Run, Canary) - B2 Fix
+    resolved_mode = mode or payload.execution_mode
+    if not resolved_mode:
+        canary_decision = canary_router.decide_execution_mode(
+            tenant_id=tenant_id,
+            session_id=payload.session_id,
+        )
+        if canary_decision == "canary":
+            resolved_mode = ExecutionMode.CANARY
+        else:
+            resolved_mode = DiffEngine.resolve_traffic_mode(
+                db=db,
+                agent_id=payload.agent_id,
+                harness_version=payload.harness_version,
+                session_id=payload.session_id,
+            )
+    is_shadow_or_dry_run = resolved_mode in (ExecutionMode.SHADOW, ExecutionMode.DRY_RUN)
+
+    # 1.5. Layer 1.5: Trusted Context & Anti-Hallucination Fact-Check (Sprint 1 & Audit 1.2)
+    # Three-mode feature flag: off | monitor | enforce (default: monitor)
+    tc_env = os.getenv("ENABLE_TRUSTED_CONTEXT", "monitor").lower()
     is_trusted_context_enabled = (
-        os.getenv("ENABLE_TRUSTED_CONTEXT", "0") in ("1", "true", "True")
+        tc_env in ("monitor", "enforce", "1", "true")
+        or bool(payload.context_hash)
+    )
+    is_enforcing = (
+        tc_env in ("enforce", "1", "true")
         or bool(payload.context_hash)
     )
     if is_trusted_context_enabled:
@@ -201,84 +229,114 @@ def execute_agent_intent(
             )
 
         require_hash = (
-            os.getenv("ENABLE_TRUSTED_CONTEXT", "0") in ("1", "true", "True")
+            tc_env in ("enforce", "1", "true")
             or bool(payload.context_hash)
         )
         fact_violations = IntentValidator.validate_against_trusted_context(
             payload, trusted_ctx, require_hash=require_hash
         )
         if fact_violations:
-            has_discount_breach = any("GR-03" in v for v in fact_violations)
-            if has_discount_breach:
-                if HardFailureRateLimiter.should_record_scenario(payload.session_id):
-                    incident = AgentIncident(
-                        trace_id=payload.trace_id,
-                        severity="P0",
-                        source="FACT_CHECK_GUARD",
-                        agent_id=payload.agent_id,
-                        harness_version=payload.harness_version,
-                        summary="Fact-check breach: unauthorized discount or terms hallucination",
-                        root_cause="; ".join(fact_violations),
-                        status="OPEN",
-                        created_at=now,
-                    )
-                    db.add(incident)
-                    VCRScenarioGenerator.capture_incident_as_pending(
-                        db=db,
-                        trace_id=payload.trace_id,
-                        source_policy="GR-03",
-                        raw_trace=payload.model_dump(mode="json"),
-                        error_summary="; ".join(fact_violations),
-                    )
-                trace = AgentTrace(
-                    trace_id=payload.trace_id,
-                    session_id=payload.session_id,
-                    tenant_id=tenant_id,
-                    agent_id=payload.agent_id,
-                    harness_version=payload.harness_version,
-                    policy_version=payload.policy_version,
-                    channel=payload.channel,
-                    source_event_id=payload.source_event_id,
-                    execution_mode="blocked",
-                    input_payload_sanitized={"client_message": client_message},
-                    context_snapshot_json=trusted_ctx.model_dump(mode="json"),
-                    raw_intent_json=payload.model_dump(mode="json"),
-                    error="; ".join(fact_violations),
-                    created_at=now,
-                )
-                db.add(trace)
-                db.commit()
+            # M1: Transparent handling for race condition stale contexts
+            has_stale_context = any("STALE_CONTEXT" in v for v in fact_violations)
+            if has_stale_context and not is_shadow_or_dry_run:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
+                    status_code=status.HTTP_409_CONFLICT,
                     detail={
-                        "status": "BLOCKED",
-                        "verdict": DriftSeverity.HARD_FAILURE.value,
-                        "violations": [{"rule_id": "GR-03_DISCOUNT_PROMISE_GUARD", "message": v} for v in fact_violations],
+                        "error": "STALE_CONTEXT",
+                        "message": "Context signature expired. Re-assemble trusted context before proceeding.",
+                        "violations": fact_violations,
                     },
                 )
+
+            antidrift_metrics.record_fact_check_failure(
+                tenant_id=tenant_id,
+                policy="GR-03" if any("GR-03" in v for v in fact_violations) else "FACT_CHECK",
+                reason="; ".join(fact_violations),
+            )
+            # B2: Shadow execution never triggers canary auto-rollback or P0 incidents
+            if not is_shadow_or_dry_run:
+                canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=True)
+                has_discount_breach = any("GR-03" in v for v in fact_violations)
+                if has_discount_breach:
+                    if HardFailureRateLimiter.should_record_scenario(payload.session_id):
+                        incident = AgentIncident(
+                            trace_id=payload.trace_id,
+                            severity="P0",
+                            source="FACT_CHECK_GUARD",
+                            agent_id=payload.agent_id,
+                            harness_version=payload.harness_version,
+                            summary="Fact-check breach: unauthorized discount or terms hallucination",
+                            root_cause="; ".join(fact_violations),
+                            status="OPEN",
+                            created_at=now,
+                        )
+                        db.add(incident)
+                        VCRScenarioGenerator.capture_incident_as_pending(
+                            db=db,
+                            trace_id=payload.trace_id,
+                            source_policy="GR-03",
+                            raw_trace=payload.model_dump(mode="json"),
+                            error_summary="; ".join(fact_violations),
+                        )
+                        antidrift_metrics.record_auto_vcr_generated(cohort="03_financials", source_policy="GR-03")
+
+            has_discount_breach = any("GR-03" in v for v in fact_violations)
+            # 1.2: Enforce blocks immediately; Monitor logs and only blocks hard commercial breach
+            if is_enforcing or has_discount_breach:
+                if has_discount_breach:
+                    trace = AgentTrace(
+                        trace_id=payload.trace_id,
+                        session_id=payload.session_id,
+                        tenant_id=tenant_id,
+                        agent_id=payload.agent_id,
+                        harness_version=payload.harness_version,
+                        policy_version=payload.policy_version,
+                        channel=payload.channel,
+                        source_event_id=payload.source_event_id,
+                        execution_mode="blocked",
+                        input_payload_sanitized={"client_message": client_message},
+                        context_snapshot_json=trusted_ctx.model_dump(mode="json"),
+                        raw_intent_json=payload.model_dump(mode="json"),
+                        error="; ".join(fact_violations),
+                        created_at=now,
+                    )
+                    db.add(trace)
+                    db.commit()
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail={
+                            "status": "BLOCKED",
+                            "verdict": DriftSeverity.HARD_FAILURE.value,
+                            "violations": [{"rule_id": "GR-03_DISCOUNT_PROMISE_GUARD", "message": v} for v in fact_violations],
+                        },
+                    )
+                else:
+                    trace = AgentTrace(
+                        trace_id=payload.trace_id,
+                        session_id=payload.session_id,
+                        tenant_id=tenant_id,
+                        agent_id=payload.agent_id,
+                        harness_version=payload.harness_version,
+                        policy_version=payload.policy_version,
+                        channel=payload.channel,
+                        source_event_id=payload.source_event_id,
+                        execution_mode="rejected",
+                        input_payload_sanitized={"client_message": client_message},
+                        context_snapshot_json=trusted_ctx.model_dump(mode="json"),
+                        raw_intent_json=payload.model_dump(mode="json"),
+                        validation_result_json={"fact_violations": fact_violations},
+                        error="; ".join(fact_violations),
+                        created_at=now,
+                    )
+                    db.add(trace)
+                    db.commit()
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail={"error": "Fact-check validation failed", "violations": fact_violations},
+                    )
             else:
-                trace = AgentTrace(
-                    trace_id=payload.trace_id,
-                    session_id=payload.session_id,
-                    tenant_id=tenant_id,
-                    agent_id=payload.agent_id,
-                    harness_version=payload.harness_version,
-                    policy_version=payload.policy_version,
-                    channel=payload.channel,
-                    source_event_id=payload.source_event_id,
-                    execution_mode="rejected",
-                    input_payload_sanitized={"client_message": client_message},
-                    context_snapshot_json=trusted_ctx.model_dump(mode="json"),
-                    raw_intent_json=payload.model_dump(mode="json"),
-                    validation_result_json={"fact_violations": fact_violations},
-                    error="; ".join(fact_violations),
-                    created_at=now,
-                )
-                db.add(trace)
-                db.commit()
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail={"error": "Fact-check validation failed", "violations": fact_violations},
+                logger.warning(
+                    f"[TRUSTED_CONTEXT_MONITOR] Fact-check violations observed in monitor mode: {fact_violations}"
                 )
 
     # 2. Multi-factor Risk Scoring
@@ -294,14 +352,6 @@ def execute_agent_intent(
         intent=payload,
         client_inbound_message=client_message,
         current_deal_context=payload.context_refs,
-    )
-
-    # Sprint 2: Resolve Execution Mode (Prod, Shadow, Dry-Run)
-    resolved_mode = mode or payload.execution_mode or DiffEngine.resolve_traffic_mode(
-        db=db,
-        agent_id=payload.agent_id,
-        harness_version=payload.harness_version,
-        session_id=payload.session_id,
     )
 
     if resolved_mode == ExecutionMode.DRY_RUN:
@@ -354,6 +404,8 @@ def execute_agent_intent(
             shadow_proposal=payload,
             shadow_would_be_blocked=would_be_blocked,
         )
+        antidrift_metrics.record_shadow_comparison(tenant_id, is_divergent=diff_metric.has_divergence)
+        canary_router.record_canary_execution(tenant_id, is_hard_failure=False, is_divergent=diff_metric.has_divergence)
 
         trace = AgentTrace(
             trace_id=payload.trace_id,
@@ -410,6 +462,9 @@ def execute_agent_intent(
                 raw_trace=payload.model_dump(mode="json"),
                 error_summary="; ".join(v.message for v in policy_result.violations),
             )
+            cohort = VCRScenarioGenerator.map_policy_to_cohort(source_rule)
+            antidrift_metrics.record_auto_vcr_generated(cohort=cohort, source_policy=source_rule)
+            canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=True)
 
         # Record blocked trace
         trace = AgentTrace(
@@ -497,22 +552,40 @@ def execute_agent_intent(
         db.add(trace)
         db.commit()
 
-        try:
-            dispatch_hitl_approval_card(
-                approval_id=str(approval.approval_id),
-                tenant_id=tenant_id,
-                agent_id=payload.agent_id,
-                harness_version=payload.harness_version,
-                intent_name=payload.intent,
-                risk_level=risk_result.risk_level,
-                risk_score=payload.risk_score,
-                reasons=risk_result.reasons,
-                proposed_actions=[a.model_dump(mode="json") for a in payload.proposed_actions],
-                client_reply_text=payload.proposed_client_reply.text if payload.proposed_client_reply else None,
-                client_message=client_message,
+        # B2 Fix: Deduplicate HITL Telegram card dispatch (1 active card per session)
+        active_pending_card = (
+            db.query(HITLApproval)
+            .join(AgentIntent, AgentIntent.intent_id == HITLApproval.intent_id)
+            .filter(
+                HITLApproval.tenant_id == tenant_id,
+                AgentIntent.session_id == payload.session_id,
+                HITLApproval.status == "PENDING",
+                HITLApproval.approval_id != str(approval.approval_id),
             )
-        except Exception as e:
-            logger.error(f"Error dispatching HITL Telegram card: {e}")
+            .first()
+        )
+        if not active_pending_card:
+            try:
+                dispatch_hitl_approval_card(
+                    approval_id=str(approval.approval_id),
+                    tenant_id=tenant_id,
+                    agent_id=payload.agent_id,
+                    harness_version=payload.harness_version,
+                    intent_name=payload.intent,
+                    risk_level=risk_result.risk_level,
+                    risk_score=payload.risk_score,
+                    reasons=risk_result.reasons,
+                    proposed_actions=[a.model_dump(mode="json") for a in payload.proposed_actions],
+                    client_reply_text=payload.proposed_client_reply.text if payload.proposed_client_reply else None,
+                    client_message=client_message,
+                )
+            except Exception as e:
+                logger.error(f"Error dispatching HITL Telegram card: {e}")
+        else:
+            logger.info(
+                f"[HITL_DEDUPLICATED] Session '{payload.session_id}' already has active approval card "
+                f"'{active_pending_card.approval_id}'. Suppressed duplicate Telegram dispatch."
+            )
 
         return {
             "status": "AWAITING_APPROVAL",
@@ -551,7 +624,8 @@ def execute_agent_intent(
         policy_version=payload.policy_version,
         channel=payload.channel,
         source_event_id=payload.source_event_id,
-        execution_mode="prod",
+        execution_mode=resolved_mode.value if isinstance(resolved_mode, ExecutionMode) else (resolved_mode or "prod"),
+        context_hash=getattr(payload, "context_hash", None),
         input_payload_sanitized={"client_message": client_message},
         raw_intent_json=payload.model_dump(mode='json'),
         guardrail_result_json=policy_result.model_dump(mode='json'),
@@ -585,6 +659,7 @@ def execute_agent_intent(
             action_type=action.action_type.value,
             source_event_id=payload.source_event_id,
             payload=action.payload,
+            execution_mode=resolved_mode.value if isinstance(resolved_mode, ExecutionMode) else resolved_mode,
         )
 
         if not is_new:
@@ -618,9 +693,11 @@ def execute_agent_intent(
 
     db.commit()
 
+    canary_router.record_canary_execution(tenant_id=tenant_id, is_hard_failure=False)
     return {
         "status": "EXECUTED",
         "trace_id": payload.trace_id,
+        "execution_mode": resolved_mode.value if isinstance(resolved_mode, ExecutionMode) else (resolved_mode or "prod"),
         "intent": payload.intent,
         "actions_executed": executed_actions,
         "approved_client_reply": payload.proposed_client_reply.text if payload.proposed_client_reply else None,
@@ -683,6 +760,46 @@ def decide_hitl_approval(
         raise HTTPException(status_code=400, detail=f"Approval already decided with status: {approval.status}")
 
     now = datetime.now(timezone.utc)
+
+    # Audit 1.3: TTL Guard (15 min) + safe fallback
+    if approval.expires_at:
+        exp = approval.expires_at
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=timezone.utc)
+        if now > exp:
+            setattr(approval, "status", "EXPIRED")
+            setattr(approval, "decision", "EXPIRED")
+            setattr(approval, "decided_at", now)
+            db.commit()
+            return {
+                "status": "EXPIRED",
+                "approval_id": approval.approval_id,
+                "fallback_action": "TRANSFER_TO_DUTY_MANAGER",
+                "message": "Approval card expired (TTL 15m). Lead safely transferred to duty manager.",
+            }
+
+    # Audit 1.3: Role Matrix Guard (ROP / Head of Sales vs regular manager)
+    ALLOWED_APPROVER_ROLES = frozenset({"ROP", "HEAD_OF_SALES", "SALES_DIRECTOR", "ADMIN", "SUPERADMIN", "DIRECTOR", "CEO", "ENGINEER"})
+    role_norm = str(payload.approver_role or "").strip().upper()
+    if role_norm not in ALLOWED_APPROVER_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": "INSUFFICIENT_PERMISSIONS",
+                "message": f"Role '{payload.approver_role}' is not authorized to decide HITL approvals. Required: ROP or Head of Sales.",
+            },
+        )
+
+    # Audit 1.3: HMAC Signature Verification (if signature provided)
+    if payload.signature:
+        from packages.antidrift.hitl.telegram_notifier import verify_hitl_signature
+        action_verb = payload.decision.lower()
+        if not verify_hitl_signature(action_verb, approval_id, payload.signature):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"error": "INVALID_SIGNATURE", "message": "Invalid HMAC signature for HITL callback action"},
+            )
+
     setattr(approval, "status", "APPROVED" if payload.decision == "APPROVE" else "REJECTED")
     setattr(approval, "approver_id", payload.approver_id)
     setattr(approval, "approver_role", payload.approver_role)
@@ -860,3 +977,62 @@ def get_vcr_stats_endpoint(
 ):
     """Returns aggregated metrics on auto-captured tests for /golden_stats."""
     return VCRScenarioGenerator.get_golden_stats(db)
+
+
+class CanaryConfigureRequest(BaseModel):
+    weight_pct: Optional[float] = Field(None, ge=0.0, le=100.0)
+    reset_rollback: bool = False
+    divergence_threshold_pct: Optional[float] = Field(None, ge=0.0, le=100.0)
+    enabled: Optional[bool] = None
+
+
+@router.get("/metrics")
+def get_antidrift_metrics_endpoint(request: Request):
+    """
+    Prometheus exposition metrics for Zero-Trust Fabric scrapers.
+    M3 Fix: Protected endpoint with optional INTERNAL_METRICS_TOKEN auth.
+    """
+    token = os.getenv("INTERNAL_METRICS_TOKEN")
+    if token:
+        auth_hdr = request.headers.get("Authorization", "")
+        token_hdr = request.headers.get("X-Internal-Token", "")
+        if auth_hdr != f"Bearer {token}" and token_hdr != token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unauthorized metrics scraper",
+            )
+
+    from fastapi.responses import Response
+    return Response(content=antidrift_metrics.to_prometheus_format(), media_type="text/plain; version=0.0.4")
+
+
+@router.get("/canary/status")
+def get_canary_status_endpoint():
+    """Returns the current status of the Canary Traffic Router & Auto-Rollback circuit breaker."""
+    return canary_router.get_status()
+
+
+@router.post("/canary/configure")
+def configure_canary_endpoint(req: CanaryConfigureRequest):
+    """Dynamically adjusts canary traffic weight (0-100%) or resets tripped rollback state."""
+    return canary_router.configure(
+        weight_pct=req.weight_pct,
+        reset_rollback=req.reset_rollback,
+        divergence_threshold_pct=req.divergence_threshold_pct,
+        enabled=req.enabled,
+    )
+
+
+@router.get("/policy/recommendations")
+def get_policy_tuning_recommendations_endpoint(
+    tenant_id: Optional[str] = Query(None, description="Optional tenant filter"),
+    min_samples: int = Query(3, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    """Returns data-driven Guardrail tuning recommendations derived from HITL approvals."""
+    recs = PolicyAutoTuner.analyze_tuning_opportunities(
+        db=db,
+        tenant_id=tenant_id,
+        min_samples=min_samples,
+    )
+    return [rec.model_dump() for rec in recs]

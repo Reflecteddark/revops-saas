@@ -224,10 +224,17 @@ def assemble_trusted_context(
         if not deal_stage:
             deal_stage = str(deal_context.get("stage", "") or deal_context.get("stage_name", "") or "")
 
-    # 3. Policy limits
-    disc_max = allowed_discount_max if allowed_discount_max is not None else 5.0
-    defer_days = allowed_deferment_days if allowed_deferment_days is not None else 14
-    human_thresh = requires_human_above if requires_human_above is not None else 300000.0
+    # 3. Policy limits from TenantPolicyRegistry (Audit 1.1: Calibrated per-tenant policies & whitelist)
+    from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
+    tenant_cfg = TenantPolicyRegistry.get_config(clean_tenant_id)
+
+    client_ref = None
+    if deal_context:
+        client_ref = str(deal_context.get("client_id") or deal_context.get("client_name") or deal_context.get("contact_phone") or "")
+
+    disc_max = allowed_discount_max if allowed_discount_max is not None else tenant_cfg.allowed_discount_max
+    defer_days = allowed_deferment_days if allowed_deferment_days is not None else tenant_cfg.get_effective_deferment_days(client_ref)
+    human_thresh = requires_human_above if requires_human_above is not None else tenant_cfg.requires_human_above
 
     ctx = TrustedContext(
         tenant_id=clean_tenant_id,
