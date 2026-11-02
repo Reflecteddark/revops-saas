@@ -125,12 +125,11 @@ function getAdminAuthHeaders() {
       savedKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key');
     } catch (e) {}
   }
-  if (!savedKey || savedKey === 'null' || savedKey === 'undefined' || !savedKey.trim()) {
-    savedKey = 'revops_admin_fleet_secret_2026';
-    try { localStorage.setItem('revops_admin_key', savedKey); } catch (e) {}
+  // No built-in default key: without an explicit key the request relies on the HttpOnly admin cookie.
+  if (savedKey && savedKey !== 'null' && savedKey !== 'undefined' && savedKey.trim()) {
+    headers['X-Admin-Key'] = savedKey;
+    headers['X-RevOps-Admin-Key'] = savedKey;
   }
-  headers['X-Admin-Key'] = savedKey;
-  headers['X-RevOps-Admin-Key'] = savedKey;
   return headers;
 }
 if (typeof window !== 'undefined') window.getAdminAuthHeaders = getAdminAuthHeaders;

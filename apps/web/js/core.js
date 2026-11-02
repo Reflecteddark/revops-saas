@@ -248,11 +248,7 @@ async function loadCrmProviderStatus(tenantId) {
   try {
     const headers = (typeof getAdminAuthHeaders === 'function')
       ? getAdminAuthHeaders()
-      : {
-          'Content-Type': 'application/json',
-          'X-Admin-Key': 'revops_admin_fleet_secret_2026',
-          'X-RevOps-Admin-Key': 'revops_admin_fleet_secret_2026'
-        };
+      : { 'Content-Type': 'application/json' };
 
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/crm/status?tenant_id=${encodeURIComponent(tid)}`, {
       headers: headers,
@@ -312,11 +308,7 @@ async function switchActiveCrm(targetCrm) {
   try {
     const headers = (typeof getAdminAuthHeaders === 'function')
       ? getAdminAuthHeaders()
-      : {
-          'Content-Type': 'application/json',
-          'X-Admin-Key': 'revops_admin_fleet_secret_2026',
-          'X-RevOps-Admin-Key': 'revops_admin_fleet_secret_2026'
-        };
+      : { 'Content-Type': 'application/json' };
 
     const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/crm/action`, {
       method: 'POST',
@@ -721,17 +713,13 @@ async function switchTab(tabId) {
       try {
         currentKey = localStorage.getItem('revops_admin_key') || sessionStorage.getItem('revops_admin_key');
       } catch (e) {}
-      if (!currentKey || currentKey === 'null' || currentKey === 'undefined' || !currentKey.trim()) {
-        currentKey = 'revops_admin_fleet_secret_2026';
-      }
+      const hasKey = !!currentKey && currentKey !== 'null' && currentKey !== 'undefined' && !!currentKey.trim();
 
-      const headers = (typeof getAdminAuthHeaders === 'function') 
-        ? getAdminAuthHeaders() 
-        : { 
-            'Content-Type': 'application/json', 
-            'X-Admin-Key': currentKey,
-            'X-RevOps-Admin-Key': currentKey 
-          };
+      const headers = (typeof getAdminAuthHeaders === 'function')
+        ? getAdminAuthHeaders()
+        : (hasKey
+            ? { 'Content-Type': 'application/json', 'X-Admin-Key': currentKey, 'X-RevOps-Admin-Key': currentKey }
+            : { 'Content-Type': 'application/json' });
       const res = await fetch(`${REVOPS_API_BASE}/api/v1/admin/status`, { 
         method: 'GET', 
         headers: headers, 
