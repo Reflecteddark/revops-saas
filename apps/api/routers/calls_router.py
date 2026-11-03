@@ -12,7 +12,7 @@ import requests
 from datetime import datetime, timedelta, timezone
 from ipaddress import ip_address, ip_network
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -677,7 +677,7 @@ def get_dashboard_calls_data(
                 "next_step": call_next_step,
                 # DB stores naive UTC; the РОП works in the client's time zone, so a 22:30 UTC call (01:30 MSK) belongs
                 # to the next working day. The string is local wall time, same as dates written by n8n to Sheets.
-                "date": local_str(c.created_at, call_tz),
+                "date": local_str(cast("datetime | None", c.created_at), call_tz),
                 "cr": cr_val,
                 "zoom_scheduled": card["zoom_scheduled"],
                 "error_summary": c.ai_summary or sc.get("error_summary", "Анализ завершен ИИ"),
