@@ -556,9 +556,9 @@ def sync_deals_to_database(
             db.add(db_deal)
             inserted += 1
         else:
-            old_payload = dict(db_deal.custom_payload) if isinstance(db_deal.custom_payload, dict) else {}
-            stage_changed = (db_deal.stage_name != stage_name) or (db_deal.stage != stage_enum)
-            already_won = db_deal.stage == DealStage.WON and stage_enum == DealStage.WON
+            old_payload: dict[str, Any] = dict(db_deal.custom_payload) if isinstance(db_deal.custom_payload, dict) else {}
+            stage_changed = bool(db_deal.stage_name != stage_name) or bool(db_deal.stage != stage_enum)
+            already_won = bool(db_deal.stage == DealStage.WON) and stage_enum == DealStage.WON
             setattr(db_deal, "title", title)
             setattr(db_deal, "company_name", title)
             setattr(db_deal, "budget", amount)
@@ -584,7 +584,8 @@ def sync_deals_to_database(
             updated += 1
             stamp_stage_since(db_deal, stage_changed)
 
-        if not db_deal.custom_payload or not parse_moment((db_deal.custom_payload or {}).get("stage_since")):
+        current_payload: dict[str, Any] = db_deal.custom_payload if isinstance(db_deal.custom_payload, dict) else {}
+        if not parse_moment(current_payload.get("stage_since")):
             stamp_stage_since(db_deal, False)
         sla = deal_sla_state(db_deal)
         setattr(db_deal, "days_in_stage", sla.days_in_stage)

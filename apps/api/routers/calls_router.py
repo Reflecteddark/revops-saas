@@ -607,7 +607,7 @@ def get_dashboard_calls_data(
             dur_secs = int(c.duration_seconds or 0)
             dur_str = f"{dur_secs // 60}:{dur_secs % 60:02d}"
 
-            card = read_scorecard(sc, c.overall_score)
+            card = read_scorecard(sc, float(c.overall_score) if c.overall_score is not None else None)
             cr_val = card["cr"]
             call_score = card["score"]
             call_next_step = card["next_step"]
