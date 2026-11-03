@@ -125,7 +125,8 @@ export function PipelineFunnel({
       deals.forEach((d) => {
         const amt = typeof d.amount === 'number' ? d.amount : 0;
         const stId = parseInt(String(d.stage_id || '1'), 10) || 1;
-        const isWon = d.status === 'won' || stId >= 5 || String(d.stage || '').toLowerCase().includes('оплат');
+        // Won = the deal's own status. Stage "5" (final invoice) is NOT a won deal.
+        const isWon = d.status === 'won' || String(d.stage || '').toLowerCase().includes('оплат');
 
         if (isWon) {
           val5 += amt; cnt5 += 1;
@@ -149,29 +150,8 @@ export function PipelineFunnel({
           val1 += amt; cnt1 += 1;
         }
       });
-    } else if (calls && calls.length > 0) {
-      calls.forEach((c) => {
-        const amt = c.amount_num || 0;
-        const isWon = c.status === 'won';
-        const hasZoom = c.next_step === 1 || Boolean(c.cr?.[0] === 1);
-        const hasOffer = Boolean(c.cr?.[7] === 1 || c.cr?.[4] === 1);
-        const hasContract = Boolean(c.cr?.[11] === 1 || c.cr?.[10] === 1);
-
-        val1 += amt; cnt1 += 1;
-        if (hasZoom || hasOffer || hasContract || isWon) {
-          val2 += amt; cnt2 += 1;
-        }
-        if (hasOffer || hasContract || isWon) {
-          val3 += amt; cnt3 += 1;
-        }
-        if (hasContract || isWon) {
-          val4 += amt; cnt4 += 1;
-        }
-        if (isWon) {
-          val5 += amt; cnt5 += 1;
-        }
-      });
     }
+    // No deals => an empty funnel. It used to be "reconstructed" from calls by criterion indexes, i.e. invented.
 
     return [
       { id: 1, name: '1. Квалификация', amount: val1, count: cnt1, colorClass: 'bg-violet-500' },

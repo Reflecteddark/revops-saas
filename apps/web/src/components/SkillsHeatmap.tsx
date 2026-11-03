@@ -78,15 +78,21 @@ export function SkillsHeatmap({
 
     map.forEach((repCalls, name) => {
       const count = repCalls.length;
-      const scoreSum = repCalls.reduce((acc, c) => acc + (c.score || 0), 0);
-      const avgScore = count > 0 ? scoreSum / count : 0;
+      // Rated calls only: an unrated call (score null) used to count as 0 points
+      const ratedCalls = repCalls.filter((c) => typeof c.score === 'number');
+      const scoreSum = ratedCalls.reduce((acc, c) => acc + (c.score as number), 0);
+      const avgScore = ratedCalls.length > 0 ? scoreSum / ratedCalls.length : 0;
 
       const criteriaRates = Array.from({ length: 13 }).map((_, idx) => {
+        // Pass rate over calls where THIS criterion was actually assessed (0 or 1), not over all calls
         let passCount = 0;
+        let assessed = 0;
         repCalls.forEach((c) => {
-          if (c.cr && c.cr[idx] === 1) passCount += 1;
+          const v = c.cr?.[idx];
+          if (v === 1 || v === 0) assessed += 1;
+          if (v === 1) passCount += 1;
         });
-        const rate = count > 0 ? passCount / count : 0;
+        const rate = assessed > 0 ? passCount / assessed : 0;
         return { index: idx, passCount, rate };
       });
 

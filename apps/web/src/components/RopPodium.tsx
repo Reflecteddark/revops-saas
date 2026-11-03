@@ -25,6 +25,7 @@ export interface ManagerPerformance {
   name: string;
   callsCount: number;
   scoresSum: number;
+  ratedCount: number; // calls that have a score
   avgScore: number;
   pipeAmt: number;
   nextStepWon: number;
@@ -52,6 +53,7 @@ export function RopPodium({
           name,
           callsCount: 0,
           scoresSum: 0,
+          ratedCount: 0,
           avgScore: 0,
           pipeAmt: 0,
           nextStepWon: 0,
@@ -62,7 +64,11 @@ export function RopPodium({
 
       const m = mgrMap.get(name)!;
       m.callsCount += 1;
-      m.scoresSum += c.score ?? 8;
+      // Only rated calls count: an unrated call used to be counted as 8 points and propped up the average.
+      if (typeof c.score === 'number') {
+        m.scoresSum += c.score;
+        m.ratedCount += 1;
+      }
       const amt = c.amount_num || 0;
       m.pipeAmt += amt;
 
@@ -81,7 +87,7 @@ export function RopPodium({
 
     const managers = Array.from(mgrMap.values()).map((m) => ({
       ...m,
-      avgScore: m.callsCount > 0 ? m.scoresSum / m.callsCount : 0,
+      avgScore: m.ratedCount > 0 ? m.scoresSum / m.ratedCount : 0,
       nextStepPct:
         m.callsCount > 0 ? Math.round((m.nextStepWon / m.callsCount) * 100) : 0,
     }));
