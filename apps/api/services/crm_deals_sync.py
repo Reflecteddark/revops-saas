@@ -20,6 +20,13 @@ from packages.database.session import SessionLocal
 from ..cache_client import delete_cached_json_sync
 from ..tenant_registry import get_tenant_config
 from .deal_keys import deal_pk_for, find_tenant_deal
+from .crm_next_steps import (
+    attach_task_deadlines,
+    fetch_amocrm_open_task_deadlines,
+    fetch_bitrix24_open_activity_deadlines,
+    parse_deadline,
+    resolve_next_step,
+)
 from .deal_sla import deal_sla_state, parse_moment, stamp_stage_since
 from .crm_deal_normalizer import (
     normalize_amocrm_deal,
@@ -274,6 +281,11 @@ async def fetch_amocrm_deals(
             except Exception as e_norm:
                 logger.warning(f"Failed to normalize amoCRM lead ID {l.get('id')}: {e_norm}")
 
+        # 6. Next steps = open tasks of the leads (None when the CRM did not answer completely: stays unknown)
+        attach_task_deadlines(
+            normalized, await fetch_amocrm_open_task_deadlines(client, domain_clean, headers), "AMO-"
+        )
+
         return normalized
 
 
@@ -428,6 +440,11 @@ async def fetch_bitrix24_deals(
                 normalized.append(norm)
             except Exception as e_norm:
                 logger.warning(f"Failed to normalize Bitrix24 deal ID {d.get('ID')}: {e_norm}")
+
+        # 4. Next steps = open activities of the deals (None when the CRM did not answer completely)
+        attach_task_deadlines(
+            normalized, await fetch_bitrix24_open_activity_deadlines(client, url_clean), "B24-"
+        )
 
         return normalized
 
@@ -587,6 +604,16 @@ def sync_deals_to_database(
         current_payload: dict[str, Any] = db_deal.custom_payload if isinstance(db_deal.custom_payload, dict) else {}
         if not parse_moment(current_payload.get("stage_since")):
             stamp_stage_since(db_deal, False)
+
+        # Next step from the CRM's open tasks/activities (+ a date set by hand while it is still in the future).
+        # "crm_task_deadlines" missing or None = the CRM did not answer: leave the deal's next step untouched.
+        if "crm_task_deadlines" in norm:
+            raw_deadlines = norm["crm_task_deadlines"]
+            crm_dates = None if raw_deadlines is None else [d for d in map(parse_deadline, raw_deadlines) if d]
+            next_dt, has_step = resolve_next_step(crm_dates, parse_moment(current_payload.get("manual_next_step")))
+            if has_step is not None:
+                setattr(db_deal, "has_next_step", has_step)
+                setattr(db_deal, "next_step_date", next_dt.replace(tzinfo=None) if next_dt else None)
         sla = deal_sla_state(db_deal)
         setattr(db_deal, "days_in_stage", sla.days_in_stage)
         setattr(db_deal, "is_at_risk", sla.at_risk)

@@ -1427,6 +1427,11 @@ async def fix_next_step(
     if db_deal:
         setattr(db_deal, "next_step_date", when_utc.replace(tzinfo=None))
         setattr(db_deal, "has_next_step", True)
+        # Remember it as a MANUAL next step: the CRM sync keeps it while it is in the future instead of
+        # replacing it with "the CRM has no open task for this deal".
+        payload_now = dict(db_deal.custom_payload) if isinstance(db_deal.custom_payload, dict) else {}
+        payload_now["manual_next_step"] = when_utc.isoformat()
+        setattr(db_deal, "custom_payload", payload_now)
         state = deal_sla_state(db_deal, now)
         setattr(db_deal, "days_in_stage", state.days_in_stage)
         setattr(db_deal, "is_at_risk", state.at_risk)
