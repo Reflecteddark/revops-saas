@@ -280,6 +280,21 @@ class CallRecording(Base):
     manager = relationship("User", back_populates="call_recordings")
 
 
+class CallProcessingClaim(Base):
+    """Per-call lock of the n8n audit pipeline: overlapping executions must not audit (and bill) one call twice.
+
+    No FK to tenants: n8n claims a call before the tenant's first call creates any tenant rows.
+    """
+    __tablename__ = "call_processing_claims"
+
+    tenant_id = Column(String(36), primary_key=True)
+    call_id = Column(String(150), primary_key=True)
+    status = Column(String(20), nullable=False, default="in_progress")  # in_progress | done
+    attempts = Column(Integer, nullable=False, default=1)
+    claimed_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
+
+
 class RevokedToken(Base):
     """Blacklist of revoked JWT tokens (identified by jti)."""
     __tablename__ = "revoked_tokens"

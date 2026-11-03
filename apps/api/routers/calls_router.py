@@ -9,7 +9,7 @@ import secrets
 import time
 import uuid
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from ipaddress import ip_address, ip_network
 from pathlib import Path
 from typing import Any
@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
+from sqlalchemy import DateTime, bindparam, text
 from sqlalchemy.orm import Session
 
 from packages.analytics_engine.speech_scoring import evaluate_speech_scorecard
@@ -171,6 +172,73 @@ def verify_internal_or_admin(request: Request) -> bool:
         status_code=403,
         detail="Доступ запрещён: эндпоинт доступен только из локальной сети n8n или с ключом администратора"
     )
+
+
+# --- Per-call claims for the n8n audit pipeline -------------------------------------------------------------
+# The poll trigger fires every 5 min, a batch can run longer, and n8n staticData is read at execution start and
+# written at the end, so overlapping executions never see each other. The claim lives in the DB instead.
+CLAIM_STALE_AFTER = timedelta(minutes=60)  # a claim left by a crashed execution is taken over after this
+CLAIM_MAX_ATTEMPTS = 3  # every attempt is a paid audit; a call that keeps failing is not retried forever
+
+_CLAIM_SQL = text("""
+    INSERT INTO call_processing_claims (tenant_id, call_id, status, attempts, claimed_at, updated_at)
+    VALUES (:tenant_id, :call_id, 'in_progress', 1, :now, :now)
+    ON CONFLICT (tenant_id, call_id) DO UPDATE
+    SET attempts = call_processing_claims.attempts + 1, claimed_at = :now, updated_at = :now
+    WHERE call_processing_claims.status = 'in_progress'
+      AND call_processing_claims.claimed_at < :stale_before
+      AND call_processing_claims.attempts < :max_attempts
+    RETURNING attempts
+""").bindparams(bindparam("now", type_=DateTime), bindparam("stale_before", type_=DateTime))
+
+_DONE_SQL = text("""
+    INSERT INTO call_processing_claims (tenant_id, call_id, status, attempts, claimed_at, updated_at)
+    VALUES (:tenant_id, :call_id, 'done', 1, :now, :now)
+    ON CONFLICT (tenant_id, call_id) DO UPDATE SET status = 'done', updated_at = :now
+""").bindparams(bindparam("now", type_=DateTime))
+
+
+class CallClaimPayload(BaseModel):
+    tenant_id: str
+    call_id: str
+
+
+def _claim_key(payload: CallClaimPayload) -> tuple[str, str]:
+    tenant_id, call_id = payload.tenant_id.strip().upper(), payload.call_id.strip()
+    if not tenant_id or not call_id or len(tenant_id) > 36 or len(call_id) > 150:
+        raise HTTPException(status_code=422, detail="tenant_id (<=36) and call_id (<=150) are required")
+    return tenant_id, call_id
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def mark_call_processed(db: Session, tenant_id: str, call_id: str) -> None:
+    db.execute(_DONE_SQL, {"tenant_id": tenant_id, "call_id": call_id, "now": _utcnow()})
+    db.commit()
+
+
+@router.post("/claim")
+def claim_call_for_audit(payload: CallClaimPayload, request: Request, db: Session = Depends(get_db)):
+    """Atomic per-call lock: only the execution that gets claimed=true audits the call."""
+    verify_internal_or_admin(request)
+    tenant_id, call_id = _claim_key(payload)
+    now = _utcnow()
+    row = db.execute(_CLAIM_SQL, {
+        "tenant_id": tenant_id, "call_id": call_id, "now": now,
+        "stale_before": now - CLAIM_STALE_AFTER, "max_attempts": CLAIM_MAX_ATTEMPTS,
+    }).first()
+    db.commit()
+    return {"claimed": row is not None, "attempt": row[0] if row else None}
+
+
+@router.post("/claim/done")
+def complete_call_claim(payload: CallClaimPayload, request: Request, db: Session = Depends(get_db)):
+    """The audit was delivered (CRM note written): the call is never audited again."""
+    verify_internal_or_admin(request)
+    mark_call_processed(db, *_claim_key(payload))
+    return {"status": "done"}
 
 
 # In-memory cache for live calls from Google Sheets keyed by tenant_id (TTL: 15s)
@@ -847,6 +915,13 @@ async def ingest_call_from_n8n(
         logger.error(f"Error persisting ingested call {call_id} for {target_tenant}: {db_err}")
         db.rollback()
         raise HTTPException(status_code=500, detail="Call was not persisted")
+
+    # A call that reached the cabinet is never audited again, whichever path delivered it.
+    try:
+        mark_call_processed(db, target_tenant, call_id)
+    except Exception as claim_err:
+        db.rollback()
+        logger.warning(f"Could not mark call {call_id} of {target_tenant} as processed: {claim_err}")
 
     # Broadcast to open web dashboard tabs via WebSocket
     await manager.broadcast(target_tenant, {
