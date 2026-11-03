@@ -37,6 +37,8 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { dealsApi } from '@/lib/api';
+import { addDaysToKey, businessDayKey } from '@/lib/dates';
+import { DEALS_CHANGED_EVENT } from '@/hooks/useWebSocket';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 import { DealDetailsDrawer } from '@/components/DealDetailsDrawer';
 import {
@@ -150,6 +152,32 @@ export function DealsPage() {
       console.error('CRM sync error:', err);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  // Reload when the server announces that deals changed (e.g. a next step was set from another tab)
+  const selectedPipelineRef = React.useRef(selectedPipelineId);
+  selectedPipelineRef.current = selectedPipelineId;
+  React.useEffect(() => {
+    const reload = () => {
+      void fetchDeals(selectedPipelineRef.current);
+    };
+    window.addEventListener(DEALS_CHANGED_EVENT, reload);
+    return () => window.removeEventListener(DEALS_CHANGED_EVENT, reload);
+  }, [fetchDeals]);
+
+  // "Назначить шаг": next step for tomorrow (Moscow business day); the server stores it and re-evaluates the risk
+  const [fixingDealId, setFixingDealId] = React.useState<string | null>(null);
+  const handleFixNextStep = async (deal: Deal) => {
+    const dealKey = String(deal.id);
+    setFixingDealId(dealKey);
+    try {
+      await dealsApi.fixNextStep(dealKey, addDaysToKey(businessDayKey(), 1), activeTenantId || undefined);
+      await fetchDeals(selectedPipelineRef.current);
+    } catch (err) {
+      console.error('Fix next step failed:', err);
+    } finally {
+      setFixingDealId(null);
     }
   };
 
@@ -300,12 +328,16 @@ export function DealsPage() {
 
   // Enterprise Executive Metrics calculations
   const totalDealsCount = filteredDeals.length;
-  const totalPipelineAmount = filteredDeals.reduce(
+  // Pipeline = OPEN deals only (same definition as the Pulse page). Won and lost deals used to be added to it,
+  // and the weighted forecast counted already-won deals at 100%.
+  const openFilteredDeals = filteredDeals.filter((d) => !isDealClosed(d));
+  const openDealsCount = openFilteredDeals.length;
+  const totalPipelineAmount = openFilteredDeals.reduce(
     (sum, d) => sum + (d.amount || 0),
     0
   );
   const weightedForecast = Math.round(
-    filteredDeals.reduce(
+    openFilteredDeals.reduce(
       (sum, d) => sum + (d.amount || 0) * (d.health.winProbability / 100),
       0
     )
@@ -455,20 +487,20 @@ export function DealsPage() {
             {totalDealsCount}
           </p>
           <p className="truncate text-[11px] text-tertiary">
-            {activePipeline?.name || 'Воронка не выбрана'}
+            {activePipeline?.name || 'Воронка не выбрана'} · в работе: {openDealsCount}
           </p>
         </div>
 
         {/* Card 2: Nominal Pipeline */}
         <div className="shadow-xs space-y-1 rounded-xl border border-subtle bg-surface p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-tertiary">Общий пайплайн</span>
+            <span className="text-xs text-tertiary">Пайплайн в работе</span>
             <span className="font-mono text-[10px] text-tertiary">100%</span>
           </div>
           <p className="font-mono text-xl font-bold text-foreground">
             {totalPipelineAmount.toLocaleString('ru-RU')} ₽
           </p>
-          <p className="text-[11px] text-tertiary">Номинальная сумма воронки</p>
+          <p className="text-[11px] text-tertiary">Только открытые сделки (без выигранных и проигранных)</p>
         </div>
 
         {/* Card 3: Weighted AI Forecast */}
@@ -1065,6 +1097,21 @@ export function DealsPage() {
                           <span className="flex items-center gap-1.5">
                             <Sparkles className="h-3 w-3 shrink-0 text-amber-400" />
                             <span>{d.health.aiNextAction}</span>
+                            {d.sla_risk && !isDealClosed(d) && (
+                              <button
+                                type="button"
+                                data-testid={`fix-next-step-${d.id}`}
+                                disabled={fixingDealId === String(d.id)}
+                                title={d.risk_reason || 'Назначить следующий шаг на завтра'}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleFixNextStep(d);
+                                }}
+                                className="ml-1 shrink-0 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+                              >
+                                {fixingDealId === String(d.id) ? '…' : 'Назначить шаг'}
+                              </button>
+                            )}
                           </span>
                         </td>
 

@@ -15,6 +15,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRevOpsStore, type WebSocketStatus } from '../store/useRevOpsStore';
 import type { WebSocketMessage } from '../types/api';
 
+/** Window event fired when the server says deals changed (deal_updated). */
+export const DEALS_CHANGED_EVENT = 'revops:deals-changed';
+
 export interface UseWebSocketOptions {
   tenantId?: string | null;
   enabled?: boolean;
@@ -153,6 +156,8 @@ export function useWebSocket(
           queryClient.invalidateQueries({ queryKey: ['calls'] });
         } else if (eventType === 'deal_updated') {
           queryClient.invalidateQueries({ queryKey: ['deals'] });
+          // DealsPage keeps its deals in component state (not in react-query): tell it to reload
+          window.dispatchEvent(new CustomEvent(DEALS_CHANGED_EVENT));
         } else if (eventType === 'crm_switched') {
           queryClient.invalidateQueries();
         } else if (eventType === 'settings_updated') {

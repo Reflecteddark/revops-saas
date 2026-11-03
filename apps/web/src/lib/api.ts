@@ -246,6 +246,20 @@ export const dealsApi = {
     return res.data;
   },
 
+  /** Sets the next-step date (YYYY-MM-DD, end of that day in the client's time zone); the server re-evaluates the SLA risk. */
+  fixNextStep: async (
+    dealId: string,
+    nextStepDate: string,
+    tenantId?: string
+  ): Promise<{ status: string; persisted: boolean; message: string; deal: Record<string, unknown> }> => {
+    const res = await api.post(
+      `/deals/${encodeURIComponent(dealId)}/fix-next-step`,
+      { next_step_date: nextStepDate },
+      { params: tenantId ? { org_id: tenantId } : undefined }
+    );
+    return res.data;
+  },
+
   repPerformance: async (params?: {
     tenant_id?: string;
     pipeline_id?: string;

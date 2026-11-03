@@ -210,6 +210,8 @@ export interface Deal {
   loss_reason_code?: string;
   sla_risk: boolean;
   days_in_stage?: number;
+  risk_reason?: string; // why the SLA risk is set (empty when not at risk)
+  next_step_date?: string | null; // ISO, UTC
   responsible_user: string;
   manager_name?: string;
   contact_phone?: string;

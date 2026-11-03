@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { DealsPage } from './DealsPage';
 import { dealsApi } from '@/lib/api';
+import { DEALS_CHANGED_EVENT } from '@/hooks/useWebSocket';
 import type { Deal, Pipeline } from '@/types/api';
 
 vi.mock('@/lib/api', () => ({
@@ -19,6 +20,7 @@ vi.mock('@/lib/api', () => ({
     sync: vi.fn(),
     get: vi.fn(),
     repPerformance: vi.fn(),
+    fixNextStep: vi.fn(),
   },
 }));
 
@@ -146,7 +148,9 @@ describe('DealsPage', () => {
     await waitFor(() => {
       expect(screen.getAllByText(/Новые продажи/).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Всего сделок')).toBeInTheDocument();
-      expect(screen.getAllByText(/1 500 000 ₽/).length).toBeGreaterThanOrEqual(1);
+      // pipeline = OPEN deals only: the 500 000 lost deal is not part of it (1 000 000, not 1 500 000)
+      expect(screen.getAllByText(/1 000 000 ₽/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText(/1 500 000 ₽/)).not.toBeInTheDocument();
     });
   });
 
@@ -297,6 +301,45 @@ describe('DealsPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('rep-performance-matrix')).toBeInTheDocument();
       expect(screen.getByText('Лидер продаж воронки')).toBeInTheDocument();
+    });
+  });
+
+  it('radar: "Назначить шаг" stores the next step on the server and reloads the deals', async () => {
+    vi.mocked(dealsApi.fixNextStep).mockResolvedValue({ status: 'success', persisted: true, message: 'ok', deal: {} });
+
+    renderWithQuery(<DealsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('АО ТехноПром')).toBeInTheDocument();
+    });
+    const callsBefore = vi.mocked(dealsApi.list).mock.calls.length;
+
+    fireEvent.click(screen.getByRole('button', { name: /радар рисков/i }));
+    const fixBtn = await screen.findByTestId('fix-next-step-AMO-4870417');
+    fireEvent.click(fixBtn);
+
+    await waitFor(() => {
+      expect(dealsApi.fixNextStep).toHaveBeenCalledTimes(1);
+    });
+    const [dealId, date, tenant] = vi.mocked(dealsApi.fixNextStep).mock.calls[0];
+    expect(dealId).toBe('AMO-4870417');
+    expect(date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(tenant).toBe('TNT-002');
+    await waitFor(() => {
+      expect(vi.mocked(dealsApi.list).mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+  });
+
+  it('reloads the deals when the server announces a change (WebSocket deal_updated)', async () => {
+    renderWithQuery(<DealsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('АО ТехноПром')).toBeInTheDocument();
+    });
+    const callsBefore = vi.mocked(dealsApi.list).mock.calls.length;
+
+    window.dispatchEvent(new CustomEvent(DEALS_CHANGED_EVENT));
+
+    await waitFor(() => {
+      expect(vi.mocked(dealsApi.list).mock.calls.length).toBeGreaterThan(callsBefore);
     });
   });
 });
