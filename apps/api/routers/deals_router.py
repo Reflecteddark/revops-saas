@@ -28,7 +28,7 @@ from ..cache_client import (
     get_cached_json_sync,
     set_cached_json_sync,
 )
-from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
+from ..tenant_registry import CLEAN_TEMPLATE_ID, get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
 from .admin_router import verify_admin_access
 
@@ -100,8 +100,7 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
     tenant_crm = str(cfg.get("crm_type") or "bitrix24").strip().lower()
     sheet_id = cfg.get("spreadsheet_id") or get_tenant_spreadsheet_id(clean_tenant)
 
-    CLEAN_STARTER_TEMPLATE_ID = "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A"
-    if clean_tenant in ("TNT-002", "TNT-CLEAN-001") or sheet_id == CLEAN_STARTER_TEMPLATE_ID:
+    if clean_tenant in ("TNT-002", "TNT-CLEAN-001") or sheet_id == CLEAN_TEMPLATE_ID:
         empty_res: list[dict[str, Any]] = []
         _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
         set_cached_json_sync(cache_key, empty_res, ex=60)

@@ -15,6 +15,8 @@ from typing import Any
 logger = logging.getLogger("tenant_registry")
 
 DEFAULT_SPREADSHEET_ID = os.getenv("REVOPS_SPREADSHEET_ID", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk")
+# Clean starter template: the source clients copy from, never a client's own sheet.
+CLEAN_TEMPLATE_ID = os.getenv("CLEAN_TEMPLATE_ID", "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A")
 
 _REGISTRY_LOCK = threading.Lock()
 
@@ -302,7 +304,7 @@ def load_tenants_registry() -> dict[str, Any]:
         master_template = {
             "tenant_id": "TNT-CLEAN-001",
             "tenant_name": "Clean Starter Template",
-            "spreadsheet_id": "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A",
+            "spreadsheet_id": CLEAN_TEMPLATE_ID,
             "crm_type": "template",
             "status": "template",
             "is_template": True,
@@ -386,7 +388,7 @@ def get_all_tenants_summary() -> list[dict[str, Any]]:
             "tenant_id": tpl.get("tenant_id", "TNT-CLEAN-001"),
             "tenant_name": tpl.get("tenant_name", "Clean Client Starter (Шаблон)"),
             "crm_type": "template",
-            "spreadsheet_id": tpl.get("spreadsheet_id", "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A"),
+            "spreadsheet_id": tpl.get("spreadsheet_id", CLEAN_TEMPLATE_ID),
             "status": "template",
             "niche_name": "Чистый старт",
             "avg_deal_check": 0,

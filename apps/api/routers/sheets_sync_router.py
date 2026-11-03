@@ -21,6 +21,7 @@ from apps.api.services.pii_service import PIIService
 from apps.api.routers.admin_router import ALLOWED_ADMIN_KEYS
 from apps.api.cache_client import delete_cached_json_sync
 from apps.api.routers.calls_router import _CALLS_CACHE, is_internal_request
+from apps.api.tenant_registry import CLEAN_TEMPLATE_ID
 from apps.api.routers.deals_router import _DEALS_CACHE
 from apps.api.websocket_manager import manager
 
@@ -105,7 +106,7 @@ def _get_spreadsheet_id(tenant_id: str, custom_sheet_id: Optional[str] = None) -
                 with open(p, 'r', encoding='utf-8') as f:
                     reg = json.load(f)
                 for t in reg.get('tenants', []):
-                    if t.get('tenant_id') == tenant_id or t.get('slug') == tenant_id.lower():
+                    if (t.get('tenant_id') == tenant_id or t.get('slug') == tenant_id.lower()) and t.get('spreadsheet_id'):
                         return t.get('spreadsheet_id')
                 # If tenant is master or clean starter
                 if tenant_id in ['TNT-CLEAN-001', 'TNT-MASTER-001', 'master', 'clean']:
@@ -113,10 +114,10 @@ def _get_spreadsheet_id(tenant_id: str, custom_sheet_id: Optional[str] = None) -
             except Exception as e:
                 logger.warning(f"Error reading registry at {p}: {e}")
 
-    # 3. Дефолтный ID чистого шаблона (Clean Client Starter)
-    clean_id = os.getenv('CLEAN_TEMPLATE_ID', '1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A')
-    if clean_id:
-        return clean_id
+    # 3. Only the template tenants themselves map to the clean template: a client without its own sheet must
+    # never be synced into the shared template that every new client is copied from.
+    if tenant_id.upper() in ('TNT-CLEAN-001', 'TNT-MASTER-001'):
+        return CLEAN_TEMPLATE_ID
 
     raise HTTPException(status_code=404, detail=f"Spreadsheet not configured for tenant {tenant_id}")
 

@@ -1496,6 +1496,14 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
     plain_password = req.password.strip() if req.password else f"RevOps_{int(time.time()) % 10000}!"
     password_hash = hashlib.sha256(plain_password.encode("utf-8")).hexdigest()
 
+    # The client's own sheet is checked before anything is written: an unchecked sheet means n8n writes fail silently.
+    from ..services.tenant_sheet import check_tenant_sheet, normalize_sheet_id
+    sheet_id = normalize_sheet_id(req.sheet_id)
+    if sheet_id:
+        sheet_problems = check_tenant_sheet(sheet_id)
+        if sheet_problems:
+            raise HTTPException(status_code=400, detail="Таблица не подключена: " + "; ".join(sheet_problems))
+
     append_console_log(f"🚀 Старт авто-развертывания клиента: '{company_name}' ({crm_type.upper()})...", "info")
 
     prov_dir = ENTERPRISE_OS_DIR / "multitenant_revops"
@@ -1511,7 +1519,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         tenant_record = provision_tenant(
             company_name=company_name,
             client_email=clean_email if clean_email else None,
-            sheet_id=req.sheet_id if req.sheet_id else None,
+            sheet_id=sheet_id or None,
             crm_type=crm_type,
             crm_webhook=req.crm_webhook,
             amo_domain=req.amo_domain,
@@ -1524,15 +1532,6 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         logger.error(f"Tenant provisioning error: {e}", exc_info=True)
         append_console_log(f"[-] Сбой развертывания тенанта: {e}", "error")
         raise HTTPException(status_code=500, detail=f"Ошибка развертывания тенанта: {e!s}")
-
-    if not tenant_record:
-        err_msg = (
-            "Квота хранилища Google Drive сервисного аккаунта исчерпана для прямого автоклонирования. "
-            "Пожалуйста, откройте шаблон: https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy , "
-            "сохраните копию на свой Google Диск и укажите её ID в поле 'Google Spreadsheet ID'."
-        )
-        append_console_log(f"[-] {err_msg}", "warning")
-        raise HTTPException(status_code=400, detail=err_msg)
 
     tenant_id = tenant_record.get("tenant_id")
 
@@ -1656,8 +1655,16 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
 @router.put("/tenants/{tenant_id}")
 def update_tenant_endpoint(tenant_id: str, req: TenantUpdateRequest):
     """Updates tenant settings in tenants_registry.json and credentials in registered_clients.json."""
+    from ..services.tenant_sheet import check_tenant_sheet, normalize_sheet_id
     from ..tenant_registry import load_tenants_registry
     clean_id = tenant_id.strip().upper()
+
+    # Validate the sheet before touching the (cached) registry record: a rejected request must change nothing.
+    clean_sh = normalize_sheet_id(req.spreadsheet_id) if req.spreadsheet_id is not None else ""
+    if clean_sh:  # empty = disconnect the sheet (n8n then skips the tenant)
+        sheet_problems = check_tenant_sheet(clean_sh)
+        if sheet_problems:
+            raise HTTPException(status_code=400, detail="Таблица не подключена: " + "; ".join(sheet_problems))
     registry = load_tenants_registry()
     
     target_tenant = None
@@ -1703,9 +1710,6 @@ def update_tenant_endpoint(tenant_id: str, req: TenantUpdateRequest):
         target_tenant["client_email"] = new_em
         target_tenant["client_emails"] = [new_em]
     if req.spreadsheet_id is not None:
-        raw_sh = req.spreadsheet_id.strip()
-        sh_m = re.search(r"/spreadsheets/d/([a-zA-Z0-9-_]+)", raw_sh)
-        clean_sh = sh_m.group(1) if sh_m else raw_sh
         target_tenant["spreadsheet_id"] = clean_sh
     if req.minutes_quota is not None:
         target_tenant["minutes_quota"] = req.minutes_quota

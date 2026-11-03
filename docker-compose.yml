@@ -15,6 +15,8 @@ services:
       - TENANTS_REGISTRY_PATH=/opt/revops-enterprise-os/tenants_registry.json
       - REDIS_URL=redis://redis:6379/0
       - REDIS_ENABLED=true
+      # n8n writes raw_* sheets with this account: a client's sheet must be shared with it (onboarding check)
+      - N8N_SHEETS_BOT_EMAIL=n8n-bot@n8n-sheets-508111.iam.gserviceaccount.com
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
