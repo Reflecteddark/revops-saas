@@ -111,6 +111,11 @@ def test_fix_next_step_broadcasts_only_to_own_tenant(client, side_effects, monke
         seen.append(org)
 
     monkeypatch.setattr(deals_router.manager, "broadcast", rec)
+    # a real (transient) deal: fix-next-step answers 404 for a deal that does not exist
+    from packages.database.models import Deal, DealStage
+    fake = Deal(id="D-1", tenant_id="TNT-001", workspace_id="ws", title="T", budget=1.0,
+                stage=DealStage.QUALIFICATION, stage_name="Квалификация", custom_payload={})
+    monkeypatch.setattr(deals_router, "find_tenant_deal", lambda db, tenant, crm_id: fake)
     headers = {**EXTERNAL, "Authorization": f"Bearer {_jwt('TNT-001')}"}
     res = client.post("/api/v1/deals/D-1/fix-next-step", headers=headers)
     assert res.status_code == 200, res.text[:200]

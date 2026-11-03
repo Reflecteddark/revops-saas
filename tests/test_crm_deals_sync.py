@@ -179,7 +179,7 @@ def test_sync_deals_to_database_and_pruning():
         assert d1.title == "ООО Ромашка"
         assert d1.budget == 250000.0
         assert d1.stage == DealStage.LEAD_INCOMING
-        assert d1.is_at_risk is True
+        assert d1.is_at_risk is False  # a brand-new deal is not an SLA breach just because it is on an early stage
         assert d1.status == "ACTIVE"
 
         d2 = db.query(Deal).filter(Deal.id == "AMO-102").first()

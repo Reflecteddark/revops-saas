@@ -21,24 +21,14 @@ def client():
     return TestClient(app, client=("172.16.0.5", 50000))
 
 
-def test_deals_list_and_fix_step(client):
-    # 1. Fetch deals
+def test_deals_list_shape(client):
+    # The list/fix-next-step round trip on a real deal lives in tests/test_deal_sla.py. This test used to
+    # depend on seeded demo deals that the API invented for any tenant without data.
     res = client.get("/api/v1/deals?sla_risk_only=true")
     assert res.status_code == 200
     data = res.json()
-    assert "deals" in data
-    assert data["total"] >= 1
-    deal_to_fix = data["deals"][0]
-    deal_id = deal_to_fix["id"]
-    assert deal_to_fix["sla_risk"] is True
-
-    # 2. Fix next step
-    fix_res = client.post(f"/api/v1/deals/{deal_id}/fix-next-step", json={"next_step_date": "2026-10-10"})
-    assert fix_res.status_code == 200
-    fixed = fix_res.json()["deal"]
-    assert fixed["id"] == deal_id
-    assert fixed["sla_risk"] is False
-    assert fixed["next_step_date"] == "2026-10-10"
+    assert "deals" in data and data["total"] == len(data["deals"])
+    assert all(d["sla_risk"] is True for d in data["deals"])
 
 
 def test_metrics_revenue_history(client):

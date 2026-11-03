@@ -20,6 +20,7 @@ from packages.database.session import SessionLocal
 from ..cache_client import delete_cached_json_sync
 from ..tenant_registry import get_tenant_config
 from .deal_keys import deal_pk_for, find_tenant_deal
+from .deal_sla import deal_sla_state, parse_moment, stamp_stage_since
 from .crm_deal_normalizer import (
     normalize_amocrm_deal,
     normalize_bitrix24_deal,
@@ -511,15 +512,6 @@ def sync_deals_to_database(
         status = "DELETED" if is_deleted else ("WON" if stage_enum == DealStage.WON else ("LOST" if stage_enum == DealStage.LOST else "ACTIVE"))
         crm_source = str(norm.get("source") or norm.get("crm_source") or "amocrm")
 
-        # SLA risk calculation
-        sla_risk = bool(
-            not is_won and not is_lost and not is_deleted and (
-                stage_enum in (DealStage.LEAD_INCOMING, DealStage.QUALIFICATION)
-                or "первичный" in stage_name.lower()
-                or "кп" in stage_name.lower()
-            )
-        )
-
         manager_name = str(norm.get("manager_name") or "Не назначен")
         assigned_uid = user_name_to_id.get(manager_name.lower().strip())
 
@@ -558,13 +550,15 @@ def sync_deals_to_database(
                 crm_source=crm_source,
                 status=status,
                 is_deleted=is_deleted,
-                is_at_risk=sla_risk,
                 weighted_amount=norm.get("weighted_amount"),
                 custom_payload=custom_payload,
             )
             db.add(db_deal)
             inserted += 1
         else:
+            old_payload = dict(db_deal.custom_payload) if isinstance(db_deal.custom_payload, dict) else {}
+            stage_changed = (db_deal.stage_name != stage_name) or (db_deal.stage != stage_enum)
+            already_won = db_deal.stage == DealStage.WON and stage_enum == DealStage.WON
             setattr(db_deal, "title", title)
             setattr(db_deal, "company_name", title)
             setattr(db_deal, "budget", amount)
@@ -577,12 +571,25 @@ def sync_deals_to_database(
             setattr(db_deal, "crm_source", crm_source)
             setattr(db_deal, "status", status)
             setattr(db_deal, "is_deleted", is_deleted)
-            setattr(db_deal, "is_at_risk", sla_risk)
             setattr(db_deal, "weighted_amount", norm.get("weighted_amount"))
-            setattr(db_deal, "custom_payload", custom_payload)
+            # Merge, do not overwrite: stage_since and anything else we keep in the payload must survive a sync.
+            merged_payload = {**old_payload, **custom_payload}
+            if already_won and old_payload.get("last_stage_change"):
+                # The CRM "last modified" date moves on ANY edit of a closed deal (a comment, a changed field).
+                # Keep the date the deal was first seen won, or an old deal re-enters the current month's revenue.
+                merged_payload["last_stage_change"] = old_payload["last_stage_change"]
+            setattr(db_deal, "custom_payload", merged_payload)
             if assigned_uid:
                 setattr(db_deal, "assigned_user_id", assigned_uid)
             updated += 1
+            stamp_stage_since(db_deal, stage_changed)
+
+        if not db_deal.custom_payload or not parse_moment((db_deal.custom_payload or {}).get("stage_since")):
+            stamp_stage_since(db_deal, False)
+        sla = deal_sla_state(db_deal)
+        setattr(db_deal, "days_in_stage", sla.days_in_stage)
+        setattr(db_deal, "is_at_risk", sla.at_risk)
+        setattr(db_deal, "risk_reason", sla.reason_text or None)
 
     # Prune / soft-delete obsolete deals that are no longer in CRM
     existing_deals = db.query(Deal).filter(Deal.tenant_id == clean_tid).all()

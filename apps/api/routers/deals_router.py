@@ -30,6 +30,8 @@ from ..cache_client import (
 )
 from ..services.crm_deal_normalizer import parse_numeric_price
 from ..services.deal_keys import deal_pk_for, find_tenant_deal
+from ..services.deal_sla import deal_sla_state, end_of_local_day_utc
+from ..services.tz import tenant_tz
 from ..tenant_registry import CLEAN_TEMPLATE_ID, get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
 from .admin_router import verify_admin_access
@@ -62,6 +64,17 @@ def get_service_account_path() -> Path | None:
         if p.exists():
             return p
     return None
+
+
+def _sla_fields(d: Deal) -> dict[str, Any]:
+    """SLA state of a stored deal evaluated NOW (the stored is_at_risk goes stale between syncs)."""
+    st = deal_sla_state(d)
+    return {
+        "sla_risk": st.at_risk,
+        "days_in_stage": st.days_in_stage,
+        "risk_reason": st.reason_text,
+        "next_step_date": d.next_step_date.isoformat() if d.next_step_date else None,
+    }
 
 
 def parse_amount(val: Any) -> float:
@@ -441,7 +454,7 @@ async def get_pipelines(
         else:
             p_entry["active_amount"] += amt
 
-        if d.is_at_risk and not is_won and not is_lost:
+        if deal_sla_state(d).at_risk and not is_won and not is_lost:
             p_entry["sla_risk_count"] += 1
 
     # Ensure every pipeline has stages list populated with counts
@@ -616,8 +629,7 @@ async def list_deals(
                 "status": deal_status,
                 "loss_reason": d.loss_reason or "",
                 "loss_reason_code": d.loss_reason_code or "",
-                "sla_risk": False if (deal_status in ("won", "lost") or d.stage in (DealStage.WON, DealStage.LOST) or any(w in str(d.stage_name or "").lower() for w in ("успешно", "закрыт", "отказ", "не реализовано"))) else bool(d.is_at_risk),
-                "days_in_stage": d.days_in_stage or 0,
+                **_sla_fields(d),
                 "responsible_user": manager_name,
                 "manager_name": manager_name,
                 "segment": "General B2B",
@@ -726,7 +738,7 @@ async def get_reps_performance(
                 "manager": str(mgr).strip(),
                 "created_at": d.created_at,
                 "updated_at": d.updated_at,
-                "sla_risk": bool(d.is_at_risk) if status == "active" else False,
+                "sla_risk": deal_sla_state(d).at_risk if status == "active" else False,
             })
     else:
         is_demo_tenant = str(effective_tenant).lower().startswith("demo_") or str(effective_tenant).lower().startswith("demo-")
@@ -1070,8 +1082,7 @@ async def get_deal_details(
                 "status": "won" if (db_deal.stage == DealStage.WON or "успешно" in str(db_deal.stage_name).lower()) else ("lost" if (db_deal.stage == DealStage.LOST or "закрыто" in str(db_deal.stage_name).lower() or "отказ" in str(db_deal.stage_name).lower()) else "active"),
                 "loss_reason": db_deal.loss_reason or "",
                 "loss_reason_code": db_deal.loss_reason_code or "",
-                "sla_risk": False if (db_deal.stage in (DealStage.WON, DealStage.LOST) or any(w in str(db_deal.stage_name or "").lower() for w in ("успешно", "закрыт", "отказ", "не реализовано"))) else bool(db_deal.is_at_risk),
-                "days_in_stage": db_deal.days_in_stage or 0,
+                **_sla_fields(db_deal),
                 "responsible_user": manager_name,
                 "manager_name": manager_name,
                 "created_at": db_deal.created_at.isoformat() if db_deal.created_at else "",
@@ -1421,53 +1432,85 @@ async def ingest_deal(
 
 
 @router.post("/{deal_id}/fix-next-step")
-
 async def fix_next_step(
     deal_id: str,
     request: Request,
     payload: FixNextStepPayload | None = None,
     next_step_date_iso: str | None = Query(None),
-    org_id: str | None = None
+    org_id: str | None = None,
+    db: Session = Depends(get_db),
 ):
-    """Fixes the next step date, clears the SLA risk, and broadcasts real-time WebSocket update."""
+    """Sets the next-step date of a deal, stores it, re-evaluates the SLA risk and tells the open tabs.
+
+    It used to change only a per-process cache and broadcast: the next GET /deals returned the old risk and
+    the date was lost on restart (or on another worker). Now the date is written to the deal row."""
     # Tenant comes from auth context; a non-admin cannot target (or broadcast into) another tenant.
     org_id = get_authenticated_tenant_or_verify_admin(request, org_id)
-    target_date = next_step_date_iso or (payload.next_step_date if payload else None)
-    if not target_date:
-        target_date = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat().split("T")[0]
+    clean_tid = org_id.strip().upper()
+    raw_date = (next_step_date_iso or (payload.next_step_date if payload else None) or "").strip()
 
-    found = None
-    lookup = get_deals_lookup(tenant_id=org_id)
-    clean_id = deal_id.upper().strip()
-    if clean_id in lookup:
-        found = lookup[clean_id]
-        found["sla_risk"] = False
-        found["next_step_date"] = target_date
+    tz = tenant_tz(get_tenant_config(clean_tid))
+    now = datetime.now(timezone.utc)
+    if not raw_date:
+        raw_date = (now.astimezone(tz) + timedelta(days=1)).strftime("%Y-%m-%d")
+    try:
+        parsed = datetime.fromisoformat(raw_date)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="next_step_date: ожидается дата YYYY-MM-DD или ISO-время")
+    if len(raw_date) <= 10:
+        when_utc = end_of_local_day_utc(parsed, tz)  # a date means "by the end of that day"
+    else:
+        when_utc = (parsed if parsed.tzinfo else parsed.replace(tzinfo=tz)).astimezone(timezone.utc)
+    if when_utc < now:
+        raise HTTPException(status_code=422, detail="Дата следующего шага уже в прошлом: риск не будет снят")
 
-    if not found:
-        found = {
-            "id": deal_id,
-            "deal_id": deal_id,
-            "org_id": org_id,
-            "title": f"Сделка {deal_id}",
-            "amount": 0.0,
-            "amount_str": "0 ₽",
-            "stage": "Первичный контакт",
-            "status": "active",
-            "sla_risk": False,
-            "next_step_date": target_date,
-            "synced_at": datetime.now(timezone.utc).isoformat()
+    db_deal = None
+    for candidate_id in (deal_id.strip(), f"B24-{deal_id.strip()}", f"AMO-{deal_id.strip()}"):
+        db_deal = find_tenant_deal(db, clean_tid, candidate_id)
+        if db_deal:
+            break
+
+    if db_deal:
+        setattr(db_deal, "next_step_date", when_utc.replace(tzinfo=None))
+        setattr(db_deal, "has_next_step", True)
+        state = deal_sla_state(db_deal, now)
+        setattr(db_deal, "days_in_stage", state.days_in_stage)
+        setattr(db_deal, "is_at_risk", state.at_risk)
+        setattr(db_deal, "risk_reason", state.reason_text or None)
+        db.commit()
+        deal_view: dict[str, Any] = {
+            "id": db_deal.id,
+            "deal_id": db_deal.id,
+            "org_id": clean_tid,
+            "title": db_deal.title,
+            "amount": float(db_deal.budget or 0.0),
+            **_sla_fields(db_deal),
         }
+        persisted = True
+    else:
+        # Deal that exists only in the Google Sheets mirror: nothing to write to the DB, the CRM stays the source.
+        found = get_deals_lookup(tenant_id=clean_tid).get(deal_id.upper().strip())
+        if not found:
+            raise HTTPException(status_code=404, detail=f"Сделка {deal_id} не найдена")
+        found["sla_risk"] = False
+        found["next_step_date"] = when_utc.isoformat()
+        deal_view = dict(found)
+        persisted = False
+
+    delete_cached_json_sync(f"deals:{clean_tid}")
+    delete_cached_json_sync(f"pipelines:{clean_tid}")
+    _DEALS_CACHE.pop(clean_tid, None)
 
     # Real-time WebSocket Broadcast
-    await manager.broadcast(org_id, {
+    await manager.broadcast(clean_tid, {
         "type": "deal_updated",
         "action": "fix_next_step",
-        "data": found
+        "data": deal_view,
     })
 
     return {
         "status": "success",
-        "message": f"Следующий шаг по сделке {deal_id} назначен на {target_date}. Риск снят.",
-        "deal": found
+        "persisted": persisted,
+        "message": f"Следующий шаг по сделке {deal_id} назначен на {when_utc.astimezone(tz).strftime('%d.%m.%Y %H:%M')}. Риск пересчитан.",
+        "deal": deal_view,
     }

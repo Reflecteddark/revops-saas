@@ -18,6 +18,7 @@ from packages.database.session import get_db
 from packages.monitoring.ai_probe import generate_gemini_content_cascade
 
 from ..auth import get_current_user
+from ..services.deal_sla import deal_sla_state
 from ..tenant_registry import DEFAULT_SPREADSHEET_ID, get_tenant_config
 
 logger = logging.getLogger("insights_router")
@@ -121,14 +122,15 @@ def load_tenant_dataset(
                     or stage_val in ("DEAL_WON", "DEAL_LOST", "WON", "LOST", "142", "143", "6", "7")
                     or any(w in stage_val.lower() for w in ("успешн", "закрыт", "отказ", "не реализован"))
                 )
+                sla_now = deal_sla_state(d)  # same SLA rule as the deals API, evaluated now
                 deals_list.append({
                     "id": str(d.id),
                     "title": str(d.title or f"Сделка #{d.id}"),
                     "budget": float(d.budget or 0.0),
                     "stage": stage_val,
                     "status": st_name,
-                    "is_at_risk": False if is_closed else bool(d.is_at_risk or (d.days_in_stage or 0) > 3),
-                    "days_in_stage": int(d.days_in_stage or 0),
+                    "is_at_risk": False if is_closed else sla_now.at_risk,
+                    "days_in_stage": sla_now.days_in_stage,
                     "crm_source": str(d.crm_source or ""),
                     "manager_name": mgr or ""
                 })

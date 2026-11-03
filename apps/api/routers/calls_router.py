@@ -38,6 +38,7 @@ from ..services.raw_calls_row import build_raw_calls_row
 from ..services.tz import tenant_tz, to_local
 from ..services.crm_deal_normalizer import parse_numeric_price
 from ..services.deal_keys import deal_pk_for, find_tenant_deal
+from ..services.deal_sla import deal_sla_state
 from ..services.workspaces import get_or_create_workspace, normalize_crm_type
 from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
@@ -820,7 +821,6 @@ async def ingest_call_from_n8n(
                     stage_name=payload.stage or ("Переговоры" if status == "won" else "Первичный контакт"),
                     pipeline_name="Основная воронка",
                     pipeline_id="0",
-                    is_at_risk=bool(score is not None and score < 8),
                     avg_call_score=float(score) if score is not None else 0.0,
                     crm_source=tenant_crm or "unknown",
                     status="active"
@@ -843,15 +843,10 @@ async def ingest_call_from_n8n(
                     mean_score = round(sum(existing_call_scores) / len(existing_call_scores), 1)
                     setattr(deal, "avg_call_score", mean_score)
 
-                deal_is_closed = (
-                    getattr(deal, "status", "") in ("won", "lost")
-                    or getattr(deal, "stage", "") in (DealStage.WON, DealStage.LOST)
-                    or any(w in str(getattr(deal, "stage_name", "")).lower() for w in ("успешно", "закрыт", "отказ", "не реализовано"))
-                )
-                if not deal_is_closed and score is not None and score < 8 and dur_sec >= 20:
-                    setattr(deal, "is_at_risk", True)
-                elif deal_is_closed or (score is not None and score >= 8):
-                    setattr(deal, "is_at_risk", False)
+                # SLA risk is about the PROCESS (next step, stagnation), not about one call's score: a weak call
+                # used to flip the flag and the next CRM sync flipped it back. Weak calls are visible in the
+                # audit and in avg_call_score.
+                setattr(deal, "is_at_risk", deal_sla_state(deal).at_risk)
                 current_title = str(getattr(deal, "title", "") or "")
                 if (current_title.startswith("?") or current_title.startswith("Сделка #") or not current_title) and payload.deal_title and not payload.deal_title.startswith("?"):
                     setattr(deal, "title", payload.deal_title)
