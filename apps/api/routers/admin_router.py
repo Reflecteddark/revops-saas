@@ -2744,6 +2744,7 @@ async def execute_crm_action(req: CRMActionRequest):
     - sync_deals: python {connector}.py (live deal sync to raw_deals)
     - switch_crm: switch active CRM in tenants_registry.json
     """
+    from .. import tenant_registry
     from ..tenant_registry import get_tenant_config, get_tenants_registry_path
 
     tenant_id = req.tenant_id or "TNT-001"
@@ -2753,15 +2754,8 @@ async def execute_crm_action(req: CRMActionRequest):
 
     if action == "switch_crm":
         new_crm = (req.crm_type or ("amocrm" if current_crm == "bitrix24" else "bitrix24")).lower()
-        candidate_reg_paths = [
-            get_tenants_registry_path(),
-            Path("/opt/revops-saas/tenants_registry.json"),
-            Path("/opt/revops-enterprise-os/tenants_registry.json"),
-            ENTERPRISE_OS_DIR / "tenants_registry.json",
-            Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "tenants_registry.json",
-            Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "multitenant_revops" / "tenants_registry.json",
-            Path("/opt/revops-enterprise-os/multitenant_revops/tenants_registry.json")
-        ]
+        # Same mirror set as save_tenants_registry (single source of registry locations).
+        candidate_reg_paths = [get_tenants_registry_path(), *tenant_registry.get_all_candidate_registry_paths()]
         seen_paths = set()
         for rp in candidate_reg_paths:
             if rp and rp.exists() and str(rp.resolve()) not in seen_paths:

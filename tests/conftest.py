@@ -11,7 +11,17 @@ os.environ["DISABLE_TELEGRAM_ALERTS"] = "true"
 os.environ.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long-abc-xyz")
 os.environ.setdefault("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
 
+import tempfile
 from pathlib import Path
+
+# Hermetic tenant registry: tests must never write to real registry files. The app resolves
+# registry paths relative to the repo and to the developer's home (e.g. ../revops-enterprise-os/),
+# so without this a test that saves the registry silently overwrote the developer's real files,
+# and local runs passed only because those real files happened to exist (CI has none).
+_TEST_TMP_DIR = Path(tempfile.mkdtemp(prefix="revops-tests-"))
+_TEST_REGISTRY = _TEST_TMP_DIR / "tenants_registry.json"
+_TEST_REGISTRY.write_text('{"tenants": []}', encoding="utf-8")
+os.environ["TENANTS_REGISTRY_PATH"] = str(_TEST_REGISTRY)
 
 from packages.database.session import Base, engine, init_db
 
@@ -23,6 +33,17 @@ _RUNTIME_WRITTEN_TRACKED_FILES = [
     _REPO_ROOT / "apps" / "api" / "data" / "registered_clients.json",
     _REPO_ROOT / "logs" / "webhooks_dlq_snapshot.json",
 ]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _hermetic_tenant_registry():
+    """Registry mirrors collapse to the session temp file (see _TEST_REGISTRY above)."""
+    from apps.api import tenant_registry
+
+    mp = pytest.MonkeyPatch()
+    mp.setattr(tenant_registry, "get_all_candidate_registry_paths", lambda: [_TEST_REGISTRY])
+    yield _TEST_REGISTRY
+    mp.undo()
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -456,7 +456,6 @@ def sync_system_registry(tenant: Tenant, managers: list[User]):
     reg_candidates = [
         BASE_DIR / "tenants_registry.json",
         BASE_DIR / "multitenant_revops" / "tenants_registry.json",
-        Path.home() / ".gemini" / "antigravity" / "scratch" / "revops-enterprise-os" / "tenants_registry.json",
     ]
     for reg_path in reg_candidates:
         if reg_path.exists():

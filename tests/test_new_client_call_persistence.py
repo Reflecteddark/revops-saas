@@ -140,7 +140,12 @@ def test_ingest_requires_explicit_tenant_id():
     assert res.status_code == 422
 
 
-def test_provisioning_creates_workspace(tid):
+def test_provisioning_creates_workspace(tid, monkeypatch):
+    # The provisioner is mocked, so the real registry/client-file writes must be mocked too:
+    # saving the mocked (empty) registry used to wipe the registry cache for every later test.
+    from apps.api.routers import admin_router
+    monkeypatch.setattr(admin_router, "sync_save_registry", lambda data: True)
+    monkeypatch.setattr(admin_router, "save_registered_clients", lambda clients: None)
     mock_module = MagicMock()
     mock_module.provision_tenant.return_value = {"tenant_id": tid, "tenant_name": "Новый клиент", "crm_type": "amocrm",
                                                  "spreadsheet_id": "sheet-x"}
