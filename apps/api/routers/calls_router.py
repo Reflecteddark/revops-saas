@@ -31,6 +31,7 @@ from ..cache_client import (
     set_cached_json_sync,
 )
 from ..schemas import SpeechEvaluationRequest
+from ..services.audio_duration import mp3_duration_seconds
 from ..services.workspaces import get_or_create_workspace, normalize_crm_type
 from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
@@ -1032,10 +1033,10 @@ async def inject_call_to_amocrm(
     with open(target_path, "wb") as f_out:
         f_out.write(audio_bytes)
 
-    # Estimate duration if not provided (assume ~128kbps = 16000 bytes/sec)
+    # Real duration from the MP3 headers; size-based estimate only for non-MP3 audio
     dur = duration
     if not dur or dur <= 0:
-        dur = max(25, int(len(audio_bytes) / 16000))
+        dur = mp3_duration_seconds(audio_bytes) or max(25, int(len(audio_bytes) / 16000))
 
     headers = {"Authorization": f"Bearer {amo_token}"}
     target_lead_id = lead_id
