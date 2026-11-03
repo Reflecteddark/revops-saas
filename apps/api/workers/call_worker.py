@@ -251,6 +251,35 @@ def sync_methodology_evaluations_for_call(
         logger.warning(f"Could not sync methodology evaluations for call {call_id}: {e}")
 
 
+def _park_in_dlq(
+    tenant_id: str, crm_source: str, external_call_id: str, audio_url: str, task_data: Dict[str, Any], error: str
+) -> None:
+    """Record a call that could not be audited so it can be retried; never raises."""
+    db = SessionLocal()
+    try:
+        db.execute(
+            text("""
+                INSERT INTO failed_calls_dlq (
+                    tenant_id, crm_source, external_call_id, audio_url, payload, error_message, created_at
+                ) VALUES (:tenant_id, :crm_source, :call_id, :audio_url, :payload, :error, NOW())
+            """),
+            {
+                "tenant_id": tenant_id,
+                "crm_source": crm_source,
+                "call_id": external_call_id,
+                "audio_url": audio_url,
+                "payload": json.dumps(task_data, ensure_ascii=False),
+                "error": error,
+            },
+        )
+        db.commit()
+    except Exception as dlq_err:
+        db.rollback()
+        logger.error(f"DLQ insert error: {dlq_err}")
+    finally:
+        db.close()
+
+
 async def process_call_task(task_data: Dict[str, Any], r_client: aioredis.Redis):
     """Полный пайплайн аудита одного звонка."""
     tenant_id: str = str(task_data.get("tenant_id") or "TNT-001")
@@ -273,20 +302,26 @@ async def process_call_task(task_data: Dict[str, Any], r_client: aioredis.Redis)
     audit_json = await call_gemini_api(system_prompt, audio_bytes, response_schema)
 
     if not audit_json:
-        audit_json = {
-            "transcript": "Стенограмма формируется нейросетью.",
-            "manager_name": "Менеджер",
-            "client_name": "Клиент",
-            "client_niche": "B2B",
-            "error_summary": "Анализ в процессе формирования",
-            "ai_recommendation": "Ожидание завершения транскрибации",
-            "next_action_extracted": "Уточнить у клиента",
-            "zoom_scheduled": 0,
-        }
-        for i in range(1, 14):
-            audit_json[f"cr{i}"] = 1
+        # The model gave no answer. This used to save a call with all 13 criteria = 1 ("13/13, ЭТАЛОН")
+        # and push a fake report to the CRM. A call that was not audited must not look audited:
+        # park it in the DLQ for a retry and write nothing to the cabinet or the CRM.
+        logger.error(f"Gemini returned no audit for call {external_call_id} of {tenant_id}; sent to DLQ")
+        _park_in_dlq(tenant_id, crm_source, external_call_id, audio_url, task_data, "Gemini returned no audit result")
+        return
 
     scores = calculate_scores(audit_json)
+    # Stored in the SAME shape as /calls/ingest (n8n): overall_score = points 0..13, plus cr list,
+    # next step (cr1) and the model's zoom flag. A percent in overall_score was indistinguishable from points
+    # (7.7% = 1 point read as "8 of 13") and the cr list was missing, so the heatmap showed "—" everywhere.
+    scorecard = {
+        **scores["criteria_scores"],
+        "cr": scores["cr"],
+        "score": scores["raw_score"],
+        "next_step": scores["cr"][0],
+        "zoom_scheduled": 1 if str(audit_json.get("zoom_scheduled", 0)).strip() in ("1", "true", "True") else 0,
+        "manager": str(audit_json.get("manager_name") or task_data.get("manager_name") or ""),
+        "client": str(audit_json.get("client_name") or ""),
+    }
 
     db = SessionLocal()
     call_id = str(uuid.uuid4())
@@ -343,13 +378,13 @@ async def process_call_task(task_data: Dict[str, Any], r_client: aioredis.Redis)
             "transcript": audit_json.get("transcript", ""),
             "summary": summary_text,
             "next_action": audit_json.get("next_action_extracted", "Не назначен"),
-            "overall_score": scores["overall_score"],
-            "criteria": json.dumps(scores["criteria_scores"]),
+            "overall_score": float(scores["raw_score"]),
+            "criteria": json.dumps(scorecard, ensure_ascii=False),
             "idempotency_key": idempotency_key,
             "crm_source": crm_source,
         })
         db.commit()
-        logger.info(f"Saved audit for call {external_call_id} to DB (Score: {scores['overall_score']}%)")
+        logger.info(f"Saved audit for call {external_call_id} to DB (Score: {scores['raw_score']}/13)")
 
         # Automatically evaluate call against active methodology script version
         sync_methodology_evaluations_for_call(

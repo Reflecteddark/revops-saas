@@ -1,0 +1,27 @@
+# -*- coding: utf-8 -*-
+"""cr1..cr13 must mean the same thing in Gemini's prompt (worker) and in the cabinet (criteria.ts)."""
+
+import re
+from pathlib import Path
+
+from apps.api.services.prompt_builder import BASE_10_CRITERIA, DEFAULT_CUSTOM_3, build_system_prompt
+
+TS = Path(__file__).resolve().parent.parent / "apps" / "web" / "src" / "lib" / "criteria.ts"
+
+
+def _ts_labels() -> dict[str, str]:
+    src = TS.read_text(encoding="utf-8")
+    return dict(re.findall(r"id: '(cr\d+)',\s*label: '([^']+)'", src))
+
+
+def test_prompt_builder_titles_match_cabinet_labels():
+    ts = _ts_labels()
+    assert len(ts) == 13
+    py = {k: v["title"] for k, v in {**BASE_10_CRITERIA, **DEFAULT_CUSTOM_3}.items()}
+    assert py == ts
+
+
+def test_next_step_is_cr1_in_the_prompt():
+    prompt = build_system_prompt(None)
+    assert "cr1 (Твёрдый Next Step)" in prompt
+    assert "cr10 (Твёрдый Next Step)" not in prompt

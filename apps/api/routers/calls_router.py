@@ -33,6 +33,9 @@ from ..cache_client import (
 )
 from ..schemas import SpeechEvaluationRequest
 from ..services.audio_duration import mp3_duration_seconds
+from ..services.call_scorecard import read_scorecard
+from ..services.raw_calls_row import build_raw_calls_row
+from ..services.tz import tenant_tz, to_local
 from ..services.crm_deal_normalizer import parse_numeric_price
 from ..services.deal_keys import deal_pk_for, find_tenant_deal
 from ..services.workspaces import get_or_create_workspace, normalize_crm_type
@@ -138,12 +141,13 @@ class CallIngestPayload(BaseModel):
     stage: str | None = "Первичный контакт"
     duration_sec: int | None = None
     duration: str | None = None
-    amount: str | None = "500 000 ₽"
+    amount: str | None = None  # unknown stays unknown; it used to default to an invented "500 000 ₽"
     score: int | None = None
     status: str | None = None
     status_label: str | None = None
     risk_amount: str | None = None
-    next_step: int | None = 1
+    next_step: int | None = None  # None -> taken from cr1; it used to default to 1 ("next step fixed")
+    zoom_scheduled: int | None = None
     cr: list[int] | None = None
     error_summary: str | None = None
     recommendation: str | None = None
@@ -336,7 +340,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
             deal_stage = deal_meta["stage"] if deal_meta else "1. Первичный контакт"
 
             # Duration parsing
-            dur_sec = 120
+            dur_sec = 0
             if len(r) > 4 and r[4].isdigit():
                 dur_sec = int(r[4])
             duration_str = f"{dur_sec // 60}:{dur_sec % 60:02d}"
@@ -413,6 +417,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                 "next_step": next_step,
                 "date": r[3] if len(r) > 3 and r[3] else "",
                 "cr": cr_list,
+                "zoom_scheduled": None,
                 "error_summary": error_sum or "Анализ завершен ИИ",
                 "recommendation": rec or "Следовать регламенту фиксации Next Step",
                 "transcript": transcript or "Транскрипт отсутствует"
@@ -448,10 +453,11 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
         call_id = payload.id or f"call_n8n_{int(time.time())}"
         deal_id = payload.deal_id or f"D-{int(time.time()) % 10000}"
         manager_id = payload.manager or "Менеджер"
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        synced_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # The sheet is read by people in the client's time zone: stamp "today" in it, not in server UTC.
+        now_local = to_local(datetime.now(timezone.utc), tenant_tz(get_tenant_config(tenant_id)))
+        today_str = now_local.strftime("%Y-%m-%d")
 
-        dur_sec = payload.duration_sec or 120
+        dur_sec = payload.duration_sec or 0  # unknown duration stays 0, not an invented 2 minutes
         if payload.duration and ":" in payload.duration:
             parts = payload.duration.split(":")
             try:
@@ -463,7 +469,7 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
         if has_cr:
             cr_list: list[Any] = list(payload.cr)  # type: ignore[arg-type]
             total_score = payload.score if payload.score is not None else sum(int(c) for c in cr_list if c is not None)
-            next_step_flag = payload.next_step if payload.next_step is not None else 1
+            next_step_flag = payload.next_step if payload.next_step is not None else cr_list[0]
         else:
             cr_list = [None] * 13
             total_score = None
@@ -473,39 +479,21 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
         ai_recommendation = payload.recommendation or ""
         transcript_text = payload.transcript or ""
 
-        # Compute deterministic Payload SHA-256 checksum (hash_out)
-        hash_out = hashlib.sha256(
-            f"{call_id}:{manager_id}:{total_score}:{dur_sec}:{next_step_flag}".encode()
-        ).hexdigest()
-
-        row = [
-            call_id,
-            deal_id,
-            manager_id,
-            today_str,
-            str(dur_sec),
-            "presentation",
-            *[str(c) if c is not None else "" for c in cr_list],
-            str(total_score) if total_score is not None else "",
-            str(next_step_flag) if next_step_flag is not None else "",
-            error_summary,
-            ai_recommendation,
-            synced_at,
-            "",
-            today_str,
-            "V20.0",
-            "AI Supervisor (n8n)",
-            f"sha256_{hash_out[:12]}",
-            transcript_text,
-            "0",
-            "Middle",
-            str(datetime.now().hour),
-            "1",
-            "0",
-            payload.tenant_id,
-            "0",
-            "0"
-        ]
+        row, hash_out = build_raw_calls_row(
+            call_id=call_id,
+            deal_id=deal_id,
+            manager=manager_id,
+            date_str=today_str,
+            dur_sec=dur_sec,
+            cr=cr_list,
+            total_score=total_score,
+            next_step=next_step_flag,
+            error_summary=error_summary,
+            recommendation=ai_recommendation,
+            transcript=transcript_text,
+            tenant_id=payload.tenant_id,
+            now=now_local,
+        )
 
         # 1. Strict Idempotency Check & UPSERT (prevents duplicates on retry/replay)
         existing_call_ids = ws.col_values(1)
@@ -618,21 +606,10 @@ def get_dashboard_calls_data(
             dur_secs = int(c.duration_seconds or 0)
             dur_str = f"{dur_secs // 60}:{dur_secs % 60:02d}"
 
-            if sc.get("cr") and isinstance(sc.get("cr"), list) and len(sc.get("cr", [])) == 13:
-                cr_val = sc.get("cr")
-            else:
-                cr_val = [None] * 13
-
-            if sc.get("score") is not None:
-                call_score = sc.get("score")
-            elif c.overall_score is not None:
-                call_score = int(round((c.overall_score / 100.0) * 13)) if c.overall_score > 13 else int(round(c.overall_score))
-            else:
-                call_score = None
-
-            call_next_step = sc.get("next_step")
-            if call_next_step is None and c.overall_score is not None:
-                call_next_step = 1 if c.overall_score >= 60 else 0
+            card = read_scorecard(sc, c.overall_score)
+            cr_val = card["cr"]
+            call_score = card["score"]
+            call_next_step = card["next_step"]
 
             call_status = sc.get("status")
             if not call_status:
@@ -698,6 +675,7 @@ def get_dashboard_calls_data(
                 "next_step": call_next_step,
                 "date": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else "",
                 "cr": cr_val,
+                "zoom_scheduled": card["zoom_scheduled"],
                 "error_summary": c.ai_summary or sc.get("error_summary", "Анализ завершен ИИ"),
                 "recommendation": c.next_action_extracted or sc.get("recommendation", "Следовать регламенту фиксации Next Step"),
                 "transcript": c.transcript_text or "Транскрипт отсутствует"
@@ -735,7 +713,7 @@ async def ingest_call_from_n8n(
     """
     verify_internal_or_admin(request)
     call_id = payload.id or f"call_{int(time.time())}"
-    dur_sec = payload.duration_sec or 120
+    dur_sec = payload.duration_sec or 0  # unknown duration stays 0, not an invented 2 minutes
     if payload.duration and ":" in payload.duration:
         parts = payload.duration.split(":")
         try:
@@ -748,7 +726,7 @@ async def ingest_call_from_n8n(
     if has_cr:
         cr_list: list[int | None] = [int(x) if x is not None else None for x in payload.cr]  # type: ignore[union-attr]
         score = payload.score if payload.score is not None else sum(c for c in cr_list if c is not None)
-        next_step = payload.next_step if payload.next_step is not None else 1
+        next_step = payload.next_step if payload.next_step is not None else cr_list[0]
 
         if payload.status:
             status = payload.status
@@ -790,6 +768,7 @@ async def ingest_call_from_n8n(
         "risk_amount": risk_amt,
         "next_step": next_step,
         "cr": cr_list,
+        "zoom_scheduled": payload.zoom_scheduled,
         "error_summary": payload.error_summary or "",
         "recommendation": payload.recommendation or "",
         "transcript": payload.transcript or ""

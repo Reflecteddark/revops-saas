@@ -2,7 +2,7 @@
 """
 Google Sheets Micro-Batch Syncer.
 Batches completed audits and appends them in chunks of 20-50 rows every 120 seconds.
-Guarantees T-24 invariant (raw_score in Column T).
+Guarantees T-24 invariant (raw_score = sum of cr1..cr13 in Column T, same layout as /calls/ingest).
 Reduces Google Sheets API quota usage by 95%.
 """
 import os
@@ -15,6 +15,9 @@ from google.oauth2.service_account import Credentials
 from sqlalchemy import text
 
 from apps.api.database import SessionLocal
+from apps.api.services.call_scorecard import read_scorecard
+from apps.api.services.raw_calls_row import build_raw_calls_row
+from apps.api.services.tz import tenant_tz, to_local
 from apps.api.models import Tenant, Call
 
 logger = logging.getLogger("revops_sheets_batch")
@@ -54,8 +57,11 @@ async def sync_pending_batches_to_sheets(batch_size: int = 50) -> int:
                 c.id, c.tenant_id, c.deal_id, c.manager_id, c.external_call_id,
                 c.client_phone, c.duration_seconds, c.overall_score,
                 c.scorecard_criteria, c.transcript_text, c.ai_summary,
-                c.next_action_extracted, c.created_at, c.crm_source
+                c.next_action_extracted, c.created_at, c.crm_source,
+                d.external_crm_id AS deal_external_id, u.full_name AS manager_name
             FROM call_recordings c
+            LEFT JOIN deals d ON d.id = c.deal_id
+            LEFT JOIN users u ON u.id = c.manager_id
             WHERE c.reverse_etl_synced IS NOT TRUE
             ORDER BY c.created_at ASC
             LIMIT :limit
@@ -83,6 +89,7 @@ async def sync_pending_batches_to_sheets(batch_size: int = 50) -> int:
             sheet_id = None
             if tenant and tenant.settings and isinstance(tenant.settings, dict):
                 sheet_id = tenant.settings.get("spreadsheet_id")
+            tz = tenant_tz(tenant.settings if tenant and isinstance(tenant.settings, dict) else None)
 
             if not sheet_id:
                 logger.info(f"Tenant {tid} has no spreadsheet_id, skipping Sheets sync")
@@ -100,30 +107,27 @@ async def sync_pending_batches_to_sheets(batch_size: int = 50) -> int:
                 # Подготавливаем матрицу строк
                 values_matrix = []
                 for c in calls_list:
-                    criteria = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
-                    
-                    # Расчет T-24: сумма cr1..cr13 [0..13]
-                    t24_sum = 0
-                    cr_values = []
-                    for i in range(1, 14):
-                        val = int(criteria.get(f"cr{i}", 0))
-                        val = 1 if val >= 1 else 0
-                        cr_values.append(val)
-                        t24_sum += val
-
-                    created_str = c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else ""
-                    
-                    # Строка таблицы: ID, Дата, Телефон, Длительность, cr1..cr13, Общий балл T-24, Резюме
-                    row = [
-                        c.id,
-                        created_str,
-                        c.client_phone or "",
-                        c.duration_seconds or 0,
-                    ] + cr_values + [
-                        t24_sum,  # Колонка T: сумма критериев [0..13]
-                        c.ai_summary or "",
-                        c.next_action_extracted or "",
-                    ]
+                    # SAME 38-column layout as /calls/ingest (cr1..cr13 in G..S, score in T, next step in U);
+                    # this syncer used to write its own shorter layout (phone in C, score in R) into the same sheet.
+                    card = read_scorecard(c.scorecard_criteria, c.overall_score)
+                    sc = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
+                    created_local = to_local(c.created_at, tz) if c.created_at else to_local(datetime.now(timezone.utc), tz)
+                    summary_parts = str(c.ai_summary or "").split(" | ", 1)
+                    row, _hash = build_raw_calls_row(
+                        call_id=c.external_call_id or c.id,
+                        deal_id=c.deal_external_id or c.deal_id or "",
+                        manager=c.manager_name or str(sc.get("manager") or "Менеджер"),
+                        date_str=created_local.strftime("%Y-%m-%d"),
+                        dur_sec=int(c.duration_seconds or 0),
+                        cr=card["cr"],
+                        total_score=card["score"],  # T-24: sum of cr1..cr13, empty when the call was not rated
+                        next_step=card["next_step"],
+                        error_summary=summary_parts[0],
+                        recommendation=summary_parts[1] if len(summary_parts) > 1 else str(c.next_action_extracted or ""),
+                        transcript=str(c.transcript_text or ""),
+                        tenant_id=str(tid),
+                        now=created_local,
+                    )
                     values_matrix.append(row)
 
                 # Выполняем ровно 1 сетевой вызов к Google API на всю пачку строк!
