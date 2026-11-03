@@ -330,10 +330,8 @@ def get_tenant_config(tenant_id: str) -> dict[str, Any] | None:
     if clean_starter and str(clean_starter.get("tenant_id", "")).upper() == clean_id:
         return clean_starter
 
-    # Check by name or prefix if clean_id contained name
-    for t in registry.get("tenants", []):
-        if clean_id in str(t.get("tenant_id", "")).upper() or str(t.get("tenant_id", "")).upper() in clean_id:
-            return t
+    # No substring matching: "TNT-1000" used to resolve to the config of "TNT-100" (and "TNT-001-TEST" to
+    # "TNT-001"; an empty id matched the first tenant), i.e. one client's keys/sheet for another's id.
 
     # Direct DB fallback if cache missed
     try:
