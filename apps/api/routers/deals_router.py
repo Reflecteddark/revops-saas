@@ -124,60 +124,14 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
     if not sa_path:
         if cached and cached.get("deals"):
             return cached.get("deals", [])
-        logger.warning(f"service_account.json not found for deals fetch (tenant: {clean_tenant}, crm: {tenant_crm}), using golden master seed deals")
-        from packages.analytics_engine.calc_engine import DEFAULT_DEALS
-        fallback_deals: list[dict[str, Any]] = []
-        lookup: dict[str, dict[str, Any]] = {}
-
-        # If hybrid/both: generate two sets; if amo: AMO prefix; if b24: B24 prefix
-        crms_to_gen = ["bitrix24", "amocrm"] if tenant_crm in ("both", "hybrid", "all") else [tenant_crm]
-
-        for crm_src in crms_to_gen:
-            pfx = "AMO-" if crm_src == "amocrm" else "B24-"
-            src_label = "amoCRM" if crm_src == "amocrm" else "Bitrix24"
-            for d in DEFAULT_DEALS:
-                raw_seed_id = str(d.get("deal_id", "101")).replace("D-", "")
-                deal_id = f"{pfx}{raw_seed_id}"
-                st_id = int(d.get("stage_id", 1))
-                is_seed_won = (st_id == 6)
-                is_seed_lost = (st_id == 7)
-                stage_name = str(d.get("stage_name", "Первичный контакт"))
-                amt_num = float(d.get("amount", 0.0))
-                sla_risk = (not is_seed_won and not is_seed_lost) and (st_id in (1, 2, 4) or "Первичный" in stage_name or "КП" in stage_name or "Новый" in stage_name)
-                deal_obj = {
-                    "id": deal_id,
-                    "deal_id": deal_id,
-                    "org_id": clean_tenant,
-                    "crm_deal_id": deal_id,
-                    "crm_source": src_label,
-                    "title": str(d.get("client_name", f"Сделка {deal_id}")),
-                    "amount": amt_num,
-                    "amount_str": f"{int(amt_num):,} ₽".replace(",", " "),
-                    "stage_id": str(st_id),
-                    "stage": stage_name,
-                    "status": "won" if is_seed_won else ("lost" if is_seed_lost else "active"),
-                    "sla_risk": sla_risk,
-                    "responsible_user": f"Менеджер {d.get('manager_id', 101)}",
-                    "segment": str(d.get("segment_code", "SEG1")),
-                    "created_at": str(d.get("created_date", "")),
-                    "updated_at": str(d.get("stage_changed_date", "")),
-                    "synced_at": datetime.now(timezone.utc).isoformat(),
-                }
-                fallback_deals.append(deal_obj)
-                lookup[deal_id.upper().strip()] = deal_obj
-                num_only = re.sub(r"\D", "", deal_id)
-                if num_only:
-                    lookup[num_only] = deal_obj
-                    lookup[f"B24-{num_only}"] = deal_obj
-                    lookup[f"AMO-{num_only}"] = deal_obj
-
-        _DEALS_CACHE[clean_tenant] = {
-            "timestamp": now,
-            "deals": fallback_deals,
-            "lookup": lookup
-        }
-        set_cached_json_sync(cache_key, fallback_deals, ex=60)
-        return fallback_deals
+        # Used to fill in 11 invented "golden master" deals (8.18 M ₽) for any tenant without data, so a missing
+        # key file made every such client look like it had a pipeline. An unavailable source means NO data.
+        # Not cached: the next request retries once the key file is back.
+        logger.error(
+            f"service_account.json not found: cannot read raw_deals (tenant: {clean_tenant}, crm: {tenant_crm}); "
+            "returning no deals"
+        )
+        return []
 
     cfg = get_tenant_config(clean_tenant) or {}
     sheet_id = cfg.get("spreadsheet_id") or get_tenant_spreadsheet_id(clean_tenant)

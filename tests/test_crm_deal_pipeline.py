@@ -340,36 +340,17 @@ def test_amocrm_leads_array_and_delete_webhook():
 # 7. Deals Router & Multi-Tenant Routing Tests (bitrix24, amocrm, both)
 # ==============================================================================
 
-def test_deals_router_crm_type_routing():
+def test_deals_router_without_a_data_source_returns_no_deals_for_any_crm_type():
+    """No service account => NO deals for every crm_type. It used to invent B24-/AMO- demo deals per crm_type.
+    CRM-type routing of real rows is covered by test_deals_sheets_parsing_multi_source."""
     from apps.api.routers.deals_router import _DEALS_CACHE
 
     with patch("apps.api.routers.deals_router.get_service_account_path", return_value=None):
-        # 1. Tenant with crm_type="bitrix24"
-        _DEALS_CACHE.clear()
-        with patch("apps.api.routers.deals_router.get_tenant_config") as mock_cfg:
-            mock_cfg.return_value = {"tenant_id": "TNT-B24", "crm_type": "bitrix24"}
-            deals_b24 = fetch_deals_from_sheets(tenant_id="TNT-B24")
-            assert len(deals_b24) > 0
-            assert all(d["deal_id"].startswith("B24-") for d in deals_b24)
-            assert all("bitrix" in d["crm_source"].lower() for d in deals_b24)
-
-        # 2. Tenant with crm_type="amocrm"
-        _DEALS_CACHE.clear()
-        with patch("apps.api.routers.deals_router.get_tenant_config") as mock_cfg:
-            mock_cfg.return_value = {"tenant_id": "TNT-AMO", "crm_type": "amocrm"}
-            deals_amo = fetch_deals_from_sheets(tenant_id="TNT-AMO")
-            assert len(deals_amo) > 0
-            assert all(d["deal_id"].startswith("AMO-") for d in deals_amo)
-            assert all("amo" in d["crm_source"].lower() for d in deals_amo)
-
-        # 3. Tenant with crm_type="both"
-        _DEALS_CACHE.clear()
-        with patch("apps.api.routers.deals_router.get_tenant_config") as mock_cfg:
-            mock_cfg.return_value = {"tenant_id": "TNT-BOTH", "crm_type": "both"}
-            deals_both = fetch_deals_from_sheets(tenant_id="TNT-BOTH")
-            has_b24 = any(d["deal_id"].startswith("B24-") for d in deals_both)
-            has_amo = any(d["deal_id"].startswith("AMO-") for d in deals_both)
-            assert has_b24 and has_amo, "Tenant with crm_type='both' must aggregate both B24 and amoCRM deals"
+        for crm_type in ("bitrix24", "amocrm", "both"):
+            _DEALS_CACHE.clear()
+            with patch("apps.api.routers.deals_router.get_tenant_config") as mock_cfg:
+                mock_cfg.return_value = {"tenant_id": "TNT-X", "crm_type": crm_type}
+                assert fetch_deals_from_sheets(tenant_id="TNT-X") == []
 
 
 def test_deals_sheets_parsing_multi_source():
