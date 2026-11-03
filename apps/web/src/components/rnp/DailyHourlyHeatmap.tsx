@@ -1,3 +1,4 @@
+import { businessDayKey, callDayKey, callHour } from '@/lib/dates';
 import React, { useMemo, useState } from 'react';
 import { Call, ManagerConfig } from '@/types/api';
 import {
@@ -24,30 +25,10 @@ export function extractCallHourAndDate(c: Call): {
   hour: number | null;
 } {
   const raw = c.date || c.created_at || '';
-  if (!raw) return { dateStr: '', hour: null };
-
-  // Match YYYY-MM-DD HH:mm
-  const isoMatch = raw.match(/(\d{4}-\d{2}-\d{2})[T\s](\d{2}):/);
-  if (isoMatch) {
-    return { dateStr: isoMatch[1], hour: parseInt(isoMatch[2], 10) };
-  }
-
-  // Match DD.MM.YYYY HH:mm
-  const ruMatch = raw.match(/(\d{2})\.(\d{2})\.(\d{4})[T\s](\d{2}):/);
-  if (ruMatch) {
-    const dateStr = `${ruMatch[3]}-${ruMatch[2]}-${ruMatch[1]}`;
-    return { dateStr, hour: parseInt(ruMatch[4], 10) };
-  }
-
-  const parsed = new Date(raw);
-  if (!isNaN(parsed.getTime())) {
-    return {
-      dateStr: parsed.toISOString().slice(0, 10),
-      hour: parsed.getHours(),
-    };
-  }
-
-  return { dateStr: '', hour: null };
+  // Business (Moscow) day and hour; handles wall time, DD.MM.YYYY and ISO with a zone (see lib/dates.ts)
+  const dateStr = callDayKey(raw);
+  if (!dateStr) return { dateStr: '', hour: null };
+  return { dateStr, hour: callHour(raw) };
 }
 
 export function isCallOverMinute(c: Call): boolean {
@@ -77,11 +58,11 @@ export const DailyHourlyHeatmap: React.FC<DailyHourlyHeatmapProps> = ({
       if (dateStr) dateSet.add(dateStr);
     });
     const sorted = Array.from(dateSet).sort().reverse();
-    return sorted.length > 0 ? sorted : [new Date().toISOString().slice(0, 10)];
+    return sorted.length > 0 ? sorted : [businessDayKey()];
   }, [calls]);
 
   const [activeDate, setActiveDate] = useState<string>(
-    propDate || availableDates[0] || new Date().toISOString().slice(0, 10)
+    propDate || availableDates[0] || businessDayKey()
   );
 
   // 2. Filter calls for the active date

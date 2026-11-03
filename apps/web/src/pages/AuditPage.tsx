@@ -34,6 +34,7 @@ import { SkillsHeatmap } from '@/components/SkillsHeatmap';
 import { RopBriefingCard } from '@/components/RopBriefingCard';
 import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { callsApi } from '@/lib/api';
+import { callInstant } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 
@@ -186,8 +187,8 @@ export function AuditPage() {
     }
     // Period filter (relative to call.date string)
     if (periodFilter !== 'all') {
-      const callDate = new Date(call.date);
-      if (!isNaN(callDate.getTime())) {
+      const callDate = callInstant(call.date); // Moscow wall time / DD.MM.YYYY / ISO (see lib/dates.ts)
+      if (callDate) {
         const now = new Date();
         const diffDays =
           (now.getTime() - callDate.getTime()) / (1000 * 3600 * 24);

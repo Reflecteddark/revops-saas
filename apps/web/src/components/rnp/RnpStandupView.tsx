@@ -36,6 +36,7 @@ import {
 import { DailyHourlyHeatmap } from './DailyHourlyHeatmap';
 import type { Call, Deal, ManagerConfig } from '@/types/api';
 import { isDealClosed } from '@/lib/dealHealth';
+import { addDaysToKey, businessDayKey, callDayKey } from '@/lib/dates';
 
 export interface RnpStandupViewProps {
   calls: Call[];
@@ -78,15 +79,10 @@ export function RnpStandupView({
 
   // Filter yesterday's calls
   const { yesterdayCalls, isFallback } = React.useMemo(() => {
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = yesterday.toISOString().slice(0, 10);
+    // "Yesterday" = the previous Moscow business day (toISOString() is UTC: at 02:00 MSK it gave two days back).
+    const yStr = addDaysToKey(businessDayKey(), -1);
 
-    const filtered = calls.filter((c) => {
-      const dt = c.date || c.created_at || '';
-      return dt.includes(yStr);
-    });
+    const filtered = calls.filter((c) => callDayKey(c.date || c.created_at) === yStr);
 
     // Fallback: if today is Monday or yesterday had 0 calls, take the most recent 10 calls
     const fallbackNeeded = filtered.length === 0;
@@ -102,9 +98,8 @@ export function RnpStandupView({
     return durSec >= 90 || c.score !== null;
   }).length;
 
-  const zoomScheduledCount = yesterdayCalls.filter(
-    (c) => c.zoom_scheduled || (c.cr && c.cr[6] === 1)
-  ).length;
+  // Only the audit's own zoom_scheduled flag counts (no guessing from other criteria).
+  const zoomScheduledCount = yesterdayCalls.filter((c) => Boolean(c.zoom_scheduled)).length;
 
   const yesterdayLeaksCount = yesterdayCalls.filter(
     (c) => c.status === 'risk' || (c.score !== null && c.score < CALL_SCORE_THRESHOLDS.mid.min)
@@ -158,35 +153,22 @@ export function RnpStandupView({
           : 0;
 
       // Filter yesterday's calls for this manager
-      const now = new Date();
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yStr = yesterday.toISOString().slice(0, 10);
-      const mgrYesterdayCalls = mgrCalls.filter((c) => {
-        const dt = c.date || c.created_at || '';
-        return dt.includes(yStr);
-      });
+      const yStr = addDaysToKey(businessDayKey(), -1);
+      const mgrYesterdayCalls = mgrCalls.filter((c) => callDayKey(c.date || c.created_at) === yStr);
       const yesterdayCallsCount = mgrYesterdayCalls.length;
 
       // Next Step strictly from Gemini AI Speech Audit
       const auditedCalls = mgrCalls.filter(
-        (c) =>
-          c.score !== null || c.next_step !== null || Boolean(c.zoom_scheduled)
+        (c) => c.score !== null || c.next_step !== null
       );
-      const nextStepCalls = auditedCalls.filter(
-        (c) =>
-          c.next_step === 1 ||
-          Boolean(c.zoom_scheduled) ||
-          (c.cr && (c.cr[6] === 1 || c.cr[13] === 1))
-      );
+      // cr1 "Твёрдый Next Step" as stored by the audit; zoom is a separate metric
+      const nextStepCalls = auditedCalls.filter((c) => c.next_step === 1);
       const nextStepPct =
         auditedCalls.length > 0
           ? Math.round((nextStepCalls.length / auditedCalls.length) * 100)
           : null;
 
-      const zoomCount = mgrCalls.filter(
-        (c) => Boolean(c.zoom_scheduled) || (c.cr && c.cr[6] === 1)
-      ).length;
+      const zoomCount = mgrCalls.filter((c) => Boolean(c.zoom_scheduled)).length;
 
       const activeDeals = mgrDeals.filter(
         (d) => d.status !== 'won' && d.status !== 'lost'

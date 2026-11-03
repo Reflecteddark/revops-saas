@@ -10,6 +10,7 @@ import * as React from 'react';
 import { CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { addDaysToKey, businessDayKey, callDayKey } from '@/lib/dates';
 import type { Call } from '@/types/api';
 
 export interface LostDealsBannerProps {
@@ -37,13 +38,6 @@ function formatLeakAmount(call: Call): string {
   return '0 ₽';
 }
 
-function parseCallDate(rawDate?: string): Date | null {
-  if (!rawDate) return null;
-  const d = new Date(rawDate);
-  if (!isNaN(d.getTime())) return d;
-  return null;
-}
-
 export function LostDealsBanner({
   calls = [],
   onInspectCall,
@@ -54,17 +48,8 @@ export function LostDealsBanner({
   const leaks = React.useMemo(() => {
     if (!calls || calls.length === 0) return [];
 
-    const now = new Date();
-    const startOfToday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
-    const startOfYesterday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 1
-    );
+    // previous Moscow business day
+    const yesterdayKey = addDaysToKey(businessDayKey(), -1);
 
     return calls.filter((c) => {
       if (!c) return false;
@@ -74,9 +59,9 @@ export function LostDealsBanner({
 
       if (!filterYesterdayOnly) return true;
 
-      const callDate = parseCallDate(c.date || c.created_at);
-      if (!callDate) return true; // If date cannot be parsed, keep in filter
-      return callDate >= startOfYesterday && callDate < startOfToday;
+      const dayKey = callDayKey(c.date || c.created_at);
+      if (!dayKey) return true; // If date cannot be parsed, keep in filter
+      return dayKey === yesterdayKey;
     });
   }, [calls, filterYesterdayOnly]);
 

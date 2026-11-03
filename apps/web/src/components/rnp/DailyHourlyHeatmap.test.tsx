@@ -109,9 +109,15 @@ describe('DailyHourlyHeatmap Helpers', () => {
       extractCallHourAndDate({ ...mockCalls[0], date: '2026-10-26 10:15:00' })
     ).toEqual({ dateStr: '2026-10-26', hour: 10 });
 
+    // An instant with an explicit zone is shown in business (Moscow) time: 18:45Z = 21:45 MSK
     expect(
       extractCallHourAndDate({ ...mockCalls[0], date: '2026-10-26T18:45:00Z' })
-    ).toEqual({ dateStr: '2026-10-26', hour: 18 });
+    ).toEqual({ dateStr: '2026-10-26', hour: 21 });
+
+    // ...and a late UTC call lands on the NEXT Moscow working day
+    expect(
+      extractCallHourAndDate({ ...mockCalls[0], date: '2026-10-26T22:30:00Z' })
+    ).toEqual({ dateStr: '2026-10-27', hour: 1 });
 
     expect(
       extractCallHourAndDate({ ...mockCalls[0], date: '26.10.2026 14:20:00' })

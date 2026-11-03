@@ -9,6 +9,7 @@
 
 import * as React from 'react';
 import { CALL_SCORE_THRESHOLDS, getCallScoreBand } from '@/lib/thresholds';
+import { businessDayKey, monthInfo } from '@/lib/dates';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -152,7 +153,7 @@ export function PulsePage() {
 
   const callsQuery = useQuery({
     queryKey: ['calls', tenantId, 'recent'],
-    queryFn: () => callsApi.list({ tenant_id: tenantId!, limit: 20 }),
+    queryFn: () => callsApi.list({ tenant_id: tenantId!, limit: 100 }),
     enabled: Boolean(tenantId),
   });
 
@@ -223,14 +224,24 @@ export function PulsePage() {
   // Month-to-date revenue from the backend only (deals won in the current month).
   // The deals list is all-time, so summing it here would compare all-time revenue to a monthly plan.
   const revenue = Number(kpi?.revenue ?? 0);
-  const slaRiskCount = kpi?.sla_risk_count ?? kpi?.sla_at_risk_count ?? 0;
 
   // Active open pipeline sum in progress (excludes won revenue and lost deals)
   const pipelineSum = React.useMemo(() => {
     return openDeals.reduce((acc, d) => acc + (d.amount || 0), 0);
   }, [openDeals]);
 
-  const avgCheckRub = openDeals.length > 0 ? Math.round(pipelineSum / openDeals.length) : 0;
+  // Average check = average of WON deals (what clients actually paid). Until the first won deal exists, fall back
+  // to the open pipeline average so the simulator below still has a starting point.
+  const wonDealsList = deals.filter(isWonDeal);
+  const wonAvgCheck =
+    wonDealsList.length > 0
+      ? Math.round(wonDealsList.reduce((acc, d) => acc + (d.amount || 0), 0) / wonDealsList.length)
+      : 0;
+  const openAvgCheck = openDeals.length > 0 ? Math.round(pipelineSum / openDeals.length) : 0;
+  const avgCheckRub = wonAvgCheck > 0 ? wonAvgCheck : openAvgCheck;
+
+  // Open deals at SLA risk (one rule with the Deals page: backend deal_sla.py)
+  const slaRiskCount = openDeals.filter((d) => Boolean(d.sla_risk)).length;
   const uniqueManagersCount = new Set(calls.map((c) => c.manager).filter(Boolean)).size;
 
   const monthlyTarget = settingsQuery.data?.general?.monthly_target;
@@ -242,9 +253,11 @@ export function PulsePage() {
   );
   const deficitSum = Math.max(0, planTarget - revenue);
 
+  // Only RATED calls: an unrated call (score null) is not a 0-point call and must not drag the average down.
+  const ratedCalls = calls.filter((c): c is typeof c & { score: number } => typeof c.score === 'number');
   const avgCallScore =
-    calls.length > 0
-      ? Math.round((calls.reduce((acc, c) => acc + (c.score || 0), 0) / calls.length) * 10) / 10
+    ratedCalls.length > 0
+      ? Math.round((ratedCalls.reduce((acc, c) => acc + c.score, 0) / ratedCalls.length) * 10) / 10
       : 0;
   const qualityPct = avgCallScore > 0 ? Math.round((avgCallScore / 13) * 100) : 0;
 
@@ -262,15 +275,14 @@ export function PulsePage() {
   const stalledAmountRub = leakBreakdown?.stalled_deals?.amount_rub ?? 0;
   const fakeYesCount = calls.filter((c) => c.status === 'fake_yes').length;
 
-  const totalCalls = calls.length;
-  const wonCallsCount = calls.filter((c) => (c.score || 0) >= CALL_SCORE_THRESHOLDS.high.min).length;
-  const midCallsCount = calls.filter(
-    (c) => (c.score || 0) >= CALL_SCORE_THRESHOLDS.mid.min && (c.score || 0) <= CALL_SCORE_THRESHOLDS.mid.max
+  const wonCallsCount = ratedCalls.filter((c) => c.score >= CALL_SCORE_THRESHOLDS.high.min).length;
+  const midCallsCount = ratedCalls.filter(
+    (c) => c.score >= CALL_SCORE_THRESHOLDS.mid.min && c.score <= CALL_SCORE_THRESHOLDS.mid.max
   ).length;
-  const lostCallsCount = calls.filter((c) => (c.score || 0) <= CALL_SCORE_THRESHOLDS.low.max).length;
+  const lostCallsCount = ratedCalls.filter((c) => c.score <= CALL_SCORE_THRESHOLDS.low.max).length;
 
   const dealsWonCount = deals.filter(isWonDeal).length;
-  const dealsRiskCount = openDeals.filter((d) => Boolean(d.sla_risk) || Boolean((d as any).risk)).length;
+  const dealsRiskCount = slaRiskCount;
   const dealsInWorkCount = Math.max(0, openDeals.length - dealsRiskCount);
   const totalDeals = deals.length;
 
@@ -303,9 +315,8 @@ export function PulsePage() {
   };
 
   // Month progress and pacing calculations (Pulsar7 & Salesforce style)
-  const now = new Date();
-  const dayOfMonth = now.getDate();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  // Moscow business month (the backend KPI month starts at 00:00 MSK), not the browser zone
+  const { dayOfMonth, daysInMonth } = monthInfo(businessDayKey());
   const monthProgressPct = Math.round((dayOfMonth / daysInMonth) * 100);
   const targetToDate = planTarget > 0 ? Math.round((planTarget / daysInMonth) * dayOfMonth) : 0;
   const pacingPct = targetToDate > 0 ? Math.round((revenue / targetToDate) * 100) : 100;
@@ -612,8 +623,8 @@ export function PulsePage() {
       {/* Status Segmented Bars Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <StatusSegmentedBar
-          title="Распределение звонков по стандартам РОПа"
-          totalCount={totalCalls}
+          title="Распределение оценённых звонков по стандартам РОПа"
+          totalCount={ratedCalls.length}
           segments={[
             {
               id: 'won',
@@ -661,7 +672,7 @@ export function PulsePage() {
             },
             {
               id: 'risk-deals',
-              label: 'Риск срыва SLA (>48ч)',
+              label: 'Риск срыва SLA',
               count: dealsRiskCount,
               colorClass: 'bg-rose-500',
               dotColorClass: 'bg-rose-500',

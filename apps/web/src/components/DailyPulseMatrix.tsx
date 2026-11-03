@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { addDaysToKey, businessDayKey, callDayKey } from '@/lib/dates';
 import { isSystemName } from '@/lib/systemNames';
 import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
 import type { Call } from '@/types/api';
@@ -24,6 +25,7 @@ export interface DayMetric {
   dateStr: string; // "24 окт"
   dayOfWeek: string; // "Пт"
   callsCount: number;
+  ratedCount: number; // calls that have a score; unrated calls are not 0-point calls
   avgScore: number;
   nextStepPct: number;
 }
@@ -55,15 +57,15 @@ function getLast7Days(): { dateStr: string; dayOfWeek: string; isoDate: string }
   ];
 
   const result = [];
-  const now = new Date();
+  const today = businessDayKey(); // Moscow business day, not UTC / browser zone
 
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
+    const key = addDaysToKey(today, -i);
+    const d = new Date(`${key}T00:00:00Z`);
     result.push({
-      dateStr: `${d.getDate()} ${monthsShort[d.getMonth()]}`,
-      dayOfWeek: daysShort[d.getDay()],
-      isoDate: d.toISOString().slice(0, 10),
+      dateStr: `${d.getUTCDate()} ${monthsShort[d.getUTCMonth()]}`,
+      dayOfWeek: daysShort[d.getUTCDay()],
+      isoDate: key,
     });
   }
 
@@ -180,32 +182,32 @@ export function DailyPulseMatrix({
       const mgrCalls = calls.filter((c) => c.manager === mgrName);
 
       const days: DayMetric[] = last7Days.map((d) => {
-        const callsOnDay = mgrCalls.filter((c) => {
-          const callDate = c.date || c.created_at || '';
-          return callDate.includes(d.isoDate);
-        });
+        const callsOnDay = mgrCalls.filter((c) => callDayKey(c.date || c.created_at) === d.isoDate);
 
         const count = callsOnDay.length;
-        const totalScore = callsOnDay.reduce((acc, c) => acc + (c.score || 0), 0);
-        const avg = count > 0 ? Math.round((totalScore / count) * 10) / 10 : 0;
-        const nextStepCount = callsOnDay.filter(
-          (c) => c.zoom_scheduled || (c.cr && c.cr[6] === 1) || c.status === 'won'
-        ).length;
+        // Average only over RATED calls: an unrated call is not a 0-point call.
+        const rated = callsOnDay.filter((c) => typeof c.score === 'number');
+        const totalScore = rated.reduce((acc, c) => acc + (c.score as number), 0);
+        const avg = rated.length > 0 ? Math.round((totalScore / rated.length) * 10) / 10 : 0;
+        // "Next Step" = criterion cr1 as stored by the audit (not zoom, not "status === won").
+        const nextStepCount = callsOnDay.filter((c) => c.next_step === 1).length;
         const nextStepPct = count > 0 ? Math.round((nextStepCount / count) * 100) : 0;
 
         return {
           dateStr: d.dateStr,
           dayOfWeek: d.dayOfWeek,
           callsCount: count,
+          ratedCount: rated.length,
           avgScore: avg,
           nextStepPct,
         };
       });
 
       const totalCalls = days.reduce((acc, d) => acc + d.callsCount, 0);
-      const totalScoreSum = days.reduce((acc, d) => acc + d.avgScore * d.callsCount, 0);
+      const totalRated = days.reduce((acc, d) => acc + d.ratedCount, 0);
+      const totalScoreSum = days.reduce((acc, d) => acc + d.avgScore * d.ratedCount, 0);
       const avgScore =
-        totalCalls > 0 ? Math.round((totalScoreSum / totalCalls) * 10) / 10 : 0;
+        totalRated > 0 ? Math.round((totalScoreSum / totalRated) * 10) / 10 : 0;
       const totalNextStepCount = days.reduce(
         (acc, d) => acc + Math.round((d.nextStepPct * d.callsCount) / 100),
         0
