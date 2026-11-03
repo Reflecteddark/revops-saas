@@ -19,6 +19,7 @@ from packages.database.models import Deal, DealStage, SubscriptionTier, Tenant, 
 from packages.database.session import SessionLocal
 from ..cache_client import delete_cached_json_sync
 from ..tenant_registry import get_tenant_config
+from .deal_keys import deal_pk_for, find_tenant_deal
 from .crm_deal_normalizer import (
     normalize_amocrm_deal,
     normalize_bitrix24_deal,
@@ -534,16 +535,13 @@ def sync_deals_to_database(
             "last_stage_change": norm.get("last_stage_change"),
         }
 
-        db_deal = db.query(Deal).filter(Deal.id == deal_id).first()
-        if not db_deal:
-            # Also check by external_crm_id
-            db_deal = db.query(Deal).filter(
-                (Deal.tenant_id == clean_tid) & (Deal.external_crm_id == deal_id)
-            ).first()
+        # deals.id is a global PK and CRM numbers repeat between clients (every Bitrix portal has B24-1):
+        # look the deal up inside THIS tenant only, never by the bare id.
+        db_deal = find_tenant_deal(db, clean_tid, deal_id)
 
         if not db_deal:
             db_deal = Deal(
-                id=deal_id,
+                id=deal_pk_for(db, clean_tid, deal_id),
                 tenant_id=clean_tid,
                 workspace_id=workspace.id,
                 assigned_user_id=assigned_uid,

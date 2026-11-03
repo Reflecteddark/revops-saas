@@ -28,6 +28,7 @@ from ..cache_client import (
     get_cached_json_sync,
     set_cached_json_sync,
 )
+from ..services.deal_keys import deal_pk_for, find_tenant_deal
 from ..tenant_registry import CLEAN_TEMPLATE_ID, get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
 from .admin_router import verify_admin_access
@@ -985,16 +986,16 @@ async def get_deal_details(
     effective_tenant = get_authenticated_tenant_or_verify_admin(request, requested)
     clean_tid = effective_tenant.strip().upper()
 
-    db_deal = (
-        db.query(Deal)
-        .filter(
-            (Deal.id == clean_id)
-            | (Deal.external_crm_id == clean_id)
-            | (Deal.id == f"B24-{clean_id}")
-            | (Deal.id == f"AMO-{clean_id}")
-        )
-        .first()
-    )
+    # Look inside the caller's own tenant only: CRM ids repeat between clients, and a bare-id lookup
+    # used to return (or 403 on) another client's deal.
+    db_deal = None
+    for candidate_id in (clean_id, f"B24-{clean_id}", f"AMO-{clean_id}"):
+        if clean_tid == "*":
+            db_deal = db.query(Deal).filter((Deal.id == candidate_id) | (Deal.external_crm_id == candidate_id)).first()
+        else:
+            db_deal = find_tenant_deal(db, clean_tid, candidate_id)
+        if db_deal:
+            break
 
     if db_deal:
         deal_tenant = str(db_deal.tenant_id).upper()
@@ -1368,10 +1369,11 @@ async def ingest_deal(
     is_at_risk = bool(payload.get("sla_risk") or payload.get("is_at_risk"))
 
     # 4. Insert or update Deal in Postgres
-    db_deal = db.query(Deal).filter(Deal.id == str(deal_id)).first()
+    db_deal = find_tenant_deal(db, effective_tenant, str(deal_id))
     if not db_deal:
         db_deal = Deal(
-            id=str(deal_id),
+            id=deal_pk_for(db, effective_tenant, str(deal_id)),
+            external_crm_id=str(deal_id),
             tenant_id=effective_tenant,
             workspace_id=str(workspace_id),
             title=str(title),

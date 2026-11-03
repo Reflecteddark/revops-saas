@@ -33,6 +33,7 @@ from ..cache_client import (
 )
 from ..schemas import SpeechEvaluationRequest
 from ..services.audio_duration import mp3_duration_seconds
+from ..services.deal_keys import deal_pk_for, find_tenant_deal
 from ..services.workspaces import get_or_create_workspace, normalize_crm_type
 from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
@@ -821,20 +822,13 @@ async def ingest_call_from_n8n(
             setattr(db_call, "duration_seconds", dur_sec)
             db.commit()
         else:
-            deal = db.query(Deal).filter(
-                Deal.tenant_id == target_tenant,
-                (Deal.id == payload.deal_id) | (Deal.external_crm_id == payload.deal_id)
-            ).first() if payload.deal_id else None
+            deal = find_tenant_deal(db, target_tenant, payload.deal_id) if payload.deal_id else None
 
             if not deal and payload.deal_id:
                 ws_id = get_or_create_workspace(db, target_tenant, tenant_crm).id
                 # deals.id is global: the same CRM deal number may already belong to another client
                 # (Bitrix portals all start at 1). Keep the CRM number in external_crm_id.
-                deal_pk = payload.deal_id
-                if db.query(Deal.id).filter(Deal.id == deal_pk).first():
-                    deal_pk = f"{target_tenant}:{payload.deal_id}"
-                    if len(deal_pk) > 36:
-                        deal_pk = str(uuid.uuid4())
+                deal_pk = deal_pk_for(db, target_tenant, payload.deal_id)
                 amt_clean = float(re.sub(r"[^\d.]", "", str(payload.amount or "300000")) or 300000)
                 deal = Deal(
                     id=deal_pk,
@@ -900,7 +894,8 @@ async def ingest_call_from_n8n(
             db_call = CallRecording(
                 id=call_pk,
                 tenant_id=target_tenant,
-                deal_id=deal.id if deal else (payload.deal_id if payload.deal_id and db.query(Deal).filter(Deal.id == payload.deal_id).first() else None),
+                # Never link to a deal found by the bare CRM id: that may be ANOTHER client's deal.
+                deal_id=deal.id if deal else None,
                 manager_id=mgr.id if mgr else None,
                 external_call_id=call_id,
                 client_phone=(payload.client or "+79000000000")[:50],  # VARCHAR(50); n8n sends a name here
