@@ -866,6 +866,7 @@ export function DealsPage() {
                               !d.health.divergenceRisk && (
                                 <Badge
                                   variant="outline"
+                                  title={d.risk_reason || undefined}
                                   className="border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-[10px] font-semibold text-amber-300"
                                 >
                                   <AlertTriangle className="mr-1 h-3 w-3 text-amber-400" />
@@ -1077,7 +1078,7 @@ export function DealsPage() {
                               variant="outline"
                               className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
                             >
-                              ⚠️ Просрочен регламент
+                              ⚠️ {d.risk_reason || 'Просрочен регламент'}
                             </Badge>
                           ) : d.health.isStalled ? (
                             <Badge
@@ -1258,9 +1259,10 @@ export function DealsPage() {
                         ) : d.sla_risk && !isDealClosed(d) ? (
                           <Badge
                             variant="outline"
+                            title={d.risk_reason || undefined}
                             className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
                           >
-                            Риск SLA
+                            Риск SLA{d.risk_reason ? `: ${d.risk_reason}` : ''}
                           </Badge>
                         ) : d.status === 'won' ? (
                           <Badge
