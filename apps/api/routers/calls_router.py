@@ -31,6 +31,7 @@ from ..cache_client import (
     set_cached_json_sync,
 )
 from ..schemas import SpeechEvaluationRequest
+from ..services.workspaces import get_or_create_workspace, normalize_crm_type
 from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
 from .admin_router import ALLOWED_ADMIN_KEYS
@@ -128,7 +129,8 @@ class CallIngestPayload(BaseModel):
     recommendation: str | None = None
     transcript: str | None = None
     sync_to_sheets: bool = True
-    tenant_id: str = "TNT-001"
+    # Required: a call without a tenant must never silently land in another client's data.
+    tenant_id: str
 
 
 def verify_internal_or_admin(request: Request) -> bool:
@@ -714,7 +716,10 @@ async def ingest_call_from_n8n(
     if payload.sync_to_sheets:
         sheets_synced = append_call_to_sheets(payload)
 
-    target_tenant = (payload.tenant_id or "TNT-001").strip().upper()
+    target_tenant = payload.tenant_id.strip().upper()
+    if not target_tenant:
+        raise HTTPException(status_code=422, detail="tenant_id is required")
+    tenant_crm = normalize_crm_type((get_tenant_config(target_tenant) or {}).get("crm_type"))
 
     # Persist call to tenant database
     try:
@@ -738,10 +743,17 @@ async def ingest_call_from_n8n(
             ).first() if payload.deal_id else None
 
             if not deal and payload.deal_id:
-                ws_id = f"ws_{target_tenant}"
+                ws_id = get_or_create_workspace(db, target_tenant, tenant_crm).id
+                # deals.id is global: the same CRM deal number may already belong to another client
+                # (Bitrix portals all start at 1). Keep the CRM number in external_crm_id.
+                deal_pk = payload.deal_id
+                if db.query(Deal.id).filter(Deal.id == deal_pk).first():
+                    deal_pk = f"{target_tenant}:{payload.deal_id}"
+                    if len(deal_pk) > 36:
+                        deal_pk = str(uuid.uuid4())
                 amt_clean = float(re.sub(r"[^\d.]", "", str(payload.amount or "300000")) or 300000)
                 deal = Deal(
-                    id=payload.deal_id,
+                    id=deal_pk,
                     external_crm_id=payload.deal_id,
                     tenant_id=target_tenant,
                     workspace_id=ws_id,
@@ -754,7 +766,7 @@ async def ingest_call_from_n8n(
                     pipeline_id="0",
                     is_at_risk=bool(score is not None and score < 8),
                     avg_call_score=float(score) if score is not None else 0.0,
-                    crm_source="amocrm" if target_tenant == "TNT-002" else "bitrix24",
+                    crm_source=tenant_crm or "unknown",
                     status="active"
                 )
                 db.add(deal)
@@ -815,11 +827,12 @@ async def ingest_call_from_n8n(
             db.add(db_call)
             db.commit()
     except Exception as db_err:
-        logger.warning(f"Error persisting ingested call to DB: {db_err}")
+        # Do NOT answer 200: the caller (n8n) would mark the call as done and it would be lost for the cabinet.
+        logger.error(f"Error persisting ingested call {call_id} for {target_tenant}: {db_err}")
         db.rollback()
+        raise HTTPException(status_code=500, detail="Call was not persisted")
 
     # Broadcast to open web dashboard tabs via WebSocket
-    target_tenant = (payload.tenant_id or "TNT-001").strip().upper()
     await manager.broadcast(target_tenant, {
         "type": "new_call",
         "call": formatted_call
