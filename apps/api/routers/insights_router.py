@@ -19,6 +19,8 @@ from packages.monitoring.ai_probe import generate_gemini_content_cascade
 
 from ..auth import get_current_user
 from ..services.deal_sla import deal_sla_state
+from ..services.revenue import won_revenue_by_month
+from ..services.tz import local_month, tenant_tz
 from ..tenant_registry import DEFAULT_SPREADSHEET_ID, get_tenant_config
 
 logger = logging.getLogger("insights_router")
@@ -42,37 +44,17 @@ class AnalystChatRequest(BaseModel):
 
 def compute_month_kpi(db: Session, tenant_id: str) -> dict[str, Any]:
     """
-    Revenue of deals WON in the current calendar month (UTC) for the Pulse "Выручка факт" KPI.
-    Won date = CRM last stage change (custom_payload.last_stage_change, written by CRM sync);
-    deals synced before that field existed fall back to updated_at, reported via revenue_basis.
+    Revenue of deals WON in the current calendar month (business time zone, Moscow by default) for the Pulse
+    "Выручка факт" KPI. Same calculation as /metrics/revenue-history (services/revenue.py): won date = CRM last stage
+    change; deals synced before that field existed fall back to updated_at, reported via revenue_basis.
     """
-    from datetime import datetime, timezone
-
-    from packages.database.models import DealStage
-
-    period = datetime.now(timezone.utc).strftime("%Y-%m")
-    t = (tenant_id or "").strip()
-    deals = (
-        db.query(Deal)
-        .filter(Deal.tenant_id.in_({t, t.upper(), t.lower()}))
-        .filter(Deal.is_deleted == False)  # noqa: E712
-        .all()
-    )
-    revenue, won_count, approximated = 0.0, 0, False
-    for d in deals:
-        if not (d.stage == DealStage.WON or "успешно" in str(d.stage_name or "").lower()):
-            continue
-        payload = d.custom_payload if isinstance(d.custom_payload, dict) else {}
-        won_date = str(payload.get("last_stage_change") or "")[:7]
-        if not won_date:
-            approximated = True
-            won_date = d.updated_at.strftime("%Y-%m") if d.updated_at else ""
-        if won_date == period:
-            revenue += float(d.budget or 0)
-            won_count += 1
+    tz = tenant_tz(get_tenant_config(tenant_id))
+    period = local_month(tz)
+    by_month, approximated = won_revenue_by_month(db, tenant_id, tz)
+    current = by_month.get(period, {"revenue": 0.0, "won_count": 0})
     return {
-        "revenue": round(revenue, 2),
-        "won_count": won_count,
+        "revenue": round(current["revenue"], 2),
+        "won_count": int(current["won_count"]),
         "period": period,
         "revenue_basis": "updated_at_fallback" if approximated else "crm_last_stage_change",
     }

@@ -261,7 +261,7 @@ class CallRecording(Base):
     ai_summary = Column(Text, nullable=True)
     next_action_extracted = Column(Text, nullable=True)  # AI recommendation, routinely > 255 chars
     
-    # Overall score (0-100)
+    # Overall score: points 0..13 (rows written by the worker before 2026-11 hold a percent; read via services/call_scorecard)
     overall_score = Column(Float, default=0.0)
     
     # Detailed 13 scorecard criteria in JSON

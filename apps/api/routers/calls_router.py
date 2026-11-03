@@ -35,7 +35,7 @@ from ..schemas import SpeechEvaluationRequest
 from ..services.audio_duration import mp3_duration_seconds
 from ..services.call_scorecard import read_scorecard
 from ..services.raw_calls_row import build_raw_calls_row
-from ..services.tz import tenant_tz, to_local
+from ..services.tz import local_str, tenant_tz, to_local
 from ..services.crm_deal_normalizer import parse_numeric_price
 from ..services.deal_keys import deal_pk_for, find_tenant_deal
 from ..services.deal_sla import deal_sla_state
@@ -599,6 +599,7 @@ def get_dashboard_calls_data(
 
     if db_calls:
         formatted_calls = []
+        call_tz = tenant_tz(get_tenant_config(effective_tenant))
         for c in db_calls:
             sc: dict[str, Any] = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
             call_deal = c.deal
@@ -674,7 +675,9 @@ def get_dashboard_calls_data(
                 "status_label": call_status_label,
                 "risk_amount": risk_amt_str,
                 "next_step": call_next_step,
-                "date": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else "",
+                # DB stores naive UTC; the РОП works in the client's time zone, so a 22:30 UTC call (01:30 MSK) belongs
+                # to the next working day. The string is local wall time, same as dates written by n8n to Sheets.
+                "date": local_str(c.created_at, call_tz),
                 "cr": cr_val,
                 "zoom_scheduled": card["zoom_scheduled"],
                 "error_summary": c.ai_summary or sc.get("error_summary", "Анализ завершен ИИ"),
