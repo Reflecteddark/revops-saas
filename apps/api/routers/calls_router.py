@@ -1055,7 +1055,7 @@ def serve_audio_file(filename: str):
 @router.post("/inject-amocrm")
 async def inject_call_to_amocrm(
     request: Request,
-    tenant_id: str = Query("TNT-004"),
+    tenant_id: str = Query(..., min_length=1),  # required: it used to default to TNT-004
     lead_id: int | None = Query(None),
     filename: str = Query("call.mp3"),
     phone: str = Query("+79990001122"),
@@ -1065,8 +1065,13 @@ async def inject_call_to_amocrm(
     """
     Uploads raw audio stream (or JSON payload) and registers it as a telephony call note in amoCRM.
     Triggers n8n -> Gemini AI audit -> Google Sheets sync without requiring python-multipart.
+
+    Writes into the client's CRM and stores the uploaded file, so it is admin / internal-network only.
+    It used to have NO authorization: anybody on the internet could post audio and a tenant_id and get a call
+    note (and a lead) created in that client's amoCRM.
     """
-    clean_tenant = (tenant_id or "TNT-004").strip().upper()
+    verify_internal_or_admin(request)
+    clean_tenant = tenant_id.strip().upper()
     cfg = get_tenant_config(clean_tenant)
     if not cfg:
         raise HTTPException(status_code=404, detail=f"Tenant '{clean_tenant}' not found")
@@ -1132,7 +1137,8 @@ async def inject_call_to_amocrm(
             create_lead_resp = requests.post(
                 f"{amo_domain}/api/v4/leads",
                 headers=headers,
-                json=[{"name": f"RevOps Звонок {datetime.now().strftime('%d.%m %H:%M')}", "price": 300000}],
+                # no invented "price": 300000 - the amount of a deal we did not get from the client is unknown
+                json=[{"name": f"RevOps Звонок {datetime.now().strftime('%d.%m %H:%M')}"}],
                 timeout=10
             )
             if create_lead_resp.status_code in (200, 201):

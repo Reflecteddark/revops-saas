@@ -26,12 +26,12 @@ if sys.platform == "win32":
         pass
 
 API_ENDPOINT = "https://report.ai-rop.ru/api/v1/calls/inject-amocrm"
-DEFAULT_TENANT = "TNT-004"
+ADMIN_KEY_ENV = "REVOPS_ADMIN_KEY"  # the endpoint is admin-only; the key comes from the environment, never from code
 
 
 def upload_single_call(
     file_path: Path,
-    tenant_id: str = DEFAULT_TENANT,
+    tenant_id: str,
     lead_id: int | None = None,
     phone: str = "+79990001122",
     duration: int | None = None,
@@ -64,12 +64,17 @@ def upload_single_call(
         if duration:
             params["duration"] = duration
 
+        admin_key = os.getenv(ADMIN_KEY_ENV, "").strip()
+        if not admin_key:
+            print(f"   ❌ Не задан ключ администратора: переменная окружения {ADMIN_KEY_ENV}")
+            return False
+
         print("   ⏳ Загрузка аудио на сервер и регистрация в amoCRM...")
         resp = requests.post(
             API_ENDPOINT,
             params=params,
             data=audio_bytes,
-            headers={"Content-Type": "audio/mpeg"},
+            headers={"Content-Type": "audio/mpeg", "x-admin-key": admin_key},
             timeout=30
         )
 
@@ -96,7 +101,7 @@ def main():
     parser = argparse.ArgumentParser(description="Загрузка звонков MP3 в amoCRM для ИИ-аудита")
     parser.add_argument("file", nargs="?", help="Путь к файлу .mp3")
     parser.add_argument("--folder", "-f", help="Папка с файлами .mp3 для пакетной загрузки")
-    parser.add_argument("--tenant", "-t", default=DEFAULT_TENANT, help="ID тенанта (по умолчанию TNT-004)")
+    parser.add_argument("--tenant", "-t", required=True, help="ID тенанта (обязательно, например TNT-004)")
     parser.add_argument("--lead-id", "-l", type=int, help="ID сделки в amoCRM (опционально)")
     parser.add_argument("--phone", "-p", default="+79990001122", help="Номер телефона клиента")
     parser.add_argument("--duration", "-d", type=int, help="Длительность звонка в секундах")
