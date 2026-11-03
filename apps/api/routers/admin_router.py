@@ -9,6 +9,7 @@ Replaces all desktop batch files (.bat) with a unified, secure REST & Web GUI co
 """
 
 import hashlib
+import secrets
 import hmac
 import json
 import logging
@@ -32,6 +33,9 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger("admin_router")
 
 COOKIE_ADMIN_AUTH_NAME = "revops_admin_token"
+
+PUBLIC_APP_URL = os.getenv("PUBLIC_APP_URL", "https://app.ai-rop.ru").rstrip("/")
+N8N_WEBHOOK_BASE = os.getenv("N8N_WEBHOOK_BASE", "https://webhook.ai-rop.ru").rstrip("/")
 
 # Strict Zero-Mock & Anti-Stub live data enforcement
 STRICT_LIVE_DATA = os.getenv("STRICT_LIVE_DATA", "True").lower() in ("true", "1", "yes")
@@ -1493,7 +1497,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
     if crm_type not in ("amocrm", "bitrix24", "hybrid"):
         crm_type = "amocrm"
 
-    plain_password = req.password.strip() if req.password else f"RevOps_{int(time.time()) % 10000}!"
+    plain_password = req.password.strip() if req.password else secrets.token_urlsafe(9)
     password_hash = hashlib.sha256(plain_password.encode("utf-8")).hexdigest()
 
     # The client's own sheet is checked before anything is written: an unchecked sheet means n8n writes fail silently.
@@ -1533,6 +1537,10 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         append_console_log(f"[-] Сбой развертывания тенанта: {e}", "error")
         raise HTTPException(status_code=500, detail=f"Ошибка развертывания тенанта: {e!s}")
 
+    secret = tenant_record.get("secret")
+    if not secret:
+        secret = secrets.token_urlsafe(24)
+        tenant_record["secret"] = secret
     tenant_id = tenant_record.get("tenant_id")
 
     # Sync registry across all candidate paths
@@ -1594,28 +1602,34 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
     sh_id = tenant_record.get("spreadsheet_id")
     sh_url = (
         tenant_record.get("spreadsheet_url")
-        or (f"https://docs.google.com/spreadsheets/d/{sh_id}/edit" if sh_id else "https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy")
+        or (f"https://docs.google.com/spreadsheets/d/{sh_id}/edit" if sh_id else None)
     )
-    b24_wh_url = f"https://report.ai-rop.ru/webhook/bitrix24-call?tenant={tenant_id}"
+    b24_wh_url = f"{N8N_WEBHOOK_BASE}/webhook/bitrix24-call?tenant={tenant_id}&secret={secret}"
     wh_url = b24_wh_url
-    amocrm_redirect_uri = "https://app.ai-rop.ru"
-    
+
     brief_lines = [
         f"Здравствуйте, {company_name}!",
         "",
         "Добро пожаловать в RevOps Enterprise OS — интеллектуальную систему речевого аудита и RevOps-аналитики.",
         "",
         "🔑 ВАШИ ДОСТУПЫ В ЛИЧНЫЙ КАБИНЕТ:",
-        "• Портал:    https://report.ai-rop.ru (или локально)",
+        f"• Портал:    {PUBLIC_APP_URL}",
         f"• Логин:     {login}",
         f"• Пароль:    {plain_password}",
         f"• Роль:      {req.role or 'РОП • Руководитель ОП'}",
         "",
         "📊 ВАШ ПЕРСОНАЛЬНЫЙ ДАШБОРД (GOOGLE ТАБЛИЦА):",
-        f"• Ссылка:    {sh_url}",
-        f"• Доступ:    {'Редактор для ' + clean_email if clean_email else 'Создайте независимую копию на свой Google Диск'}",
-        "",
     ]
+    if sh_url:
+        brief_lines.extend([
+            f"• Ссылка:    {sh_url}",
+            f"• Доступ:    {'Редактор для ' + clean_email if clean_email else 'Доступ настроен администратором'}",
+        ])
+    else:
+        brief_lines.append("• Таблица будет подключена администратором")
+
+    brief_lines.append("")
+
     if crm_type == "bitrix24":
         brief_lines.extend([
             "🔌 ПОДКЛЮЧЕНИЕ ТЕЛЕФОНИИ БИТРИКС24:",
@@ -1627,8 +1641,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         brief_lines.extend([
             "🔌 ПОДКЛЮЧЕНИЕ AMOCRM:",
             f"• Домен: {req.amo_domain or 'Укажите домен amoCRM в настройках'}",
-            f"• Ссылка для перенаправления (Redirect URI): {amocrm_redirect_uri}",
-            f"• Инструкция: В кабинете разработчика amoCRM укажите Redirect URI: {amocrm_redirect_uri}",
+            "• Инструкция: amoCRM → Настройки → Интеграции → Создать интеграцию → Ключи и доступы → Долгосрочный токен; передайте токен и домен администратору",
             "• Интеграция: Прямой API v4 (Polling & Events) активен",
             "• Звонки и сделки синхронизируются автоматически!",
         ])
@@ -1646,9 +1659,9 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
             "role": req.role or "РОП • Руководитель ОП",
         },
         "invite_message": brief_text,
+        "brief": brief_text,
         "spreadsheet_url": sh_url,
         "webhook_url": wh_url,
-        "amocrm_redirect_uri": amocrm_redirect_uri,
     }
 
 

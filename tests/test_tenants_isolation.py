@@ -194,39 +194,86 @@ def test_tnt002_zero_managers_and_deals_isolation(client, admin_headers):
     assert len(data_new.get("managers", [])) == 0
 
 
-def test_provision_tenant_returns_amocrm_redirect_uri(client, admin_headers):
+def test_provision_tenant_working_invite(client, admin_headers):
     """
     7. Эндпоинт POST /api/v1/admin/tenants/provision:
-       - Возвращает amocrm_redirect_uri == 'https://app.ai-rop.ru'
-       - В брифе онбординга явно указан Redirect URI https://app.ai-rop.ru
-       - Возвращает ссылку на персональную или шаблонную Google Таблицу
+       - Инвайт содержит webhook.ai-rop.ru/webhook/bitrix24-call?tenant= и &secret=
+       - Инвайт НЕ содержит report.ai-rop.ru/webhook
+       - Инвайт содержит app.ai-rop.ru
+       - Два вызова дают разные secret
+       - Пароль по умолчанию не матчится по RevOps_
     """
+    import re
+    import secrets
     import sys
     from unittest.mock import MagicMock, patch
-    payload = {
-        "name": "Тестовый Ритейл",
-        "email": "retail_test@example.com",
-        "crm_type": "amocrm",
-        "amo_domain": "retailtest.amocrm.ru"
-    }
-    mock_tenant = {
-        "tenant_id": "TNT-003",
-        "tenant_name": "Тестовый Ритейл",
-        "spreadsheet_id": "1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A",
-        "spreadsheet_url": "https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/edit",
-        "crm_type": "amocrm",
-        "status": "active",
-    }
+
     mock_module = MagicMock()
-    mock_module.provision_tenant.return_value = mock_tenant
-    mock_module.load_registry.return_value = {"tenants": [mock_tenant]}
+
+    def fake_provision(**kwargs):
+        tid = f"TNT-{secrets.token_hex(2).upper()}"
+        return {
+            "tenant_id": tid,
+            "tenant_name": kwargs.get("company_name", "Test"),
+            "spreadsheet_id": kwargs.get("sheet_id", ""),
+            "crm_type": kwargs.get("crm_type", "bitrix24"),
+            "status": "active",
+            "secret": secrets.token_urlsafe(24),
+        }
+
+    mock_module.provision_tenant.side_effect = fake_provision
+    mock_module.load_registry.return_value = {"tenants": []}
+
+    payload_b24_1 = {
+        "name": "Тестовый Ритейл Б24",
+        "email": "retail_b24@example.com",
+        "crm_type": "bitrix24"
+    }
+    payload_b24_2 = {
+        "name": "Второй Клиент Б24",
+        "email": "client2@example.com",
+        "crm_type": "bitrix24"
+    }
 
     with patch.dict(sys.modules, {"tenant_provisioner": mock_module, "apps.api.tenant_provisioner": mock_module}):
-        res = client.post("/api/v1/admin/tenants/provision", json=payload, headers=admin_headers)
-        assert res.status_code == 200, f"Provision failed: {res.text}"
-        data = res.json()
-        assert data["success"] is True
-        assert data.get("amocrm_redirect_uri") == "https://app.ai-rop.ru"
-        assert "https://app.ai-rop.ru" in data.get("invite_message", "")
-        assert "https://docs.google.com/spreadsheets/d/" in data.get("spreadsheet_url", "")
+        res1 = client.post("/api/v1/admin/tenants/provision", json=payload_b24_1, headers=admin_headers)
+        assert res1.status_code == 200, f"Provision 1 failed: {res1.text}"
+        data1 = res1.json()
+
+        invite1 = data1.get("invite_message", "")
+        assert "webhook.ai-rop.ru/webhook/bitrix24-call?tenant=" in invite1
+        assert "&secret=" in invite1
+        assert "report.ai-rop.ru/webhook" not in invite1
+        assert "app.ai-rop.ru" in invite1
+        assert "amocrm_redirect_uri" not in data1
+
+        # Check default password is generated securely (not RevOps_\d+!)
+        pwd1 = data1["credentials"]["password"]
+        assert not re.match(r"^RevOps_\d+!$", pwd1)
+
+        # Second provision call
+        res2 = client.post("/api/v1/admin/tenants/provision", json=payload_b24_2, headers=admin_headers)
+        assert res2.status_code == 200, f"Provision 2 failed: {res2.text}"
+        data2 = res2.json()
+
+        secret1 = data1["tenant"].get("secret")
+        secret2 = data2["tenant"].get("secret")
+        assert secret1 and secret2
+        assert secret1 != secret2
+
+        # Verify amoCRM instructions if provisioned with amocrm
+        payload_amo = {
+            "name": "Тестовый Ритейл Amo",
+            "email": "retail_amo@example.com",
+            "crm_type": "amocrm",
+            "amo_domain": "retailtest.amocrm.ru"
+        }
+        res_amo = client.post("/api/v1/admin/tenants/provision", json=payload_amo, headers=admin_headers)
+        assert res_amo.status_code == 200
+        data_amo = res_amo.json()
+        invite_amo = data_amo.get("invite_message", "")
+        assert "amoCRM → Настройки → Интеграции → Создать интеграцию → Ключи и доступы → Долгосрочный токен; передайте токен и домен администратору" in invite_amo
+        assert "report.ai-rop.ru/webhook" not in invite_amo
+        assert "app.ai-rop.ru" in invite_amo
+        assert "amocrm_redirect_uri" not in data_amo
 

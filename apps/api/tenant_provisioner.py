@@ -3,6 +3,7 @@ Tenant Provisioning and ID Generation for RevOps SaaS.
 Guarantees collision-free TNT-XXX sequence and atomic registry persistence.
 """
 import logging
+import secrets
 from typing import Any
 
 from .tenant_registry import load_tenants_registry, save_tenants_registry
@@ -81,6 +82,7 @@ def provision_tenant(
         "spreadsheet_id": sheet_id or "",
         "crm_type": crm_type,
         "status": "active",
+        "secret": kwargs.get("secret") or secrets.token_urlsafe(24),
         "niche_name": niche_name,
         "avg_deal_check": avg_deal_check,
         "target_next_step": target_next_step,
