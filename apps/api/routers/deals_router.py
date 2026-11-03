@@ -28,6 +28,7 @@ from ..cache_client import (
     get_cached_json_sync,
     set_cached_json_sync,
 )
+from ..services.crm_deal_normalizer import parse_numeric_price
 from ..services.deal_keys import deal_pk_for, find_tenant_deal
 from ..tenant_registry import CLEAN_TEMPLATE_ID, get_tenant_config, get_tenant_spreadsheet_id
 from ..websocket_manager import manager
@@ -66,7 +67,6 @@ def get_service_account_path() -> Path | None:
 def parse_amount(val: Any) -> float:
     if val is None or val == "":
         return 0.0
-    from ..services.crm_deal_normalizer import parse_numeric_price
     price, _ = parse_numeric_price(val)
     return price
 
@@ -1349,10 +1349,8 @@ async def ingest_deal(
 
     title = payload.get("company_name") or payload.get("title") or f"Сделка {deal_id}"
     amt_raw = payload.get("amount") if payload.get("amount") is not None else payload.get("budget", 0.0)
-    try:
-        budget = float(amt_raw) if amt_raw is not None else 0.0
-    except (ValueError, TypeError):
-        budget = 0.0
+    # "150 000", "150 000,50 руб." etc. — float() turned any CRM string with a space into 0.
+    budget, _unknown = parse_numeric_price(amt_raw)
 
     status = "WON" if stage_enum == DealStage.WON else ("LOST" if stage_enum == DealStage.LOST else (raw_status or "ACTIVE"))
     is_deleted = bool(payload.get("is_deleted") in (True, "1", 1) or status == "DELETED")

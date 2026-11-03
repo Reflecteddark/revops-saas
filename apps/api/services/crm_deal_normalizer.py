@@ -64,10 +64,31 @@ def parse_numeric_price(val: Any) -> tuple[float, bool]:
         return 0.0, True
 
     if isinstance(val, (int, float)):
-        return float(val), False
+        f = float(val)
+        if f != f or f in (float("inf"), float("-inf")) or f < 0:
+            return 0.0, True
+        return f, False
 
-    val_str = str(val).strip()
+    val_str = str(val).strip().lower()
+    if re.fullmatch(r"\+?\d+(\.\d+)?e\+?\d+", val_str):  # "1e6" must not become 16
+        return float(val_str), False
+
+    # "15 тыс.", "0,5 млн" — a multiplier word after the number
+    multiplier = 1.0
+    if re.search(r"(?<![а-яa-z])(млн|миллион)", val_str):
+        multiplier = 1_000_000.0
+    elif re.search(r"(?<![а-яa-z])(тыс|т\.\s?р)", val_str):
+        multiplier = 1_000.0
+
+    # A minus sign right before the number means a negative amount. A negative deal budget is junk
+    # (refund / bad data): report it as unknown instead of silently turning it into a positive sum.
+    if re.search(r"(^|[^\d\w])[-−–]\s*\d", val_str):
+        return 0.0, True
+
     clean = re.sub(r"[^\d.,]", "", val_str)
+    # "150 000,50 руб." / "2 000.00 р." leave a stray separator after the digits ("…,50." / "…00.");
+    # it used to be read as a thousands separator and inflated the amount ×100.
+    clean = clean.strip(".,")
     if not clean:
         return 0.0, True
 
@@ -86,7 +107,7 @@ def parse_numeric_price(val: Any) -> tuple[float, bool]:
             clean = clean.replace(".", "")
 
     try:
-        return float(clean), False
+        return float(clean) * multiplier, False
     except (ValueError, TypeError):
         return 0.0, True
 

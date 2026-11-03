@@ -33,6 +33,7 @@ from ..cache_client import (
 )
 from ..schemas import SpeechEvaluationRequest
 from ..services.audio_duration import mp3_duration_seconds
+from ..services.crm_deal_normalizer import parse_numeric_price
 from ..services.deal_keys import deal_pk_for, find_tenant_deal
 from ..services.workspaces import get_or_create_workspace, normalize_crm_type
 from ..tenant_registry import get_tenant_config, get_tenant_spreadsheet_id
@@ -329,8 +330,9 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                     deal_meta = deals_map[num_only]
 
             deal_title = deal_meta["title"] if deal_meta else f"Сделка {deal_id} ({manager_name})"
-            deal_amount_str = deal_meta["amount_str"] if deal_meta else "300 000 ₽"
-            deal_amount_num = deal_meta["amount"] if deal_meta else 300000.0
+            # No matching deal -> unknown amount (0), not an invented 300 000 that would feed "revenue at risk".
+            deal_amount_str = deal_meta["amount_str"] if deal_meta else "0 ₽"
+            deal_amount_num = deal_meta["amount"] if deal_meta else 0.0
             deal_stage = deal_meta["stage"] if deal_meta else "1. Первичный контакт"
 
             # Duration parsing
@@ -655,11 +657,7 @@ def get_dashboard_calls_data(
                 if isinstance(raw_sc_amt, (int, float)):
                     amount_num = float(raw_sc_amt)
                 elif raw_sc_amt:
-                    cleaned_amt = re.sub(r"[^\d.]", "", str(raw_sc_amt).replace(",", "."))
-                    try:
-                        amount_num = float(cleaned_amt) if cleaned_amt else 0.0
-                    except Exception:
-                        amount_num = 0.0
+                    amount_num, _unknown = parse_numeric_price(raw_sc_amt)
                 else:
                     amount_num = 0.0
 
@@ -785,7 +783,7 @@ async def ingest_call_from_n8n(
         "manager": payload.manager or "Менеджер",
         "stage": payload.stage or "Первичный контакт",
         "duration": dur_str,
-        "amount": payload.amount or "500 000 ₽",
+        "amount": payload.amount or "0 ₽",
         "score": score,
         "status": status,
         "status_label": status_label,
@@ -829,7 +827,8 @@ async def ingest_call_from_n8n(
                 # deals.id is global: the same CRM deal number may already belong to another client
                 # (Bitrix portals all start at 1). Keep the CRM number in external_crm_id.
                 deal_pk = deal_pk_for(db, target_tenant, payload.deal_id)
-                amt_clean = float(re.sub(r"[^\d.]", "", str(payload.amount or "300000")) or 300000)
+                # Unknown amount stays 0 (shown as unknown), never an invented 300 000.
+                amt_clean, _unknown = parse_numeric_price(payload.amount)
                 deal = Deal(
                     id=deal_pk,
                     external_crm_id=payload.deal_id,
