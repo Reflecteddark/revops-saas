@@ -892,8 +892,13 @@ async def ingest_call_from_n8n(
                 User.tenant_id == target_tenant
             ).first()
 
+            # call_recordings.id is VARCHAR(36) and global; CRM call ids can be longer (Bitrix external calls:
+            # 'externalCall.<32 hex>.<ts>') or repeat across clients. The CRM id always stays in external_call_id.
+            call_pk = call_id
+            if len(call_pk) > 36 or db.query(CallRecording.id).filter(CallRecording.id == call_pk).first():
+                call_pk = str(uuid.uuid5(uuid.NAMESPACE_URL, f"revops-call:{target_tenant}:{call_id}"))
             db_call = CallRecording(
-                id=call_id,
+                id=call_pk,
                 tenant_id=target_tenant,
                 deal_id=deal.id if deal else (payload.deal_id if payload.deal_id and db.query(Deal).filter(Deal.id == payload.deal_id).first() else None),
                 manager_id=mgr.id if mgr else None,
