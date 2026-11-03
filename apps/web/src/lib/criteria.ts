@@ -4,6 +4,7 @@
  * Canonical Single Source of Truth (SSOT) for 13 B2B Audit Criteria (cr1..cr13).
  * Strictly synchronized with Gemini AI prompt_builder.py, n8n (Sh4JkQtMKVdeRJn5)
  * and Google Sheets (🎙️ ИИ_Аудит, Row 16).
+ * cr11-cr13 verified against the production n8n audit prompt on 2026-11-03.
  */
 
 export interface CriterionDefinition {
@@ -87,24 +88,24 @@ export const CR_DEFINITIONS: CriterionDefinition[] = [
   },
   {
     id: 'cr11',
-    label: 'Экспертность и знание продукта',
-    shortLabel: 'Экспертность',
-    category: 'Экспертность',
-    description: 'Менеджер уверенно отвечал на технические и бизнес-вопросы, демонстрируя глубокое знание рынка.',
+    label: 'Слушание клиента',
+    shortLabel: 'Слушание',
+    category: 'Этика и тон',
+    description: 'Менеджер слушает клиента: клиент говорит не менее 40% хронометража разговора.',
   },
   {
     id: 'cr12',
-    label: 'Резюме договорённостей',
-    shortLabel: 'Резюме',
+    label: 'Фиксация договорённостей',
+    shortLabel: 'Фиксация',
     category: 'Закрытие',
-    description: 'В конце разговора менеджер подвёл итоги: кто, что и к какому сроку делает.',
+    description: 'В конце разговора менеджер подвёл резюме договорённостей: кто, что и к какому сроку делает.',
   },
   {
     id: 'cr13',
-    label: 'Слушание (клиент говорит >40%)',
-    shortLabel: 'Слушание',
-    category: 'Этика и тон',
-    description: 'Менеджер не перебивал клиента, активно слушал, клиент говорил не менее 40% хронометража.',
+    label: 'Защита маржинальности',
+    shortLabel: 'Маржа',
+    category: 'Цена',
+    description: 'Скидки не даются просто так: без встречных уступок по объёму или предоплате.',
   },
 ];
 

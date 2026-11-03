@@ -25,3 +25,11 @@ def test_next_step_is_cr1_in_the_prompt():
     prompt = build_system_prompt(None)
     assert "cr1 (Твёрдый Next Step)" in prompt
     assert "cr10 (Твёрдый Next Step)" not in prompt
+
+
+def test_cr11_to_cr13_match_the_production_n8n_prompt():
+    # Read from the production n8n workflow "Analysis of sales department calls" (2026-11-03):
+    # cr11 Слушание клиента, cr12 Фиксация договорённостей, cr13 Защита маржинальности
+    ts = _ts_labels()
+    assert (ts["cr11"], ts["cr12"], ts["cr13"]) == (
+        "Слушание клиента", "Фиксация договорённостей", "Защита маржинальности")
