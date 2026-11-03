@@ -137,7 +137,7 @@ def test_cookie_after_login_is_httponly(client):
     # Test via server-side client login
     res = client.post("/api/v1/auth/client-login", json={
         "login": "admin",
-        "password": "1908"
+        "password": "ci-test-client-pass"  # seeded by conftest
     })
     assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
 
@@ -169,7 +169,7 @@ def test_get_me_with_client_login_cookie_200(client):
     """9. GET /api/v1/auth/me с cookie после client-login → 200 OK."""
     login_res = client.post("/api/v1/auth/client-login", json={
         "login": "admin",
-        "password": "1908"
+        "password": "ci-test-client-pass"  # seeded by conftest
     })
     assert login_res.status_code == 200
     assert "access_token" in login_res.cookies

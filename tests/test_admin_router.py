@@ -213,7 +213,7 @@ def test_client_login_dmitry_sets_admin_cookie():
     """Verifies that client-login for Dmitry Fedotov returns is_admin=True and sets revops_admin_token."""
     resp = client.post(
         "/api/v1/auth/client-login",
-        json={"login": "dmitriyfedotov1908@gmail.com", "password": "1908"}
+        json={"login": "dmitriyfedotov1908@gmail.com", "password": "ci-test-client-pass"}
     )
     assert resp.status_code == 200
     data = resp.json()
