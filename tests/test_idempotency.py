@@ -150,3 +150,37 @@ def test_same_external_crm_id_different_tenants_succeeds():
             db.query(Tenant).filter(Tenant.id == tid).delete()
         db.commit()
         db.close()
+
+def _worker_payload(call_id, score):
+    return {"id": call_id, "external_call_id": call_id, "deal_id": "D-W", "client": "Клиент", "manager": "М",
+            "duration_sec": 120, "score": score, "next_step": 1, "cr": [1] * 13, "transcript": "t",
+            "sync_to_sheets": False}
+
+
+def test_worker_long_and_shared_call_ids_stay_per_tenant():
+    """A CRM call id longer than call_recordings.id (36) is stored; the same id of another client never touches
+    the first client's row; a replay updates in place."""
+    long_id = f"externalCall.{uuid.uuid4().hex}.1793709454"
+    short_id = f"shared_{uuid.uuid4().hex[:8]}"
+    t1, t2 = "TNT-001", "TNT-IDEMP-B"
+    db = SessionLocal()
+    try:
+        assert process_call_audio_task(_worker_payload(long_id, 7), org_id=t1)["status"] == "completed"
+        assert process_call_audio_task(_worker_payload(long_id, 9), org_id=t1)["status"] == "completed"
+        assert process_call_audio_task(_worker_payload(short_id, 5), org_id=t1)["status"] == "completed"
+        assert process_call_audio_task(_worker_payload(short_id, 11), org_id=t2)["status"] == "completed"
+
+        long_rows = db.query(CallRecording).filter(CallRecording.external_call_id == long_id).all()
+        assert len(long_rows) == 1 and len(long_rows[0].id) <= 36 and long_rows[0].overall_score == 9.0
+
+        by_tenant = {r.tenant_id: r for r in db.query(CallRecording).filter(CallRecording.external_call_id == short_id).all()}
+        assert set(by_tenant) == {t1, t2}
+        assert by_tenant[t1].overall_score == 5.0 and by_tenant[t2].overall_score == 11.0
+        assert by_tenant[t1].id != by_tenant[t2].id
+    finally:
+        db.rollback()
+        for r in db.query(CallRecording).filter(CallRecording.external_call_id.in_([long_id, short_id])).all():
+            db.delete(r)
+        db.commit()
+        db.close()
+

@@ -5,6 +5,7 @@ Celery Background Tasks:
 """
 
 import time
+import uuid
 from typing import Any
 
 from packages.analytics_engine.monte_carlo import (
@@ -107,12 +108,18 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
             db = next(get_db())
             ext_call_id = str(call_data.get("external_call_id") or call_id)
 
-            # Resolve target primary key if this external call was already recorded for tenant
+            # Resolve target primary key: reuse this client's record of the same external call. A foreign
+            # client's row must never match; call_recordings.id is VARCHAR(36) and global, so a long or already
+            # taken CRM id gets a deterministic per-client uuid (same rule as /calls/ingest).
             existing_rec = db.query(CallRecording).filter(
-                (CallRecording.id == call_id) |
-                ((CallRecording.tenant_id == org_id) & (CallRecording.external_call_id == ext_call_id))
+                (CallRecording.tenant_id == org_id) & (CallRecording.external_call_id == ext_call_id)
             ).first()
-            target_id = existing_rec.id if existing_rec else call_id
+            if existing_rec:
+                target_id = existing_rec.id
+            elif len(call_id) > 36 or db.query(CallRecording.id).filter(CallRecording.id == call_id).first():
+                target_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"revops-call:{org_id}:{call_id}"))
+            else:
+                target_id = call_id
 
             rec = CallRecording(
                 id=target_id,
