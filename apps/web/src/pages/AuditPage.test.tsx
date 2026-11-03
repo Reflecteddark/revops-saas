@@ -113,7 +113,7 @@ describe('AuditPage', () => {
     const statusTrigger = screen.getByTestId('filter-status');
     fireEvent.keyDown(statusTrigger, { key: 'ArrowDown' });
 
-    const wonOption = await screen.findByText('Успешно (won)');
+    const wonOption = await screen.findByText('Эталон (won)');
     fireEvent.click(wonOption);
 
     // After filtering, only ООО АгроХим (won) should remain

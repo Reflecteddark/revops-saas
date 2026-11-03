@@ -120,7 +120,7 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
       const variant =
         status === 'won'
           ? 'default'
-          : status === 'lost' || status === 'fake_yes'
+          : status === 'risk' || status === 'lost' || status === 'fake_yes'
             ? 'destructive'
             : 'secondary';
 
@@ -146,7 +146,7 @@ export function AuditPage() {
     refetch,
   } = useQuery({
     queryKey: ['calls', tenantId, 'all'],
-    queryFn: () => callsApi.list({ tenant_id: tenantId! }),
+    queryFn: () => callsApi.list({ tenant_id: tenantId!, limit: 500 }), // the API default is 50
     enabled: Boolean(tenantId),
   });
 
@@ -345,14 +345,15 @@ export function AuditPage() {
               <SelectItem value="all" className="text-xs">
                 Все статусы
               </SelectItem>
+              {/* the API returns exactly these statuses: won / risk / unknown */}
               <SelectItem value="won" className="text-xs">
-                Успешно (won)
+                Эталон (won)
               </SelectItem>
-              <SelectItem value="lost" className="text-xs">
-                Отказ (lost)
+              <SelectItem value="risk" className="text-xs">
+                Слив (risk)
               </SelectItem>
-              <SelectItem value="fake_yes" className="text-xs">
-                Ложное согласие
+              <SelectItem value="unknown" className="text-xs">
+                Нет данных
               </SelectItem>
             </SelectContent>
           </Select>
