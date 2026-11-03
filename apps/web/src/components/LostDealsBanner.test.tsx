@@ -95,4 +95,13 @@ describe('LostDealsBanner', () => {
     expect(handleInspect).toHaveBeenCalledTimes(1);
     expect(handleInspect).toHaveBeenCalledWith(mockCallsWithLeaks[0]);
   });
+
+  it('does not praise the team when there were no calls yesterday', () => {
+    // mockCallsNoLeaks are dated 2026-10-25, i.e. not yesterday
+    render(<LostDealsBanner calls={mockCallsNoLeaks} filterYesterdayOnly />);
+
+    expect(screen.getByText('Вчера звонков не было')).toBeInTheDocument();
+    expect(screen.queryByText(/Отличная работа/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Next\s*Step 100%/i)).not.toBeInTheDocument();
+  });
 });

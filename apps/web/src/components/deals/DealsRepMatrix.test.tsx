@@ -186,4 +186,30 @@ describe('DealsRepMatrix Component', () => {
     fireEvent.click(leaderActionBtn);
     expect(onSelectManager).toHaveBeenCalledWith('Алексей Смирнов');
   });
+
+  it('shows no leader and no win rate while nothing is closed', async () => {
+    vi.mocked(dealsApi.repPerformance).mockResolvedValue({
+      ...mockResponse,
+      benchmark_leader: mockResponse.benchmark_leader
+        ? { ...mockResponse.benchmark_leader, won_count: 0, won_amount: 0 }
+        : mockResponse.benchmark_leader,
+      team_benchmarks: { ...mockResponse.team_benchmarks, win_rate_pct: 0 },
+      reps: mockResponse.reps.map((r) => ({ ...r, won_count: 0, lost_count: 0, won_amount: 0, win_rate_pct: 0 })),
+    });
+    const queryClient = createTestQueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <DealsRepMatrix tenantId="TNT-001" pipelineId="pipe-1" />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('rep-performance-matrix')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Лидер продаж воронки')).not.toBeInTheDocument();
+    expect(screen.queryByText('0%')).not.toBeInTheDocument();
+    // no raw LaTeX in the heading
+    expect(document.body.textContent).not.toContain('$');
+  });
 });

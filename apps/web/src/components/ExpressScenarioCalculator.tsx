@@ -30,6 +30,15 @@ export function ExpressScenarioCalculator({
   const [leads, setLeads] = React.useState<number>(initialLeads);
   const [avgCheck, setAvgCheck] = React.useState<number>(initialCheck);
   const [managers, setManagers] = React.useState<number>(initialManagers);
+
+  // Real numbers arrive after the first render; follow them until the user starts playing with the sliders
+  const touched = React.useRef(false);
+  React.useEffect(() => {
+    if (touched.current) return;
+    setLeads(initialLeads);
+    setAvgCheck(initialCheck);
+    setManagers(initialManagers);
+  }, [initialLeads, initialCheck, initialManagers]);
   const upliftPct = 15;
 
   const leakPct = realLeakPct ?? 28;
@@ -84,7 +93,7 @@ export function ExpressScenarioCalculator({
             max={300}
             step={5}
             value={leads}
-            onChange={(e) => setLeads(Number(e.target.value))}
+            onChange={(e) => { touched.current = true; setLeads(Number(e.target.value)); }}
             className="w-full accent-violet-500 cursor-pointer h-1.5 bg-hover rounded-lg appearance-none"
             data-testid="slider-leads"
           />
@@ -108,7 +117,7 @@ export function ExpressScenarioCalculator({
             max={2000000}
             step={25000}
             value={avgCheck}
-            onChange={(e) => setAvgCheck(Number(e.target.value))}
+            onChange={(e) => { touched.current = true; setAvgCheck(Number(e.target.value)); }}
             className="w-full accent-violet-500 cursor-pointer h-1.5 bg-hover rounded-lg appearance-none"
             data-testid="slider-check"
           />
@@ -132,7 +141,7 @@ export function ExpressScenarioCalculator({
             max={20}
             step={1}
             value={managers}
-            onChange={(e) => setManagers(Number(e.target.value))}
+            onChange={(e) => { touched.current = true; setManagers(Number(e.target.value)); }}
             className="w-full accent-violet-500 cursor-pointer h-1.5 bg-hover rounded-lg appearance-none"
             data-testid="slider-managers"
           />

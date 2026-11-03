@@ -259,8 +259,35 @@ describe('PulsePage', () => {
 
     renderWithClient(<PulsePage />);
 
-    // Should display plan 8.0M in trend label
-    expect(await screen.findByText(/план 8\.0M ₽/i)).toBeInTheDocument();
+    // The plan from settings is shown under the deficit card
+    expect(await screen.findByText(/план 8 000 000 ₽/i)).toBeInTheDocument();
+  });
+
+  it('shows money at risk (not the plan deficit) as losses and never prints a fake-yes ruble sum', async () => {
+    vi.mocked(insightsApi.summary).mockResolvedValue({
+      ...mockInsights,
+      leak_breakdown: {
+        fake_yes: { count: 37, avg_check: 100000, sum: 3700000, assumed_default: false },
+        stuck_deals: { count: 1, avg: 99888, sum: 99888 },
+        total_leak_rub: 99888,
+        capped_by_pipeline: true,
+      },
+      total_leak_rub: 99888,
+    });
+    vi.mocked(callsApi.list).mockResolvedValue([]);
+    vi.mocked(dealsApi.list).mockResolvedValue([]);
+
+    renderWithClient(<PulsePage />);
+
+    const card = await screen.findByTestId('business-economics-card');
+    // plan is 5 000 000 (settings), the loss column must show the real risk instead of the deficit
+    await waitFor(() => {
+      expect(card).toHaveTextContent('99 888 ₽');
+    });
+    expect(await screen.findByText('Звонки без следующего шага')).toBeInTheDocument();
+    expect(screen.queryByText('3 700 000 ₽')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Fake Yes/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Монте-Карло/i)).not.toBeInTheDocument();
   });
 
   it('shows month revenue from insights.kpi, not all-time won deals', async () => {

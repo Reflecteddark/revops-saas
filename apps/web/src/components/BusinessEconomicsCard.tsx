@@ -69,7 +69,7 @@ export function BusinessEconomicsCard({
           </h2>
           <p className="text-pretty text-xs text-secondary">
             Сквозной срез выручки, сопутствующих потерь воронки и достижения
-            плана P90
+            плана
           </p>
         </div>
         <span className="font-mono text-xs text-tertiary">
@@ -167,9 +167,9 @@ export function BusinessEconomicsCard({
               </span>
             </div>
             <div className="flex items-center justify-between text-secondary">
-              <span>Ложные согласия (Fake-Yes)</span>
+              <span>Звонки без Next Step</span>
               <span className="font-mono font-medium text-amber-400">
-                {fakeYesCount} срывов
+                {fakeYesCount} звонков
               </span>
             </div>
           </div>
@@ -179,7 +179,7 @@ export function BusinessEconomicsCard({
         <div className="space-y-3.5 pl-0 pt-4 md:pl-4 md:pt-0">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
-              Цель P90 и качество
+              План и качество звонков
             </span>
             <div className="flex items-center gap-1 font-mono text-xs font-semibold text-primary">
               <span>{planPct}% плана</span>
@@ -211,7 +211,7 @@ export function BusinessEconomicsCard({
               </span>
             </div>
             <div className="flex items-center justify-between text-secondary">
-              <span>Точность Монте-Карло</span>
+              <span>Достоверность прогноза</span>
               <span className="font-mono font-medium text-cyan-400">
                 {corridorConfidencePct > 0 ? `${corridorConfidencePct}%` : '—'}
               </span>

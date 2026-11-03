@@ -512,7 +512,7 @@ async def get_ai_insights_summary(
                 "p10_corridor_rub": eff_p10,
                 "p50_corridor_rub": eff_p50,
                 "p90_corridor_rub": eff_p90,
-                "confidence_score": 0.94,
+                "confidence_score": None,  # a linear scenario has no statistical confidence; never invent one
                 "calculation_method": "linear_scenario (not Monte-Carlo)",
                 "leak_breakdown": leak_breakdown,
                 "total_leak_rub": total_leak_rub
@@ -520,26 +520,31 @@ async def get_ai_insights_summary(
         except Exception as e:
             logger.warning(f"Claude API unavailable: {e}")
 
-    recommendations = [
-        {
+    stuck_count = len(leak_metrics["stuck_deals"])
+    stuck_sum = float(leak_metrics["stuck_amount"])
+    recommendations = []
+    if stuck_count > 0:
+        recommendations.append({
             "priority": "HIGH",
-            "title": "Ликвидация зависания сделок в воронке",
-            "impact_rub": round(active_sum * 0.25, 2),
-            "description": f"В активном пайплайне находится {len(active_deals)} сделок на общую сумму {active_sum:,.0f} ₽. Проведите ревизию сроков нахождения на этапе."
-        },
-        {
-            "priority": "MEDIUM",
-            "title": "Контроль фиксации Next Step",
-            "impact_rub": round(active_sum * 0.15, 2),
-            "description": "Проверьте обязательное наличие запланированного контакта или Zoom-разбора по всем ключевым сделкам."
-        },
-        {
-            "priority": "MEDIUM",
-            "title": "Повышение конверсии квалификации (cr2, cr4)",
-            "impact_rub": round(active_sum * 0.10, 2),
-            "description": "Проконтролируйте программирование звонка и выявление болей ЛПР на первом контакте для снижения процента отказов."
-        }
-    ]
+            "title": "Сделки в зоне риска по регламенту",
+            "impact_rub": round(stuck_sum, 2),
+            "description": (
+                f"В зоне риска {stuck_count} из {len(active_deals)} открытых сделок на {stuck_sum:,.0f} ₽: "
+                "нет следующего шага, он просрочен или сделка слишком долго стоит на этапе."
+            ).replace(",", " "),
+        })
+    recommendations.append({
+        "priority": "MEDIUM",
+        "title": "Контроль фиксации Next Step",
+        "impact_rub": 0,
+        "description": "Проверьте обязательное наличие запланированного контакта или Zoom-разбора по всем ключевым сделкам.",
+    })
+    recommendations.append({
+        "priority": "MEDIUM",
+        "title": "Повышение конверсии квалификации (cr2, cr4)",
+        "impact_rub": 0,
+        "description": "Проконтролируйте программирование звонка и выявление болей ЛПР на первом контакте для снижения процента отказов.",
+    })
     summary_text = (
         f"Для достижения медианного плана P50 ({eff_p50:,.0f} ₽) при активном объеме {active_sum:,.0f} ₽ "
         f"необходимо исключить зависания сделок и строго соблюдать регламент перехода между этапами."
@@ -552,7 +557,7 @@ async def get_ai_insights_summary(
         "p10_corridor_rub": eff_p10,
         "p50_corridor_rub": eff_p50,
         "p90_corridor_rub": eff_p90,
-        "confidence_score": 0.88,
+        "confidence_score": None,  # a linear scenario has no statistical confidence; never invent one
         "calculation_method": "linear_scenario (not Monte-Carlo)",
         "recommendations": recommendations,
         "insights": recommendations,

@@ -246,11 +246,8 @@ export function PulsePage() {
 
   const monthlyTarget = settingsQuery.data?.general?.monthly_target;
   const hasPlan = Boolean(monthlyTarget && monthlyTarget > 0);
-  const planTarget = Number(
-    hasPlan
-      ? monthlyTarget
-      : (insights?.p90_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.8) : revenue))
-  );
+  // No plan set = no plan (0). We never invent a target from the pipeline.
+  const planTarget = hasPlan ? Number(monthlyTarget) : 0;
   const deficitSum = Math.max(0, planTarget - revenue);
 
   // Only RATED calls: an unrated call (score null) is not a 0-point call and must not drag the average down.
@@ -270,10 +267,21 @@ export function PulsePage() {
       !['capped_by_pipeline', 'total_leak_rub'].includes(key)
   ) as [string, { sum?: number; amount_rub?: number; count?: number }][];
   const hasLeaks = leakCategories.length > 0;
+  const LEAK_LABELS: Record<string, string> = {
+    fake_yes: 'Звонки без следующего шага',
+    stuck_deals: 'Сделки в зоне риска',
+  };
 
-  const stalledDealsCount = leakBreakdown?.stalled_deals?.count ?? slaRiskCount;
-  const stalledAmountRub = leakBreakdown?.stalled_deals?.amount_rub ?? 0;
-  const fakeYesCount = calls.filter((c) => c.status === 'fake_yes').length;
+  // Backend key is `stuck_deals` ({count, sum}); older payloads used `stalled_deals` ({count, amount_rub})
+  const stuckBlock = (leakBreakdown?.stuck_deals ?? leakBreakdown?.stalled_deals) as
+    | { count?: number; sum?: number; amount_rub?: number }
+    | undefined;
+  const stalledDealsCount = stuckBlock?.count ?? slaRiskCount;
+  const stalledAmountRub = Number(stuckBlock?.sum ?? stuckBlock?.amount_rub ?? 0);
+  // Same count as the backend leak metric (one definition for every widget)
+  const fakeYesCount = Number(leakBreakdown?.fake_yes?.count ?? 0);
+  // Real loss = money at risk in the pipeline (capped by the pipeline), NOT the plan deficit
+  const lossRub = Number(leakBreakdown?.total_leak_rub ?? stalledAmountRub);
 
   const wonCallsCount = ratedCalls.filter((c) => c.score >= CALL_SCORE_THRESHOLDS.high.min).length;
   const midCallsCount = ratedCalls.filter(
@@ -546,7 +554,7 @@ export function PulsePage() {
       <BusinessEconomicsCard
         revenueRub={revenue}
         pipelineRub={pipelineSum}
-        lossRub={deficitSum}
+        lossRub={lossRub}
         targetRub={planTarget}
         avgCheckRub={avgCheckRub > 0 ? avgCheckRub : undefined}
         qualityPct={qualityPct}
@@ -569,7 +577,7 @@ export function PulsePage() {
           title="Пайплайн"
           value={isLoading ? 0 : pipelineSum.toLocaleString('ru-RU')}
           unit="₽"
-          trend={openDeals.length > 0 ? { direction: 'flat', value: openDeals.length, label: 'сделок в работе' } : undefined}
+          subtitle={openDeals.length > 0 ? <div className="mt-1 text-[11px] text-tertiary">{openDeals.length} в работе</div> : undefined}
           inverted={false}
           loading={isLoading}
         />
@@ -577,35 +585,28 @@ export function PulsePage() {
           title="Качество звонков"
           value={isLoading ? 0 : qualityPct}
           unit="%"
-          trend={avgCallScore > 0 ? { direction: avgCallScore >= 8 ? 'up' : 'down', value: avgCallScore, label: 'из 13 баллов' } : undefined}
+          subtitle={avgCallScore > 0 ? <div className="mt-1 text-[11px] text-tertiary">{avgCallScore.toLocaleString('ru-RU')} из 13 баллов</div> : undefined}
           inverted={false}
           loading={isLoading}
         />
         <KpiCard
-          title={hasPlan ? "Дефицит до плана" : "Дефицит (оценка)"}
-          value={isLoading ? 0 : deficitSum.toLocaleString('ru-RU')}
+          title="Дефицит до плана"
+          value={isLoading ? 0 : hasPlan ? deficitSum.toLocaleString('ru-RU') : '—'}
           unit="₽"
-          trend={
-            planTarget > 0
-              ? {
-                  direction: deficitSum === 0 ? 'up' : 'down',
-                  value: Math.round((revenue / planTarget) * 100),
-                  label: hasPlan
-                    ? `% вып. (план ${(planTarget / 1000000).toFixed(1)}M ₽)`
-                    : `% вып. (оценка ${(planTarget / 1000000).toFixed(1)}M ₽)`,
-                }
-              : undefined
-          }
           subtitle={
-            !hasPlan ? (
+            hasPlan ? (
+              <div className="mt-1 text-[11px] text-tertiary">
+                Выполнено {Math.round((revenue / planTarget) * 100)}% • план {planTarget.toLocaleString('ru-RU')} ₽
+              </div>
+            ) : (
               <div className="text-[11px] text-amber-400 flex items-center gap-1 mt-1">
                 <AlertCircle className="h-3 w-3 shrink-0" />
-                <span>Оценка • </span>
+                <span>План не задан • </span>
                 <Link to="/settings" className="underline hover:text-amber-300">
                   Задайте план
                 </Link>
               </div>
-            ) : undefined
+            )
           }
           inverted={true}
           loading={isLoading}
@@ -614,7 +615,7 @@ export function PulsePage() {
           title="SLA риск"
           value={isLoading ? 0 : slaRiskCount}
           variant={slaRiskCount > 0 ? 'danger' : 'default'}
-          trend={slaRiskCount > 0 ? { direction: 'down', value: slaRiskCount, label: 'требуют внимания' } : undefined}
+          subtitle={slaRiskCount > 0 ? <div className="mt-1 text-[11px] text-tertiary">требуют внимания</div> : undefined}
           inverted={true}
           loading={isLoading}
         />
@@ -745,14 +746,16 @@ export function PulsePage() {
       </div>
 
       {/* Monte Carlo Probabilistic Corridor */}
-      <MonteCarloCorridor
-        p10={Number(insights?.p10_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.3) : 0))}
-        p50={Number(insights?.p50_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.6) : revenue))}
-        p90={Number(insights?.p90_corridor_rub ?? (pipelineSum > 0 ? Math.round(pipelineSum * 0.95) : revenue))}
-        monthlyTarget={planTarget}
-        confidenceScore={insights?.confidence_score ?? 0}
-        hasRealData={Boolean(insights?.p10_corridor_rub)}
-      />
+      {Number(insights?.p50_corridor_rub ?? 0) > 0 && (
+        <MonteCarloCorridor
+          p10={Number(insights?.p10_corridor_rub ?? 0)}
+          p50={Number(insights?.p50_corridor_rub ?? 0)}
+          p90={Number(insights?.p90_corridor_rub ?? 0)}
+          monthlyTarget={planTarget}
+          confidenceScore={insights?.confidence_score ?? 0}
+          hasRealData={Boolean(insights?.p10_corridor_rub)}
+        />
+      )}
 
       {/* Financial Scenario Math & AI Impact Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -766,7 +769,7 @@ export function PulsePage() {
           />
         </div>
         <div className="lg:col-span-6">
-          <AiImpactCard calls={calls} />
+          <AiImpactCard calls={calls} deals={deals} />
         </div>
       </div>
 
@@ -806,6 +809,7 @@ export function PulsePage() {
             {leakCategories.map(([catKey, leak]) => {
               const amount = Number(leak?.amount_rub ?? leak?.sum ?? 0);
               const count = Number(leak?.count ?? 0);
+              const isCallsOnly = catKey === 'fake_yes';
               return (
                 <div
                   key={catKey}
@@ -817,17 +821,17 @@ export function PulsePage() {
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="text-[13px] font-medium text-foreground capitalize truncate">
-                        {catKey.replace(/_/g, ' ')}
+                        {LEAK_LABELS[catKey] ?? catKey.replace(/_/g, ' ')}
                       </span>
                       {count > 0 && (
                         <span className="text-xs text-tertiary">
-                          {count} сделок
+                          {count} {isCallsOnly ? 'звонков' : 'сделок'}
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="text-right shrink-0 pl-4 font-mono text-[13px] font-medium tabular-nums text-rose-400">
-                    {amount.toLocaleString('ru-RU')} ₽
+                    {isCallsOnly ? '—' : `${amount.toLocaleString('ru-RU')} ₽`}
                   </div>
                 </div>
               );

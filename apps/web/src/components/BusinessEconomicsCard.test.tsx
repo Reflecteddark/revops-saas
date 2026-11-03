@@ -34,6 +34,6 @@ describe('BusinessEconomicsCard', () => {
     expect(screen.getByText('-6.1%')).toBeInTheDocument();
     expect(screen.getByText('88%')).toBeInTheDocument();
     expect(screen.getByText('4 сделок')).toBeInTheDocument();
-    expect(screen.getByText('2 срывов')).toBeInTheDocument();
+    expect(screen.getByText('2 звонков')).toBeInTheDocument();
   });
 });

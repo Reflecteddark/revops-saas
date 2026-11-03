@@ -10,10 +10,11 @@ import * as React from 'react';
 import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
 import { Zap, AlertTriangle, ShieldCheck, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Call } from '@/types/api';
+import type { Call, Deal } from '@/types/api';
 
 export interface AiImpactCardProps {
   calls?: Call[];
+  deals?: Deal[];
   className?: string;
 }
 
@@ -28,7 +29,7 @@ interface TierMetrics {
   multiplierStyle: string;
 }
 
-export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
+export function AiImpactCard({ calls = [], deals = [], className }: AiImpactCardProps) {
   const { tiers, fakeYesCalls, maxSpread } = React.useMemo(() => {
     const lowCalls = calls.filter((c) => (c.score ?? 0) <= CALL_SCORE_THRESHOLDS.low.max);
     const midCalls = calls.filter(
@@ -40,27 +41,39 @@ export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
       (c) => (c.score ?? 0) >= CALL_SCORE_THRESHOLDS.high.min
     );
 
+    // Conversion = share of calls whose DEAL was actually won. A call's own score/status
+    // (status 'won' just means "reference-quality call") must never define conversion.
+    const wonDealIds = new Set<string>();
+    for (const d of deals) {
+      if (d.status === 'won' || d.is_won) {
+        [d.id, d.deal_id, d.crm_deal_id].filter(Boolean).forEach((x) => wonDealIds.add(String(x)));
+      }
+    }
+    const hasWonDeals = wonDealIds.size > 0;
+
     const calcTier = (tierCalls: Call[]) => {
       const count = tierCalls.length;
-      const wonCalls = tierCalls.filter((c) => c.status === 'won');
+      const wonCalls = tierCalls.filter((c) => wonDealIds.has(String(c.deal_id)));
       const countWon = wonCalls.length;
-      const rate =
-        count > 0 ? `${((countWon / count) * 100).toFixed(1)}%` : '0.0%';
+      const rateNum = hasWonDeals && count > 0 ? (countWon / count) * 100 : null;
+      const rate = rateNum === null ? '—' : `${rateNum.toFixed(1)}%`;
       const sumWon = wonCalls.reduce((acc, c) => acc + (c.amount_num || 0), 0);
-      return { count, rate, sumWon };
+      return { count, rate, rateNum, sumWon };
     };
 
     const tLow = calcTier(lowCalls);
     const tMid = calcTier(midCalls);
     const tHigh = calcTier(highCalls);
 
-    const lowRateVal = parseFloat(tLow.rate);
-    const midRateVal = parseFloat(tMid.rate);
-    const highRateVal = parseFloat(tHigh.rate);
+    const lowRateVal = tLow.rateNum ?? 0;
+    const midRateVal = tMid.rateNum ?? 0;
+    const highRateVal = tHigh.rateNum ?? 0;
 
     const midMult =
       tMid.count > 0
-        ? lowRateVal > 0 && midRateVal > 0
+        ? !hasWonDeals
+          ? 'Нет закрытых сделок'
+          : lowRateVal > 0 && midRateVal > 0
           ? `${(midRateVal / lowRateVal).toFixed(1)}x к базе`
           : midRateVal > 0
             ? 'Выше нормы'
@@ -69,7 +82,9 @@ export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
 
     const highMult =
       tHigh.count > 0
-        ? lowRateVal > 0 && highRateVal > 0
+        ? !hasWonDeals
+          ? 'Нет закрытых сделок'
+          : lowRateVal > 0 && highRateVal > 0
           ? `${(highRateVal / lowRateVal).toFixed(1)}x к базе`
           : highRateVal > 0
             ? 'Максимальная'
@@ -77,7 +92,9 @@ export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
         : 'Накопление данных';
 
     const maxSpread =
-      lowRateVal > 0 && highRateVal > 0
+      !hasWonDeals
+        ? 'Сбор статистики'
+        : lowRateVal > 0 && highRateVal > 0
         ? `${(highRateVal / lowRateVal).toFixed(1)}x разрыв в конверсии`
         : tHigh.count > 0
           ? 'Эталонный сегмент'
@@ -86,7 +103,7 @@ export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
     const tierList: TierMetrics[] = [
       {
         name: 'Зона риска (Низкий балл)',
-        scoreRange: '0 – 6 баллов',
+        scoreRange: '0 – 5 баллов',
         count: tLow.count,
         winRate: tLow.rate,
         sumWon: tLow.sumWon,
@@ -117,15 +134,17 @@ export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
       },
     ];
 
-    // Fake yes detection: client agreement claimed without concrete next step
+    // Rated calls without a fixed next step (same definition as the backend leak metric)
     const fakeYes = calls.filter(
       (c) =>
-        (c.status === 'fake_yes' || c.status === 'risk') &&
-        (c.next_step === 0 || c.next_step === null)
+        typeof c.score === 'number' &&
+        c.next_step !== null &&
+        c.next_step !== 1 &&
+        c.status !== 'won'
     );
 
     return { tiers: tierList, fakeYesCalls: fakeYes, maxSpread };
-  }, [calls]);
+  }, [calls, deals]);
 
   return (
     <div
@@ -237,13 +256,13 @@ export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
           <div>
             <div className="text-xs font-semibold text-foreground">
               {fakeYesCalls.length > 0
-                ? `${fakeYesCalls.length} алертов «Ложного согласия» (Fake Yes)`
-                : 'Алертов ложного согласия не обнаружено'}
+                ? `${fakeYesCalls.length} звонков без зафиксированного следующего шага`
+                : 'Звонков без следующего шага нет'}
             </div>
             <div className="mt-0.5 text-[11px] text-secondary">
               {fakeYesCalls.length > 0
-                ? 'Клиент сказал «да/интересно», но менеджер не зафиксировал дату и время следующего шага'
-                : 'Все диалоги с согласием клиента подкреплены зафиксированным Next Step'}
+                ? 'Менеджер не зафиксировал дату и время следующего шага — возможное «ложное согласие» клиента'
+                : 'Во всех оценённых звонках зафиксирован Next Step'}
             </div>
           </div>
         </div>
@@ -257,7 +276,7 @@ export function AiImpactCard({ calls = [], className }: AiImpactCardProps) {
           )}
         >
           {fakeYesCalls.length > 0
-            ? `${fakeYesCalls.length} алертов`
+            ? `${fakeYesCalls.length} звонков`
             : 'Чистый лист'}
         </span>
       </div>

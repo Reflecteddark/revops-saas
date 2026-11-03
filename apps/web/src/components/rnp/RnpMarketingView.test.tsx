@@ -10,6 +10,9 @@ import '@testing-library/jest-dom';
 import { RnpMarketingView } from './RnpMarketingView';
 import type { Deal, ManagerConfig } from '@/types/api';
 
+// created this month (Moscow) so they count as MTD leads
+const NOW_ISO = new Date().toISOString();
+
 const mockDeals: Deal[] = [
   {
     id: 'd1',
@@ -26,8 +29,8 @@ const mockDeals: Deal[] = [
     sla_risk: false,
     responsible_user: 'Иван',
     segment: 'B2B',
-    created_at: '2026-10-20',
-    updated_at: '2026-10-20',
+    created_at: NOW_ISO,
+    updated_at: NOW_ISO,
     synced_at: '2026-10-26',
   },
   {
@@ -45,8 +48,8 @@ const mockDeals: Deal[] = [
     sla_risk: false,
     responsible_user: 'Ольга',
     segment: 'B2B',
-    created_at: '2026-10-21',
-    updated_at: '2026-10-21',
+    created_at: NOW_ISO,
+    updated_at: NOW_ISO,
     synced_at: '2026-10-26',
   },
 ];
@@ -65,6 +68,16 @@ describe('RnpMarketingView', () => {
     expect(screen.getByText(/Доля SQL-квалификации/i)).toBeInTheDocument();
     expect(screen.getByText(/SLA первого контакта/i)).toBeInTheDocument();
     expect(screen.getByText(/Загрузка отдела продаж/i)).toBeInTheDocument();
+  });
+
+  it('counts MTD leads by creation date and does not advise on a tiny sample', () => {
+    const old = mockDeals.map((d) => ({ ...d, created_at: '2026-01-05T10:00:00Z' }));
+    render(<RnpMarketingView deals={old} managers={mockManagers} />);
+
+    // nothing was created this month
+    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByText(/Недостаточно данных для рекомендации/i)).toBeInTheDocument();
+    expect(screen.queryByText(/масштабировать рекламу/i)).not.toBeInTheDocument();
   });
 
   it('renders channels breakdown and AI traffic balancing recommendation', () => {

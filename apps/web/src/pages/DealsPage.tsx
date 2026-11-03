@@ -556,7 +556,9 @@ export function DealsPage() {
           <p className="text-[11px] text-tertiary">
             {filterCounts.stalled > 0
               ? `${filterCounts.stalled} зависло >3 дней`
-              : 'Все в регламенте'}
+              : totalSlaRisks > 0
+                ? 'Требуют внимания: см. причину в карточке'
+                : 'Все в регламенте'}
           </p>
         </div>
       </div>

@@ -27,7 +27,7 @@ describe('MonteCarloCorridor', () => {
     expect(screen.getByTestId('target-prob-badge')).toBeInTheDocument();
   });
 
-  it('displays high probability badge when target is easily achievable', () => {
+  it('says the base scenario covers the plan when it is above the target', () => {
     render(
       <MonteCarloCorridor
         p10={3000000}
@@ -37,6 +37,14 @@ describe('MonteCarloCorridor', () => {
       />
     );
 
-    expect(screen.getByTestId('target-prob-badge')).toHaveTextContent(/твердо в плане/i);
+    expect(screen.getByTestId('target-prob-badge')).toHaveTextContent(/156% плана в базовом сценарии/i);
+  });
+
+  it('does not invent a probability or a plan when none is set', () => {
+    render(<MonteCarloCorridor p10={75000} p50={100000} p90={135000} monthlyTarget={0} />);
+
+    expect(screen.getByTestId('target-prob-badge')).toHaveTextContent(/план не задан/i);
+    expect(screen.queryByText(/вероятность/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Монте-Карло/i)).not.toBeInTheDocument();
   });
 });

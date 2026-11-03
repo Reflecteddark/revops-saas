@@ -65,6 +65,13 @@ export function LostDealsBanner({
     });
   }, [calls, filterYesterdayOnly]);
 
+  // How many calls the "yesterday" claim is actually based on
+  const scopeCallsCount = React.useMemo(() => {
+    if (!filterYesterdayOnly) return calls.length;
+    const yesterdayKey = addDaysToKey(businessDayKey(), -1);
+    return calls.filter((c) => c && callDayKey(c.date || c.created_at) === yesterdayKey).length;
+  }, [calls, filterYesterdayOnly]);
+
   const sortedLeaks = React.useMemo(() => {
     return [...leaks]
       .sort((a, b) => (b.amount_num || 0) - (a.amount_num || 0))
@@ -93,17 +100,20 @@ export function LostDealsBanner({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-[13px] font-semibold text-emerald-400">
-                  Вчера сливов не было. Отличная работа!
+                  {scopeCallsCount === 0
+                    ? 'Вчера звонков не было'
+                    : 'Вчера сливов не было. Отличная работа!'}
                 </h3>
               </div>
               <p className="mt-0.5 text-xs text-secondary">
-                Все звонки зафиксировали договоренность о следующем шаге (Next
-                Step 100%).
+                {scopeCallsCount === 0
+                  ? 'Анализировать нечего: сливов за вчера нет.'
+                  : `Среди звонков (${scopeCallsCount}) нет сорванных договорённостей о следующем шаге.`}
               </p>
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
-            ✓ 0 сливов
+            {scopeCallsCount === 0 ? '— нет звонков' : '✓ 0 сливов'}
           </span>
         </div>
       </div>

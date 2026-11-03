@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Deal, ManagerConfig } from '@/types/api';
+import { businessDayKey, callDayKey } from '@/lib/dates';
 
 export interface RnpMarketingViewProps {
   deals: Deal[];
@@ -27,15 +28,36 @@ export interface RnpMarketingViewProps {
 }
 
 export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
-  const totalLeads = deals.length;
+  // Open deals only: won/lost deals are not "in work" and do not load the team
+  const openDeals = React.useMemo(
+    () =>
+      deals.filter((d) => {
+        if (d.status === 'won' || d.status === 'lost' || d.is_won || d.is_lost) return false;
+        const st = (d.stage_name || d.stage || '').toLowerCase();
+        return !(st.includes('успешн') || st.includes('закрыт') || st.includes('отказ') || st.includes('не реализован'));
+      }),
+    [deals]
+  );
+  const totalLeads = openDeals.length;
 
-  // Total team capacity from registry/settings
+  // Leads that arrived in the current Moscow month (by deal creation date)
+  const monthKey = businessDayKey().slice(0, 7);
+  const leadsMtd = React.useMemo(
+    () => deals.filter((d) => (callDayKey(d.created_at) || '').startsWith(monthKey)).length,
+    [deals, monthKey]
+  );
+
+  // Total team capacity from settings; 0 = no managers configured (nothing is assumed)
   const totalCapacity = React.useMemo(() => {
-    return managers.reduce((sum, m) => sum + (m.capacity || 40), 0) || 160;
+    return managers.reduce((sum, m) => sum + (m.capacity || 40), 0);
   }, [managers]);
+  const perManagerCapacity = managers.length > 0 ? Math.round(totalCapacity / managers.length) : 0;
 
   // Capacity saturation index
-  const saturationPct = totalCapacity > 0 ? Math.min(100, Math.round((totalLeads / totalCapacity) * 100)) : 50;
+  const saturationPct = totalCapacity > 0 ? Math.min(100, Math.round((totalLeads / totalCapacity) * 100)) : 0;
+  // A traffic recommendation needs a meaningful sample, not one deal
+  const MIN_DEALS_FOR_ADVICE = 10;
+  const enoughData = totalCapacity > 0 && totalLeads >= MIN_DEALS_FOR_ADVICE;
 
   // SQL Qualified deals (passed stage 1 or reached presentation/proposal)
   const sqlDeals = React.useMemo(() => {
@@ -82,12 +104,12 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
               <Target className="h-4 w-4 text-sky-400" />
             </CardDescription>
             <CardTitle className="text-2xl font-bold font-mono text-foreground">
-              {totalLeads}
+              {leadsMtd}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <span className="text-[11px] text-tertiary">
-              В активной обработке ОП
+              Создано в этом месяце • в работе сейчас: {totalLeads}
             </span>
           </CardContent>
         </Card>
@@ -133,7 +155,7 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
               <Users className="h-4 w-4 text-amber-400" />
             </CardDescription>
             <CardTitle className="text-2xl font-bold font-mono text-foreground">
-              {saturationPct}%
+              {totalCapacity > 0 ? `${saturationPct}%` : '—'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -146,7 +168,9 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
               />
             </div>
             <span className="text-[11px] text-tertiary mt-1 block">
-              {totalLeads} из {totalCapacity} лимита воронки
+              {totalCapacity > 0
+                ? `${totalLeads} из ${totalCapacity} лимита воронки`
+                : 'Менеджеры не заданы в настройках'}
             </span>
           </CardContent>
         </Card>
@@ -204,7 +228,14 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
             </h3>
           </div>
           <p className="text-xs text-secondary leading-relaxed">
-            {saturationPct > 85 ? (
+            {!enoughData ? (
+              <>
+                <strong className="text-secondary font-semibold">Недостаточно данных для рекомендации.</strong>{' '}
+                {totalCapacity > 0
+                  ? `Открытых сделок: ${totalLeads} — нужно от ${MIN_DEALS_FOR_ADVICE}, чтобы судить о загрузке и трафике.`
+                  : 'Добавьте менеджеров в настройках, чтобы рассчитать вместимость отдела.'}
+              </>
+            ) : saturationPct > 85 ? (
               <>
                 <strong className="text-amber-400 font-semibold">Отдел продаж перегружен.</strong> Загрузка составляет{' '}
                 {saturationPct}%. Рекомендуется временно замедлить холодный трафик и переключить менеджеров на закрытие зависших КП.
@@ -223,7 +254,9 @@ export function RnpMarketingView({ deals, managers }: RnpMarketingViewProps) {
           <div className="p-3 rounded-xl bg-subtle/50 border border-subtle text-[11px] text-tertiary space-y-1">
             <div className="flex items-center justify-between">
               <span>Лимит на 1 менеджера:</span>
-              <span className="font-mono font-semibold text-foreground">~40 активных сделок</span>
+              <span className="font-mono font-semibold text-foreground">
+                {perManagerCapacity > 0 ? `${perManagerCapacity} активных сделок` : '—'}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span>Фактически в работе:</span>

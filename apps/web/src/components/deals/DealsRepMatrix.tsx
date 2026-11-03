@@ -45,7 +45,11 @@ export function DealsRepMatrix({
     staleTime: 30_000,
   });
 
-  const leader = data?.benchmark_leader;
+  // "Лидер" only exists once somebody has actually won a deal
+  const leader =
+    data?.benchmark_leader && data.benchmark_leader.won_count > 0
+      ? data.benchmark_leader
+      : undefined;
   const team = data?.team_benchmarks;
   const reps = data?.reps || [];
 
@@ -248,7 +252,7 @@ export function DealsRepMatrix({
           <div className="rounded-xl border border-subtle bg-surface p-4">
             <span className="text-xs text-tertiary">Средний Win Rate</span>
             <p className="font-mono text-lg font-bold text-emerald-400 mt-1">
-              {team.win_rate_pct}%
+              {reps.some((r) => r.won_count + r.lost_count > 0) ? `${team.win_rate_pct}%` : '—'}
             </p>
             <p className="text-[11px] text-tertiary">Won / (Won + Lost)</p>
           </div>
@@ -271,7 +275,7 @@ export function DealsRepMatrix({
               Тепловая карта эффективности и ДНК диалогов
             </h3>
             <p className="text-[11px] text-tertiary">
-              Сквозная связка: выручка $\times$ средний чек $\times$ аудит 13 стандартов продаж
+              Сквозная связка: выручка × средний чек × аудит 13 стандартов продаж
             </p>
           </div>
           <span className="text-xs text-tertiary font-mono">
@@ -379,7 +383,9 @@ export function DealsRepMatrix({
 
                     {/* Win Rate */}
                     <td className="px-4 py-3 text-right font-mono">
-                      <span className={wrColor}>{rep.win_rate_pct}%</span>
+                      <span className={wrColor}>
+                        {rep.won_count + rep.lost_count > 0 ? `${rep.win_rate_pct}%` : '—'}
+                      </span>
                     </td>
 
                     {/* AOV */}

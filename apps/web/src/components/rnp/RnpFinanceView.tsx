@@ -83,7 +83,7 @@ export function RnpFinanceView({
   const remainingTarget = Math.max(0, planTarget - revenue);
 
   // Pipeline Coverage Ratio = Pipeline / Remaining Target
-  const coverageRatio = remainingTarget > 0 ? Math.round((pipelineSum / remainingTarget) * 10) / 10 : 9.9;
+  const coverageRatio = remainingTarget > 0 ? Math.round((pipelineSum / remainingTarget) * 100) / 100 : 9.9;
 
   // Productivity per Head
   const activeMgrsCount = Math.max(1, managers.length);
@@ -139,7 +139,7 @@ export function RnpFinanceView({
           <CardHeader className="pb-2">
             <CardDescription className="text-xs text-tertiary flex items-center justify-between">
               <span className="flex items-center gap-1">
-                <span>Взвешенный пайплайн</span>
+                <span>Взвешенный пайплайн (по этапам)</span>
                 <span className="cursor-help text-tertiary hover:text-foreground">ⓘ</span>
               </span>
               <Scale className="h-4 w-4 text-sky-400" />

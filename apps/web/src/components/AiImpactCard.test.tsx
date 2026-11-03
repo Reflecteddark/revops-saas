@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { AiImpactCard } from './AiImpactCard';
-import type { Call } from '@/types/api';
+import type { Call, Deal } from '@/types/api';
 
 const mockCalls: Call[] = [
   {
@@ -63,7 +63,9 @@ describe('AiImpactCard', () => {
     expect(screen.getByText('Зона риска (Низкий балл)')).toBeInTheDocument();
     expect(screen.getByText('Рабочая норма (Средний)')).toBeInTheDocument();
     expect(screen.getByText('Эталонные переговоры')).toBeInTheDocument();
-    expect(screen.getByText(/Эталонный сегмент|МАКСИМУМ/i)).toBeInTheDocument();
+    // no won deal yet -> no conversion is invented
+    expect(screen.getByText(/Сбор статистики/i)).toBeInTheDocument();
+    expect(screen.queryByText('0.0%')).not.toBeInTheDocument();
   });
 
   it('detects and flags Fake Yes alert calls', () => {
@@ -71,7 +73,16 @@ describe('AiImpactCard', () => {
 
     expect(screen.getByTestId('fake-yes-strip')).toBeInTheDocument();
     expect(
-      screen.getByText(/1 алертов «Ложного согласия»/i)
+      screen.getByText(/1 звонков без зафиксированного следующего шага/i)
     ).toBeInTheDocument();
+  });
+
+  it('computes conversion from won DEALS, not from the call score', () => {
+    const wonDeal = { id: 'd-1', deal_id: 'd-1', crm_deal_id: '1', status: 'won' } as unknown as Deal;
+    render(<AiImpactCard calls={mockCalls} deals={[wonDeal]} />);
+
+    // the only call of the 9-13 tier belongs to the won deal -> 100.0%; the 0-5 tier call to an open one -> 0.0%
+    expect(screen.getByText('100.0%')).toBeInTheDocument();
+    expect(screen.getByText('0.0%')).toBeInTheDocument();
   });
 });

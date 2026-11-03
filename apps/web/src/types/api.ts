@@ -411,7 +411,11 @@ export interface RecommendationItem {
 
 export interface LeakCategoryBreakdown {
   count: number;
-  amount_rub: number;
+  amount_rub?: number; // legacy key
+  sum?: number | null; // money (null = not estimated)
+  avg?: number | null;
+  avg_check?: number | null;
+  assumed_default?: boolean;
 }
 
 export interface KpiSummary {
@@ -426,7 +430,7 @@ export interface KpiSummary {
   average_call_score?: number | null;
   audited_calls_count?: number;
   plan_fact_percentage?: number;
-  confidence_score?: number;
+  confidence_score?: number | null;
   synthesis?: string;
   recommendations?: RecommendationItem[];
   /** Revenue of deals won in the current month (backend insights.kpi). */
@@ -449,14 +453,15 @@ export interface InsightsSummaryResponse {
   p10_corridor_rub?: number;
   p50_corridor_rub?: number;
   p90_corridor_rub?: number;
-  confidence_score?: number;
+  confidence_score?: number | null;
   calculation_method?: string;
   summary?: string;
   synthesis?: string;
   executive_summary?: string;
   recommendations?: RecommendationItem[];
   insights?: RecommendationItem[];
-  leak_breakdown?: Record<string, LeakCategoryBreakdown>;
+  // categories (fake_yes, stuck_deals) plus the scalars total_leak_rub / capped_by_pipeline
+  leak_breakdown?: Record<string, LeakCategoryBreakdown | number | boolean>;
   total_leak_rub?: number;
   message?: string;
   kpi?: KpiSummary | null;

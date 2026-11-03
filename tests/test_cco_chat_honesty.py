@@ -332,3 +332,48 @@ def test_cco_snapshot_endpoints():
     assert resp_ref.status_code == 200
     data_ref = resp_ref.json()
     assert data_ref.get("status") in ("queued", "completed_sync")
+
+
+def test_summary_invents_no_confidence_and_no_canned_impact(monkeypatch):
+    """The scenario corridor is a linear estimate: no made-up confidence, and the only ruble impact
+    shown is the real money of at-risk deals (not 25/15/10 % of the pipeline)."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    deals = [
+        {
+            "id": "D-RISK", "title": "Сделка 123", "budget": 99888.0, "stage": "Первичный контакт",
+            "status": "ACTIVE", "is_at_risk": True, "days_in_stage": 3, "crm_source": "amocrm",
+            "manager_name": "Дмитрий",
+        },
+        {
+            "id": "D-OK", "title": "Сделка 2", "budget": 100000.0, "stage": "Переговоры",
+            "status": "ACTIVE", "is_at_risk": False, "days_in_stage": 1, "crm_source": "amocrm",
+            "manager_name": "Дмитрий",
+        },
+    ]
+    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=([], deals)):
+        resp = client.get("/api/v1/insights/summary?tenant_id=TNT-001")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["confidence_score"] is None
+    assert data["calculation_method"] == "linear_scenario (not Monte-Carlo)"
+
+    impacts = [r["impact_rub"] for r in data["recommendations"]]
+    assert impacts[0] == 99888.0  # the real at-risk money
+    assert all(i == 0 for i in impacts[1:])  # nothing else is estimated
+    assert "1 из 2" in data["recommendations"][0]["description"]
+
+
+def test_summary_without_risky_deals_has_no_risk_recommendation(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    deals = [
+        {
+            "id": "D-OK", "title": "Сделка 2", "budget": 100000.0, "stage": "Переговоры",
+            "status": "ACTIVE", "is_at_risk": False, "days_in_stage": 1, "crm_source": "amocrm",
+            "manager_name": "Дмитрий",
+        },
+    ]
+    with patch("apps.api.routers.insights_router.load_tenant_dataset", return_value=([], deals)):
+        resp = client.get("/api/v1/insights/summary?tenant_id=TNT-001")
+    data = resp.json()
+    assert all(r["impact_rub"] == 0 for r in data["recommendations"])
+    assert not any("зоне риска" in r["title"] for r in data["recommendations"])
