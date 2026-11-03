@@ -67,6 +67,29 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 SessionRead = sessionmaker(autocommit=False, autoflush=False, bind=engine_read)
 
 
+# Columns created as VARCHAR in older deployments that must hold unbounded AI text.
+# create_all() never alters existing columns, so they are widened on startup (idempotent, data-safe).
+WIDEN_TO_TEXT = [("call_recordings", "next_action_extracted")]
+
+
+def widen_legacy_text_columns(conn, dialect_name: str) -> list[str]:
+    """ALTER legacy VARCHAR columns to TEXT on PostgreSQL. Returns the list of widened columns."""
+    if dialect_name != "postgresql":
+        return []
+    from sqlalchemy import text
+
+    widened = []
+    for table, column in WIDEN_TO_TEXT:
+        row = conn.execute(
+            text("SELECT data_type FROM information_schema.columns WHERE table_name = :t AND column_name = :c"),
+            {"t": table, "c": column},
+        ).fetchone()
+        if row and row[0] == "character varying":
+            conn.execute(text(f"ALTER TABLE {table} ALTER COLUMN {column} TYPE TEXT"))
+            widened.append(f"{table}.{column}")
+    return widened
+
+
 def init_db():
     """Initializes all database tables safely and ensures schema columns and unique indexes exist."""
     try:
@@ -116,6 +139,17 @@ def init_db():
     except Exception as e:
         import logging
         logging.getLogger("database").warning(f"Could not apply schema migration or indexes in init_db: {e}")
+
+    # Separate transaction: must not be rolled back by an unrelated failure above.
+    try:
+        with engine.begin() as conn:
+            widened = widen_legacy_text_columns(conn, engine.dialect.name)
+        if widened:
+            import logging
+            logging.getLogger("database").info(f"Widened legacy columns to TEXT: {widened}")
+    except Exception as e:
+        import logging
+        logging.getLogger("database").error(f"Could not widen legacy text columns: {e}")
 
 
 def get_db() -> Generator[Session, None, None]:

@@ -259,7 +259,7 @@ class CallRecording(Base):
     status = Column(String(50), default="completed")  # queued, processing, completed, error
     transcript_text = Column(Text, nullable=True)
     ai_summary = Column(Text, nullable=True)
-    next_action_extracted = Column(String(255), nullable=True)
+    next_action_extracted = Column(Text, nullable=True)  # AI recommendation, routinely > 255 chars
     
     # Overall score (0-100)
     overall_score = Column(Float, default=0.0)
