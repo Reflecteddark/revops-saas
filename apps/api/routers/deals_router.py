@@ -29,7 +29,7 @@ from ..cache_client import (
     set_cached_json_sync,
 )
 from ..services.crm_deal_normalizer import parse_numeric_price
-from ..services.deal_keys import deal_pk_for, find_tenant_deal
+from ..services.deal_keys import dedupe_same_crm_deals, deal_pk_for, find_tenant_deal
 from ..services.deal_sla import deal_sla_state, end_of_local_day_utc
 from ..services.tz import tenant_tz
 from ..tenant_registry import CLEAN_TEMPLATE_ID, get_tenant_config, get_tenant_spreadsheet_id
@@ -64,6 +64,21 @@ def get_service_account_path() -> Path | None:
         if p.exists():
             return p
     return None
+
+
+def _tenant_has_db_deals(db: Session, tenant: str) -> bool:
+    """Does the tenant have ANY live deal in the database (regardless of the pipeline / loss-reason filter)?
+
+    An empty answer for ONE pipeline is not "no data": it used to make the API replace the answer with the Google
+    Sheets mirror (stale rows, the same lead under two id formats, wrong managers) and run a CRM sync on every
+    page load of an empty pipeline."""
+    t = tenant.strip()
+    return (
+        db.query(Deal.id)
+        .filter(Deal.tenant_id.in_({t, t.upper(), t.lower()}), Deal.is_deleted == False)  # noqa: E712
+        .first()
+        is not None
+    )
 
 
 def _sla_fields(d: Deal) -> dict[str, Any]:
@@ -233,6 +248,10 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
                 lookup[f"B24-{num_only}"] = deal_obj
                 lookup[f"BX_{num_only}"] = deal_obj
                 lookup[f"AMO-{num_only}"] = deal_obj
+
+        # the mirror may hold one lead twice ("5272089" and "AMO-5272089"): count it once
+        deals = dedupe_same_crm_deals(deals)
+        lookup = {k: v for k, v in lookup.items() if any(v is x for x in deals)}
 
         _DEALS_CACHE[clean_tenant] = {
             "timestamp": now,
@@ -502,8 +521,9 @@ async def list_deals(
         q = q.filter(Deal.loss_reason == loss_reason)
 
     db_deals = q.all()
+    tenant_has_deals = bool(db_deals) or _tenant_has_db_deals(db, effective_tenant)
 
-    if not db_deals:
+    if not db_deals and not tenant_has_deals:
         cfg = get_tenant_config(effective_tenant) or {}
         has_crm = bool(cfg.get("amo_token") or cfg.get("bitrix_webhook_url"))
         if has_crm:
@@ -528,6 +548,7 @@ async def list_deals(
                 if loss_reason:
                     q2 = q2.filter(Deal.loss_reason == loss_reason)
                 db_deals = q2.all()
+                tenant_has_deals = bool(db_deals) or _tenant_has_db_deals(db, effective_tenant)
             except Exception as e_sync:
                 logger.warning(f"Auto deal sync on query failed for {effective_tenant}: {e_sync}")
 
@@ -595,6 +616,10 @@ async def list_deals(
                 "updated_at": d.updated_at.isoformat() if d.updated_at else "",
                 "synced_at": datetime.now(timezone.utc).isoformat(),
             })
+    elif tenant_has_deals:
+        # The tenant has deals, just none match this pipeline / filter: an honest empty list from the database.
+        all_deals = []
+        source = "database"
     else:
         is_demo_tenant = str(effective_tenant).lower().startswith("demo_") or str(effective_tenant).lower().startswith("demo-")
         all_deals = [] if is_demo_tenant else fetch_deals_from_sheets(tenant_id=effective_tenant)
@@ -673,6 +698,7 @@ async def get_reps_performance(
     if pipeline_id and pipeline_id not in ("all", "*"):
         q = q.filter(Deal.pipeline_id == pipeline_id)
     db_deals = q.all()
+    tenant_has_deals = bool(db_deals) or _tenant_has_db_deals(db, effective_tenant)
 
     deals_data: list[dict[str, Any]] = []
     if db_deals:
@@ -696,7 +722,7 @@ async def get_reps_performance(
                 "updated_at": d.updated_at,
                 "sla_risk": deal_sla_state(d).at_risk if status == "active" else False,
             })
-    else:
+    elif not tenant_has_deals:
         is_demo_tenant = str(effective_tenant).lower().startswith("demo_") or str(effective_tenant).lower().startswith("demo-")
         sheet_deals = [] if is_demo_tenant else fetch_deals_from_sheets(tenant_id=effective_tenant)
         for sd in sheet_deals:

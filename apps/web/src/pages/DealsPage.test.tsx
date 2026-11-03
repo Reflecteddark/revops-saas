@@ -342,4 +342,25 @@ describe('DealsPage', () => {
       expect(vi.mocked(dealsApi.list).mock.calls.length).toBeGreaterThan(callsBefore);
     });
   });
+
+  it('opens the pipeline that has deals when the main pipeline is empty', async () => {
+    (dealsApi.pipelines as any).mockResolvedValue([
+      { ...mockPipelines[0], deal_count: 0, total_amount: 0 },       // main, empty
+      { ...mockPipelines[1], deal_count: 3 },                        // the deals are here
+    ]);
+
+    renderWithQuery(<DealsPage />);
+
+    await waitFor(() => {
+      expect(dealsApi.list).toHaveBeenCalledWith(expect.objectContaining({ pipeline_id: 'pipe-vip' }));
+    });
+    expect(dealsApi.list).not.toHaveBeenCalledWith(expect.objectContaining({ pipeline_id: 'pipe-main' }));
+  });
+
+  it('keeps opening the main pipeline when it has deals', async () => {
+    renderWithQuery(<DealsPage />);
+    await waitFor(() => {
+      expect(dealsApi.list).toHaveBeenCalledWith(expect.objectContaining({ pipeline_id: 'pipe-main' }));
+    });
+  });
 });

@@ -113,7 +113,16 @@ export function DealsPage() {
         if (cancelled) return;
         setPipelines(pipes);
 
-        const initialPipe = pipes.find((p) => p.is_main) || pipes[0];
+        // Open the main pipeline, but not when it is empty and the deals live in another one (the page used to
+        // open on an empty "Воронка" while the client's only deal sat in "Тест02").
+        const mainPipe = pipes.find((p) => p.is_main);
+        const busiest = [...pipes].sort((a, b) => (b.deal_count ?? 0) - (a.deal_count ?? 0))[0];
+        const initialPipe =
+          mainPipe && (mainPipe.deal_count ?? 0) > 0
+            ? mainPipe
+            : busiest && (busiest.deal_count ?? 0) > 0
+              ? busiest
+              : mainPipe || pipes[0];
         const initialPipeId = initialPipe ? initialPipe.id : 'all';
         setSelectedPipelineId(initialPipeId);
 
