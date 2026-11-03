@@ -13,7 +13,6 @@ from google.oauth2.service_account import Credentials
 import gspread
 import gspread.utils
 
-from ipaddress import ip_address, ip_network
 import secrets
 
 from apps.api.database import SessionLocal
@@ -21,29 +20,11 @@ from apps.api.models import Deal, Call, Tenant
 from apps.api.services.pii_service import PIIService
 from apps.api.routers.admin_router import ALLOWED_ADMIN_KEYS
 from apps.api.cache_client import delete_cached_json_sync
-from apps.api.routers.calls_router import _CALLS_CACHE
+from apps.api.routers.calls_router import _CALLS_CACHE, is_internal_request
 from apps.api.routers.deals_router import _DEALS_CACHE
 from apps.api.websocket_manager import manager
 
 logger = logging.getLogger("revops_sheets_sync")
-
-INTERNAL_NETS = [
-    ip_network("127.0.0.0/8"),
-    ip_network("10.0.0.0/8"),
-    ip_network("172.16.0.0/12"),
-    ip_network("192.168.0.0/16"),
-]
-
-
-def _is_internal_ip(ip_str: str) -> bool:
-    if not ip_str:
-        return False
-    try:
-        ip = ip_address(ip_str)
-        return any(ip in net for net in INTERNAL_NETS)
-    except Exception:
-        return False
-
 
 def _get_admin_keys() -> set[str]:
     keys = set(ALLOWED_ADMIN_KEYS)
@@ -58,8 +39,7 @@ async def verify_admin_key(
     request: Request,
     x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key"),
 ):
-    client_ip = request.client.host if request.client else ""
-    if client_ip and _is_internal_ip(client_ip):
+    if is_internal_request(request):
         return True
 
     key = (

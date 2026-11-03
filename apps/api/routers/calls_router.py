@@ -59,6 +59,22 @@ def _is_internal_ip(ip_str: str) -> bool:
         return False
 
 
+# Headers a reverse proxy / tunnel adds; a direct container-to-container call (n8n, worker) has none.
+_PROXY_HEADERS = ("cf-connecting-ip", "x-forwarded-for", "x-real-ip", "forwarded")
+
+
+def is_internal_request(request: Request) -> bool:
+    """True only for direct calls from the docker network.
+
+    Public traffic reaches the API through the Cloudflare tunnel from the docker gateway (172.x.0.1),
+    so an internal source IP alone proves nothing: proxied requests are never internal.
+    """
+    client_ip = request.client.host if request.client else ""
+    if not client_ip or not _is_internal_ip(client_ip):
+        return False
+    return not any(request.headers.get(h) for h in _PROXY_HEADERS)
+
+
 def get_calls_data_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
@@ -136,8 +152,7 @@ class CallIngestPayload(BaseModel):
 
 def verify_internal_or_admin(request: Request) -> bool:
     """Allows requests from internal networks or with valid admin key."""
-    client_ip = request.client.host if request.client else ""
-    if client_ip and _is_internal_ip(client_ip):
+    if is_internal_request(request):
         return True
 
     secret = (
