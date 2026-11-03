@@ -266,9 +266,15 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
             path="/"
         )
 
-    tenant_str = str(matched_client.get("tenant") or "TNT-001")
+    tenant_str = str(matched_client.get("tenant") or "")
     t_match = re.search(r"TNT-[A-Z0-9_-]+", tenant_str, re.IGNORECASE)
-    effective_tenant = t_match.group(0).upper() if t_match else "TNT-001"
+    if not t_match and not is_admin:
+        # A client account without a company used to be logged into TNT-001 (the main client's data).
+        raise HTTPException(
+            status_code=403,
+            detail="Для учётной записи не назначена компания. Обратитесь к администратору.",
+        )
+    effective_tenant = t_match.group(0).upper() if t_match else "TNT-001"  # platform admin only
 
     from ..auth import create_access_token
     token_payload = {

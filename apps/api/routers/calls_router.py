@@ -118,6 +118,10 @@ def get_calls_data_user(
                 u = db.query(User).filter(User.id == user_id).first()
                 if u:
                     return u
+                is_admin_token = "admin" in str(payload.get("role", "")).lower()
+                if not tenant_id and not is_admin_token:
+                    # same rule as auth.get_current_user: a client token without a company must not become TNT-001
+                    raise HTTPException(status_code=401, detail="Токен не содержит компанию (tenant)")
                 return User(
                     id=user_id,
                     tenant_id=tenant_id or "TNT-001",

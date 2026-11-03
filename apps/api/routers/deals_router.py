@@ -114,7 +114,9 @@ def fetch_deals_from_sheets(tenant_id: str = "TNT-001", limit: int = 100) -> lis
     tenant_crm = str(cfg.get("crm_type") or "bitrix24").strip().lower()
     sheet_id = cfg.get("spreadsheet_id") or get_tenant_spreadsheet_id(clean_tenant)
 
-    if clean_tenant in ("TNT-002", "TNT-CLEAN-001") or sheet_id == CLEAN_TEMPLATE_ID:
+    # The clean starter template never holds client data. (A literal "TNT-002" used to be treated as one too: a real
+    # client that happened to get that id would have seen an empty cabinet forever.)
+    if clean_tenant == "TNT-CLEAN-001" or sheet_id == CLEAN_TEMPLATE_ID:
         empty_res: list[dict[str, Any]] = []
         _DEALS_CACHE[clean_tenant] = {"timestamp": now, "deals": empty_res, "lookup": {}}
         set_cached_json_sync(cache_key, empty_res, ex=60)
