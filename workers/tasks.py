@@ -114,8 +114,9 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
             existing_rec = db.query(CallRecording).filter(
                 (CallRecording.tenant_id == org_id) & (CallRecording.external_call_id == ext_call_id)
             ).first()
+            target_id: str
             if existing_rec:
-                target_id = existing_rec.id
+                target_id = str(existing_rec.id)
             elif len(call_id) > 36 or db.query(CallRecording.id).filter(CallRecording.id == call_id).first():
                 target_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"revops-call:{org_id}:{call_id}"))
             else:
