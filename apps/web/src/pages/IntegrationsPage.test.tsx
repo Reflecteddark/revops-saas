@@ -190,8 +190,18 @@ describe('IntegrationsPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders CRM endpoints hub with amoCRM Redirect URI https://app.ai-rop.ru and Google Sheet link', async () => {
+  it('renders CRM endpoints hub with amoCRM Redirect URI https://app.ai-rop.ru and Google Sheet link when connected', async () => {
     vi.mocked(integrationsApi.getHealth).mockResolvedValue(mockHealthData);
+    useRevOpsStore.setState({
+      activeTenantId: 'TNT-001',
+      tenants: [
+        {
+          tenant_id: 'TNT-001',
+          tenant_name: 'Тестовый Тенант',
+          spreadsheet_id: '1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk',
+        } as any,
+      ],
+    });
 
     renderWithClient(<IntegrationsPage />);
 
@@ -209,5 +219,27 @@ describe('IntegrationsPage', () => {
     );
 
     expect(screen.getByTestId('btn-open-client-sheet')).toBeInTheDocument();
+    expect(screen.getByText('Подключена')).toBeInTheDocument();
+  });
+
+  it('renders "Таблица не подключена" and hides sheet link when spreadsheet_id is empty', async () => {
+    vi.mocked(integrationsApi.getHealth).mockResolvedValue(mockHealthData);
+    useRevOpsStore.setState({
+      activeTenantId: 'TNT-002',
+      tenants: [
+        {
+          tenant_id: 'TNT-002',
+          tenant_name: 'Тенант Без Таблицы',
+          spreadsheet_id: '',
+        } as any,
+      ],
+    });
+
+    renderWithClient(<IntegrationsPage />);
+
+    expect(await screen.findByTestId('crm-endpoints-hub')).toBeInTheDocument();
+    expect(screen.getByText('Таблица не подключена')).toBeInTheDocument();
+    expect(screen.queryByTestId('btn-open-client-sheet')).not.toBeInTheDocument();
+    expect(screen.queryByText(/copy/)).not.toBeInTheDocument();
   });
 });

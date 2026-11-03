@@ -452,47 +452,45 @@ export function IntegrationsPage() {
                     : 'border-amber-500/30 text-amber-400'
                 }`}
               >
-                {activeTenant?.spreadsheet_id ? 'Подключена' : 'Шаблон Clean'}
+                {activeTenant?.spreadsheet_id ? 'Подключена' : 'Таблица не подключена'}
               </Badge>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              {activeTenant?.spreadsheet_id
-                ? 'Персональная таблица с расчетами и журналом звонков:'
-                : 'Шаблон Clean Starter для создания независимой копии:'}
-            </p>
-            <div className="flex items-center gap-1.5">
-              <Input
-                readOnly
-                value={
-                  activeTenant?.spreadsheet_id
-                    ? `https://docs.google.com/spreadsheets/d/${activeTenant.spreadsheet_id}/edit`
-                    : 'https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy'
-                }
-                className="h-8 select-all border-subtle bg-surface font-mono text-xs"
-                data-testid="input-client-sheet-url"
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="h-8 shrink-0 gap-1 px-2.5 text-xs"
-                asChild
-              >
-                <a
-                  href={
-                    activeTenant?.spreadsheet_id
-                      ? `https://docs.google.com/spreadsheets/d/${activeTenant.spreadsheet_id}/edit`
-                      : 'https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy'
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-testid="btn-open-client-sheet"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  <span>Открыть</span>
-                </a>
-              </Button>
-            </div>
+            {activeTenant?.spreadsheet_id ? (
+              <>
+                <p className="text-[11px] text-muted-foreground">
+                  Персональная таблица с расчетами и журналом звонков:
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    readOnly
+                    value={`https://docs.google.com/spreadsheets/d/${activeTenant.spreadsheet_id}/edit`}
+                    className="h-8 select-all border-subtle bg-surface font-mono text-xs"
+                    data-testid="input-client-sheet-url"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 shrink-0 gap-1 px-2.5 text-xs"
+                    asChild
+                  >
+                    <a
+                      href={`https://docs.google.com/spreadsheets/d/${activeTenant.spreadsheet_id}/edit`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-testid="btn-open-client-sheet"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <span>Открыть</span>
+                    </a>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                Таблица не подключена.
+              </p>
+            )}
           </div>
         </div>
       </div>

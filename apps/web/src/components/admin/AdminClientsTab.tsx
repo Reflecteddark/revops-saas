@@ -119,8 +119,9 @@ export function AdminClientsTab() {
       queryClient.invalidateQueries({ queryKey: ['admin-tenants-list'] });
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
-    onError: (err: Error) => {
-      setActionAlert({ text: `Ошибка развертывания: ${err.message}`, type: 'error' });
+    onError: (err: any) => {
+      const detail = err?.detail || err?.response?.data?.detail || err?.message || 'Неизвестная ошибка';
+      setActionAlert({ text: `Ошибка развертывания: ${detail}`, type: 'error' });
     },
   });
 
@@ -477,17 +478,9 @@ export function AdminClientsTab() {
                             <ExternalLink className="h-2.5 w-2.5 text-tertiary" />
                           </a>
                         ) : (
-                          <a
-                            href="https://docs.google.com/spreadsheets/d/1jBBotOfFh-XEJGScJyQi10jiFrna66OpJ91yPDrXy2A/copy"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                            title="Создать копию чистого шаблона Google Таблицы на своем Google Диске"
-                          >
-                            <FileSpreadsheet className="h-3 w-3 text-emerald-400" />
-                            <span>Создать копию</span>
-                            <ExternalLink className="h-2.5 w-2.5 text-tertiary" />
-                          </a>
+                          <span className="inline-flex items-center rounded-md border border-subtle bg-subtle/40 px-2 py-0.5 text-[11px] font-medium text-secondary">
+                            Не подключена
+                          </span>
                         )}
                       </td>
 
@@ -788,11 +781,14 @@ export function AdminClientsTab() {
                 <div className="space-y-1">
                   <label className="text-[11px] font-medium text-secondary">Google Spreadsheet ID (опционально)</label>
                   <Input
-                    placeholder="Пусто = авто-клон из Clean Starter"
+                    placeholder="ID или ссылка на Google Таблицу"
                     value={sheetId}
                     onChange={(e) => setSheetId(e.target.value)}
                     className="h-8 text-xs font-mono bg-subtle/50 border-subtle"
                   />
+                  <p className="text-[10px] text-tertiary leading-relaxed">
+                    Копия шаблона (Файл → Создать копию). Доступ «Редактор» для sheets-agent@antigravity-sheets-509519.iam.gserviceaccount.com и n8n-bot@n8n-sheets-508111.iam.gserviceaccount.com. Можно вставить ссылку.
+                  </p>
                 </div>
               </div>
 

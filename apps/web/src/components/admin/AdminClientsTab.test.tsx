@@ -66,6 +66,20 @@ const mockTenantsData = {
       spent_rub: 500,
       connected_clients: [],
     },
+    {
+      tenant_id: 'TNT-003',
+      tenant_name: 'Клиент Без Таблицы',
+      effective_status: 'active',
+      crm_type: 'amocrm',
+      spreadsheet_id: '',
+      spreadsheet_url: '',
+      niche_name: 'Универсальный B2B',
+      avg_deal_check: 150000,
+      minutes_used: 0,
+      minutes_quota: 1000,
+      spent_rub: 0,
+      connected_clients: [],
+    },
   ],
   archived: [],
   total_active: 2,
@@ -222,5 +236,47 @@ describe('AdminClientsTab', () => {
       expect(adminApi.deleteTenant).toHaveBeenCalledWith('TNT-002');
       expect(screen.getByText(/Организация TNT-002 полностью удалена/)).toBeInTheDocument();
     });
+   });
+
+  it('renders "Не подключена" badge for tenant with empty spreadsheet_id', async () => {
+    renderWithClient(<AdminClientsTab />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Клиент Без Таблицы')).toBeInTheDocument();
+      expect(screen.getByText('Не подключена')).toBeInTheDocument();
+    });
+  });
+
+  it('displays detailed error message from API response when provision fails with 400', async () => {
+    vi.mocked(adminApi.provisionTenant).mockRejectedValue({
+      detail: 'Таблица не подключена: нет листа raw_calls; бот не имеет прав редактора',
+    });
+
+    renderWithClient(<AdminClientsTab />);
+
+    const nameInput = screen.getByPlaceholderText(/Например: ООО 'Альфа Трейд'/);
+    const emailInput = screen.getByPlaceholderText('client@company.ru');
+    const submitBtn = screen.getByTestId('btn-provision-submit');
+
+    fireEvent.change(nameInput, { target: { value: 'Тест Ошибка' } });
+    fireEvent.change(emailInput, { target: { value: 'err@example.com' } });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Ошибка развертывания: Таблица не подключена: нет листа raw_calls/)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('renders instructions for sheet copy and bot emails near spreadsheet id input', async () => {
+    renderWithClient(<AdminClientsTab />);
+
+    expect(
+      screen.getByText(/sheets-agent@antigravity-sheets-509519.iam.gserviceaccount.com/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/n8n-bot@n8n-sheets-508111.iam.gserviceaccount.com/)
+    ).toBeInTheDocument();
   });
 });
