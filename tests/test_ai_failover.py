@@ -128,8 +128,27 @@ def test_ai_cascade_failover_to_tier4_ssot():
         assert res["model"] == "deterministic_ssot"
 
 
-def test_analyst_chat_api_endpoint():
+def test_analyst_chat_api_endpoint(monkeypatch):
     """Tests POST /api/v1/insights/analyst/chat with tenant scoping."""
+    from apps.api.routers import insights_router
+    mock_calls = [{"score": 9.8, "next_step": 1, "manager": "Менеджер 1"}]
+    mock_deals = [{
+        "id": "D-1",
+        "title": "Сделка 1",
+        "budget": 500000.0,
+        "stage": "WON",
+        "status": "won",
+        "is_at_risk": False,
+        "days_in_stage": 1,
+        "crm_source": "amocrm",
+        "manager_name": "Менеджер 1"
+    }]
+    monkeypatch.setattr(
+        insights_router,
+        "load_tenant_dataset",
+        lambda tenant, db, **kw: (mock_calls, mock_deals)
+    )
+
     payload = {
         "message": "Где мы теряем больше всего денег?",
         "tenant_id": "TNT-001",
