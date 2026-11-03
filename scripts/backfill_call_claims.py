@@ -70,8 +70,9 @@ def main() -> None:
         print(f"call_recordings: {len(from_db)} calls")
         targets |= from_db
 
-        for tid, cfg in load_tenants_registry().items():
-            if cfg.get("crm_type") != "amocrm" or not cfg.get("amo_token") or not cfg.get("amo_domain"):
+        for cfg in load_tenants_registry().get("tenants", []):
+            tid = str(cfg.get("tenant_id", "")).strip().upper()
+            if cfg.get("crm_type") != "amocrm" or not cfg.get("amo_token") or not cfg.get("amo_domain") or not tid:
                 continue
             domain = str(cfg["amo_domain"]).replace("https://", "").replace("http://", "").strip("/")
             n_events, ids = audited_call_ids(domain, cfg["amo_token"])

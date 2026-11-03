@@ -140,3 +140,26 @@ def test_backfill_reads_call_id_from_n8n_audit_note_footer():
     note = "🤖 ИИ-Аудит звонка\n💡 Совет менеджеру: x\n──────────\nid: call_tnt-005_5272089_1793685732_d3e0"
     assert AUDIT_FOOTER.search(note).group(1) == "call_tnt-005_5272089_1793685732_d3e0"
     assert AUDIT_FOOTER.search("Обычная заметка менеджера, id: 123") is None
+
+
+def test_backfill_dry_run_reads_registry_and_amo_without_writing(monkeypatch, capsys, tid):
+    from scripts import backfill_call_claims as bf
+
+    monkeypatch.setattr(bf, "load_tenants_registry", lambda: {"tenants": [
+        {"tenant_id": tid, "crm_type": "amocrm", "amo_domain": "https://x.amocrm.ru", "amo_token": "t"},
+        {"tenant_id": "TNT-B24", "crm_type": "bitrix24"},
+    ]})
+    footer = "──────────\nid: "
+
+    def fake_amo(domain, token, path, params):
+        if path == "/api/v4/events":
+            return {"_embedded": {"events": [{"entity_type": "lead", "entity_id": 7}]}}
+        return {"_embedded": {"notes": [{"params": {"text": "Аудит" + footer + "c-old"}}, {"params": {"text": "звонок"}}]}}
+
+    monkeypatch.setattr(bf, "amo_get", fake_amo)
+    monkeypatch.setattr("sys.argv", ["backfill"])
+    bf.main()
+    out = capsys.readouterr().out
+    assert f"{tid}: 1 call events, 1 calls already have an audit note" in out
+    assert "dry run" in out
+    assert _claim(tid, "c-old") is True  # dry run wrote nothing
