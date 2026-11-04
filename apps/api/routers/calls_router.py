@@ -281,6 +281,11 @@ def complete_call_claim(payload: CallClaimPayload, request: Request, db: Session
 # In-memory cache for live calls from Google Sheets keyed by tenant_id (TTL: 15s)
 _CALLS_CACHE: dict[str, Any] = {}
 
+# The cache is shared by callers with different limits (the Pulse asks for 20, the audit tab for 500), so it holds the
+# whole list. It used to hold what the first caller asked for, and the next one silently got fewer calls.
+SHEET_CALLS_MAX = 2000
+ANALYTICS_CALLS_LIMIT = 500  # the audit tab and the insights count the same calls
+
 
 def get_service_account_path() -> Path | None:
     env_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_PATH")
@@ -307,16 +312,16 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
     cached_redis = get_cached_json_sync(cache_key)
     if cached_redis is not None and isinstance(cached_redis, list) and len(cached_redis) > 0:
         _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": cached_redis}
-        return cached_redis[:limit]
+        return cached_redis[:limit]  # the cache holds the whole list: see SHEET_CALLS_MAX
 
     cached = _CALLS_CACHE.get(clean_tenant)
     if isinstance(cached, dict) and (now - cached.get("timestamp", 0) < 15):
-        return cached.get("calls", [])
+        return cached.get("calls", [])[:limit]
 
     sa_path = get_service_account_path()
     if not sa_path:
         logger.warning(f"service_account.json not found, skipping Google Sheets fetch (tenant: {clean_tenant})")
-        return cached.get("calls", []) if isinstance(cached, dict) else []
+        return cached.get("calls", [])[:limit] if isinstance(cached, dict) else []
 
     cfg = get_tenant_config(clean_tenant) or {}
     sheet_id = cfg.get("spreadsheet_id") or get_tenant_spreadsheet_id(clean_tenant)
@@ -449,15 +454,18 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                 "recommendation": rec,
                 "transcript": transcript or "Транскрипт отсутствует"
             })
-            if len(calls) >= limit:
+            if len(calls) >= SHEET_CALLS_MAX:
                 break
 
         _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": calls}
         set_cached_json_sync(cache_key, calls, ex=60)
-        return calls
+        return calls[:limit]
     except Exception as e:
         logger.error(f"Error fetching calls from Google Sheets: {e}")
-        return []
+        # Keep the last good list, and do not hit a failing sheet on every request.
+        stale = cached.get("calls", []) if isinstance(cached, dict) else []
+        _CALLS_CACHE[clean_tenant] = {"timestamp": now, "calls": stale}
+        return stale[:limit]
 
 
 def append_call_to_sheets(payload: CallIngestPayload) -> bool:
@@ -579,6 +587,124 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
 # PUBLIC DASHBOARD & LIVE N8N INGESTION ENDPOINTS
 # ==========================================================================
 
+def _format_db_call(c: CallRecording, tenant_cfg: dict[str, Any] | None, call_tz: Any) -> dict[str, Any]:
+    sc: dict[str, Any] = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
+    call_deal = c.deal
+    deal_budget = float(call_deal.budget or 0.0) if (call_deal and call_deal.budget is not None) else None
+    dur_secs = int(c.duration_seconds or 0)
+    dur_str = f"{dur_secs // 60}:{dur_secs % 60:02d}"
+
+    error_summary = str(c.ai_summary or sc.get("error_summary") or "")
+    recommendation = str(c.next_action_extracted or sc.get("recommendation") or "")
+    card = read_scorecard(
+        sc, float(c.overall_score) if c.overall_score is not None else None, error_summary=error_summary
+    )
+    error_summary, recommendation = call_texts(card["kind"], error_summary, recommendation)
+
+    if deal_budget is not None:
+        amount_num = float(deal_budget)
+    else:
+        raw_sc_amt = sc.get("amount")
+        if isinstance(raw_sc_amt, (int, float)):
+            amount_num = float(raw_sc_amt)
+        elif raw_sc_amt:
+            amount_num, _unknown = parse_numeric_price(raw_sc_amt)
+        else:
+            amount_num = 0.0
+
+    amount_str = f"{int(amount_num):,} ₽".replace(",", " ") if amount_num > 0 else (sc.get("amount_str") or "0 ₽")
+    risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and card["at_risk"]) else "0 ₽"
+
+    # Prioritize specific client/contact extracted from the call
+    sc_client = sc.get("client")
+    if sc_client and sc_client not in ("Клиент", "Клиент B2B", "Неизвестно") and "электроник" not in sc_client.lower() and "оптовая" not in sc_client.lower():
+        client_name = sc_client
+    elif call_deal and call_deal.company_name and "электроник" not in call_deal.company_name.lower() and "оптовая" not in call_deal.company_name.lower():
+        client_name = call_deal.company_name
+    elif sc_client and "электроник" not in sc_client.lower() and "оптовая" not in sc_client.lower():
+        client_name = sc_client
+    else:
+        client_name = "Клиент"
+
+    raw_deal_title = call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}")
+    if "?" in raw_deal_title or "оптовая" in raw_deal_title.lower() or "электроник" in raw_deal_title.lower():
+        raw_deal_title = f"Сделка #{c.deal_id or c.id[-4:]}"
+
+    deal_stage = call_deal.stage.value if (call_deal and hasattr(call_deal.stage, "value")) else (str(call_deal.stage) if call_deal and call_deal.stage else "Первичный контакт")
+
+    return {
+        "id": c.id,
+        "deal_id": c.deal_id or f"D-{c.id[-4:]}",
+        "deal_title": raw_deal_title,
+        "client": client_name,
+        "manager": resolve_call_manager(
+            tenant_cfg, sc.get("manager_crm_id"), sc.get("manager") or (c.manager.full_name if c.manager else "")
+        ),
+        "stage": deal_stage,
+        "duration": dur_str,
+        "amount": amount_str,
+        "amount_num": amount_num,
+        "score": card["score"],
+        "kind": card["kind"],
+        "status": card["status"],
+        "status_label": card["status_label"],
+        "risk_amount": risk_amt_str,
+        "next_step": card["next_step"],
+        # DB stores naive UTC; the РОП works in the client's time zone, so a 22:30 UTC call (01:30 MSK) belongs
+        # to the next working day. The string is local wall time, same as dates written by n8n to Sheets.
+        "date": local_str(cast("datetime | None", c.created_at), call_tz),
+        "cr": card["cr"],
+        "zoom_scheduled": card["zoom_scheduled"],
+        "error_summary": error_summary,
+        "recommendation": recommendation,
+        "transcript": c.transcript_text or "Транскрипт отсутствует"
+    }
+
+
+def _call_sort_key(call: dict[str, Any]) -> str:
+    """ISO text sorts by time; a hand-edited sheet may hold DD.MM.YYYY."""
+    date = str(call.get("date") or "")
+    m = re.match(r"(\d{2})\.(\d{2})\.(\d{4})(.*)", date)
+    return f"{m[3]}-{m[2]}-{m[1]}{m[4]}" if m else date
+
+
+def load_tenant_calls(db: Session, tenant_id: str, limit: int) -> tuple[list[dict[str, Any]], str]:
+    """
+    The calls of a tenant, newest first, and where they came from. The one list behind the audit tab, the Pulse and
+    the insights. The DB holds everything that came through /calls/ingest; the sheet adds the history that never
+    reached the DB. The DB used to replace the sheet: the first ingested call hid all the earlier ones.
+    """
+    raw_tenant = (tenant_id or "").strip()
+    effective_tenant = raw_tenant.upper()
+    rows = (
+        db.query(CallRecording)
+        .filter(
+            (CallRecording.tenant_id == raw_tenant)
+            | (CallRecording.tenant_id == effective_tenant)
+            | (CallRecording.tenant_id == raw_tenant.lower())
+        )
+        .order_by(CallRecording.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    tenant_cfg = get_tenant_config(effective_tenant) if rows else None
+    call_tz = tenant_tz(tenant_cfg)
+    db_calls = [_format_db_call(c, tenant_cfg, call_tz) for c in rows]
+
+    # Sheet rows carry the CRM call id, which the DB keeps in external_call_id.
+    known_ids = {str(c.id) for c in rows} | {str(c.external_call_id) for c in rows if c.external_call_id}
+    history = [
+        c for c in fetch_calls_from_sheets(tenant_id=effective_tenant, limit=limit)
+        if str(c.get("id")) not in known_ids
+    ]
+
+    if db_calls and history:
+        source = "database+google_sheets"
+    else:
+        source = "database" if db_calls else "google_sheets"
+    return sorted(db_calls + history, key=_call_sort_key, reverse=True)[:limit], source
+
+
 @router.get("/data")
 def get_dashboard_calls_data(
     tenant_id: str = Query("TNT-001"),
@@ -610,109 +736,11 @@ def get_dashboard_calls_data(
         if target_tenant != str(current_user.tenant_id).upper() and not is_admin:
             raise HTTPException(status_code=403, detail="cross-tenant access denied")
 
-    # 1. Primary Enterprise DWH Storage: query PostgreSQL first (sub-millisecond indexed latency)
-    db_calls = (
-        db.query(CallRecording)
-        .filter(
-            (CallRecording.tenant_id == raw_tenant)
-            | (CallRecording.tenant_id == effective_tenant)
-            | (CallRecording.tenant_id == raw_tenant.lower())
-        )
-        .order_by(CallRecording.created_at.desc())
-        .limit(limit)
-        .all()
-    ) if not is_demo_tenant else []
-
-    if db_calls:
-        formatted_calls = []
-        tenant_cfg = get_tenant_config(effective_tenant)
-        call_tz = tenant_tz(tenant_cfg)
-        for c in db_calls:
-            sc: dict[str, Any] = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
-            call_deal = c.deal
-            deal_budget = float(call_deal.budget or 0.0) if (call_deal and call_deal.budget is not None) else None
-            dur_secs = int(c.duration_seconds or 0)
-            dur_str = f"{dur_secs // 60}:{dur_secs % 60:02d}"
-
-            error_summary = str(c.ai_summary or sc.get("error_summary") or "")
-            recommendation = str(c.next_action_extracted or sc.get("recommendation") or "")
-            card = read_scorecard(
-                sc, float(c.overall_score) if c.overall_score is not None else None, error_summary=error_summary
-            )
-            error_summary, recommendation = call_texts(card["kind"], error_summary, recommendation)
-
-            if deal_budget is not None:
-                amount_num = float(deal_budget)
-            else:
-                raw_sc_amt = sc.get("amount")
-                if isinstance(raw_sc_amt, (int, float)):
-                    amount_num = float(raw_sc_amt)
-                elif raw_sc_amt:
-                    amount_num, _unknown = parse_numeric_price(raw_sc_amt)
-                else:
-                    amount_num = 0.0
-
-            amount_str = f"{int(amount_num):,} ₽".replace(",", " ") if amount_num > 0 else (sc.get("amount_str") or "0 ₽")
-            risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and card["at_risk"]) else "0 ₽"
-
-            # Prioritize specific client/contact extracted from the call
-            sc_client = sc.get("client")
-            if sc_client and sc_client not in ("Клиент", "Клиент B2B", "Неизвестно") and "электроник" not in sc_client.lower() and "оптовая" not in sc_client.lower():
-                client_name = sc_client
-            elif call_deal and call_deal.company_name and "электроник" not in call_deal.company_name.lower() and "оптовая" not in call_deal.company_name.lower():
-                client_name = call_deal.company_name
-            elif sc_client and "электроник" not in sc_client.lower() and "оптовая" not in sc_client.lower():
-                client_name = sc_client
-            else:
-                client_name = "Клиент"
-
-            raw_deal_title = call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}")
-            if "?" in raw_deal_title or "оптовая" in raw_deal_title.lower() or "электроник" in raw_deal_title.lower():
-                raw_deal_title = f"Сделка #{c.deal_id or c.id[-4:]}"
-
-            deal_stage = call_deal.stage.value if (call_deal and hasattr(call_deal.stage, "value")) else (str(call_deal.stage) if call_deal and call_deal.stage else "Первичный контакт")
-
-            formatted_calls.append({
-                "id": c.id,
-                "deal_id": c.deal_id or f"D-{c.id[-4:]}",
-                "deal_title": raw_deal_title,
-                "client": client_name,
-                "manager": resolve_call_manager(
-                    tenant_cfg, sc.get("manager_crm_id"), sc.get("manager") or (c.manager.full_name if c.manager else "")
-                ),
-                "stage": deal_stage,
-                "duration": dur_str,
-                "amount": amount_str,
-                "amount_num": amount_num,
-                "score": card["score"],
-                "kind": card["kind"],
-                "status": card["status"],
-                "status_label": card["status_label"],
-                "risk_amount": risk_amt_str,
-                "next_step": card["next_step"],
-                # DB stores naive UTC; the РОП works in the client's time zone, so a 22:30 UTC call (01:30 MSK) belongs
-                # to the next working day. The string is local wall time, same as dates written by n8n to Sheets.
-                "date": local_str(cast("datetime | None", c.created_at), call_tz),
-                "cr": card["cr"],
-                "zoom_scheduled": card["zoom_scheduled"],
-                "error_summary": error_summary,
-                "recommendation": recommendation,
-                "transcript": c.transcript_text or "Транскрипт отсутствует"
-            })
-        return {
-            "status": "ok",
-            "tenant_id": raw_tenant,
-            "source": "database",
-            "count": len(formatted_calls),
-            "calls": formatted_calls
-        }
-
-    # 2. Resilient Fallback: Google Sheets only if PostgreSQL is empty for tenant
-    calls = [] if is_demo_tenant else fetch_calls_from_sheets(tenant_id=effective_tenant, limit=limit)
+    calls, source = ([], "google_sheets") if is_demo_tenant else load_tenant_calls(db, raw_tenant, limit)
     return {
         "status": "ok",
         "tenant_id": effective_tenant,
-        "source": "google_sheets",
+        "source": source,
         "count": len(calls),
         "calls": calls
     }
@@ -932,7 +960,7 @@ def force_sync_from_sheets(request: Request, tenant_id: str = Query("TNT-001")):
     delete_cached_json_sync(f"calls:{clean_tenant}")
     if clean_tenant in _CALLS_CACHE and isinstance(_CALLS_CACHE[clean_tenant], dict):
         _CALLS_CACHE[clean_tenant]["timestamp"] = 0
-    calls = fetch_calls_from_sheets(tenant_id=clean_tenant, limit=100)
+    calls = fetch_calls_from_sheets(tenant_id=clean_tenant, limit=SHEET_CALLS_MAX)
     _CALLS_CACHE[clean_tenant] = {"timestamp": time.time(), "calls": calls}
     set_cached_json_sync(f"calls:{clean_tenant}", calls, ex=300)
     return {
