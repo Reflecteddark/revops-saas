@@ -374,56 +374,7 @@ def get_fallback_settings() -> dict[str, Any]:
             {"id": 6, "name": "6. Успешно реализовано", "sla_hours": 0, "win_pct": 100},
             {"id": 7, "name": "7. Закрыто и не реализовано", "sla_hours": 0, "win_pct": 0}
         ],
-        "managers": [
-            {
-                "id": "101",
-                "name": "Заряна",
-                "role": "Менеджер ОП",
-                "capacity": 40,
-                "revenue_target": 1200000.0,
-                "daily_calls_target": 25,
-                "daily_dials_target": 40,
-                "monthly_meetings_target": 15,
-                "meetings_enabled": True,
-                "next_step_target_pct": 80
-            },
-            {
-                "id": "102",
-                "name": "Надежда",
-                "role": "Менеджер ОП",
-                "capacity": 40,
-                "revenue_target": 1200000.0,
-                "daily_calls_target": 25,
-                "daily_dials_target": 40,
-                "monthly_meetings_target": 20,
-                "meetings_enabled": True,
-                "next_step_target_pct": 80
-            },
-            {
-                "id": "103",
-                "name": "Виктория",
-                "role": "Менеджер ОП",
-                "capacity": 40,
-                "revenue_target": 1100000.0,
-                "daily_calls_target": 20,
-                "daily_dials_target": 35,
-                "monthly_meetings_target": 15,
-                "meetings_enabled": True,
-                "next_step_target_pct": 80
-            },
-            {
-                "id": "11422686",
-                "name": "Дмитрий Федотов",
-                "role": "РОП / Клоузер",
-                "capacity": 50,
-                "revenue_target": 1500000.0,
-                "daily_calls_target": 20,
-                "daily_dials_target": 35,
-                "monthly_meetings_target": 15,
-                "meetings_enabled": True,
-                "next_step_target_pct": 80
-            }
-        ],
+        "managers": [],  # the team comes from the CRM (crm_users_sync), never from a template
         "loss_reasons": [
             {"code": "L1", "reason": "Дорого / нет бюджета", "reactivation_prob": 50},
             {"code": "L2", "reason": "Выбрали конкурента", "reactivation_prob": 35},

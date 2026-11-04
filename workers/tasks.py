@@ -138,7 +138,12 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
                 ai_summary=payload.error_summary,
                 next_action_extracted=payload.recommendation,
                 overall_score=float(view["score"] or 0.0),
-                scorecard_criteria={"cr": view["cr"], "score": view["score"], "next_step": view["next_step"]},
+                scorecard_criteria={
+                    "cr": view["cr"],
+                    "score": view["score"],
+                    "next_step": view["next_step"],
+                    "manager": payload.manager,
+                },
                 reverse_etl_synced=payload.sync_to_sheets
             )
             db.merge(rec)

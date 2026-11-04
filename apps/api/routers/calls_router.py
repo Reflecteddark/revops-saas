@@ -33,6 +33,7 @@ from ..cache_client import (
 )
 from ..schemas import SpeechEvaluationRequest
 from ..services.audio_duration import mp3_duration_seconds
+from ..services.call_manager import in_crm_team, resolve_call_manager
 from ..services.call_scorecard import call_texts, read_scorecard
 from ..services.raw_calls_row import build_raw_calls_row
 from ..services.tz import local_str, tenant_tz, to_local
@@ -143,6 +144,7 @@ class CallIngestPayload(BaseModel):
     deal_title: str | None = None
     client: str | None = None
     manager: str | None = None
+    manager_crm_id: str | None = None  # the CRM user id of the call: the manager is resolved by it first
     stage: str | None = None
     duration_sec: int | None = None
     duration: str | None = None
@@ -350,7 +352,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                 continue
             call_id = r[0]
             deal_id = r[1] if len(r) > 1 and r[1] else "Deal-N"
-            manager_name = r[2] if len(r) > 2 and r[2] else "Менеджер"
+            manager_name = resolve_call_manager(cfg, None, r[2] if len(r) > 2 else "")
 
             # Match against real deals
             deal_meta = None
@@ -623,11 +625,11 @@ def get_dashboard_calls_data(
 
     if db_calls:
         formatted_calls = []
-        call_tz = tenant_tz(get_tenant_config(effective_tenant))
+        tenant_cfg = get_tenant_config(effective_tenant)
+        call_tz = tenant_tz(tenant_cfg)
         for c in db_calls:
             sc: dict[str, Any] = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
             call_deal = c.deal
-            mgr = c.manager
             deal_budget = float(call_deal.budget or 0.0) if (call_deal and call_deal.budget is not None) else None
             dur_secs = int(c.duration_seconds or 0)
             dur_str = f"{dur_secs // 60}:{dur_secs % 60:02d}"
@@ -675,7 +677,9 @@ def get_dashboard_calls_data(
                 "deal_id": c.deal_id or f"D-{c.id[-4:]}",
                 "deal_title": raw_deal_title,
                 "client": client_name,
-                "manager": mgr.full_name if mgr else (sc.get("manager") or "Менеджер"),
+                "manager": resolve_call_manager(
+                    tenant_cfg, sc.get("manager_crm_id"), sc.get("manager") or (c.manager.full_name if c.manager else "")
+                ),
                 "stage": deal_stage,
                 "duration": dur_str,
                 "amount": amount_str,
@@ -739,6 +743,21 @@ async def ingest_call_from_n8n(
 
     dur_str = payload.duration or f"{dur_sec // 60}:{dur_sec % 60:02d}"
 
+    target_tenant = payload.tenant_id.strip().upper()
+    if not target_tenant:
+        raise HTTPException(status_code=422, detail="tenant_id is required")
+    tenant_cfg = get_tenant_config(target_tenant) or {}
+    tenant_crm = normalize_crm_type(tenant_cfg.get("crm_type"))
+
+    # A name that is not on the team list may be a new employee: refresh the list from the CRM before calling it unknown.
+    if (payload.manager or payload.manager_crm_id) and not in_crm_team(tenant_cfg, payload.manager_crm_id, payload.manager):
+        try:
+            from ..services.crm_users_sync import sync_tenant_crm_managers
+            await sync_tenant_crm_managers(target_tenant)
+            tenant_cfg = get_tenant_config(target_tenant) or {}
+        except Exception as sync_err:
+            logger.warning(f"CRM users sync failed during ingest for {target_tenant}: {sync_err}")
+
     card = call_view(payload)
     cr_list, score, next_step = card["cr"], card["score"], card["next_step"]
     status, status_label, risk_amt = card["status"], card["status_label"], card["risk_amount"]
@@ -748,7 +767,8 @@ async def ingest_call_from_n8n(
         "deal_id": payload.deal_id or f"D-{int(time.time()) % 10000}",
         "deal_title": payload.deal_title or f"Сделка {payload.deal_id or call_id}",
         "client": payload.client or "Клиент",
-        "manager": payload.manager or "Менеджер",
+        "manager": payload.manager or "",  # as received: the reader resolves it against the current team list
+        "manager_crm_id": payload.manager_crm_id or "",
         "stage": payload.stage or "Первичный контакт",
         "duration": dur_str,
         "amount": payload.amount or "0 ₽",
@@ -770,11 +790,6 @@ async def ingest_call_from_n8n(
     sheets_synced = False
     if payload.sync_to_sheets:
         sheets_synced = append_call_to_sheets(payload)
-
-    target_tenant = payload.tenant_id.strip().upper()
-    if not target_tenant:
-        raise HTTPException(status_code=422, detail="tenant_id is required")
-    tenant_crm = normalize_crm_type((get_tenant_config(target_tenant) or {}).get("crm_type"))
 
     # Persist call to tenant database
     try:
@@ -853,10 +868,6 @@ async def ingest_call_from_n8n(
                     if current_comp.startswith("?") or not current_comp or current_comp == "Клиент":
                         setattr(deal, "company_name", payload.client)
 
-            mgr = db.query(User).filter(
-                User.tenant_id == target_tenant
-            ).first()
-
             # call_recordings.id is VARCHAR(36) and global; CRM call ids can be longer (Bitrix external calls:
             # 'externalCall.<32 hex>.<ts>') or repeat across clients. The CRM id always stays in external_call_id.
             call_pk = call_id
@@ -867,7 +878,6 @@ async def ingest_call_from_n8n(
                 tenant_id=target_tenant,
                 # Never link to a deal found by the bare CRM id: that may be ANOTHER client's deal.
                 deal_id=deal.id if deal else None,
-                manager_id=mgr.id if mgr else None,
                 external_call_id=call_id,
                 client_phone=(payload.client or "+79000000000")[:50],  # VARCHAR(50); n8n sends a name here
                 duration_seconds=dur_sec,
@@ -897,7 +907,10 @@ async def ingest_call_from_n8n(
     # Broadcast to open web dashboard tabs via WebSocket
     await manager.broadcast(target_tenant, {
         "type": "new_call",
-        "call": formatted_call
+        "call": {
+            **formatted_call,
+            "manager": resolve_call_manager(tenant_cfg, payload.manager_crm_id, payload.manager),
+        },
     })
 
     delete_cached_json_sync(f"calls:{target_tenant}")
