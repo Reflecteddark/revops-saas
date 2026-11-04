@@ -194,129 +194,13 @@ def load_tenant_dataset(
     if payload_calls and isinstance(payload_calls, list) and len(payload_calls) > 0:
         calls_list = payload_calls
     else:
-        # 2.1 Check in-memory sync cache (strictly scoped to clean_tenant)
+        # The same list as the audit tab: this function used to keep its own readers with their own limit (50), their
+        # own cut-off (>= 8) and an invented next step ("has a recommendation" / "score >= 8" meant "next step fixed").
         try:
-            from .calls_router import _CALLS_CACHE
-            cached_entry = _CALLS_CACHE.get(clean_tenant)
-            if isinstance(cached_entry, dict) and cached_entry.get("calls"):
-                calls_list = cached_entry["calls"]
-            elif _CALLS_CACHE.get(f"calls:{clean_tenant}") and isinstance(_CALLS_CACHE[f"calls:{clean_tenant}"], dict):
-                calls_list = _CALLS_CACHE[f"calls:{clean_tenant}"].get("calls", [])
-        except Exception:
-            pass
-
-        # 2.2 Check Redis cache (strictly scoped to calls:{clean_tenant})
-        if not calls_list:
-            try:
-                from ..cache_client import get_cached_json_sync
-                redis_calls = get_cached_json_sync(f"calls:{clean_tenant}")
-                if redis_calls and isinstance(redis_calls, list) and len(redis_calls) > 0:
-                    for rc in redis_calls:
-                        tid = str(rc.get("tenant_id") or clean_tenant).strip().upper()
-                        if tid and tid != clean_tenant:
-                            continue
-                        raw_sc = rc.get("score")
-                        score_val = int(raw_sc) if raw_sc is not None else None
-                        raw_ns = rc.get("next_step")
-                        ns_val = int(raw_ns) if raw_ns is not None else None
-                        raw_st = rc.get("status")
-                        status_val = str(raw_st).lower() if raw_st else ("unknown" if score_val is None else ("won" if score_val >= 8 else "risk"))
-                        raw_cr = rc.get("cr")
-                        cr_val = raw_cr if (isinstance(raw_cr, list) and len(raw_cr) == 13) else [None] * 13
-                        calls_list.append({
-                            "id": str(rc.get("id") or ""),
-                            "score": score_val,
-                            "next_step": ns_val,
-                            "status": status_val,
-                            "manager": str(rc.get("manager") or ""),
-                            "cr": cr_val,
-                            "transcript": str(rc.get("transcript") or "")
-                        })
-                    if calls_list:
-                        try:
-                            from .calls_router import _CALLS_CACHE
-                            _CALLS_CACHE[clean_tenant] = {"timestamp": time.time(), "calls": calls_list}
-                        except Exception:
-                            pass
-            except Exception as e_rc:
-                logger.debug(f"Redis calls lookup for {clean_tenant}: {e_rc}")
-
-        # 2.3 Check Postgres call_recordings
-        if not calls_list:
-            db_calls = db.query(CallRecording).filter(
-                CallRecording.tenant_id == clean_tenant
-            ).order_by(CallRecording.created_at.desc()).limit(50).all()
-            if db_calls:
-                for c in db_calls:
-                    sc = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
-                    raw_sc = sc.get("score")
-                    if raw_sc is not None:
-                        score = int(raw_sc)
-                    elif c.overall_score is not None:
-                        score = int(round((c.overall_score / 100.0) * 13)) if c.overall_score > 13 else int(round(c.overall_score))
-                    else:
-                        score = None
-
-                    raw_ns = sc.get("next_step") if isinstance(sc, dict) else None
-                    if raw_ns is not None:
-                        next_step = int(raw_ns)
-                    elif c.next_action_extracted:
-                        next_step = 1
-                    elif score is not None:
-                        next_step = 1 if score >= 8 else 0
-                    else:
-                        next_step = None
-
-                    mgr = c.manager.full_name if c.manager else (sc.get("manager") or "")
-                    call_status = sc.get("status")
-                    if not call_status:
-                        if score is not None:
-                            call_status = "won" if score >= 8 else "risk"
-                        else:
-                            call_status = "unknown"
-
-                    raw_cr = sc.get("cr")
-                    cr_val = raw_cr if (isinstance(raw_cr, list) and len(raw_cr) == 13) else [None] * 13
-
-                    calls_list.append({
-                        "id": str(c.id),
-                        "score": score,
-                        "next_step": next_step,
-                        "status": call_status,
-                        "manager": mgr or "",
-                        "cr": cr_val,
-                        "transcript": c.transcript_text or ""
-                    })
-
-        # 2.4 Fallback to Google Sheets (if tenant has a configured spreadsheet)
-        if not calls_list and has_sheet:
-            try:
-                from .calls_router import fetch_calls_from_sheets
-                sheet_calls = fetch_calls_from_sheets(clean_tenant)
-                if sheet_calls:
-                    for sc in sheet_calls:
-                        tid = str(sc.get("tenant_id") or clean_tenant).strip().upper()
-                        if tid and tid != clean_tenant:
-                            continue
-                        raw_sc = sc.get("score")
-                        score_val = int(raw_sc) if raw_sc is not None else None
-                        raw_ns = sc.get("next_step")
-                        ns_val = int(raw_ns) if raw_ns is not None else None
-                        raw_st = sc.get("status")
-                        status_val = str(raw_st).lower() if raw_st else ("unknown" if score_val is None else ("won" if score_val >= 8 else "risk"))
-                        raw_cr = sc.get("cr")
-                        cr_val = raw_cr if (isinstance(raw_cr, list) and len(raw_cr) == 13) else [None] * 13
-                        calls_list.append({
-                            "id": str(sc.get("id") or ""),
-                            "score": score_val,
-                            "next_step": ns_val,
-                            "status": status_val,
-                            "manager": str(sc.get("manager") or ""),
-                            "cr": cr_val,
-                            "transcript": str(sc.get("transcript") or "")
-                        })
-            except Exception as e_c:
-                logger.debug(f"Note reading calls for {clean_tenant}: {e_c}")
+            from .calls_router import ANALYTICS_CALLS_LIMIT, load_tenant_calls
+            calls_list, _source = load_tenant_calls(db, clean_tenant, ANALYTICS_CALLS_LIMIT)
+        except Exception as e_c:
+            logger.warning(f"Could not load calls for {clean_tenant}: {e_c}")
 
     return calls_list, deals_list
 

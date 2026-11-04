@@ -11,6 +11,7 @@ Validates:
 """
 
 import json
+import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -587,6 +588,7 @@ def test_calls_cache_persistence_on_sync_sheets():
     from apps.api.routers.calls_router import _CALLS_CACHE
 
     key = next(iter(ALLOWED_ADMIN_KEYS))
+    tenant = f"TNT-SYNC-{uuid.uuid4().hex[:6].upper()}"  # no calls in the DB: the insights read the DB plus the sheet
 
     mock_calls = [
         {
@@ -611,7 +613,7 @@ def test_calls_cache_persistence_on_sync_sheets():
 
     with patch("apps.api.routers.calls_router.fetch_calls_from_sheets", return_value=mock_calls):
         res = client.post(
-            "/api/v1/calls/sync_sheets?tenant_id=TNT-001",
+            f"/api/v1/calls/sync_sheets?tenant_id={tenant}",
             headers={"X-Admin-Key": key}
         )
         assert res.status_code == 200, f"Expected 200, got {res.status_code}"
@@ -619,19 +621,20 @@ def test_calls_cache_persistence_on_sync_sheets():
         assert data["status"] == "ok"
         assert data["count"] == 1
 
-        # Verify _CALLS_CACHE contains "TNT-001" key and does not leak global "calls"
-        assert "TNT-001" in _CALLS_CACHE, "_CALLS_CACHE['TNT-001'] must be populated"
-        assert _CALLS_CACHE["TNT-001"]["calls"] == mock_calls
+        # Verify _CALLS_CACHE contains the tenant key and does not leak global "calls"
+        assert tenant in _CALLS_CACHE, "_CALLS_CACHE[tenant] must be populated"
+        assert _CALLS_CACHE[tenant]["calls"] == mock_calls
         assert "calls" not in _CALLS_CACHE, "Global _CALLS_CACHE['calls'] must not exist"
 
         # Verify CCO Analyst Overview picks up the cached calls without synthetic fallback
         from apps.api.auth import create_access_token
-        auth_hdr = {"Authorization": f"Bearer {create_access_token({'sub': 'usr-tnt-001', 'tenant_id': 'TNT-001'})}"}
-        res_overview = client.post("/api/v1/insights/analyst/overview", json={"tenant_id": "TNT-001"}, headers=auth_hdr)
+        auth_hdr = {"Authorization": f"Bearer {create_access_token({'sub': 'usr-sync', 'tenant_id': tenant})}"}
+        res_overview = client.post("/api/v1/insights/analyst/overview", json={"tenant_id": tenant}, headers=auth_hdr)
         assert res_overview.status_code == 200
         overview = res_overview.json()
         assert overview["metrics_summary"]["total_calls"] == 1
         assert overview["metrics_summary"]["avg_score"] == 85.0
+    _CALLS_CACHE.pop(tenant, None)
 
 
 # ==============================================================================
