@@ -8,56 +8,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { SpeechRadarChart } from './SpeechRadarChart';
-import type { Call } from '@/types/api';
+import { failedCall, missedCall, ratedCalls } from '@/test/callFactory';
 
-const mockCalls: Call[] = [
-  {
-    id: 'c-1',
-    deal_id: 'd-1',
-    deal_title: 'Сделка 1',
-    client: 'ООО Альфа',
-    manager: 'Иван Петров',
-    stage: 'КП',
-    duration: '03:10',
-    amount: '300 000 ₽',
-    amount_num: 300000,
-    score: 11,
-    status: 'won',
-    status_label: 'Успешно',
-    risk_amount: '0 ₽',
-    next_step: 1,
-    date: '2026-10-24 10:00',
-    cr: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-    error_summary: '',
-    recommendation: 'Супер',
-    transcript: '...',
-  },
-  {
-    id: 'c-2',
-    deal_id: 'd-2',
-    deal_title: 'Сделка 2',
-    client: 'ЗАО Бета',
-    manager: 'Ольга Смирнова',
-    stage: 'Встреча',
-    duration: '02:00',
-    amount: '100 000 ₽',
-    amount_num: 100000,
-    score: 5,
-    status: 'lost',
-    status_label: 'Слив',
-    risk_amount: '100 000 ₽',
-    next_step: 0,
-    date: '2026-10-24 11:00',
-    cr: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    error_summary: 'Слив',
-    recommendation: 'Обучить',
-    transcript: '...',
-  },
-];
+const team = [...ratedCalls('Иван Петров', 11, 2), ...ratedCalls('Ольга Смирнова', 5, 1)];
 
 describe('SpeechRadarChart', () => {
   it('renders radar chart with legend and rep switcher pills', () => {
-    render(<SpeechRadarChart calls={mockCalls} />);
+    render(<SpeechRadarChart calls={team} />);
 
     expect(screen.getByTestId('speech-radar-chart')).toBeInTheDocument();
     expect(screen.getByText('Вся команда')).toBeInTheDocument();
@@ -68,11 +25,25 @@ describe('SpeechRadarChart', () => {
 
   it('calls onSelectRep when rep pill is clicked', () => {
     const handleSelect = vi.fn();
-    render(<SpeechRadarChart calls={mockCalls} onSelectRep={handleSelect} />);
+    render(<SpeechRadarChart calls={team} onSelectRep={handleSelect} />);
 
-    const olgaBtn = screen.getByRole('button', { name: 'Ольга Смирнова' });
-    fireEvent.click(olgaBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Ольга Смирнова' }));
     expect(handleSelect).toHaveBeenCalledWith('Ольга Смирнова');
+  });
+
+  it('has no pill for "Неизвестен" or "Не определён" and counts only rated calls', () => {
+    const calls = [...team, ...ratedCalls('Неизвестен', 2, 2), ...ratedCalls('Не определён', 3, 2), missedCall(), failedCall()];
+    render(<SpeechRadarChart calls={calls} />);
+
+    expect(screen.queryByRole('button', { name: 'Неизвестен' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Не определён' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('speech-radar-chart')).toHaveTextContent('3 оценённых звонка');
+  });
+
+  it('draws no polygon, and says so, when no call was rated', () => {
+    const { container } = render(<SpeechRadarChart calls={[missedCall(), failedCall()]} />);
+
+    expect(screen.getByTestId('speech-radar-chart')).toHaveTextContent('нет оценённых звонков');
+    expect(container.querySelectorAll('polygon[fill="rgba(139, 92, 246, 0.22)"]')).toHaveLength(0);
   });
 });

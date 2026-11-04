@@ -1,12 +1,11 @@
 /**
  * apps/web/src/components/RopBriefingCard.tsx
  *
- * Daily ROP Briefing & Sales Meeting Action Items Widget.
- * Synthesizes 24-hour speech audit findings into 3 actionable coaching points:
- * 1. Main systemic flaw across the team (lowest CR compliance & leakage amount)
- * 2. Top performer to praise (highest score & next step rate)
- * 3. Individual reps needing immediate coaching intervention
- * Includes one-click Telegram meeting agenda export.
+ * Briefing for the sales meeting, built from the audit by fixed rules (no AI is called here):
+ * 1. the weakest criterion of the team;
+ * 2. the manager to praise (best average of rated calls);
+ * 3. the managers to coach (not "Эталон" by average).
+ * Same counting as the podium and the heatmap (lib/callStats.ts): CRM managers, rated calls, MIN_RATED_CALLS per person.
  */
 
 import * as React from 'react';
@@ -14,12 +13,8 @@ import { Sparkles, AlertTriangle, Trophy, UserX, Copy, Check } from 'lucide-reac
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 import { CR_DEFINITIONS } from '@/lib/criteria';
-import { isSystemName } from '@/lib/systemNames';
-import {
-  COACHING_THRESHOLD,
-  NEXT_STEP_MIN_PCT,
-  MIN_CALLS_FOR_COACHING,
-} from '@/lib/thresholds';
+import { criterionRates, hasCrmManager, managerStats, ruPlural, summarizeCalls } from '@/lib/callStats';
+import { MIN_RATED_CALLS } from '@/lib/thresholds';
 
 export interface RopBriefingCardProps {
   calls?: Call[];
@@ -28,133 +23,56 @@ export interface RopBriefingCardProps {
   className?: string;
 }
 
-export function RopBriefingCard({
-  calls = [],
-  onSelectRep,
-  onSelectCriterion,
-  className,
-}: RopBriefingCardProps) {
+const nextStep = (p: number | null) => (p === null ? 'Next Step: —' : `Next Step: ${p}%`);
+
+export function RopBriefingCard({ calls = [], onSelectRep, onSelectCriterion, className }: RopBriefingCardProps) {
   const [copied, setCopied] = React.useState(false);
 
-  // Analysis computation
   const briefing = React.useMemo(() => {
-    const validCalls = calls.filter((c) => !isSystemName(c.manager));
+    const team = calls.filter(hasCrmManager);
+    const { assessed } = summarizeCalls(team);
+    if (assessed === 0) return null;
 
-    if (validCalls.length === 0) {
-      return null;
-    }
+    // 1. The weakest criterion: the lowest pass rate among the criteria that were assessed at all (first one on a tie)
+    const worstCr = criterionRates(team)
+      .filter((r) => r.rate !== null)
+      .reduce((worst, r) => (worst === null || (r.rate as number) < (worst.rate as number) ? r : worst), null as ReturnType<typeof criterionRates>[number] | null);
+    if (!worstCr) return null;
+    const worstCrDef = CR_DEFINITIONS[worstCr.index];
 
-    const totalCalls = validCalls.length;
-
-    // 1. Find the worst department-wide criterion (lowest pass rate)
-    const crStats = Array.from({ length: 13 }).map((_, idx) => {
-      let passCount = 0;
-      let riskSum = 0;
-      validCalls.forEach((c) => {
-        if (c.cr && c.cr[idx] === 1) {
-          passCount += 1;
-        } else {
-          riskSum += c.amount_num || 0;
-        }
-      });
-      const rate = passCount / totalCalls;
-      return {
-        index: idx,
-        passCount,
-        failedCount: totalCalls - passCount,
-        rate,
-        riskSum,
-      };
-    });
-
-    // Sort by failure rate descending (lowest pass rate first)
-    const worstCr = [...crStats].sort((a, b) => a.rate - b.rate)[0];
-    const worstCrDef = CR_DEFINITIONS[worstCr.index] || {
-      id: `cr${worstCr.index + 1}`,
-      label: `Критерий ${worstCr.index + 1}`,
-      shortLabel: `CR${worstCr.index + 1}`,
-    };
-
-    // 2. Group by manager
-    const managerMap = new Map<string, Call[]>();
-    validCalls.forEach((c) => {
-      const name = c.manager!.trim();
-      if (!managerMap.has(name)) managerMap.set(name, []);
-      managerMap.get(name)!.push(c);
-    });
-
-    const repStats: {
-      name: string;
-      callsCount: number;
-      avgScore: number;
-      nextStepPct: number;
-      riskSum: number;
-    }[] = [];
-
-    managerMap.forEach((repCalls, name) => {
-      const count = repCalls.length;
-      const scoreSum = repCalls.reduce((acc, c) => acc + (c.score || 0), 0);
-      const nextStepCount = repCalls.filter((c) => c.next_step === 1).length;
-      const riskSum = repCalls.reduce((acc, c) => acc + (c.amount_num || 0), 0);
-
-      repStats.push({
-        name,
-        callsCount: count,
-        avgScore: count > 0 ? scoreSum / count : 0,
-        nextStepPct: count > 0 ? Math.round((nextStepCount / count) * 100) : 0,
-        riskSum,
-      });
-    });
-
-    // Top performer: highest avg score (tie breaker: next step)
-    const sortedByScore = [...repStats].sort((a, b) => {
-      if (b.avgScore !== a.avgScore) return b.avgScore - a.avgScore;
-      return b.nextStepPct - a.nextStepPct;
-    });
-    const topRep = sortedByScore[0] || null;
-
-    // Reps needing coaching (A7): minimum MIN_CALLS_FOR_COACHING calls, score < COACHING_THRESHOLD or nextStepPct < NEXT_STEP_MIN_PCT
-    const eligibleReps = repStats.filter((r) => r.callsCount >= MIN_CALLS_FOR_COACHING);
-    const coachingCandidates = eligibleReps
-      .filter((r) => r.avgScore < COACHING_THRESHOLD || r.nextStepPct < NEXT_STEP_MIN_PCT)
-      .sort((a, b) => a.avgScore - b.avgScore)
+    // 2. + 3. People: only managers with enough rated calls
+    const ranked = managerStats(team).filter((m) => m.enough);
+    const topRep = ranked[0] ?? null;
+    const coachingCandidates = [...ranked]
+      .filter((m) => m !== topRep && m.band !== 'high')
+      .sort((a, b) => (a.avgScore ?? 0) - (b.avgScore ?? 0))
       .slice(0, 3);
 
-    return {
-      totalCalls,
-      worstCr,
-      worstCrDef,
-      topRep,
-      coachingCandidates,
-    };
+    return { assessed, worstCr, worstCrDef, topRep, coachingCandidates, hasRanking: ranked.length > 0 };
   }, [calls]);
 
   const handleCopyAgenda = () => {
     if (!briefing) return;
-    const { worstCr, worstCrDef, topRep, coachingCandidates, totalCalls } = briefing;
-
-    const worstPct = Math.round(worstCr.rate * 100);
-    const worstFailCount = worstCr.failedCount;
+    const { worstCr, worstCrDef, topRep, coachingCandidates, assessed } = briefing;
+    const worstPct = Math.round((worstCr.rate as number) * 100);
 
     const coachingStr =
       coachingCandidates.length > 0
-        ? coachingCandidates
-            .map((c) => `• ${c.name} (${c.avgScore.toFixed(1)}/13, Next Step: ${c.nextStepPct}%)`)
-            .join('\n')
-        : '• Все менеджеры держат норматив';
+        ? coachingCandidates.map((c) => `• ${c.name} (${c.avgScore?.toFixed(1)}/13, ${nextStep(c.nextStepPct)})`).join('\n')
+        : '• Нет менеджеров для разбора';
 
-    const text = `⚡ Планёрка ОП — Фокус дня (RevOps ИИ):
+    const text = `⚡ Планёрка ОП — Фокус дня (RevOps):
 
-🚨 Системная дыра отдела:
-${worstCrDef.label} (CR${worstCr.index + 1}) — соблюдается лишь в ${worstPct}% звонков (${worstFailCount} из ${totalCalls} без зачёта).
+🚨 Слабое место отдела:
+${worstCrDef.label} (CR${worstCr.index + 1}) — соблюдается в ${worstPct}% оценённых звонков (${worstCr.assessed - worstCr.pass} из ${worstCr.assessed} без зачёта, всего оценено ${assessed}).
 
 🏆 Кого похвалить:
-${topRep ? `${topRep.name} — балл ${topRep.avgScore.toFixed(1)}/13, Next Step ${topRep.nextStepPct}%.` : '—'}
+${topRep ? `${topRep.name} — балл ${topRep.avgScore?.toFixed(1)}/13, ${nextStep(topRep.nextStepPct)}.` : '—'}
 
 ⚠️ Персональный разбор на планёрке:
 ${coachingStr}
 
-👉 Задача дня: в каждом звонке фиксировать дату и время следующего шага в CRM.`;
+👉 Задача дня: подтянуть критерий «${worstCrDef.label}».`;
 
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(text);
@@ -166,45 +84,35 @@ ${coachingStr}
   if (!briefing) {
     return (
       <div
-        className={cn(
-          'surface rounded-xl border border-subtle p-5 text-center text-xs text-secondary',
-          className
-        )}
+        className={cn('surface rounded-xl border border-subtle p-5 text-center text-xs text-secondary', className)}
         data-testid="rop-briefing-empty"
       >
         <Sparkles className="mx-auto mb-2 h-6 w-6 text-primary" />
-        <div className="font-semibold text-foreground">ИИ-Брифинг дня</div>
+        <div className="font-semibold text-foreground">Фокус дня</div>
         <p className="mt-1 text-tertiary">
-          Ожидание звонков для автоматического формирования повестки планёрки РОПа.
+          Повестка планёрки появится, когда будут оценённые звонки менеджеров из CRM.
         </p>
       </div>
     );
   }
 
-  const { worstCr, worstCrDef, topRep, coachingCandidates, totalCalls } = briefing;
-  const passPct = Math.round(worstCr.rate * 100);
+  const { assessed, worstCr, worstCrDef, topRep, coachingCandidates, hasRanking } = briefing;
+  const passPct = Math.round((worstCr.rate as number) * 100);
 
   return (
     <div
-      className={cn(
-        'surface flex flex-col justify-between space-y-4 rounded-xl border border-subtle p-5 shadow-sm',
-        className
-      )}
+      className={cn('surface flex flex-col justify-between space-y-4 rounded-xl border border-subtle p-5 shadow-sm', className)}
       data-testid="rop-briefing-card"
     >
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-subtle pb-3">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
             <Sparkles className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-foreground">
-              ⚡ Фокус дня для планёрки РОПа
-            </h3>
+            <h3 className="text-sm font-bold text-foreground">⚡ Фокус дня для планёрки РОПа</h3>
             <p className="text-[11px] text-tertiary">
-              Сформировано ИИ на основе аудита {totalCalls}{' '}
-              {totalCalls === 1 ? 'звонка' : 'звонков'}
+              По {assessed} {ruPlural(assessed, ['оценённому звонку', 'оценённым звонкам', 'оценённым звонкам'])} за выбранный период
             </p>
           </div>
         </div>
@@ -229,9 +137,8 @@ ${coachingStr}
         </button>
       </div>
 
-      {/* 3 Action Items */}
       <div className="space-y-3">
-        {/* 1. Systemic Weakness */}
+        {/* 1. Systemic weakness */}
         <div
           role="button"
           tabIndex={0}
@@ -242,30 +149,19 @@ ${coachingStr}
         >
           <div className="flex items-center gap-2 text-xs font-semibold text-rose-500 dark:text-rose-400">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            <span>Главная системная дыра отдела:</span>
+            <span>Слабое место отдела:</span>
           </div>
           <div className="mt-1 text-[13px] font-bold text-foreground">
             {worstCrDef.label}{' '}
-            <span className="font-mono text-xs font-semibold text-rose-500">
-              (CR{worstCr.index + 1})
-            </span>
+            <span className="font-mono text-xs font-semibold text-rose-500">(CR{worstCr.index + 1})</span>
           </div>
           <p className="mt-1 text-[11px] leading-relaxed text-secondary">
-            Соблюдается лишь в{' '}
-            <span className="font-bold text-rose-500">{passPct}%</span> звонков ({worstCr.failedCount} из {totalCalls} без зачёта).{' '}
-            {worstCr.riskSum > 0 && (
-              <span>
-                Объём сделок в риске:{' '}
-                <span className="font-semibold text-foreground">
-                  {Math.round(worstCr.riskSum).toLocaleString('ru-RU')} ₽
-                </span>
-                .
-              </span>
-            )}
+            Соблюдается в <span className="font-bold text-rose-500">{passPct}%</span> оценённых звонков (
+            {worstCr.assessed - worstCr.pass} из {worstCr.assessed} без зачёта).
           </p>
         </div>
 
-        {/* 2. Top Performer to Praise */}
+        {/* 2. Top performer */}
         {topRep && (
           <div
             role="button"
@@ -273,27 +169,26 @@ ${coachingStr}
             onClick={() => onSelectRep?.(topRep.name)}
             onKeyDown={(e) => e.key === 'Enter' && onSelectRep?.(topRep.name)}
             className="group cursor-pointer rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/10"
-            title="Кликните, чтобы показать звонки лидера"
+            title="Кликните, чтобы показать звонки менеджера"
           >
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               <Trophy className="h-3.5 w-3.5 shrink-0" />
               <span>Кого похвалить на планёрке:</span>
             </div>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-[13px] font-bold text-foreground">
-                {topRep.name}
-              </span>
+              <span className="text-[13px] font-bold text-foreground">{topRep.name}</span>
               <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                {topRep.avgScore.toFixed(1)} / 13
+                {topRep.avgScore?.toFixed(1)} / 13
               </span>
             </div>
             <p className="mt-1 text-[11px] text-secondary">
-              Next Step: {topRep.nextStepPct}% • Лидер команды по среднему баллу и конверсии в шаг.
+              {nextStep(topRep.nextStepPct)} • Лучший средний балл в команде ({topRep.assessed}{' '}
+              {ruPlural(topRep.assessed, ['звонок', 'звонка', 'звонков'])}).
             </p>
           </div>
         )}
 
-        {/* 3. Individual Coaching */}
+        {/* 3. Coaching */}
         {coachingCandidates.length > 0 && (
           <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
             <div className="flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400">
@@ -310,16 +205,20 @@ ${coachingStr}
                   title={`Показать звонки менеджера: ${c.name}`}
                 >
                   <span>{c.name}</span>
-                  <span className="font-mono text-[10px] text-amber-600 dark:text-amber-400">
-                    ({c.avgScore.toFixed(1)})
-                  </span>
+                  <span className="font-mono text-[10px] text-amber-600 dark:text-amber-400">({c.avgScore?.toFixed(1)})</span>
                 </button>
               ))}
             </div>
             <p className="mt-1 text-[10px] text-tertiary">
-              Кликните на имя менеджера для фильтрации его звонков с ошибками.
+              Менеджеры, чей средний балл ниже эталона (9). Кликните на имя, чтобы увидеть его звонки.
             </p>
           </div>
+        )}
+
+        {!hasRanking && (
+          <p className="rounded-lg border border-subtle bg-hover/40 p-3 text-[11px] text-tertiary" data-testid="briefing-few-calls">
+            Кого хвалить и кого разбирать, станет понятно от {MIN_RATED_CALLS} оценённых звонков на менеджера.
+          </p>
         )}
       </div>
     </div>

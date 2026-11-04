@@ -251,9 +251,14 @@ export interface DealsResponse {
 // 4. Speech AI & Calls Scorecard (13 Criteria)
 // ============================================================================
 
-export type CallStatus = 'won' | 'risk' | 'unknown' | string;
+/**
+ * Quality of a call by its score (won 9-13, norm 6-8, risk 0-5), or why it has no score:
+ * unanswered = nobody talked (voicemail, a drop), audit_failed = the AI could not read the recording.
+ */
+export type CallStatus = 'won' | 'norm' | 'risk' | 'unknown' | 'unanswered' | 'audit_failed' | string;
+export type CallKind = 'assessed' | 'unanswered' | 'audit_failed' | 'unrated';
 export type CallStatusLabel =
-  'ЭТАЛОН' | 'СЛИВ' | 'СЛИВ (НЕТ NEXT STEP)' | 'НЕТ ДАННЫХ' | string;
+  'ЭТАЛОН' | 'НОРМА' | 'СРЫВ' | 'НЕДОЗВОН' | 'СБОЙ АНАЛИЗА' | 'НЕТ ДАННЫХ' | string;
 
 /**
  * 13 Criteria of B2B call audit:
@@ -272,6 +277,7 @@ export interface Call {
   amount: string;
   amount_num: number;
   score: number | null;
+  kind?: CallKind;
   status: CallStatus;
   status_label: CallStatusLabel;
   risk_amount: string;
