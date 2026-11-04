@@ -3614,18 +3614,15 @@ async def resolve_quarantined_call(req: QuarantineResolveRequest):
 
         call_payload = CallIngestPayload(
             id=target.get("id"),
-            deal_id=target.get("deal_id", "D-MODERATED"),
-            deal_title=target.get("deal_title", "Модерированный звонок"),
-            manager=target.get("manager", "Дмитрий Федотов"),
-            client=target.get("client", "Клиент"),
-            duration_sec=180,
-            duration=target.get("duration", "3:00"),
-            amount="300 000 ₽",
-            score=target.get("score", 10),
-            next_step=1,
-            # Fallback — 0, не идеальный скор. Иначе админ-эмуляция показывает
-            # 13/13 как будто звонок идеален.
-            cr=target.get("cr") or [0] * 13,
+            deal_id=target.get("deal_id", ""),
+            deal_title=target.get("deal_title", ""),
+            manager=target.get("manager", ""),
+            client=target.get("client", ""),
+            duration=target.get("duration"),
+            amount=target.get("amount"),
+            score=target.get("score"),
+            next_step=target.get("next_step"),
+            cr=target.get("cr"),
             error_summary=f"Карантин снят: {target.get('flagged_criterion')}",
             recommendation="Подтверждено ручной верификацией РОПа/Администратора",
             transcript=target.get("transcript", ""),

@@ -374,7 +374,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
             if not r or not r[0]:
                 continue
             call_id = r[0]
-            deal_id = r[1] if len(r) > 1 and r[1] else "Deal-N"
+            deal_id = r[1] if len(r) > 1 and r[1] else ""
             manager_name = resolve_call_manager(cfg, None, r[2] if len(r) > 2 else "")
 
             # Match against real deals
@@ -387,11 +387,11 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                 if num_only and num_only in deals_map:
                     deal_meta = deals_map[num_only]
 
-            deal_title = deal_meta["title"] if deal_meta else f"Сделка {deal_id} ({manager_name})"
+            deal_title = deal_meta["title"] if deal_meta else ""
             # No matching deal -> unknown amount (0), not an invented 300 000 that would feed "revenue at risk".
             deal_amount_str = deal_meta["amount_str"] if deal_meta else "0 ₽"
             deal_amount_num = deal_meta["amount"] if deal_meta else 0.0
-            deal_stage = deal_meta["stage"] if deal_meta else "1. Первичный контакт"
+            deal_stage = deal_meta["stage"] if deal_meta else ""
 
             # Duration parsing
             dur_sec = 0
@@ -436,24 +436,11 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
             )
             error_sum, rec = call_texts(card["kind"], error_sum, rec)
 
-            # Client name heuristic from transcript or deal title
-            client_name = "Клиент"
-            if transcript:
-                first_lines = transcript.split("\n")[:4]
-                for line in first_lines:
-                    if "Клиент:" in line or "Клиент :" in line:
-                        client_name = line.split(":", 1)[1].strip()[:35]
-                        break
-            if client_name == "Клиент" and deal_meta and "Сделка" in deal_title:
-                parts = deal_title.split(":", 1)
-                if len(parts) > 1:
-                    client_name = parts[1].strip()[:35]
-
             calls.append({
                 "id": call_id,
                 "deal_id": deal_id,
                 "deal_title": deal_title,
-                "client": client_name,
+                "client": "",  # the sheet has no client: the first phrase of a transcript used to pass for one
                 "manager": manager_name,
                 "stage": deal_stage,
                 "duration": duration_str,
@@ -470,7 +457,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                 "zoom_scheduled": None,
                 "error_summary": error_sum,
                 "recommendation": rec,
-                "transcript": transcript or "Транскрипт отсутствует"
+                "transcript": transcript
             })
             if len(calls) >= SHEET_CALLS_MAX:
                 break
@@ -504,8 +491,8 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
         ws = ss.worksheet("raw_calls")
 
         call_id = payload.id or f"call_n8n_{int(time.time())}"
-        deal_id = payload.deal_id or f"D-{int(time.time()) % 10000}"
-        manager_id = payload.manager or "Менеджер"
+        deal_id = payload.deal_id or ""
+        manager_id = payload.manager or ""
         # The sheet is read by people in the client's time zone: stamp "today" in it, not in server UTC.
         now_local = to_local(datetime.now(timezone.utc), tenant_tz(get_tenant_config(tenant_id)))
         today_str = now_local.strftime("%Y-%m-%d")
@@ -605,6 +592,9 @@ def append_call_to_sheets(payload: CallIngestPayload) -> bool:
 # PUBLIC DASHBOARD & LIVE N8N INGESTION ENDPOINTS
 # ==========================================================================
 
+NO_CLIENT_NAMES = ("Клиент", "Клиент B2B", "Неизвестно", "Не указано")
+
+
 def _format_db_call(c: CallRecording, tenant_cfg: dict[str, Any] | None, call_tz: Any) -> dict[str, Any]:
     sc: dict[str, Any] = c.scorecard_criteria if isinstance(c.scorecard_criteria, dict) else {}
     call_deal = c.deal
@@ -633,27 +623,18 @@ def _format_db_call(c: CallRecording, tenant_cfg: dict[str, Any] | None, call_tz
     amount_str = f"{int(amount_num):,} ₽".replace(",", " ") if amount_num > 0 else (sc.get("amount_str") or "0 ₽")
     risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and card["at_risk"]) else "0 ₽"
 
-    # Prioritize specific client/contact extracted from the call
-    sc_client = sc.get("client")
-    if sc_client and sc_client not in ("Клиент", "Клиент B2B", "Неизвестно") and "электроник" not in sc_client.lower() and "оптовая" not in sc_client.lower():
-        client_name = sc_client
-    elif call_deal and call_deal.company_name and "электроник" not in call_deal.company_name.lower() and "оптовая" not in call_deal.company_name.lower():
-        client_name = call_deal.company_name
-    elif sc_client and "электроник" not in sc_client.lower() and "оптовая" not in sc_client.lower():
-        client_name = sc_client
-    else:
-        client_name = "Клиент"
+    # The contact named in the call, then the CRM company; n8n's "Не указано" and the like are not a client.
+    sc_client = str(sc.get("client") or "").strip()
+    deal_company = str(call_deal.company_name or "").strip() if call_deal else ""
+    client_name = next((v for v in (sc_client, deal_company) if v and v not in NO_CLIENT_NAMES), "")
 
-    raw_deal_title = call_deal.title if call_deal else (sc.get("deal_title") or f"Сделка {c.deal_id}")
-    if "?" in raw_deal_title or "оптовая" in raw_deal_title.lower() or "электроник" in raw_deal_title.lower():
-        raw_deal_title = f"Сделка #{c.deal_id or c.id[-4:]}"
-
-    deal_stage = call_deal.stage.value if (call_deal and hasattr(call_deal.stage, "value")) else (str(call_deal.stage) if call_deal and call_deal.stage else "Первичный контакт")
+    deal_title = str(call_deal.title or "") if call_deal else str(sc.get("deal_title") or "")
+    deal_stage = str(call_deal.stage_name or "") if call_deal else ""  # the name in the client's CRM
 
     return {
         "id": c.id,
-        "deal_id": c.deal_id or f"D-{c.id[-4:]}",
-        "deal_title": raw_deal_title,
+        "deal_id": c.deal_id or "",
+        "deal_title": deal_title,
         "client": client_name,
         "manager": resolve_call_manager(
             tenant_cfg, sc.get("manager_crm_id"), sc.get("manager") or (c.manager.full_name if c.manager else "")
@@ -677,7 +658,7 @@ def _format_db_call(c: CallRecording, tenant_cfg: dict[str, Any] | None, call_tz
         "zoom_scheduled": card["zoom_scheduled"],
         "error_summary": error_summary,
         "recommendation": recommendation,
-        "transcript": c.transcript_text or "Транскрипт отсутствует"
+        "transcript": c.transcript_text or ""
     }
 
 
@@ -812,13 +793,13 @@ async def ingest_call_from_n8n(
 
     formatted_call = {
         "id": call_id,
-        "deal_id": payload.deal_id or f"D-{int(time.time()) % 10000}",
-        "deal_title": payload.deal_title or f"Сделка {payload.deal_id or call_id}",
-        "client": payload.client or "Клиент",
+        "deal_id": payload.deal_id or "",
+        "deal_title": payload.deal_title or "",
+        "client": payload.client or "",
         "manager": payload.manager or "",  # as received: the reader resolves it against the current team list
         "manager_crm_id": payload.manager_crm_id or "",
         "call_started_at": payload.call_started_at or "",
-        "stage": payload.stage or "Первичный контакт",
+        "stage": payload.stage or "",
         "duration": dur_str,
         "amount": payload.amount or "0 ₽",
         "score": score,
@@ -928,7 +909,7 @@ async def ingest_call_from_n8n(
                 # Never link to a deal found by the bare CRM id: that may be ANOTHER client's deal.
                 deal_id=deal.id if deal else None,
                 external_call_id=call_id,
-                client_phone=(payload.client or "+79000000000")[:50],  # VARCHAR(50); n8n sends a name here
+                client_phone=(payload.client or "")[:50],  # VARCHAR(50); n8n sends a name here
                 duration_seconds=dur_sec,
                 status="completed",
                 transcript_text=payload.transcript or "",

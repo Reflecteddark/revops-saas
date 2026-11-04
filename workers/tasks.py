@@ -76,7 +76,7 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
         from apps.api.websocket_manager import manager
         
         # 1. Normalize call payload
-        dur_sec = int(call_data.get("duration_sec", 120))
+        dur_sec = int(call_data.get("duration_sec") or 0)
         # No criteria means "not rated": this used to default to 13 ones, a perfect 13/13 for an unaudited call.
         raw_cr = call_data.get("cr")
         has_cr = isinstance(raw_cr, (list, tuple)) and len(raw_cr) == 13 and all(c is not None for c in raw_cr)
@@ -88,19 +88,19 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
 
         payload = CallIngestPayload(
             id=call_id,
-            deal_id=str(call_data.get("deal_id") or f"D-{int(time.time()) % 10000}"),
+            deal_id=str(call_data.get("deal_id") or ""),
             deal_title=call_data.get("deal_title") or f"Сделка #{call_data.get('deal_id', call_id)}",
-            manager=call_data.get("manager") or call_data.get("manager_name") or "Дмитрий Федотов",
-            client=call_data.get("client") or call_data.get("client_name") or "Клиент телефонии",
+            manager=call_data.get("manager") or call_data.get("manager_name") or "",
+            client=call_data.get("client") or call_data.get("client_name") or "",
             duration_sec=dur_sec,
             duration=call_data.get("duration") or f"{dur_sec // 60}:{dur_sec % 60:02d}",
-            amount=call_data.get("amount") or "300 000 ₽",
+            amount=call_data.get("amount"),
             score=score,
             next_step=next_step,
             cr=cr_list,
             error_summary=call_data.get("error_summary") or "",
             recommendation=call_data.get("recommendation") or "",
-            transcript=call_data.get("transcript") or "Транскрипт аудиозаписи",
+            transcript=call_data.get("transcript") or "",
             sync_to_sheets=bool(call_data.get("sync_to_sheets", True)),
             tenant_id=org_id
         )
@@ -130,7 +130,7 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
                 id=target_id,
                 tenant_id=org_id,
                 external_call_id=ext_call_id,
-                client_phone=call_data.get("client_phone") or "+79990000000",
+                client_phone=call_data.get("client_phone") or "",
                 duration_seconds=payload.duration_sec,
                 audio_s3_url=call_data.get("audio_url") or call_data.get("record_url"),
                 status="completed",

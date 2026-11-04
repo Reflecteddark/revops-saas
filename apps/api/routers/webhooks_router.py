@@ -210,39 +210,6 @@ def verify_tenant_active(tenant_id: str):
         )
 
 
-def parse_call_from_text(text: str, default_manager: str = "Менеджер", default_client: str = "Клиент") -> dict[str, Any]:
-    """Helper to detect score and criteria from CRM note / transcription text."""
-    lower = (text or "").lower()
-
-    if "слив" in lower or "нет next step" in lower or "отказ" in lower:
-        # Fallback — НЕ "все пройдены", а "не оценено". Иначе звонки без аудита
-        # получают идеальный скор 13/13 и портят аналитику РОПа.
-        cr = [0] * 13
-        return {
-            "score": 0,
-            "cr": cr,
-            "next_step": 0,
-            "status": "risk",
-            "status_label": "СЛИВ (НЕТ NEXT STEP)"
-        }
-    elif "эталон" in lower or "успешно" in lower or "договорились" in lower:
-        return {
-            "score": 12,
-            "cr": [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
-            "next_step": 1,
-            "status": "won",
-            "status_label": "ЭТАЛОН"
-        }
-
-    return {
-        "score": None,
-        "cr": [None] * 13,
-        "next_step": None,
-        "status": "unknown",
-        "status_label": "НЕТ ДАННЫХ"
-    }
-
-
 # ==========================================================================
 # 1. amoCRM INBOUND WEBHOOK RECEIVER
 # ==========================================================================
@@ -302,24 +269,21 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
         if "call" in ev_type:
             is_call_event = True
             call_id = f"amo_call_{ev.get('id', int(time.time()))}"
-            entity_id = str(ev.get("entity_id", "amo_deal"))
+            entity_id = str(ev.get("entity_id") or "")
             call_info = ev.get("value_after", {}).get("call", {}) if isinstance(ev.get("value_after"), dict) else {}
-            dur_sec = int(call_info.get("duration", 120)) if str(call_info.get("duration", "")).isdigit() else 120
+            raw_duration = str(call_info.get("duration", ""))
+            dur_sec = int(raw_duration) if raw_duration.isdigit() else 0
 
             call_payload = CallIngestPayload(
                 id=call_id,
                 deal_id=entity_id,
                 deal_title=f"amoCRM Сделка #{entity_id}",
-                manager="Дмитрий Федотов",
-                client=call_info.get("phone", "Клиент amoCRM"),
+                client=call_info.get("phone", ""),
                 duration_sec=dur_sec,
                 duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
                 score=None,
                 next_step=None,
                 cr=None,
-                error_summary="Звонок принят из amoCRM",
-                recommendation="Своевременная фиксация договоренностей",
-                transcript=f"amoCRM звонок ID: {call_id}. Аудиозапись прикреплена к сделке #{entity_id}.",
                 sync_to_sheets=True,
                 tenant_id=org_id
             )
@@ -329,30 +293,27 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
     if not is_call_event and isinstance(body, dict) and ("call_id" in body or "transcript" in body or "manager" in body):
         is_call_event = True
         c_text = str(body.get("transcript") or body.get("amo_note_text") or "")
-        manager_str = str(body.get("manager_name") or "Менеджер")
-        parsed = parse_call_from_text(c_text, manager_str)
         call_id = str(body.get("call_id", f"amo_{int(time.time())}"))
-        deal_id = str(body.get("lead_id", body.get("deal_id", "amo_lead")))
-        dur_sec = int(body.get("duration_sec", 135))
+        deal_id = str(body.get("lead_id") or body.get("deal_id") or "")
+        dur_sec = int(body.get("duration_sec") or 0)
 
-        parsed_cr = parsed.get("cr")
-        cr_arg = body.get("cr", parsed_cr)
+        cr_arg = body.get("cr")
         safe_cr_payload = None if (cr_arg is None or any(c is None for c in cr_arg)) else cr_arg
 
         call_payload = CallIngestPayload(
             id=call_id,
             deal_id=deal_id,
             deal_title=f"amoCRM Сделка #{deal_id}",
-            manager=body.get("manager_name", body.get("manager", "Дмитрий Федотов")),
-            client=body.get("client_name", body.get("client", "Клиент amoCRM")),
+            manager=body.get("manager_name", body.get("manager", "")),
+            client=body.get("client_name", body.get("client", "")),
             duration_sec=dur_sec,
             duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
-            score=body.get("score", parsed["score"]),
-            next_step=body.get("next_step", parsed["next_step"]),
+            score=body.get("score"),
+            next_step=body.get("next_step"),
             cr=safe_cr_payload,
-            error_summary=body.get("key_mistakes", body.get("error_summary", "Аудит завершен")),
-            recommendation=body.get("improvements", body.get("recommendation", "Следовать сценарию звонка")),
-            transcript=c_text or f"Звонок amoCRM сделка #{deal_id}",
+            error_summary=body.get("key_mistakes", body.get("error_summary", "")),
+            recommendation=body.get("improvements", body.get("recommendation", "")),
+            transcript=c_text,
             sync_to_sheets=True,
             tenant_id=org_id
         )
@@ -551,26 +512,17 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
         act_id = str(data_fields.get("ID", f"b24_act_{int(time.time())}"))
         deal_id = str(data_fields.get("OWNER_ID", f"B24-{act_id}"))
         desc = data_fields.get("DESCRIPTION", "") or data_fields.get("SUBJECT", "Звонок Битрикс24")
-        dur_sec = int(data_fields.get("DURATION", 140)) if str(data_fields.get("DURATION", "")).isdigit() else 140
-
-        parsed = parse_call_from_text(desc, "Алексей Смирнов")
-        parsed_cr = parsed.get("cr")
-        safe_cr_payload = None if (parsed_cr is None or any(c is None for c in parsed_cr)) else parsed_cr
+        raw_duration = str(data_fields.get("DURATION", ""))
+        dur_sec = int(raw_duration) if raw_duration.isdigit() else 0
 
         call_payload = CallIngestPayload(
             id=f"b24_activity_{act_id}",
             deal_id=f"B24-{deal_id}",
             deal_title=f"Bitrix24 Кейс #{deal_id}: {data_fields.get('SUBJECT', 'Сопровождение сделки')}",
-            manager="Алексей Смирнов",
-            client="Клиент Битрикс24",
             duration_sec=dur_sec,
             duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
-            score=parsed["score"],
-            next_step=parsed["next_step"],
-            cr=safe_cr_payload,
-            error_summary=desc[:80] if desc else "Звонок зафиксирован в CRM",
-            recommendation="Фиксировать точное время следующего Zoom-контакта",
-            transcript=desc or f"Аудиозапись Битрикс24 активность #{act_id}.",
+            error_summary=desc[:80] if desc else "",
+            transcript=desc,
             sync_to_sheets=True,
             tenant_id=org_id
         )
@@ -723,8 +675,8 @@ class UniversalCallPayload(BaseModel):
     deal_title: str | None = None
     client_name: str | None = None
     manager_name: str | None = None
-    duration_sec: int | None = 120
-    amount: str | None = "300 000 ₽"
+    duration_sec: int | None = None
+    amount: str | None = None
     score: int | None = None
     next_step: int | None = None
     cr: list[int] | None = None
@@ -778,31 +730,30 @@ async def _process_telephony_call(
     webhook_id = record_incoming_webhook(provider_name, org_id, body, dict(request.headers), event="telephony_call", status="queued")
 
     call_id = str(body.get("call_id") or body.get("id") or f"call_{int(time.time())}")
-    deal_id = str(body.get("deal_id") or f"D-{int(time.time()) % 10000}")
+    deal_id = str(body.get("deal_id") or "")
     transcript = body.get("transcript") or ""
-    parsed = parse_call_from_text(transcript, body.get("manager_name", "Менеджер"))
 
-    dur_sec = int(body.get("duration_sec", 120))
-    score = int(body.get("score")) if body.get("score") is not None else parsed["score"]
-    next_step = int(body.get("next_step")) if body.get("next_step") is not None else parsed["next_step"]
-    cr = body.get("cr") if body.get("cr") and len(body.get("cr")) == 13 else parsed["cr"]
+    dur_sec = int(body.get("duration_sec") or 0)
+    score = int(body.get("score")) if body.get("score") is not None else None
+    next_step = int(body.get("next_step")) if body.get("next_step") is not None else None
+    cr = body.get("cr") if body.get("cr") and len(body.get("cr")) == 13 else None
     safe_cr_payload = None if (cr is None or any(c is None for c in cr)) else cr
 
     call_payload = CallIngestPayload(
         id=call_id,
         deal_id=deal_id,
         deal_title=body.get("deal_title") or f"Сделка #{deal_id}",
-        manager=body.get("manager_name") or body.get("manager") or "Дмитрий Федотов",
-        client=body.get("client_name") or body.get("client") or "Клиент телефонии",
+        manager=body.get("manager_name") or body.get("manager") or "",
+        client=body.get("client_name") or body.get("client") or "",
         duration_sec=dur_sec,
         duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
-        amount=body.get("amount") or "300 000 ₽",
+        amount=body.get("amount"),
         score=score,
         next_step=next_step,
         cr=safe_cr_payload,
-        error_summary=body.get("error_summary") or "Аудит завершен ИИ",
-        recommendation=body.get("recommendation") or "Следовать регламенту фиксации Next Step",
-        transcript=transcript or "Транскрипт аудиозаписи",
+        error_summary=body.get("error_summary") or "",
+        recommendation=body.get("recommendation") or "",
+        transcript=transcript,
         sync_to_sheets=True,
         tenant_id=org_id
     )
@@ -984,29 +935,27 @@ async def replay_webhook(
     )
 
     call_id = replay_payload["call_id"]
-    deal_id = str(replay_payload.get("deal_id") or f"D-REPLAY-{int(time.time()) % 1000}")
+    deal_id = str(replay_payload.get("deal_id") or "")
     transcript = str(replay_payload.get("transcript") or "Повторная обработка архивного звонка")
-    manager_name = str(replay_payload.get("manager_name") or "Менеджер")
-    parsed = parse_call_from_text(transcript, manager_name)
 
-    dur_sec = int(replay_payload.get("duration_sec", 120))
+    dur_sec = int(replay_payload.get("duration_sec") or 0)
     raw_score = replay_payload.get("score")
-    score = int(raw_score) if raw_score is not None else (int(parsed["score"]) if parsed["score"] is not None else None)
+    score = int(raw_score) if raw_score is not None else None
     raw_next_step = replay_payload.get("next_step")
-    next_step = int(raw_next_step) if raw_next_step is not None else (int(parsed["next_step"]) if parsed["next_step"] is not None else None)
+    next_step = int(raw_next_step) if raw_next_step is not None else None
     raw_cr = replay_payload.get("cr")
-    cr = raw_cr if isinstance(raw_cr, list) and len(raw_cr) == 13 else parsed["cr"]
+    cr = raw_cr if isinstance(raw_cr, list) and len(raw_cr) == 13 else None
     safe_cr_payload = None if (cr is None or any(c is None for c in cr)) else cr
 
     call_payload = CallIngestPayload(
         id=call_id,
         deal_id=deal_id,
         deal_title=replay_payload.get("deal_title") or f"Повторный аудит #{call_id}",
-        manager=replay_payload.get("manager_name") or replay_payload.get("manager") or "Дмитрий Федотов",
-        client=replay_payload.get("client_name") or replay_payload.get("client") or "Клиент",
+        manager=replay_payload.get("manager_name") or replay_payload.get("manager") or "",
+        client=replay_payload.get("client_name") or replay_payload.get("client") or "",
         duration_sec=dur_sec,
         duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
-        amount=replay_payload.get("amount") or "300 000 ₽",
+        amount=replay_payload.get("amount"),
         score=score,
         next_step=next_step,
         cr=safe_cr_payload,
