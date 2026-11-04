@@ -27,8 +27,12 @@ export interface ParsedCriterion {
   id: string;
   name: string;
   passed: boolean;
+  /** The criterion did not apply to the call (null in `cr`; only CR5, CR6, CR13): neither passed nor failed. */
+  notApplicable?: boolean;
   score?: number;
 }
+
+const MAY_NOT_APPLY = new Set([4, 5, 12]); // CR5, CR6, CR13 (zero-based)
 
 /**
  * Determines whether a deal has reached a terminal state (Won or Lost).
@@ -74,6 +78,7 @@ export function parse13Criteria(raw: unknown): ParsedCriterion[] {
         id: `cr${idx + 1}`,
         name,
         passed,
+        notApplicable: val === null && MAY_NOT_APPLY.has(idx),
       };
     });
   }

@@ -186,7 +186,7 @@ export interface DealLinkedCall {
   transcript_text?: string;
   ai_summary?: string;
   next_action_extracted?: string;
-  audio_s3_url?: string | null;
+  has_audio?: boolean;
   created_at?: string;
 }
 
@@ -266,6 +266,12 @@ export type CallStatusLabel =
  */
 export type CriterionScore = 1 | 0 | null;
 
+/** The AI's reason and the quote behind one criterion; a quote the server could not find in the transcript is not sent. */
+export interface CriterionEvidence {
+  why: string;
+  quote: string;
+}
+
 export interface Call {
   id: string;
   deal_id: string;
@@ -283,9 +289,19 @@ export interface Call {
   risk_amount: string;
   next_step: number | null;
   date: string;
-  audio_url?: string;
-  audio_s3_url?: string;
+  /** The recording is played through GET /calls/{id}/audio; the link itself never reaches the browser. */
+  has_audio?: boolean;
   cr: CriterionScore[];
+  /** Audit contract v2. `cr` holds null where a criterion did not apply; passed/applicable say how the score was counted. */
+  passed?: number | null;
+  applicable?: number | null;
+  evidence?: Record<string, CriterionEvidence>;
+  summary?: string;
+  call_type?: string;
+  ended_by?: string;
+  reached_decision_maker?: boolean;
+  audit_model?: string;
+  audit_version?: number;
   error_summary: string;
   recommendation: string;
   transcript: string;

@@ -13,6 +13,8 @@ export interface CriterionDefinition {
   shortLabel: string; // Short title for charts / heatmaps
   category: string;
   description: string;
+  /** Only CR5, CR6, CR13: why the criterion may not apply to a call (the client did not raise the topic). */
+  naHint?: string;
 }
 
 export const CR_DEFINITIONS: CriterionDefinition[] = [
@@ -49,14 +51,18 @@ export const CR_DEFINITIONS: CriterionDefinition[] = [
     label: 'Отработка «Дорого»',
     shortLabel: 'Дорого',
     category: 'Возражения',
-    description: 'Менеджер отработал сомнения по цене через ценность, окупаемость и ROI без демпинга и скидок.',
+    description:
+      'Менеджер отработал сомнения по цене через ценность, окупаемость и ROI без демпинга и скидок. Если клиент не говорил, что дорого, критерий не применяется (н/п).',
+    naHint: 'клиент не говорил, что дорого',
   },
   {
     id: 'cr6',
     label: 'Отработка «Я подумаю»',
     shortLabel: 'Подумаю',
     category: 'Возражения',
-    description: 'Менеджер вскрыл истинные причины паузы и сомнения клиента вместо пассивного согласия.',
+    description:
+      'Менеджер вскрыл истинные причины паузы и сомнения клиента вместо пассивного согласия. Если клиент не брал паузу («подумаю»), критерий не применяется (н/п).',
+    naHint: 'клиент не брал паузу («подумаю»)',
   },
   {
     id: 'cr7',
@@ -91,7 +97,7 @@ export const CR_DEFINITIONS: CriterionDefinition[] = [
     label: 'Слушание клиента',
     shortLabel: 'Слушание',
     category: 'Этика и тон',
-    description: 'Менеджер слушает клиента: клиент говорит не менее 40% хронометража разговора.',
+    description: 'Менеджер слушает клиента: клиент произносит не менее 30% слов разговора (считается по транскрипту).',
   },
   {
     id: 'cr12',
@@ -105,7 +111,9 @@ export const CR_DEFINITIONS: CriterionDefinition[] = [
     label: 'Защита маржинальности',
     shortLabel: 'Маржа',
     category: 'Цена',
-    description: 'Скидки не даются просто так: без встречных уступок по объёму или предоплате.',
+    description:
+      'Скидки не даются просто так: без встречных уступок по объёму или предоплате. Если клиент не просил скидку, критерий не применяется (н/п).',
+    naHint: 'клиент не просил скидку',
   },
 ];
 

@@ -67,8 +67,8 @@ def _bin(v: Any) -> int | None:
 
 def read_scorecard(sc: Any, overall_score: float | None, error_summary: str | None = None) -> dict[str, Any]:
     """
-    Return {cr, score, next_step, zoom_scheduled, kind, status, status_label, at_risk}.
-    Every value is None when it is really unknown. kind: assessed | unanswered | audit_failed | unrated.
+    Return {cr, passed, applicable, score, next_step, zoom_scheduled, kind, status, status_label, at_risk}.
+    Every value is None when it is really unknown; a None in `cr` is a criterion that did not apply to the call. kind: assessed | unanswered | audit_failed | unrated.
     """
     sc = sc if isinstance(sc, dict) else {}
 
@@ -107,8 +107,13 @@ def read_scorecard(sc: Any, overall_score: float | None, error_summary: str | No
         cr, score, next_step, zoom_scheduled = [None] * N_CRITERIA, None, None, None
 
     status, status_label = call_verdict(kind, score)
+    # "Passed 6 of 10 applicable": a criterion that did not apply (None) is neither passed nor failed.
+    known = [v for v in cr if v is not None]
+    passed, applicable = (sum(known), len(known)) if kind == "assessed" and known else (None, None)
     return {
         "cr": cr,
+        "passed": passed,
+        "applicable": applicable,
         "score": score,
         "next_step": next_step,
         "zoom_scheduled": zoom_scheduled,

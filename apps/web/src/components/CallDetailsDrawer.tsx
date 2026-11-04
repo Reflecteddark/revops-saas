@@ -13,17 +13,15 @@ import {
   PhoneCall,
   Clock,
   User,
-  CheckCircle2,
-  XCircle,
   Copy,
   Check,
   Sparkles,
   AlertTriangle,
-  Volume2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
-import { CR_LABELS, CR_DEFINITIONS } from '@/pages/AuditPage';
+import { CallAudioPlayer } from '@/components/CallAudioPlayer';
+import { CallCriteriaChecklist } from '@/components/CallCriteriaChecklist';
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 
@@ -148,19 +146,13 @@ export function CallDetailsDrawer({ call, open, onOpenChange }: CallDetailsDrawe
 
           {/* Body with Scroll */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
-            {/* Audio Player if URL exists */}
-            {(call.audio_url || (call as any).audio_s3_url) && (
-              <div className="space-y-1.5 rounded-xl border border-subtle bg-surface/50 p-3">
-                <div className="flex items-center gap-1.5 text-xs text-secondary font-medium">
-                  <Volume2 className="h-4 w-4 text-primary" />
-                  <span>Аудиозапись диалога:</span>
-                </div>
-                <audio
-                  controls
-                  className="h-8 w-full"
-                  src={call.audio_url || (call as any).audio_s3_url}
-                  data-testid="drawer-call-audio-player"
-                />
+            <CallAudioPlayer callId={call.id} hasAudio={call.has_audio} testId="drawer-call-audio-player" />
+
+            {/* What the call was about */}
+            {call.summary && (
+              <div className="space-y-1.5 rounded-xl border border-subtle bg-surface/50 p-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-tertiary">Суть звонка</h4>
+                <p className="text-xs text-secondary leading-relaxed" data-testid="drawer-call-summary">{call.summary}</p>
               </div>
             )}
 
@@ -222,45 +214,12 @@ export function CallDetailsDrawer({ call, open, onOpenChange }: CallDetailsDrawe
                 </h4>
                 {score !== null && score !== undefined && (
                   <span className="text-xs text-secondary font-mono">
-                    Выполнено: <span className="font-semibold text-foreground">{score}</span> / 13
+                    Балл: <span className="font-semibold text-foreground">{score}</span> / 13
                   </span>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="cr-criteria-grid">
-                {Array.from({ length: 13 }).map((_, idx) => {
-                  const val = call.cr?.[idx];
-                  const label = CR_LABELS[idx] || `Критерий ${idx + 1}`;
-                  const isPassed = val === 1;
-                  const isFailed = val === 0;
-
-                  return (
-                    <div
-                      key={idx}
-                      title={CR_DEFINITIONS[idx]?.description}
-                      className={cn(
-                        'flex items-center justify-between rounded-lg p-2.5 text-xs border transition-colors cursor-help',
-                        isPassed
-                          ? 'border-emerald-500/20 bg-emerald-500/[0.04] text-foreground'
-                          : isFailed
-                          ? 'border-rose-500/20 bg-rose-500/[0.04] text-foreground'
-                          : 'border-subtle bg-hover/40 text-secondary'
-                      )}
-                    >
-                      <span className="font-medium truncate pr-2">
-                        {idx + 1}. {label}
-                      </span>
-                      {isPassed ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                      ) : isFailed ? (
-                        <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
-                      ) : (
-                        <span className="text-xs text-tertiary shrink-0">—</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              <CallCriteriaChecklist call={call} />
             </div>
 
             {/* Dialogue Transcript */}
