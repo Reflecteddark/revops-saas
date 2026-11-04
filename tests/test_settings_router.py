@@ -43,7 +43,7 @@ def test_fallback_settings_helper():
     assert fb["status"] == "ok"
     assert fb["general"]["monthly_target"] == 5000000.0
     assert len(fb["stages"]) >= 5
-    assert len(fb["managers"]) >= 4
+    assert fb["managers"] == []  # the team comes from the CRM, never from a template
     assert len(fb["modules"]) >= 15
     assert fb["telegram"]["dispatcher_status"] is True
 
@@ -132,21 +132,6 @@ def test_save_settings_module_toggles():
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] in ("ok", "partial_ok")
-
-
-def test_fallback_settings_manager_kpi_presets():
-    """Verifies that managers have KPI target presets in fallback settings."""
-    fb = get_fallback_settings()
-    managers = fb.get("managers", [])
-    assert len(managers) >= 4
-
-    fedotov = next((m for m in managers if "Федотов" in m["name"]), None)
-    assert fedotov is not None
-    assert fedotov["revenue_target"] == 1500000.0
-    assert fedotov["daily_calls_target"] == 20
-    assert fedotov["monthly_meetings_target"] == 15
-    assert fedotov["capacity"] == 50
-    assert fedotov["next_step_target_pct"] == 80
 
 
 def test_patch_manager_kpis_endpoint_and_null_preservation():
