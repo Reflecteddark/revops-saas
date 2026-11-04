@@ -29,6 +29,9 @@ export interface SkillsHeatmapProps {
   onSelectCell?: (repName: string, criterionIndex: number) => void;
   selectedRep?: string | null;
   selectedCriterion?: number | null;
+  hoveredCriterion?: number | null;
+  onHoverCriterion?: (crIdx: number | null) => void;
+  onSelectCriterion?: (crIdx: number) => void;
   className?: string;
 }
 
@@ -54,6 +57,9 @@ export function SkillsHeatmap({
   onSelectCell,
   selectedRep,
   selectedCriterion,
+  hoveredCriterion = null,
+  onHoverCriterion,
+  onSelectCriterion,
   className,
 }: SkillsHeatmapProps) {
   const { repsData, unattributed, summary } = React.useMemo(() => {
@@ -101,7 +107,7 @@ export function SkillsHeatmap({
           <div>
             <h3 className="text-sm font-bold text-foreground">Тепловая карта навыков ОП (CR1 – CR13)</h3>
             <p className="text-xs text-secondary">
-              Доля оценённых звонков, где критерий выполнен • Кликните на ячейку, чтобы увидеть звонки с провалом
+              Детализация тех же 13 стандартов (CR1–CR13) с Радара по каждому менеджеру • Кликните на ячейку для фильтрации сбоев
             </p>
           </div>
         </div>
@@ -113,15 +119,28 @@ export function SkillsHeatmap({
       <div className="hidden items-center justify-between gap-3 px-3 text-[10px] font-semibold text-tertiary md:flex">
         <div className="min-w-[190px] shrink-0 uppercase tracking-wider">Менеджер / Статус</div>
         <div className="flex flex-1 items-center justify-center gap-1.5 px-1">
-          {CR_DEFINITIONS.map((cr, idx) => (
-            <div
-              key={cr.id}
-              className="flex w-[26px] cursor-help flex-col items-center justify-center text-center transition-colors hover:text-foreground"
-              title={`${cr.label} (CR${idx + 1}): ${cr.description}`}
-            >
-              <span className="font-mono text-[10px]">C{idx + 1}</span>
-            </div>
-          ))}
+          {CR_DEFINITIONS.map((cr, idx) => {
+            const isColHovered = hoveredCriterion === idx + 1;
+            const isColSelected = selectedCriterion === idx;
+            return (
+              <button
+                key={cr.id}
+                type="button"
+                onMouseEnter={() => onHoverCriterion?.(idx + 1)}
+                onMouseLeave={() => onHoverCriterion?.(null)}
+                onClick={() => onSelectCriterion?.(idx)}
+                className={cn(
+                  'flex w-[26px] cursor-pointer flex-col items-center justify-center rounded py-0.5 text-center transition-all focus:outline-none',
+                  isColHovered || isColSelected
+                    ? 'scale-110 bg-primary/25 font-bold text-primary shadow-sm ring-1 ring-primary/50'
+                    : 'text-tertiary hover:bg-hover hover:text-foreground'
+                )}
+                title={`${cr.label} (CR${idx + 1}): ${cr.description}\nКликните для фильтрации звонков с провалом`}
+              >
+                <span className="font-mono text-[9px] font-bold">CR{idx + 1}</span>
+              </button>
+            );
+          })}
         </div>
         <div className="w-[50px] shrink-0 text-right uppercase tracking-wider">Балл</div>
       </div>
@@ -203,20 +222,25 @@ export function SkillsHeatmap({
                           : 'border border-rose-500/40 bg-rose-500/25 text-rose-600 dark:text-rose-400 font-bold';
                   }
 
+                  const isColHovered = hoveredCriterion === cr.index + 1;
                   return (
                     <button
                       key={cr.index}
                       type="button"
                       title={title}
+                      onMouseEnter={() => onHoverCriterion?.(cr.index + 1)}
+                      onMouseLeave={() => onHoverCriterion?.(null)}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onSelectCell) onSelectCell(rep.name, cr.index);
                         else onSelectRep?.(rep.name);
                       }}
                       className={cn(
-                        'flex h-6 w-[26px] shrink-0 items-center justify-center rounded font-mono text-[10px] tabular-nums transition-transform hover:scale-110 focus:outline-none',
+                        'flex h-6 w-[26px] shrink-0 items-center justify-center rounded font-mono text-[10px] tabular-nums transition-all hover:scale-110 focus:outline-none',
                         bgStyle,
-                        isCellSelected && 'ring-2 ring-primary ring-offset-1'
+                        isColHovered && 'z-10 scale-110 shadow-sm ring-2 ring-primary ring-offset-1',
+                        hoveredCriterion !== null && !isColHovered && 'opacity-40 transition-opacity',
+                        isCellSelected && 'z-10 ring-2 ring-primary ring-offset-1'
                       )}
                     >
                       {pct === null ? '—' : `${pct}%`}

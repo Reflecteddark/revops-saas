@@ -167,6 +167,7 @@ export function AuditPage() {
   const [managerFilter, setManagerFilter] = React.useState<string>('all');
   const [periodFilter, setPeriodFilter] = React.useState<string>('all');
   const [crFilter, setCrFilter] = React.useState<string>('all');
+  const [hoveredCriterion, setHoveredCriterion] = React.useState<number | null>(null);
 
   const {
     data: calls = [],
@@ -380,6 +381,12 @@ export function AuditPage() {
             calls={periodCalls}
             selectedRep={managerFilter !== 'all' ? managerFilter : null}
             onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+            hoveredCriterion={hoveredCriterion}
+            onHoverCriterion={setHoveredCriterion}
+            selectedCriterion={crFilter !== 'all' ? parseInt(crFilter, 10) : null}
+            onSelectCriterion={(crIdx) => {
+              setCrFilter(crFilter === String(crIdx) ? 'all' : String(crIdx));
+            }}
           />
           <RopBriefingCard
             calls={periodCalls}
@@ -392,7 +399,12 @@ export function AuditPage() {
             calls={periodCalls}
             selectedRep={managerFilter !== 'all' ? managerFilter : null}
             selectedCriterion={crFilter !== 'all' ? parseInt(crFilter, 10) : null}
+            hoveredCriterion={hoveredCriterion}
+            onHoverCriterion={setHoveredCriterion}
             onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+            onSelectCriterion={(crIdx) => {
+              setCrFilter(crFilter === String(crIdx) ? 'all' : String(crIdx));
+            }}
             onSelectCell={(rep, crIdx) => {
               setManagerFilter(rep);
               setCrFilter(String(crIdx));
