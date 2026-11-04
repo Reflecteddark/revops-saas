@@ -8,72 +8,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { RopPodium } from './RopPodium';
-import type { Call } from '@/types/api';
+import { failedCall, makeCall, missedCall, ratedCalls } from '@/test/callFactory';
 
-const mockCalls: Call[] = [
-  {
-    id: 'c-1',
-    deal_id: 'd-1',
-    deal_title: 'Сделка 1',
-    client: 'ООО Альфа',
-    manager: 'Иван Петров',
-    stage: 'КП',
-    duration: '03:10',
-    amount: '300 000 ₽',
-    amount_num: 300000,
-    score: 12,
-    status: 'won',
-    status_label: 'Успешно',
-    risk_amount: '0 ₽',
-    next_step: 1,
-    date: '2026-10-24 10:00',
-    cr: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    error_summary: '',
-    recommendation: 'Супер',
-    transcript: '...',
-  },
-  {
-    id: 'c-2',
-    deal_id: 'd-2',
-    deal_title: 'Сделка 2',
-    client: 'ЗАО Бета',
-    manager: 'Ольга Смирнова',
-    stage: 'Встреча',
-    duration: '02:00',
-    amount: '100 000 ₽',
-    amount_num: 100000,
-    score: 5,
-    status: 'lost',
-    status_label: 'Слив',
-    risk_amount: '100 000 ₽',
-    next_step: 0,
-    date: '2026-10-24 11:00',
-    cr: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    error_summary: 'Слив',
-    recommendation: 'Обучить',
-    transcript: '...',
-  },
-  {
-    id: 'c-3',
-    deal_id: 'd-3',
-    deal_title: 'Сделка 3',
-    client: 'ПАО Гамма',
-    manager: 'Виктор Сидоров',
-    stage: 'Оплата',
-    duration: '04:00',
-    amount: '400 000 ₽',
-    amount_num: 400000,
-    score: 10,
-    status: 'won',
-    status_label: 'Успешно',
-    risk_amount: '0 ₽',
-    next_step: 1,
-    date: '2026-10-24 12:00',
-    cr: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-    error_summary: '',
-    recommendation: '',
-    transcript: '...',
-  },
+const team = [
+  ...ratedCalls('Иван Петров', 12),
+  ...ratedCalls('Виктор Сидоров', 10),
+  ...ratedCalls('Ольга Смирнова', 5, 3, { amount_num: 100000, deal_id: 'olga-deal' }),
 ];
 
 describe('RopPodium', () => {
@@ -84,31 +24,65 @@ describe('RopPodium', () => {
     expect(screen.getByText('Нет данных для пьедестала')).toBeInTheDocument();
   });
 
-  it('renders 1st, 2nd, and 3rd rank podium cards', () => {
-    render(<RopPodium calls={mockCalls} />);
+  it('renders 1st, 2nd, and 3rd rank podium cards by the average of rated calls', () => {
+    render(<RopPodium calls={team} />);
 
     expect(screen.getByTestId('rop-podium')).toBeInTheDocument();
-    expect(screen.getByTestId('podium-card-1')).toHaveTextContent(
-      'Иван Петров'
-    );
-    expect(screen.getByTestId('podium-card-2')).toHaveTextContent(
-      'Виктор Сидоров'
-    );
-    expect(screen.getByTestId('podium-card-3')).toHaveTextContent(
-      'Ольга Смирнова'
-    );
+    expect(screen.getByTestId('podium-card-1')).toHaveTextContent('Иван Петров');
+    expect(screen.getByTestId('podium-card-2')).toHaveTextContent('Виктор Сидоров');
+    expect(screen.getByTestId('podium-card-3')).toHaveTextContent('Ольга Смирнова');
   });
 
-  it('renders hazard manager alert and fires callback on click', () => {
+  it('renders the hazard manager alert and fires the callback on click', () => {
     const handleSelect = vi.fn();
-    render(<RopPodium calls={mockCalls} onSelectRep={handleSelect} />);
+    render(<RopPodium calls={team} onSelectRep={handleSelect} />);
 
     expect(screen.getByTestId('hazard-rep-alert')).toBeInTheDocument();
-    expect(screen.getByText('P0 Зона критического риска')).toBeInTheDocument();
+    expect(screen.getByText(/Зона риска: средний балл ниже 6/)).toBeInTheDocument();
 
-    const reviewBtn = screen.getByRole('button', { name: /разбор/i });
-    fireEvent.click(reviewBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: /разбор/i }));
     expect(handleSelect).toHaveBeenCalledWith('Ольга Смирнова');
+  });
+
+  it('does not rank a manager with fewer than 3 rated calls and says why', () => {
+    render(<RopPodium calls={[...ratedCalls('Иван Петров', 12, 2), makeCall({ manager: 'Ольга Смирнова', score: 4 })]} />);
+
+    expect(screen.getByTestId('rop-podium-few')).toHaveTextContent('от 3 оценённых звонков');
+    expect(screen.getByTestId('rop-podium-few')).toHaveTextContent('Иван Петров — 2');
+    expect(screen.queryByTestId('podium-card-1')).not.toBeInTheDocument();
+  });
+
+  it('a missed call and a failed audit do not pull the average down or count as rated', () => {
+    const calls = [...ratedCalls('Иван Петров', 12), missedCall({ manager: 'Иван Петров' }), failedCall({ manager: 'Иван Петров' })];
+    render(<RopPodium calls={calls} />);
+
+    expect(screen.getByTestId('podium-card-1')).toHaveTextContent('12.0 / 13');
+    expect(screen.getByTestId('podium-card-1')).toHaveTextContent('3 оценены');
+    expect(screen.queryByTestId('hazard-rep-alert')).not.toBeInTheDocument();
+  });
+
+  it('a call without a CRM manager is in no ranking', () => {
+    const calls = [...ratedCalls('Иван Петров', 12), ...ratedCalls('Не определён', 2), ...ratedCalls('Неизвестен', 1)];
+    render(<RopPodium calls={calls} />);
+
+    expect(screen.getByTestId('podium-card-1')).toHaveTextContent('Иван Петров');
+    expect(screen.queryByText('Не определён')).not.toBeInTheDocument();
+    expect(screen.queryByText('Неизвестен')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hazard-rep-alert')).not.toBeInTheDocument();
+  });
+
+  it('says so when no call has a manager from the CRM', () => {
+    render(<RopPodium calls={ratedCalls('Не определён', 9)} />);
+    expect(screen.getByTestId('rop-podium-empty')).toHaveTextContent('у 3 звонков его нет');
+  });
+
+  it('counts the deals once however many calls they have, and paints Next Step 0% as a failure', () => {
+    const calls = ratedCalls('Иван Петров', 12, 3, { deal_id: 'same', amount_num: 500000, next_step: 0 });
+    render(<RopPodium calls={calls} />);
+
+    const card = screen.getByTestId('podium-card-1');
+    expect(card).toHaveTextContent('Сделок в звонках: 1 на 500 000 ₽');
+    expect(card).toHaveTextContent('0% (0 из 3)');
+    expect(screen.getByText('0% (0 из 3)')).toHaveClass('text-rose-400');
   });
 });

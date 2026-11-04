@@ -8,179 +8,98 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { RopBriefingCard } from './RopBriefingCard';
-import type { Call } from '@/types/api';
+import { failedCall, makeCall, missedCall, ratedCalls } from '@/test/callFactory';
 
-const mockCalls: Call[] = [
-  {
-    id: 'c-1',
-    deal_id: 'd-1',
-    deal_title: 'Сделка 1',
-    client: 'ООО Альфа',
-    manager: 'Ася',
-    stage: 'КП',
-    duration: '04:10',
-    amount: '500 000 ₽',
-    amount_num: 500000,
-    score: 12,
-    status: 'won',
-    status_label: 'Успешно',
-    risk_amount: '0 ₽',
-    next_step: 1,
-    date: '2026-10-28 10:00',
-    cr: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    error_summary: '',
-    recommendation: 'Эталон',
-    transcript: '...',
-  },
-  {
-    id: 'c-2a',
-    deal_id: 'd-2',
-    deal_title: 'Сделка 2',
-    client: 'ЗАО Бета',
-    manager: 'Владислав',
-    stage: 'Встреча',
-    duration: '02:30',
-    amount: '300 000 ₽',
-    amount_num: 300000,
-    score: 5,
-    status: 'lost',
-    status_label: 'Слив',
-    risk_amount: '300 000 ₽',
-    next_step: 0,
-    date: '2026-10-28 11:00',
-    cr: [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
-    error_summary: 'Нет даты и времени',
-    recommendation: 'Фиксировать срок',
-    transcript: '...',
-  },
-  {
-    id: 'c-2b',
-    deal_id: 'd-2',
-    deal_title: 'Сделка 2b',
-    client: 'ЗАО Бета',
-    manager: 'Владислав',
-    stage: 'Встреча',
-    duration: '01:50',
-    amount: '300 000 ₽',
-    amount_num: 300000,
-    score: 5,
-    status: 'lost',
-    status_label: 'Слив',
-    risk_amount: '300 000 ₽',
-    next_step: 0,
-    date: '2026-10-28 11:10',
-    cr: [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
-    error_summary: 'Слив',
-    recommendation: 'Фиксировать срок',
-    transcript: '...',
-  },
-  {
-    id: 'c-2c',
-    deal_id: 'd-2',
-    deal_title: 'Сделка 2c',
-    client: 'ЗАО Бета',
-    manager: 'Владислав',
-    stage: 'Встреча',
-    duration: '02:15',
-    amount: '300 000 ₽',
-    amount_num: 300000,
-    score: 5,
-    status: 'lost',
-    status_label: 'Слив',
-    risk_amount: '300 000 ₽',
-    next_step: 0,
-    date: '2026-10-28 11:20',
-    cr: [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
-    error_summary: 'Слив',
-    recommendation: 'Фиксировать срок',
-    transcript: '...',
-  },
-  {
-    id: 'c-3',
-    deal_id: 'd-3',
-    deal_title: 'Сделка 3',
-    client: 'ИП Гамма',
-    manager: 'Автоответчик', // Bot call to verify it's excluded from sales analysis
-    stage: 'Квалификация',
-    duration: '00:15',
-    amount: '0 ₽',
-    amount_num: 0,
-    score: 0,
-    status: 'lost',
-    status_label: 'Слив',
-    risk_amount: '0 ₽',
-    next_step: 0,
-    date: '2026-10-28 11:30',
-    cr: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    error_summary: 'Робот',
-    recommendation: '',
-    transcript: '...',
-  },
-];
+// Ася 12/13 (CR13 failed), Владислав 5/13 (CR1-5 passed); the bot is not a manager
+const team = [...ratedCalls('Ася', 12), ...ratedCalls('Владислав', 5), ...ratedCalls('Автоответчик', 9, 2)];
 
 describe('RopBriefingCard', () => {
   it('renders empty state when no calls are passed', () => {
     render(<RopBriefingCard calls={[]} />);
 
     expect(screen.getByTestId('rop-briefing-empty')).toBeInTheDocument();
-    expect(screen.getByText('ИИ-Брифинг дня')).toBeInTheDocument();
+    expect(screen.getByText('Фокус дня')).toBeInTheDocument();
   });
 
   it('renders 3 focus points for sales meeting and excludes bot calls', () => {
-    render(<RopBriefingCard calls={mockCalls} />);
+    render(<RopBriefingCard calls={team} />);
 
     expect(screen.getByTestId('rop-briefing-card')).toBeInTheDocument();
-    expect(
-      screen.getByText('⚡ Фокус дня для планёрки РОПа')
-    ).toBeInTheDocument();
-    // Excluded 'Автоответчик', 4 real calls
-    expect(
-      screen.getByText(/Сформировано ИИ на основе аудита 4 звонков/)
-    ).toBeInTheDocument();
+    expect(screen.getByText('⚡ Фокус дня для планёрки РОПа')).toBeInTheDocument();
+    // 6 rated calls of real managers; the 2 bot calls are not counted
+    expect(screen.getByText(/По 6 оценённым звонкам/)).toBeInTheDocument();
 
-    // Main flaw
-    expect(
-      screen.getByText('Главная системная дыра отдела:')
-    ).toBeInTheDocument();
+    // The weakest criterion: CR13 is passed in none of the 6 calls
+    expect(screen.getByText('Слабое место отдела:')).toBeInTheDocument();
+    expect(screen.getByText('Защита маржинальности')).toBeInTheDocument();
+    expect(screen.getByText(/Соблюдается в/)).toHaveTextContent('0% оценённых звонков (6 из 6 без зачёта)');
 
-    // Top performer
     expect(screen.getByText('Кого похвалить на планёрке:')).toBeInTheDocument();
     expect(screen.getByText('Ася')).toBeInTheDocument();
 
-    // Coaching candidate
-    expect(
-      screen.getByText('Кого разобрать индивидуально:')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Кого разобрать индивидуально:')).toBeInTheDocument();
+    expect(screen.getByText('Владислав')).toBeInTheDocument();
+  });
+
+  it('says nothing about people before they have 3 rated calls', () => {
+    render(<RopBriefingCard calls={[...ratedCalls('Ася', 12, 2), ...ratedCalls('Владислав', 5, 2)]} />);
+
+    expect(screen.getByText('Слабое место отдела:')).toBeInTheDocument();
+    expect(screen.queryByText('Кого похвалить на планёрке:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Кого разобрать индивидуально:')).not.toBeInTheDocument();
+    expect(screen.getByTestId('briefing-few-calls')).toHaveTextContent('от 3 оценённых звонков');
+  });
+
+  it('a missed call and a failed audit are not "criterion not met"', () => {
+    const calls = [...ratedCalls('Ася', 13), missedCall({ manager: 'Ася' }), failedCall({ manager: 'Ася' })];
+    render(<RopBriefingCard calls={calls} />);
+
+    expect(screen.getByText(/По 3 оценённым звонкам/)).toBeInTheDocument();
+    expect(screen.getByText(/Соблюдается в/)).toHaveTextContent('100% оценённых звонков (0 из 3 без зачёта)');
+  });
+
+  it('shows the empty state when no call was rated or none has a CRM manager', () => {
+    render(<RopBriefingCard calls={[missedCall(), failedCall(), makeCall({ manager: 'Не определён' })]} />);
+    expect(screen.getByTestId('rop-briefing-empty')).toBeInTheDocument();
+  });
+
+  it('does not coach the manager it praises', () => {
+    render(<RopBriefingCard calls={[...ratedCalls('Ася', 8), ...ratedCalls('Владислав', 5)]} />);
+
+    expect(screen.getByText('Кого похвалить на планёрке:')).toBeInTheDocument();
+    expect(screen.getAllByText('Ася')).toHaveLength(1); // praised, not also in the coaching list
     expect(screen.getByText('Владислав')).toBeInTheDocument();
   });
 
   it('copies agenda to clipboard when clicking copy button', async () => {
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: writeTextMock,
-      },
-    });
+    Object.assign(navigator, { clipboard: { writeText: writeTextMock } });
 
-    render(<RopBriefingCard calls={mockCalls} />);
-
-    const copyBtn = screen.getByTestId('copy-agenda-btn');
-    fireEvent.click(copyBtn);
+    render(<RopBriefingCard calls={team} />);
+    fireEvent.click(screen.getByTestId('copy-agenda-btn'));
 
     expect(writeTextMock).toHaveBeenCalled();
     const copiedText = writeTextMock.mock.calls[0][0];
     expect(copiedText).toContain('Планёрка ОП');
     expect(copiedText).toContain('Ася');
     expect(copiedText).toContain('Владислав');
+    expect(copiedText).toContain('Защита маржинальности');
+    expect(copiedText).not.toContain('Автоответчик');
   });
 
   it('triggers onSelectRep when clicking coach candidate', () => {
     const handleSelectRep = vi.fn();
-    render(<RopBriefingCard calls={mockCalls} onSelectRep={handleSelectRep} />);
+    render(<RopBriefingCard calls={team} onSelectRep={handleSelectRep} />);
 
-    const vladBtn = screen.getByText('Владислав');
-    fireEvent.click(vladBtn);
-
+    fireEvent.click(screen.getByText('Владислав'));
     expect(handleSelectRep).toHaveBeenCalledWith('Владислав');
+  });
+
+  it('triggers onSelectCriterion with the criterion index', () => {
+    const handleCriterion = vi.fn();
+    render(<RopBriefingCard calls={team} onSelectCriterion={handleCriterion} />);
+
+    fireEvent.click(screen.getByText('Слабое место отдела:'));
+    expect(handleCriterion).toHaveBeenCalledWith(12);
   });
 });

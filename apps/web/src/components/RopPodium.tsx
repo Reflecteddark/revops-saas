@@ -1,17 +1,17 @@
 /**
  * apps/web/src/components/RopPodium.tsx
  *
- * ROP Leadership Podium & Hazard rep alert widget.
- * Highlights Top-3 sales performers (Gold, Silver, Bronze)
- * and surfaces critical risk reps needing call review/coaching.
+ * ROP leaderboard: the top 3 managers by the average score of their RATED calls, and the manager who needs attention.
+ * Managers are CRM users only; a missed call, a failed audit and an unrated call are not in any average
+ * (lib/callStats.ts). A manager is ranked only from MIN_RATED_CALLS rated calls: fewer say nothing about a person.
  */
 
 import * as React from 'react';
-import { PODIUM_ATTENTION_THRESHOLD, COACHING_THRESHOLD } from '@/lib/thresholds';
-import { isSystemName } from '@/lib/systemNames';
 import { Crown, Trophy, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { hasCrmManager, managerStats, ruPlural, type ManagerStats } from '@/lib/callStats';
+import { MIN_RATED_CALLS, NEXT_STEP_MIN_PCT } from '@/lib/thresholds';
 import type { Call } from '@/types/api';
 
 export interface RopPodiumProps {
@@ -21,130 +21,64 @@ export interface RopPodiumProps {
   className?: string;
 }
 
-export interface ManagerPerformance {
-  name: string;
-  callsCount: number;
-  scoresSum: number;
-  ratedCount: number; // calls that have a score
-  avgScore: number;
-  pipeAmt: number;
-  nextStepWon: number;
-  nextStepPct: number;
-  riskCallsCount: number;
-}
+const rub = (n: number) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
 
-export function RopPodium({
-  calls = [],
-  onSelectRep,
-  selectedRep,
-  className,
-}: RopPodiumProps) {
-  const { top1, top2, top3, hazardRep } = React.useMemo(() => {
-    if (!calls || calls.length === 0) {
-      return { top1: null, top2: null, top3: null, hazardRep: null };
-    }
+const scoreColor = (band: ManagerStats['band']) =>
+  band === 'high' ? 'text-emerald-400' : band === 'mid' ? 'text-amber-400' : 'text-rose-400';
 
-    const mgrMap = new Map<string, ManagerPerformance>();
+const nextStepColor = (p: number | null) =>
+  p === null ? 'text-tertiary' : p >= NEXT_STEP_MIN_PCT ? 'text-emerald-400' : p > 0 ? 'text-amber-400' : 'text-rose-400';
 
-    calls.forEach((c) => {
-      const name = (c.manager || 'Менеджер').trim();
-      if (!mgrMap.has(name)) {
-        mgrMap.set(name, {
-          name,
-          callsCount: 0,
-          scoresSum: 0,
-          ratedCount: 0,
-          avgScore: 0,
-          pipeAmt: 0,
-          nextStepWon: 0,
-          nextStepPct: 0,
-          riskCallsCount: 0,
-        });
-      }
-
-      const m = mgrMap.get(name)!;
-      m.callsCount += 1;
-      // Only rated calls count: an unrated call used to be counted as 8 points and propped up the average.
-      if (typeof c.score === 'number') {
-        m.scoresSum += c.score;
-        m.ratedCount += 1;
-      }
-      const amt = c.amount_num || 0;
-      m.pipeAmt += amt;
-
-      if (c.next_step === 1 || c.cr?.[0] === 1) {
-        m.nextStepWon += 1;
-      }
-      if (
-        c.status === 'lost' ||
-        c.status === 'risk' ||
-        (c.score !== null && c.score < COACHING_THRESHOLD) ||
-        c.next_step === 0
-      ) {
-        m.riskCallsCount += 1;
-      }
-    });
-
-    const managers = Array.from(mgrMap.values()).map((m) => ({
-      ...m,
-      avgScore: m.ratedCount > 0 ? m.scoresSum / m.ratedCount : 0,
-      nextStepPct:
-        m.callsCount > 0 ? Math.round((m.nextStepWon / m.callsCount) * 100) : 0,
-    }));
-
-    const validManagers = managers.filter((m) => !isSystemName(m.name));
-    const allCandidates = validManagers.length > 0 ? validManagers : managers;
-
-    // Sort by avgScore desc, then pipeAmt desc
-    allCandidates.sort(
-      (a, b) => b.avgScore - a.avgScore || b.pipeAmt - a.pipeAmt
-    );
-
-    const top1 = allCandidates[0] || null;
-    const top2 = allCandidates.length > 1 ? allCandidates[1] : null;
-    const top3 = allCandidates.length > 2 ? allCandidates[2] : null;
-
-    // Hazard rep: lowest avgScore or highest riskCallsCount (excludes system placeholder names like 'Не представился')
-    const risky = [...allCandidates].filter(
-      (m) => m.riskCallsCount > 0 || m.avgScore < PODIUM_ATTENTION_THRESHOLD
-    );
-    risky.sort(
-      (a, b) => a.avgScore - b.avgScore || b.riskCallsCount - a.riskCallsCount
-    );
-    const hazardRep = risky.length > 0 ? risky[0] : null;
-
-    return { top1, top2, top3, hazardRep };
+export function RopPodium({ calls = [], onSelectRep, selectedRep, className }: RopPodiumProps) {
+  const { team, ranked, hazardRep, unattributed } = React.useMemo(() => {
+    const team = managerStats(calls);
+    const ranked = team.filter((m) => m.enough);
+    const hazardRep =
+      [...ranked]
+        .filter((m) => m.band === 'low')
+        .sort((a, b) => (a.avgScore ?? 0) - (b.avgScore ?? 0) || b.lowCalls - a.lowCalls)[0] ?? null;
+    return { team, ranked, hazardRep, unattributed: calls.filter((c) => !hasCrmManager(c)).length };
   }, [calls]);
 
-  if (!top1) {
+  const shell = cn('surface space-y-2 rounded-xl border border-subtle p-6 text-center', className);
+  const icon = (
+    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-hover text-tertiary">
+      <Trophy className="h-5 w-5" />
+    </div>
+  );
+
+  if (team.length === 0) {
     return (
-      <div
-        className={cn(
-          'surface space-y-2 rounded-xl border border-subtle p-6 text-center',
-          className
-        )}
-        data-testid="rop-podium-empty"
-      >
-        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-hover text-tertiary">
-          <Trophy className="h-5 w-5" />
-        </div>
-        <h4 className="text-[13px] font-semibold text-foreground">
-          Нет данных для пьедестала
-        </h4>
-        <p className="mx-auto max-w-sm text-xs text-secondary">
-          Требуются звонки менеджеров для формирования рейтинга эффективности.
+      <div className={shell} data-testid="rop-podium-empty">
+        {icon}
+        <h4 className="text-[13px] font-semibold text-foreground">Нет данных для пьедестала</h4>
+        <p className="mx-auto max-w-md text-xs text-secondary">
+          {unattributed > 0
+            ? `Менеджер определяется по пользователю CRM, а у ${unattributed} ${ruPlural(unattributed, ['звонка', 'звонков', 'звонков'])} его нет.`
+            : 'Требуются звонки менеджеров из CRM для формирования рейтинга эффективности.'}
         </p>
       </div>
     );
   }
 
-  const renderCard = (
-    rep: ManagerPerformance | null,
-    rank: number,
-    badgeText: string,
-    isFirst: boolean
-  ) => {
+  if (ranked.length === 0) {
+    return (
+      <div className={shell} data-testid="rop-podium-few">
+        {icon}
+        <h4 className="text-[13px] font-semibold text-foreground">Пока мало оценённых звонков</h4>
+        <p className="mx-auto max-w-md text-xs text-secondary">
+          Рейтинг строится от {MIN_RATED_CALLS} оценённых звонков на менеджера. Сейчас:{' '}
+          {team.map((m) => `${m.name} — ${m.assessed}`).join(', ')}.
+        </p>
+      </div>
+    );
+  }
+
+  const [top1, top2, top3] = ranked;
+
+  const renderCard = (rep: ManagerStats | undefined, rank: number) => {
     if (!rep) return null;
+    const isFirst = rank === 1;
     const isSelected = selectedRep === rep.name;
 
     return (
@@ -163,7 +97,6 @@ export function RopPodium({
         )}
         data-testid={`podium-card-${rank}`}
       >
-        {/* Top Tag & Crown */}
         <div className="mb-3 flex items-center justify-between gap-2">
           <span
             className={cn(
@@ -174,14 +107,13 @@ export function RopPodium({
             )}
           >
             {isFirst && <Crown className="h-3 w-3 text-amber-400" />}
-            {rank} место • {badgeText}
+            {rank} место{isFirst ? ' • лидер по баллу' : ''}
           </span>
           <span className="font-mono text-xs tabular-nums text-tertiary">
-            {rep.callsCount} {rep.callsCount === 1 ? 'звонок' : 'звонков'}
+            {rep.assessed} {ruPlural(rep.assessed, ['оценён', 'оценены', 'оценено'])}
           </span>
         </div>
 
-        {/* Manager Header */}
         <div className="mb-4 flex items-center gap-3">
           <div
             className={cn(
@@ -194,35 +126,32 @@ export function RopPodium({
             {rep.name.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <h4
-              className={cn(
-                'truncate text-sm font-bold',
-                isFirst ? 'text-amber-300' : 'text-foreground'
-              )}
-            >
+            <h4 className={cn('truncate text-sm font-bold', isFirst ? 'text-amber-300' : 'text-foreground')}>
               {rep.name}
             </h4>
-            <div className="mt-0.5 text-xs text-secondary">
-              В работе:{' '}
-              <span className="font-mono font-medium tabular-nums text-foreground">
-                {rep.pipeAmt.toLocaleString('ru-RU')} ₽
-              </span>
-            </div>
+            {rep.deals.count > 0 && (
+              <div className="mt-0.5 text-xs text-secondary" title="Каждая сделка посчитана один раз, сколько бы по ней ни было звонков">
+                Сделок в звонках:{' '}
+                <span className="font-mono font-medium tabular-nums text-foreground">
+                  {rep.deals.count}
+                  {rep.deals.amount > 0 ? ` на ${rub(rep.deals.amount)}` : ''}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Metrics Box */}
         <div className="bg-background/50 space-y-2 rounded-lg border border-subtle p-3 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-secondary">Качество речи:</span>
-            <span className="font-mono font-semibold tabular-nums text-emerald-400">
-              {rep.avgScore.toFixed(1)} / 13
+            <span className={cn('font-mono font-semibold tabular-nums', scoreColor(rep.band))}>
+              {rep.avgScore === null ? '—' : rep.avgScore.toFixed(1)} / 13
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-secondary">Next Step:</span>
-            <span className="font-semibold tabular-nums text-emerald-400">
-              {rep.nextStepPct}% ({rep.nextStepWon} шт.)
+            <span className={cn('font-semibold tabular-nums', nextStepColor(rep.nextStepPct))}>
+              {rep.nextStepPct === null ? '—' : `${rep.nextStepPct}% (${rep.nextStepDone} из ${rep.nextStepKnown})`}
             </span>
           </div>
         </div>
@@ -232,31 +161,27 @@ export function RopPodium({
 
   return (
     <div className={cn('space-y-4', className)} data-testid="rop-podium">
-      {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-subtle bg-hover text-foreground">
             <Trophy className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-[13px] font-semibold text-foreground">
-              Пьедестал РОПа & Лидерборд
-            </h3>
+            <h3 className="text-[13px] font-semibold text-foreground">Пьедестал РОПа и лидерборд</h3>
             <p className="text-xs text-secondary">
-              Топ-менеджеры по качеству звонков и конверсии договоренностей
+              Менеджеры из CRM по среднему баллу оценённых звонков (от {MIN_RATED_CALLS}). Недозвоны и сбои анализа не считаются.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Podium 3 Cards Grid (Order: 2nd, 1st, 3rd) */}
+      {/* Order: 2nd, 1st, 3rd */}
       <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
-        {renderCard(top2, 2, 'Эталон скрипта', false)}
-        {renderCard(top1, 1, 'Топ-перформер', true)}
-        {renderCard(top3, 3, 'Стабильность', false)}
+        {renderCard(top2, 2)}
+        {renderCard(top1, 1)}
+        {renderCard(top3, 3)}
       </div>
 
-      {/* P0 Hazard Manager Alert Strip */}
       {hazardRep && (
         <div
           className="surface flex flex-col justify-between gap-3 rounded-xl border border-rose-500/25 bg-rose-500/[0.04] p-4 transition-colors hover:bg-rose-500/[0.07] sm:flex-row sm:items-center"
@@ -270,25 +195,26 @@ export function RopPodium({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-400">
                   <AlertTriangle className="h-3 w-3" />
-                  P0 Зона критического риска
+                  Зона риска: средний балл ниже 6
                 </span>
-                <span className="truncate text-[13px] font-bold text-foreground">
-                  {hazardRep.name}
-                </span>
-                <span className="font-mono text-xs tabular-nums text-rose-300">
-                  ({hazardRep.pipeAmt.toLocaleString('ru-RU')} ₽ в риске)
-                </span>
+                <span className="truncate text-[13px] font-bold text-foreground">{hazardRep.name}</span>
               </div>
               <div className="mt-0.5 text-xs text-secondary">
                 Балл речи:{' '}
+                <strong className="font-medium text-rose-400">{hazardRep.avgScore?.toFixed(1)}/13</strong> • Срывов:{' '}
                 <strong className="font-medium text-rose-400">
-                  {hazardRep.avgScore.toFixed(1)}/13
-                </strong>{' '}
-                • Сливов Next Step:{' '}
-                <strong className="font-medium text-rose-400">
-                  {100 - hazardRep.nextStepPct}% ({hazardRep.riskCallsCount}{' '}
-                  звонков)
+                  {hazardRep.lowCalls} из {hazardRep.assessed}
                 </strong>
+                {hazardRep.riskDeals.count > 0 && (
+                  <>
+                    {' '}
+                    • Сделок под срывами:{' '}
+                    <strong className="font-medium text-rose-400">
+                      {hazardRep.riskDeals.count}
+                      {hazardRep.riskDeals.amount > 0 ? ` на ${rub(hazardRep.riskDeals.amount)}` : ''}
+                    </strong>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -302,7 +228,7 @@ export function RopPodium({
             }}
             className="h-7 shrink-0 self-start border-rose-500/30 text-xs text-rose-300 hover:bg-rose-500/10 hover:text-rose-200 sm:self-auto"
           >
-            Разбор ({hazardRep.riskCallsCount} звонков)
+            Разбор звонков
             <ArrowRight className="ml-1 h-3 w-3" />
           </Button>
         </div>

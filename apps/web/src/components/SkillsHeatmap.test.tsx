@@ -8,73 +8,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { SkillsHeatmap } from './SkillsHeatmap';
-import type { Call } from '@/types/api';
+import { failedCall, makeCall, missedCall, ratedCalls } from '@/test/callFactory';
 
-const mockCalls: Call[] = [
-  {
-    id: 'c-1',
-    deal_id: 'd-1',
-    deal_title: 'Сделка 1',
-    client: 'ООО Альфа',
-    manager: 'Иван Петров',
-    stage: 'КП',
-    duration: '03:10',
-    amount: '300 000 ₽',
-    amount_num: 300000,
-    score: 11,
-    status: 'won',
-    status_label: 'Успешно',
-    risk_amount: '0 ₽',
-    next_step: 1,
-    date: '2026-10-24 10:00',
-    cr: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-    error_summary: '',
-    recommendation: 'Супер',
-    transcript: '...',
-  },
-  {
-    id: 'c-1b',
-    deal_id: 'd-1',
-    deal_title: 'Сделка 1 (повторный)',
-    client: 'ООО Альфа',
-    manager: 'Иван Петров',
-    stage: 'КП',
-    duration: '02:45',
-    amount: '300 000 ₽',
-    amount_num: 300000,
-    score: 11,
-    status: 'won',
-    status_label: 'Успешно',
-    risk_amount: '0 ₽',
-    next_step: 1,
-    date: '2026-10-24 10:30',
-    cr: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-    error_summary: '',
-    recommendation: 'Супер',
-    transcript: '...',
-  },
-  {
-    id: 'c-2',
-    deal_id: 'd-2',
-    deal_title: 'Сделка 2',
-    client: 'ЗАО Бета',
-    manager: 'Ольга Смирнова',
-    stage: 'Встреча',
-    duration: '02:00',
-    amount: '100 000 ₽',
-    amount_num: 100000,
-    score: 5,
-    status: 'lost',
-    status_label: 'Слив',
-    risk_amount: '100 000 ₽',
-    next_step: 0,
-    date: '2026-10-24 11:00',
-    cr: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    error_summary: 'Слив',
-    recommendation: 'Обучить',
-    transcript: '...',
-  },
-];
+const team = [...ratedCalls('Иван Петров', 11), ...ratedCalls('Ольга Смирнова', 5)];
 
 describe('SkillsHeatmap', () => {
   it('renders empty state when no calls are passed', () => {
@@ -84,8 +20,8 @@ describe('SkillsHeatmap', () => {
     expect(screen.getByText('Нет данных о менеджерах')).toBeInTheDocument();
   });
 
-  it('renders managers with score and criteria rates', () => {
-    render(<SkillsHeatmap calls={mockCalls} />);
+  it('renders managers with score and roles', () => {
+    render(<SkillsHeatmap calls={team} />);
 
     expect(screen.getByTestId('skills-heatmap')).toBeInTheDocument();
     expect(screen.getByText('Иван Петров')).toBeInTheDocument();
@@ -96,11 +32,57 @@ describe('SkillsHeatmap', () => {
 
   it('calls onSelectRep when a manager row is clicked', () => {
     const handleSelect = vi.fn();
-    render(<SkillsHeatmap calls={mockCalls} onSelectRep={handleSelect} />);
+    render(<SkillsHeatmap calls={team} onSelectRep={handleSelect} />);
 
-    const ivanRow = screen.getByTestId('skill-row-Иван Петров');
-    fireEvent.click(ivanRow);
-
+    fireEvent.click(screen.getByTestId('skill-row-Иван Петров'));
     expect(handleSelect).toHaveBeenCalledWith('Иван Петров');
+  });
+
+  it('draws a real 0% as a red "0%", and "—" only where nothing was assessed', () => {
+    const calls = ratedCalls('Иван Петров', 5, 3, { cr: [0, 1, ...Array(11).fill(null)] as never });
+    render(<SkillsHeatmap calls={calls} />);
+
+    const row = screen.getByTestId('skill-row-Иван Петров');
+    const cells = row.querySelectorAll('button');
+    expect(cells[0]).toHaveTextContent('0%'); // CR1: assessed three times, never passed
+    expect(cells[0]).toHaveClass('text-rose-600');
+    expect(cells[1]).toHaveTextContent('100%');
+    expect(cells[2]).toHaveTextContent('—'); // CR3: never assessed
+    expect(cells[2]).not.toHaveClass('text-rose-600');
+    expect(cells[0].title).toContain('0% (0 из 3 оценённых)');
+  });
+
+  it('shows how many calls are not rated and why, and the legend even without them', () => {
+    const calls = [...team, missedCall({ manager: 'Иван Петров' }), failedCall({ manager: 'Иван Петров' }), makeCall({ manager: 'Не определён' })];
+    render(<SkillsHeatmap calls={calls} />);
+
+    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('без менеджера из CRM: 1');
+    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('недозвонов: 1');
+    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('сбоев анализа: 1');
+    expect(screen.queryByText('Не определён')).not.toBeInTheDocument();
+  });
+
+  it('shows the legend when every call is rated', () => {
+    render(<SkillsHeatmap calls={team} />);
+    expect(screen.getByText('≥80% норма')).toBeInTheDocument();
+    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('В оценке участвуют все звонки');
+  });
+
+  it('gives no role to a manager with too few rated calls', () => {
+    render(<SkillsHeatmap calls={ratedCalls('Иван Петров', 12, 2)} />);
+    expect(screen.getByText('Мало данных: 2 из 3')).toBeInTheDocument();
+    expect(screen.queryByText('Эталон звонков')).not.toBeInTheDocument();
+  });
+
+  it('shows no score for a manager whose calls are all missed or failed', () => {
+    render(<SkillsHeatmap calls={[missedCall({ manager: 'Иван Петров' }), failedCall({ manager: 'Иван Петров' })]} />);
+    const row = screen.getByTestId('skill-row-Иван Петров');
+    expect(row).toHaveTextContent('Нет оценённых звонков');
+    expect(row).not.toHaveTextContent('0.0');
+  });
+
+  it('explains an empty matrix when no call has a CRM manager', () => {
+    render(<SkillsHeatmap calls={ratedCalls('Не определён', 9, 2)} />);
+    expect(screen.getByTestId('skills-heatmap-empty')).toHaveTextContent('у 2 звонков его нет');
   });
 });

@@ -4,11 +4,14 @@
  * Vector SVG Speech Radar / Spider Chart for RevOps OS.
  * Compares selected sales rep or entire department against
  * the canonical 13-criteria B2B standard benchmark without heavy external libraries.
+ * The same counting as the heatmap (lib/callStats.ts): CRM managers only, assessed calls only, and a criterion's
+ * rate is over the calls where it was really assessed. The polygon is drawn at the real value (0% sits in the centre).
  */
 
 import * as React from 'react';
 import { Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { criterionRates, hasCrmManager, managerStats, ruPlural, summarizeCalls } from '@/lib/callStats';
 import type { Call } from '@/types/api';
 
 export interface SpeechRadarChartProps {
@@ -27,31 +30,18 @@ export function SpeechRadarChart({
   onSelectRep,
   className,
 }: SpeechRadarChartProps) {
-  const reps = React.useMemo(() => {
-    return Array.from(
-      new Set(calls.map((c) => (c.manager || '').trim()).filter(Boolean))
-    );
-  }, [calls]);
+  const reps = React.useMemo(() => managerStats(calls).map((m) => m.name), [calls]);
 
-  const activeRep =
-    selectedRep && reps.includes(selectedRep) ? selectedRep : null;
+  const activeRep = selectedRep && reps.includes(selectedRep) ? selectedRep : null;
 
-  // Compute 13 criteria pass rates for active selection
-  const actualValues = React.useMemo(() => {
-    const filteredCalls = activeRep
-      ? calls.filter((c) => c.manager === activeRep)
-      : calls;
-    if (filteredCalls.length === 0) {
-      return Array(13).fill(0);
-    }
-    const count = filteredCalls.length;
-    return Array.from({ length: 13 }).map((_, idx) => {
-      let passCount = 0;
-      filteredCalls.forEach((c) => {
-        if (c.cr && c.cr[idx] === 1) passCount += 1;
-      });
-      return Math.round((passCount / count) * 100);
-    });
+  // 13 criteria pass rates for the active selection
+  const { actualValues, assessedCount } = React.useMemo(() => {
+    const team = calls.filter(hasCrmManager);
+    const scope = activeRep ? team.filter((c) => c.manager.trim() === activeRep) : team;
+    return {
+      actualValues: criterionRates(scope).map((r) => (r.rate === null ? 0 : Math.round(r.rate * 100))),
+      assessedCount: summarizeCalls(scope).assessed,
+    };
   }, [calls, activeRep]);
 
   // Geometry parameters
@@ -81,7 +71,7 @@ export function SpeechRadarChart({
 
   const actualPoints = actualValues
     .map((val, i) => {
-      const { x, y } = getCoords(i, Math.max(val, 5));
+      const { x, y } = getCoords(i, val);
       return `${x},${y}`;
     })
     .join(' ');
@@ -105,7 +95,10 @@ export function SpeechRadarChart({
               Радар соблюдения стандартов речи
             </h3>
             <p className="text-xs text-secondary">
-              Сравнение факта диалогов с эталоном B2B (100%)
+              Сравнение факта диалогов с эталоном B2B (100%) •{' '}
+              {assessedCount > 0
+                ? `${assessedCount} ${ruPlural(assessedCount, ['оценённый звонок', 'оценённых звонка', 'оценённых звонков'])}`
+                : 'нет оценённых звонков'}
             </p>
           </div>
         </div>
@@ -195,16 +188,18 @@ export function SpeechRadarChart({
           />
 
           {/* Actual Performance Polygon */}
-          <polygon
-            points={actualPoints}
-            fill="rgba(139, 92, 246, 0.22)"
-            stroke="rgb(139, 92, 246)"
-            strokeWidth={2}
-          />
+          {assessedCount > 0 && (
+            <polygon
+              points={actualPoints}
+              fill="rgba(139, 92, 246, 0.22)"
+              stroke="rgb(139, 92, 246)"
+              strokeWidth={2}
+            />
+          )}
 
           {/* Actual Data Points */}
-          {actualValues.map((val, i) => {
-            const { x, y } = getCoords(i, Math.max(val, 5));
+          {assessedCount > 0 && actualValues.map((val, i) => {
+            const { x, y } = getCoords(i, val);
             return (
               <circle
                 key={i}

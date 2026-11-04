@@ -5,12 +5,14 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuditPage } from './AuditPage';
 import { useRevOpsStore } from '@/store/useRevOpsStore';
 import { callsApi } from '@/lib/api';
+import { addDaysToKey, businessDayKey } from '@/lib/dates';
+import { failedCall, makeCall, missedCall, ratedCalls } from '@/test/callFactory';
 import type { Call } from '@/types/api';
 
 vi.mock('@/lib/api', () => ({
@@ -39,7 +41,7 @@ const mockCalls: Call[] = [
     amount_num: 500000,
     score: 11,
     status: 'won',
-    status_label: 'Успешно',
+    status_label: 'ЭТАЛОН',
     risk_amount: '0 ₽',
     next_step: 1,
     date: '2026-10-24 14:30',
@@ -61,8 +63,8 @@ const mockCalls: Call[] = [
     amount: '200 000 ₽',
     amount_num: 200000,
     score: 4,
-    status: 'lost',
-    status_label: 'Отказ',
+    status: 'risk',
+    status_label: 'СРЫВ',
     risk_amount: '200 000 ₽',
     next_step: 0,
     date: '2026-10-23 10:15',
@@ -84,6 +86,13 @@ function renderWithClient(ui: React.ReactElement) {
   });
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
+
+async function pick(testId: string, optionName: string) {
+  fireEvent.keyDown(screen.getByTestId(testId), { key: 'ArrowDown' });
+  fireEvent.click(await screen.findByRole('option', { name: optionName }));
+}
+
+const daysAgo = (n: number) => `${addDaysToKey(businessDayKey(), -n)} 12:00:00`;
 
 describe('AuditPage', () => {
   beforeEach(() => {
@@ -109,14 +118,8 @@ describe('AuditPage', () => {
     expect(await screen.findByText('ООО АгроХим')).toBeInTheDocument();
     expect(screen.getByText('АО СтройМаш')).toBeInTheDocument();
 
-    // Open status filter dropdown and select 'won'
-    const statusTrigger = screen.getByTestId('filter-status');
-    fireEvent.keyDown(statusTrigger, { key: 'ArrowDown' });
+    await pick('filter-status', 'Эталон (9–13)');
 
-    const wonOption = await screen.findByText('Эталон (won)');
-    fireEvent.click(wonOption);
-
-    // After filtering, only ООО АгроХим (won) should remain
     expect(screen.getByText('ООО АгроХим')).toBeInTheDocument();
     expect(screen.queryByText('АО СтройМаш')).not.toBeInTheDocument();
     expect(screen.getByTestId('calls-count')).toHaveTextContent('1');
@@ -127,16 +130,13 @@ describe('AuditPage', () => {
 
     renderWithClient(<AuditPage />);
 
-    const clientCell = await screen.findByText('ООО АгроХим');
-    fireEvent.click(clientCell);
+    fireEvent.click(await screen.findByText('ООО АгроХим'));
 
     await waitFor(() => {
       expect(screen.getByTestId('audit-dialog')).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId('audit-call-transcript')).toHaveTextContent(
-      'Транскрипт тестового звонка ООО АгроХим'
-    );
+    expect(screen.getByTestId('audit-call-transcript')).toHaveTextContent('Транскрипт тестового звонка ООО АгроХим');
     expect(screen.getByTestId('audit-call-audio-player')).toBeInTheDocument();
   });
 
@@ -145,26 +145,115 @@ describe('AuditPage', () => {
 
     renderWithClient(<AuditPage />);
 
-    const clientCell = await screen.findByText('ООО АгроХим');
-    fireEvent.click(clientCell);
+    fireEvent.click(await screen.findByText('ООО АгроХим'));
 
     await waitFor(() => {
       expect(screen.getByTestId('cr-criteria-grid')).toBeInTheDocument();
     });
 
-    // Check CR1 (val: 1 -> green text-emerald-500)
-    const cr1 = screen.getByTestId('cr-item-1');
-    expect(cr1).toHaveClass('text-emerald-500');
-    expect(cr1).toHaveTextContent('1');
+    expect(screen.getByTestId('cr-item-1')).toHaveClass('text-emerald-500');
+    expect(screen.getByTestId('cr-item-1')).toHaveTextContent('1');
+    expect(screen.getByTestId('cr-item-2')).toHaveClass('text-red-500');
+    expect(screen.getByTestId('cr-item-2')).toHaveTextContent('0');
+    expect(screen.getByTestId('cr-item-3')).toHaveClass('text-muted-foreground');
+    expect(screen.getByTestId('cr-item-3')).toHaveTextContent('—');
+  });
 
-    // Check CR2 (val: 0 -> red text-red-500)
-    const cr2 = screen.getByTestId('cr-item-2');
-    expect(cr2).toHaveClass('text-red-500');
-    expect(cr2).toHaveTextContent('0');
+  describe('honest numbers', () => {
+    const mixed = [
+      ...ratedCalls('Иван Петров', 12, 3, { date: daysAgo(1), next_step: 1 }),
+      ...ratedCalls('Ольга Смирнова', 4, 1, { date: daysAgo(2), next_step: 0 }),
+      missedCall({ manager: 'Иван Петров', date: daysAgo(1) }),
+      failedCall({ manager: 'Не определён', date: daysAgo(3) }),
+      ...ratedCalls('Иван Петров', 12, 2, { date: daysAgo(20) }),
+    ];
 
-    // Check CR3 (val: null -> gray text-muted-foreground)
-    const cr3 = screen.getByTestId('cr-item-3');
-    expect(cr3).toHaveClass('text-muted-foreground');
-    expect(cr3).toHaveTextContent('—');
+    it('the KPI row counts only rated calls and says what is not rated', async () => {
+      vi.mocked(callsApi.list).mockResolvedValue(mixed);
+      renderWithClient(<AuditPage />);
+
+      await screen.findByTestId('kpi-total');
+      await waitFor(() => expect(screen.getByTestId('kpi-total')).toHaveTextContent('8'));
+      expect(screen.getByTestId('kpi-assessed')).toHaveTextContent('6');
+      // (12*5 + 4) / 6 = 10.7: the missed call and the failed audit are not zeros
+      expect(screen.getByTestId('kpi-avg')).toHaveTextContent('10.7 / 13');
+      expect(screen.getByTestId('kpi-not-rated')).toHaveTextContent('2');
+      expect(screen.getByTestId('kpi-not-rated')).toHaveTextContent('1 недозвон');
+      expect(screen.getByTestId('kpi-not-rated')).toHaveTextContent('1 сбой анализа');
+    });
+
+    it('the period filter changes the KPI row and the widgets, not only the table', async () => {
+      vi.mocked(callsApi.list).mockResolvedValue(mixed);
+      renderWithClient(<AuditPage />);
+
+      await waitFor(() => expect(screen.getByTestId('kpi-total')).toHaveTextContent('8'));
+      await pick('filter-period', 'Последние 7 дней');
+
+      await waitFor(() => expect(screen.getByTestId('kpi-total')).toHaveTextContent('6'));
+      expect(screen.getByTestId('kpi-assessed')).toHaveTextContent('4');
+      expect(screen.getByTestId('calls-count')).toHaveTextContent('6');
+      // the heatmap row of Иван Петров now says 4 calls (3 rated + 1 missed), not 7
+      expect(within(screen.getByTestId('skill-row-Иван Петров')).getByText(/4 звонка/)).toBeInTheDocument();
+    });
+
+    it('the manager filter narrows the table but leaves the KPI row and the widgets alone', async () => {
+      vi.mocked(callsApi.list).mockResolvedValue(mixed);
+      renderWithClient(<AuditPage />);
+
+      await waitFor(() => expect(screen.getByTestId('kpi-total')).toHaveTextContent('8'));
+      await pick('filter-manager', 'Ольга Смирнова');
+
+      await waitFor(() => expect(screen.getByTestId('calls-count')).toHaveTextContent('1'));
+      expect(screen.getByTestId('kpi-total')).toHaveTextContent('8');
+      expect(screen.getByTestId('skill-row-Иван Петров')).toBeInTheDocument();
+    });
+
+    it('shows a status and a Next Step for every call, and a dash for what is unknown', async () => {
+      vi.mocked(callsApi.list).mockResolvedValue([
+        makeCall({ manager: 'Иван Петров', score: 4, status: 'risk', next_step: 0, client: '' }),
+        missedCall({ manager: 'Иван Петров' }),
+        failedCall({ manager: 'Иван Петров' }),
+      ]);
+      renderWithClient(<AuditPage />);
+
+      expect(await screen.findByText('СРЫВ')).toBeInTheDocument();
+      expect(screen.getByText('НЕДОЗВОН')).toBeInTheDocument();
+      expect(screen.getByText('СБОЙ АНАЛИЗА')).toBeInTheDocument();
+      expect(screen.getByText('Нет')).toBeInTheDocument(); // Next Step of the first call
+      expect(screen.getByText('4/13')).toBeInTheDocument();
+      expect(screen.queryByText('0/13')).not.toBeInTheDocument();
+      // an unknown client is a dash, not a stub (row 0 is the header)
+      const firstRow = screen.getAllByRole('row')[1];
+      expect(firstRow).not.toHaveTextContent('Клиент');
+      expect(firstRow).toHaveTextContent('—');
+    });
+
+    it('a missed call opens with an explanation and no score', async () => {
+      vi.mocked(callsApi.list).mockResolvedValue([missedCall({ manager: 'Иван Петров', client: 'ООО Тест' })]);
+      renderWithClient(<AuditPage />);
+
+      fireEvent.click(await screen.findByText('ООО Тест'));
+
+      expect(await screen.findByTestId('audit-notice-unanswered')).toHaveTextContent('не оценивается');
+      expect(screen.queryByText(/Итоговый балл/)).not.toBeInTheDocument();
+    });
+
+    it('a failed audit says the manager is not to blame', async () => {
+      vi.mocked(callsApi.list).mockResolvedValue([failedCall({ manager: 'Иван Петров', client: 'ООО Тест' })]);
+      renderWithClient(<AuditPage />);
+
+      fireEvent.click(await screen.findByText('ООО Тест'));
+
+      expect(await screen.findByTestId('audit-notice-failed')).toHaveTextContent('Баллы менеджера от этого не страдают');
+    });
+
+    it('explains an empty client instead of an empty table', async () => {
+      vi.mocked(callsApi.list).mockResolvedValue([]);
+      renderWithClient(<AuditPage />);
+
+      expect(await screen.findByText(/Аудированных звонков пока нет/)).toBeInTheDocument();
+      expect(screen.getByTestId('kpi-avg')).toHaveTextContent('—');
+      expect(screen.getByTestId('kpi-next-step')).toHaveTextContent('—');
+    });
   });
 });
