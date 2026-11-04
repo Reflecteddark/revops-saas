@@ -70,7 +70,7 @@ export function SettingsPage() {
   });
 
   // Local form states
-  const [editTarget, setEditTarget] = useState<string>('5000000');
+  const [editTarget, setEditTarget] = useState<string>('');
   const [editAvgCheck, setEditAvgCheck] = useState<string>('');
   const [companyName, setCompanyName] = useState<string>('');
   const [currency, setCurrency] = useState<string>('RUB (₽)');
@@ -119,12 +119,12 @@ export function SettingsPage() {
         setCurrency(settings.general.currency || 'RUB (₽)');
         setPeriodStart(settings.general.period_start || '');
         setPeriodEnd(settings.general.period_end || '');
-        if (
-          settings.general.monthly_target !== undefined &&
-          settings.general.monthly_target !== null
-        ) {
-          setEditTarget(String(settings.general.monthly_target));
-        }
+        // 0 / missing = no plan set: the field stays empty (nothing is assumed)
+        setEditTarget(
+          settings.general.monthly_target && settings.general.monthly_target > 0
+            ? String(settings.general.monthly_target)
+            : ''
+        );
         setEditAvgCheck(
           settings.general.avg_deal_check ? String(settings.general.avg_deal_check) : ''
         );
@@ -328,10 +328,12 @@ export function SettingsPage() {
 
   // Handlers
   const handleSaveGeneral = () => {
-    const targetVal = parseFloat(editTarget);
-    if (isNaN(targetVal) || targetVal <= 0) {
+    // An empty field clears the plan (0 = not set); otherwise a positive number of rubles
+    const rawTarget = editTarget.trim();
+    const targetVal = rawTarget === '' ? 0 : parseFloat(rawTarget);
+    if (isNaN(targetVal) || targetVal < 0) {
       setSaveStatus({
-        text: 'Введите корректную сумму плана выручки в рублях',
+        text: 'Введите корректную сумму плана выручки в рублях (или оставьте поле пустым)',
         type: 'error',
       });
       return;
@@ -534,10 +536,10 @@ export function SettingsPage() {
 
   const formattedPlan = general?.monthly_target
     ? `${general.monthly_target.toLocaleString('ru-RU')} ₽`
-    : '5 000 000 ₽';
+    : 'не задан';
   const displayCompanyName = general?.company_name || 'RevOps Демо';
 
-  const companyPlan = general?.monthly_target || 5000000;
+  const companyPlan = general?.monthly_target || 0;
   const totalPersonalPlans = managers.reduce(
     (sum, m) =>
       sum + (m.revenue_target && m.revenue_target > 0 ? m.revenue_target : 0),
@@ -698,7 +700,7 @@ export function SettingsPage() {
                       step="100000"
                       value={editTarget}
                       onChange={(e) => setEditTarget(e.target.value)}
-                      placeholder="5000000"
+                      placeholder="не задан"
                       className="w-40 bg-background font-mono text-sm font-bold text-emerald-500"
                     />
                     <Button
@@ -860,7 +862,7 @@ export function SettingsPage() {
                       Дата запуска проекта
                     </Label>
                     <div className="bg-muted/30 flex h-9 items-center rounded-md border border-subtle px-3 font-mono text-xs text-foreground">
-                      {general?.project_start_date || '2026-10-03'}
+                      {general?.project_start_date || '—'}
                     </div>
                   </div>
                 </div>

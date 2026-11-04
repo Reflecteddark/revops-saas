@@ -98,18 +98,26 @@ export function RnpStandupView({
   // dd.mm for the badge
   const refDayLabel = `${refDayKey.slice(8, 10)}.${refDayKey.slice(5, 7)}`;
 
-  // Yesterday's metrics
-  const targetCallsCount = yesterdayCalls.filter((c) => {
-    const durSec = c.duration_seconds || 0;
-    return durSec >= 90 || c.score !== null;
-  }).length;
+  // Call length in seconds: the numeric field when present, otherwise the "m:ss" / "h:mm:ss" string
+  const callSeconds = (c: (typeof yesterdayCalls)[number]): number => {
+    if (typeof c.duration_seconds === 'number') return c.duration_seconds;
+    const parts = String(c.duration || '')
+      .split(':')
+      .map((p) => parseInt(p.trim(), 10));
+    if (parts.length === 0 || parts.some((n) => isNaN(n))) return 0;
+    return parts.reduce((acc, n) => acc * 60 + n, 0);
+  };
+  // A breakdown ("срыв") is a call scored 0-5: the same rule as the distribution on the Pulse page
+  const isBreakdownCall = (c: (typeof yesterdayCalls)[number]) =>
+    typeof c.score === 'number' && c.score <= CALL_SCORE_THRESHOLDS.low.max;
+
+  // Reference-day metrics
+  const targetCallsCount = yesterdayCalls.filter((c) => callSeconds(c) >= 90).length;
 
   // Only the audit's own zoom_scheduled flag counts (no guessing from other criteria).
   const zoomScheduledCount = yesterdayCalls.filter((c) => Boolean(c.zoom_scheduled)).length;
 
-  const yesterdayLeaksCount = yesterdayCalls.filter(
-    (c) => c.status === 'risk' || (c.score !== null && c.score < CALL_SCORE_THRESHOLDS.mid.min)
-  ).length;
+  const yesterdayLeaksCount = yesterdayCalls.filter(isBreakdownCall).length;
 
   const wonDealsCount = deals.filter((d) => d.status === 'won').length;
 
@@ -436,17 +444,14 @@ export function RnpStandupView({
             }`}
             onClick={() => {
               if (onInspectCall) {
-                const leakCall = yesterdayCalls.find(
-                  (c) =>
-                    c.status === 'risk' || (c.score !== null && c.score < CALL_SCORE_THRESHOLDS.mid.min)
-                );
+                const leakCall = yesterdayCalls.find(isBreakdownCall);
                 if (leakCall) onInspectCall(leakCall);
               }
             }}
           >
             <div className="flex items-center gap-1.5 text-xs text-tertiary">
               <ShieldAlert className="h-3.5 w-3.5 text-rose-400" />
-              <span>Срывы / Токсичные звонки</span>
+              <span>Срывы (балл 0–5)</span>
             </div>
             <div className="mt-1 font-mono text-lg font-bold text-rose-400">
               {yesterdayLeaksCount}{' '}

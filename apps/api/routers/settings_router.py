@@ -183,10 +183,11 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
         # Parse general settings
         company_name = "Самозанятый" if is_master_or_template else (cfg.get("tenant_name") or f"Клиент {clean_tenant}")
         currency = "RUB (₽)"
-        period_start = "2026-10-01"
-        period_end = "2026-10-31"
+        # only the shared master/template carries demo dates; a real client's missing cells stay empty
+        period_start = "2026-10-01" if is_master_or_template else ""
+        period_end = "2026-10-31" if is_master_or_template else ""
         monthly_target = 5000000.0 if is_master_or_template else 0.0
-        project_start_date = "2026-10-03"
+        project_start_date = "2026-10-03" if is_master_or_template else ""
 
         for r in s_rows:
             if not r:
@@ -636,7 +637,8 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
             if "period_end" in sent and g.period_end is not None:
                 ws_settings.update_acell("B7", g.period_end)
             if "monthly_target" in sent and g.monthly_target is not None:
-                target_str = f"{g.monthly_target:,.0f} ₽".replace(",", " ")
+                # 0 = "no plan": the cell is cleared, never filled with a number nobody set
+                target_str = "" if g.monthly_target <= 0 else f"{g.monthly_target:,.0f} ₽".replace(",", " ")
                 ws_settings.update_acell("B9", target_str)
 
         # 2. Update stages SLA and Win % if present (Rows 12-18)

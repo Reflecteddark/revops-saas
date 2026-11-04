@@ -180,6 +180,27 @@ describe('RnpStandupView', () => {
     expect(screen.getByTestId('manager-card-m1')).toHaveTextContent(`${ivanCalls} / 20`);
   });
 
+  it('counts target calls by real length and breakdowns by score (not by missing next step)', () => {
+    const base = mockCalls[0];
+    const day = '2026-01-10 11:00';
+    const calls = [
+      // 1:40 given only as a string (Sheets rows have no duration_seconds): a target call; scored 10 but no next step
+      { ...base, id: 'k1', manager: 'Иван Петров', date: day, duration: '01:40', duration_seconds: undefined, score: 10, status: 'risk' as const, next_step: 0 },
+      // 0:30: not a target call; score 3 = a breakdown
+      { ...base, id: 'k2', manager: 'Иван Петров', date: day, duration: '00:30', duration_seconds: undefined, score: 3, status: 'risk' as const, next_step: 0 },
+      // 2:00 and score 5 = target call AND breakdown
+      { ...base, id: 'k3', manager: 'Иван Петров', date: day, duration: '02:00', duration_seconds: undefined, score: 5, status: 'risk' as const, next_step: 0 },
+    ];
+    render(
+      <RnpStandupView calls={calls} deals={mockDeals} managers={mockManagers} planTarget={2000000} />
+    );
+
+    const targetCard = screen.getByText(/Целевые звонки/i).closest('div')!.parentElement!;
+    expect(targetCard).toHaveTextContent(/^.*2\s*звонков/);
+    const breakdownCard = screen.getByText(/Срывы \(балл 0–5\)/i).closest('div')!.parentElement!;
+    expect(breakdownCard).toHaveTextContent(/2\s*инцидентов/);
+  });
+
   it('displays critical SLA risk deals section', () => {
     render(
       <RnpStandupView

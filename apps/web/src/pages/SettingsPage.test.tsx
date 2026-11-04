@@ -218,6 +218,31 @@ describe('SettingsPage', () => {
     expect(settingsApi.updateGeneral).not.toHaveBeenCalled();
   });
 
+  it('shows "not set" instead of an invented plan and date, and can clear the plan', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue({
+      ...mockSettings,
+      general: { ...mockSettings.general, monthly_target: 0, project_start_date: '' },
+    });
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    expect(screen.queryByText(/5 000 000/)).not.toBeInTheDocument();
+    expect(screen.queryByText('2026-10-03')).not.toBeInTheDocument();
+    expect(screen.getAllByText(/не задан/i).length).toBeGreaterThan(0);
+    expect((screen.getByLabelText(/ПЛАН ВЫРУЧКИ НА МЕСЯЦ/i) as HTMLInputElement).value).toBe('');
+
+    // saving an empty plan clears it (0 = not set)
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+    await waitFor(() => {
+      expect(settingsApi.updateGeneral).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.objectContaining({ monthly_target: 0 })
+      );
+    });
+  });
+
   it('triggers updateStages mutation when clicking "Сохранить регламент этапов"', async () => {
     vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
     vi.mocked(settingsApi.updateStages).mockResolvedValue(mockSettings);

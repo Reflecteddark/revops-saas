@@ -87,6 +87,41 @@ def test_only_the_sent_plan_is_written_to_the_sheet(monkeypatch):
     assert "3 000 000" in ws.cells["B9"]
 
 
+def test_a_zero_plan_clears_the_plan_cell(monkeypatch):
+    ws = _wire(monkeypatch)
+
+    save_settings_to_sheets(SettingsPayload(tenant_id="TNT-NODEF", general=GeneralSettings(monthly_target=0)))
+
+    assert ws.cells == {"B9": ""}  # "no plan" empties the cell instead of writing a number
+
+
+def test_a_client_without_cells_gets_no_demo_dates(monkeypatch):
+    class _Ws:
+        def get_all_values(self):
+            return [["Организация", ""], ["План выручки", ""]]
+
+    class _Ss:
+        def worksheet(self, name):
+            return _Ws()
+
+    class _Gc:
+        def open_by_key(self, key):
+            return _Ss()
+
+    monkeypatch.setattr(settings_router, "get_service_account_path", lambda: Path("service_account.json"))
+    monkeypatch.setattr(settings_router, "get_tenant_spreadsheet_id", lambda tid: "sheet-id")
+    monkeypatch.setattr(gspread, "service_account", lambda path: _Gc())
+    monkeypatch.setattr(tenant_registry, "get_tenant_config", lambda tid: {"tenant_name": "Клиент"})
+    settings_router._SETTINGS_CACHE.clear()
+
+    general = settings_router.fetch_settings_from_sheets(tenant_id="TNT-NODATES", force_refresh=True)["general"]
+
+    assert general["monthly_target"] == 0
+    assert general["period_start"] == ""
+    assert general["period_end"] == ""
+    assert general["project_start_date"] == ""
+
+
 def test_creating_a_client_assumes_no_average_check(monkeypatch):
     assert TenantProvisionRequest(name="ООО Клиент").avg_deal_check is None
 
