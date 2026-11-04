@@ -222,10 +222,19 @@ describe('AuditPage', () => {
       expect(screen.getByText('Нет')).toBeInTheDocument(); // Next Step of the first call
       expect(screen.getByText('4/13')).toBeInTheDocument();
       expect(screen.queryByText('0/13')).not.toBeInTheDocument();
-      // an unknown client is a dash, not a stub (row 0 is the header)
-      const firstRow = screen.getAllByRole('row')[1];
-      expect(firstRow).not.toHaveTextContent('Клиент');
-      expect(firstRow).toHaveTextContent('—');
+      // no call has a client or a stage: those columns are not shown, and no stub fills the row
+      expect(screen.queryByRole('columnheader', { name: 'Клиент' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('columnheader', { name: 'Этап' })).not.toBeInTheDocument();
+      expect(screen.getAllByRole('row')[1]).not.toHaveTextContent('Клиент');
+    });
+
+    it('shows the client and stage columns as soon as one call has them', async () => {
+      vi.mocked(callsApi.list).mockResolvedValue([makeCall({ client: 'ООО Тест', stage: 'КП', manager: 'Иван Петров' }), makeCall({ manager: 'Иван Петров' })]);
+      renderWithClient(<AuditPage />);
+
+      expect(await screen.findByRole('columnheader', { name: 'Клиент' })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: 'Этап' })).toBeInTheDocument();
+      expect(screen.getByText('ООО Тест')).toBeInTheDocument();
     });
 
     it('a missed call opens with an explanation and no score', async () => {

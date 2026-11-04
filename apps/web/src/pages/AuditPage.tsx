@@ -192,6 +192,18 @@ export function AuditPage() {
 
   const summary = React.useMemo(() => summarizeCalls(periodCalls), [periodCalls]);
 
+  // A column that is empty for every call is just a row of dashes: the client and the stage come from the CRM deal
+  const columns = React.useMemo(
+    () =>
+      auditColumns.filter((col) => {
+        const key = (col as { accessorKey?: string }).accessorKey;
+        if (key === 'client') return calls.some((c) => c.client);
+        if (key === 'stage') return calls.some((c) => c.stage);
+        return true;
+      }),
+    [calls]
+  );
+
   const managers = React.useMemo(
     () => Array.from(new Set(calls.map((c) => c.manager).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru')),
     [calls]
@@ -486,7 +498,7 @@ export function AuditPage() {
       </div>
 
       <DataTable
-        columns={auditColumns}
+        columns={columns}
         data={filteredCalls}
         loading={isLoading}
         emptyMessage={

@@ -4,8 +4,10 @@
  * Vector SVG Speech Radar / Spider Chart for RevOps OS.
  * Compares selected sales rep or entire department against
  * the canonical 13-criteria B2B standard benchmark without heavy external libraries.
- * The same counting as the heatmap (lib/callStats.ts): CRM managers only, assessed calls only, and a criterion's
- * rate is over the calls where it was really assessed. The polygon is drawn at the real value (0% sits in the centre).
+ * The same counting as the heatmap (lib/callStats.ts): assessed calls only, and a criterion's rate is over the calls
+ * where it was really assessed. "Вся команда" is every rated call of the period (the same set as the KPI row, calls
+ * without a CRM manager included); one manager is a CRM user. The polygon is drawn at the real value (0% sits in
+ * the centre).
  */
 
 import * as React from 'react';
@@ -36,8 +38,7 @@ export function SpeechRadarChart({
 
   // 13 criteria pass rates for the active selection
   const { actualValues, assessedCount } = React.useMemo(() => {
-    const team = calls.filter(hasCrmManager);
-    const scope = activeRep ? team.filter((c) => c.manager.trim() === activeRep) : team;
+    const scope = activeRep ? calls.filter((c) => hasCrmManager(c) && c.manager.trim() === activeRep) : calls;
     return {
       actualValues: criterionRates(scope).map((r) => (r.rate === null ? 0 : Math.round(r.rate * 100))),
       assessedCount: summarizeCalls(scope).assessed,

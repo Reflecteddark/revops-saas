@@ -5,7 +5,8 @@
  * 1. the weakest criterion of the team;
  * 2. the manager to praise (best average of rated calls);
  * 3. the managers to coach (not "Эталон" by average).
- * Same counting as the podium and the heatmap (lib/callStats.ts): CRM managers, rated calls, MIN_RATED_CALLS per person.
+ * Same counting as the podium and the heatmap (lib/callStats.ts): rated calls only. The weakest criterion is over every
+ * rated call of the period (the KPI row's set); people (praise, coaching) are CRM managers with MIN_RATED_CALLS each.
  */
 
 import * as React from 'react';
@@ -13,7 +14,7 @@ import { Sparkles, AlertTriangle, Trophy, UserX, Copy, Check } from 'lucide-reac
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 import { CR_DEFINITIONS } from '@/lib/criteria';
-import { criterionRates, hasCrmManager, managerStats, ruPlural, summarizeCalls } from '@/lib/callStats';
+import { criterionRates, managerStats, ruPlural, summarizeCalls } from '@/lib/callStats';
 import { MIN_RATED_CALLS } from '@/lib/thresholds';
 
 export interface RopBriefingCardProps {
@@ -29,19 +30,18 @@ export function RopBriefingCard({ calls = [], onSelectRep, onSelectCriterion, cl
   const [copied, setCopied] = React.useState(false);
 
   const briefing = React.useMemo(() => {
-    const team = calls.filter(hasCrmManager);
-    const { assessed } = summarizeCalls(team);
+    const { assessed } = summarizeCalls(calls);
     if (assessed === 0) return null;
 
     // 1. The weakest criterion: the lowest pass rate among the criteria that were assessed at all (first one on a tie)
-    const worstCr = criterionRates(team)
+    const worstCr = criterionRates(calls)
       .filter((r) => r.rate !== null)
       .reduce((worst, r) => (worst === null || (r.rate as number) < (worst.rate as number) ? r : worst), null as ReturnType<typeof criterionRates>[number] | null);
     if (!worstCr) return null;
     const worstCrDef = CR_DEFINITIONS[worstCr.index];
 
     // 2. + 3. People: only managers with enough rated calls
-    const ranked = managerStats(team).filter((m) => m.enough);
+    const ranked = managerStats(calls).filter((m) => m.enough);
     const topRep = ranked[0] ?? null;
     const coachingCandidates = [...ranked]
       .filter((m) => m !== topRep && m.band !== 'high')

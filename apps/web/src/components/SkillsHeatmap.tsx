@@ -88,12 +88,6 @@ export function SkillsHeatmap({
     );
   }
 
-  const notRated = [
-    unattributed > 0 && `без менеджера из CRM: ${unattributed}`,
-    summary.unanswered > 0 && `недозвонов: ${summary.unanswered}`,
-    summary.failed > 0 && `сбоев анализа: ${summary.failed}`,
-  ].filter(Boolean);
-
   return (
     <div
       className={cn('surface flex flex-col justify-between space-y-3 rounded-xl border border-subtle p-5 shadow-sm', className)}
@@ -243,8 +237,19 @@ export function SkillsHeatmap({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-subtle pt-2 text-[11px] text-tertiary">
-        <div data-testid="heatmap-excluded">
-          {notRated.length > 0 ? `Не участвуют в оценке — ${notRated.join(' • ')}` : 'В оценке участвуют все звонки'}
+        <div className="space-y-0.5" data-testid="heatmap-excluded">
+          {unattributed > 0 && (
+            <div>
+              Без менеджера из CRM: {unattributed} {ruPlural(unattributed, ['звонок', 'звонка', 'звонков'])} — в рейтингах менеджеров
+              не участвуют
+            </div>
+          )}
+          {summary.unanswered + summary.failed > 0 && (
+            <div>
+              Оценки нет: недозвонов {summary.unanswered}, сбоев анализа {summary.failed}
+            </div>
+          )}
+          {unattributed === 0 && summary.unanswered + summary.failed === 0 && <div>Все звонки учтены</div>}
         </div>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">

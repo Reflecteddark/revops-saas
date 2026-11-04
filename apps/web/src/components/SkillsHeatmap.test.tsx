@@ -56,16 +56,15 @@ describe('SkillsHeatmap', () => {
     const calls = [...team, missedCall({ manager: 'Иван Петров' }), failedCall({ manager: 'Иван Петров' }), makeCall({ manager: 'Не определён' })];
     render(<SkillsHeatmap calls={calls} />);
 
-    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('без менеджера из CRM: 1');
-    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('недозвонов: 1');
-    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('сбоев анализа: 1');
+    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('Без менеджера из CRM: 1 звонок — в рейтингах менеджеров не участвуют');
+    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('Оценки нет: недозвонов 1, сбоев анализа 1');
     expect(screen.queryByText('Не определён')).not.toBeInTheDocument();
   });
 
   it('shows the legend when every call is rated', () => {
     render(<SkillsHeatmap calls={team} />);
     expect(screen.getByText('≥80% норма')).toBeInTheDocument();
-    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('В оценке участвуют все звонки');
+    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('Все звонки учтены');
   });
 
   it('gives no role to a manager with too few rated calls', () => {
@@ -79,6 +78,16 @@ describe('SkillsHeatmap', () => {
     const row = screen.getByTestId('skill-row-Иван Петров');
     expect(row).toHaveTextContent('Нет оценённых звонков');
     expect(row).not.toHaveTextContent('0.0');
+  });
+
+  it('does not add the same call to two lists: a missed call of an unattributed manager is counted in both facts apart', () => {
+    const calls = [...team, missedCall({ manager: 'Не определён' }), missedCall({ manager: 'Не определён' })];
+    render(<SkillsHeatmap calls={calls} />);
+
+    // two separate facts, not one list whose numbers add up to more than the calls
+    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('Без менеджера из CRM: 2 звонка');
+    expect(screen.getByTestId('heatmap-excluded')).toHaveTextContent('Оценки нет: недозвонов 2, сбоев анализа 0');
+    expect(screen.getByTestId('heatmap-excluded').textContent).not.toContain('Не участвуют в оценке');
   });
 
   it('explains an empty matrix when no call has a CRM manager', () => {

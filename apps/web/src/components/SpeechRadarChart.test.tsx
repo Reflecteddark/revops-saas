@@ -31,13 +31,20 @@ describe('SpeechRadarChart', () => {
     expect(handleSelect).toHaveBeenCalledWith('Ольга Смирнова');
   });
 
-  it('has no pill for "Неизвестен" or "Не определён" and counts only rated calls', () => {
+  it('has no pill for "Неизвестен" or "Не определён"; the team polygon counts every rated call, not the missed ones', () => {
     const calls = [...team, ...ratedCalls('Неизвестен', 2, 2), ...ratedCalls('Не определён', 3, 2), missedCall(), failedCall()];
     render(<SpeechRadarChart calls={calls} />);
 
     expect(screen.queryByRole('button', { name: 'Неизвестен' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Не определён' })).not.toBeInTheDocument();
-    expect(screen.getByTestId('speech-radar-chart')).toHaveTextContent('3 оценённых звонка');
+    expect(screen.getByTestId('speech-radar-chart')).toHaveTextContent('7 оценённых звонков'); // 3 + 2 + 2, same as the KPI row
+  });
+
+  it('one manager is counted alone', () => {
+    const calls = [...team, ...ratedCalls('Не определён', 3, 4)];
+    render(<SpeechRadarChart calls={calls} selectedRep="Иван Петров" />);
+
+    expect(screen.getByTestId('speech-radar-chart')).toHaveTextContent('2 оценённых звонка');
   });
 
   it('draws no polygon, and says so, when no call was rated', () => {

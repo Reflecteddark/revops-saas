@@ -10,7 +10,7 @@ import '@testing-library/jest-dom';
 import { RopBriefingCard } from './RopBriefingCard';
 import { failedCall, makeCall, missedCall, ratedCalls } from '@/test/callFactory';
 
-// Ася 12/13 (CR13 failed), Владислав 5/13 (CR1-5 passed); the bot is not a manager
+// Ася 12/13 (CR13 failed), Владислав 5/13 (CR1-5 passed); "Автоответчик" is not a manager but its calls are rated
 const team = [...ratedCalls('Ася', 12), ...ratedCalls('Владислав', 5), ...ratedCalls('Автоответчик', 9, 2)];
 
 describe('RopBriefingCard', () => {
@@ -21,18 +21,18 @@ describe('RopBriefingCard', () => {
     expect(screen.getByText('Фокус дня')).toBeInTheDocument();
   });
 
-  it('renders 3 focus points for sales meeting and excludes bot calls', () => {
+  it('renders 3 focus points for the sales meeting; the weakest criterion counts every rated call', () => {
     render(<RopBriefingCard calls={team} />);
 
     expect(screen.getByTestId('rop-briefing-card')).toBeInTheDocument();
     expect(screen.getByText('⚡ Фокус дня для планёрки РОПа')).toBeInTheDocument();
-    // 6 rated calls of real managers; the 2 bot calls are not counted
-    expect(screen.getByText(/По 6 оценённым звонкам/)).toBeInTheDocument();
+    // 8 rated calls (6 of real managers + 2 without a CRM manager), the same set as the KPI row
+    expect(screen.getByText(/По 8 оценённым звонкам/)).toBeInTheDocument();
 
-    // The weakest criterion: CR13 is passed in none of the 6 calls
+    // The weakest criterion: CR13 is passed in none of the 8 calls
     expect(screen.getByText('Слабое место отдела:')).toBeInTheDocument();
     expect(screen.getByText('Защита маржинальности')).toBeInTheDocument();
-    expect(screen.getByText(/Соблюдается в/)).toHaveTextContent('0% оценённых звонков (6 из 6 без зачёта)');
+    expect(screen.getByText(/Соблюдается в/)).toHaveTextContent('0% оценённых звонков (8 из 8 без зачёта)');
 
     expect(screen.getByText('Кого похвалить на планёрке:')).toBeInTheDocument();
     expect(screen.getByText('Ася')).toBeInTheDocument();
@@ -58,9 +58,17 @@ describe('RopBriefingCard', () => {
     expect(screen.getByText(/Соблюдается в/)).toHaveTextContent('100% оценённых звонков (0 из 3 без зачёта)');
   });
 
-  it('shows the empty state when no call was rated or none has a CRM manager', () => {
-    render(<RopBriefingCard calls={[missedCall(), failedCall(), makeCall({ manager: 'Не определён' })]} />);
+  it('shows the empty state when no call was rated', () => {
+    render(<RopBriefingCard calls={[missedCall(), failedCall()]} />);
     expect(screen.getByTestId('rop-briefing-empty')).toBeInTheDocument();
+  });
+
+  it('calls without a CRM manager still show the weakest criterion, but nobody is praised or coached', () => {
+    render(<RopBriefingCard calls={[makeCall({ manager: 'Не определён', score: 8 })]} />);
+
+    expect(screen.getByText('Слабое место отдела:')).toBeInTheDocument();
+    expect(screen.queryByText('Кого похвалить на планёрке:')).not.toBeInTheDocument();
+    expect(screen.getByTestId('briefing-few-calls')).toBeInTheDocument();
   });
 
   it('does not coach the manager it praises', () => {
