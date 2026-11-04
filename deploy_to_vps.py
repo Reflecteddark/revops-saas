@@ -6,6 +6,7 @@ RevOps Enterprise OS — Unified Deployment Engine (Windows -> GitHub & Aeza VPS
 
 import argparse
 import base64
+import contextlib
 import json
 import os
 import py_compile
@@ -662,13 +663,14 @@ def rollback_docker(vps_path: str, target_sha: str | None = None) -> bool:
     # 3. Пуллим целевой образ и перезапускаем контейнер
     log(f"Загрузка образа {target_short} и перезапуск контейнера...", symbol="[^]")
     docker_cmd = f"cd {vps_path} && docker compose pull api worker && docker compose up -d api worker"
-    res_docker = subprocess.run(
-        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="ignore"
-    )
+    with guard_paused():
+        res_docker = subprocess.run(
+            ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="ignore"
+        )
     if res_docker.returncode != 0:
         log(f"[-] Ошибка pull/up при откате: {res_docker.stderr.strip() or res_docker.stdout.strip()}", symbol="[-]")
         return False
@@ -684,10 +686,11 @@ def rollback_docker(vps_path: str, target_sha: str | None = None) -> bool:
     else:
         log(f"❌ [Rollback] Смоук-тест версии {target_short} провален! Экстренное восстановление {current_short}...", symbol="[-]")
         set_vps_image_tag(vps_path, resolve_commit_sha(repo, current_sha, local_path))
-        subprocess.run(
-            ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
-            capture_output=True
-        )
+        with guard_paused():
+            subprocess.run(
+                ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
+                capture_output=True
+            )
         send_telegram_alert(
             f"🚨 <b>[RevOps Disaster Alert]</b>\n"
             f"Попытка отката на <code>{target_short}</code> завершилась ошибкой смоук-теста!\n"
@@ -745,6 +748,53 @@ def list_versions(repo: str, vps_path: str):
         print(f"  python deploy_to_vps.py saas --rollback           (на {previous_sha or 'предыдущую'})\n")
     except Exception as e:
         log(f"[-] Не удалось получить список коммитов: {e}", symbol="[-]")
+
+
+GUARD_TIMER = "revops-health-guard.timer"
+
+
+def _vps_run(remote_cmd: str, timeout: int = 30) -> "subprocess.CompletedProcess[str] | None":
+    """One short command on the VPS; None when ssh cannot be run or hangs."""
+    try:
+        return subprocess.run(
+            ["ssh", "-n", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10", f"{VPS_USER}@{VPS_HOST}", remote_cmd],
+            capture_output=True, text=True, encoding="utf-8", errors="ignore", timeout=timeout,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+
+
+def _wait_api_ready(timeout_sec: int = 90) -> bool:
+    deadline = time.time() + timeout_sec
+    while True:
+        res = _vps_run("curl -fsS -o /dev/null -m 5 http://127.0.0.1:8000/api/v1/health", timeout=20)
+        if res is not None and res.returncode == 0:
+            return True
+        if time.time() >= deadline:
+            return False
+        time.sleep(3)
+
+
+@contextlib.contextmanager
+def guard_paused():
+    """
+    The health guard (systemd timer, every minute) restarts a service it finds down. During a deploy that service is
+    the one being replaced: on 2026-11-04 it restarted revops-api twice in the middle of a deploy and sent a
+    PARTIALLY_RECOVERED alert to Telegram. The timer is stopped for the container swap and started again once the
+    API answers (or after 90 s), also when the deploy fails. A timer that was not running is left as it was.
+    """
+    res = _vps_run(f"systemctl is-active --quiet {GUARD_TIMER} && systemctl stop {GUARD_TIMER}")
+    paused = res is not None and res.returncode == 0
+    log("Health Guard приостановлен на время выкатки" if paused else "Health Guard не был активен или не остановлен: выкатка без паузы",
+        symbol="[i]" if paused else "[!]")
+    try:
+        yield
+    finally:
+        if paused:
+            if not _wait_api_ready():
+                log("API не ответил за 90 с: Health Guard включается и разберётся сам", symbol="[!]")
+            _vps_run(f"systemctl start {GUARD_TIMER}")
+            log("Health Guard снова включён", symbol="[i]")
 
 
 def deploy_via_docker_compose(
@@ -812,13 +862,14 @@ def deploy_via_docker_compose(
     # 5. Выполняем docker compose pull && docker compose up -d
     log(f"Обновление и запуск Docker-контейнеров (IMAGE_TAG={commit_hash[:7]})...", symbol="[^]")
     docker_cmd = f"cd {vps_path} && docker compose pull api worker && docker compose up -d api worker"
-    res_docker = subprocess.run(
-        ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="ignore"
-    )
+    with guard_paused():
+        res_docker = subprocess.run(
+            ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="ignore"
+        )
     if res_docker.returncode != 0:
         log(f"Ошибка запуска контейнеров: {res_docker.stderr.strip() or res_docker.stdout.strip()}", symbol="[-]")
         return False

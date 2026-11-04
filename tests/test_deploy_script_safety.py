@@ -99,3 +99,85 @@ def test_dirty_tree_aborts_without_committing(tmp_path):
 
     assert git("rev-list", "--count", "HEAD").stdout.strip() == "1"
     assert "client_data.json" not in git("ls-files").stdout
+
+
+# --- the health guard must not fight the deploy ---------------------------------------------------------------
+
+def _recording_ssh(commands, fail=None):
+    """Replaces subprocess.run: records the remote command of every ssh call; `fail` maps a substring to a returncode."""
+    def run(cmd, **k):
+        remote = cmd[-1] if isinstance(cmd, list) else str(cmd)
+        commands.append(remote)
+        for needle, code in (fail or {}).items():
+            if needle in remote:
+                return SimpleNamespace(returncode=code, stdout="", stderr="boom")
+        return _ok()
+    return run
+
+
+def _stub_deploy(tmp_path, monkeypatch, commands, fail=None):
+    (tmp_path / "docker-compose.yml").write_text("services: {}\n", encoding="utf-8")
+    monkeypatch.setattr(d, "check_ssh_reachability", lambda **k: True)
+    monkeypatch.setattr(d, "get_vps_deploy_info", lambda p: {"current_sha": "oldsha1"})
+    monkeypatch.setattr(d, "set_vps_image_tag", lambda *a: True)
+    monkeypatch.setattr(d, "setup_vps_backup_timer", lambda *a: True)
+    monkeypatch.setattr(d, "update_vps_deploy_info", lambda *a, **k: True)
+    monkeypatch.setattr(d.time, "sleep", lambda s: None)
+    monkeypatch.setattr(d.subprocess, "run", _recording_ssh(commands, fail))
+
+
+def _index(commands, needle):
+    return next(i for i, c in enumerate(commands) if needle in c)
+
+
+def test_guard_is_stopped_for_the_container_swap_and_started_after_the_api_answers(tmp_path, monkeypatch):
+    commands = []
+    _stub_deploy(tmp_path, monkeypatch, commands)
+
+    assert d.deploy_via_docker_compose(tmp_path, "/opt/x", "newsha1", previous_sha="oldsha1")
+
+    stop = _index(commands, "systemctl stop revops-health-guard.timer")
+    up = _index(commands, "docker compose up -d api worker")
+    ready = _index(commands, "127.0.0.1:8000/api/v1/health")
+    start = _index(commands, "systemctl start revops-health-guard.timer")
+    assert stop < up < ready < start
+
+
+def test_guard_is_started_again_when_the_deploy_fails(tmp_path, monkeypatch):
+    commands = []
+    _stub_deploy(tmp_path, monkeypatch, commands, fail={"docker compose up": 1})
+
+    assert d.deploy_via_docker_compose(tmp_path, "/opt/x", "newsha1", previous_sha="oldsha1") is False
+    assert any("systemctl start revops-health-guard.timer" in c for c in commands)
+
+
+def test_a_guard_that_was_not_running_is_not_started_by_the_deploy(tmp_path, monkeypatch):
+    commands = []
+    _stub_deploy(tmp_path, monkeypatch, commands, fail={"systemctl is-active": 3})
+
+    assert d.deploy_via_docker_compose(tmp_path, "/opt/x", "newsha1", previous_sha="oldsha1")
+    assert not any("systemctl start revops-health-guard.timer" in c for c in commands)
+
+
+def test_the_guard_is_not_waited_for_longer_than_90_seconds(monkeypatch):
+    now = {"t": 0.0}
+    monkeypatch.setattr(d.time, "time", lambda: now["t"])
+    monkeypatch.setattr(d.time, "sleep", lambda s: now.update(t=now["t"] + s))
+    monkeypatch.setattr(d.subprocess, "run", lambda *a, **k: SimpleNamespace(returncode=7, stdout="", stderr=""))
+    assert d._wait_api_ready(timeout_sec=90) is False
+    assert now["t"] <= 93
+
+
+def test_rollback_also_pauses_the_guard(monkeypatch):
+    commands = []
+    monkeypatch.setattr(d, "get_vps_deploy_info", lambda p: {"current_sha": "9f9ec4b", "previous_sha": "4b1ff5f"})
+    monkeypatch.setattr(d, "resolve_commit_sha", lambda repo, sha, lp=None: sha + "0" * 33)
+    monkeypatch.setattr(d, "check_ssh_reachability", lambda **k: True)
+    monkeypatch.setattr(d, "set_vps_image_tag", lambda *a: True)
+    monkeypatch.setattr(d, "run_smoke_test", lambda **k: True)
+    monkeypatch.setattr(d, "update_vps_deploy_info", lambda *a, **k: True)
+    monkeypatch.setattr(d.time, "sleep", lambda s: None)
+    monkeypatch.setattr(d.subprocess, "run", _recording_ssh(commands))
+
+    assert d.rollback_docker("/opt/x", target_sha=None)
+    assert _index(commands, "systemctl stop") < _index(commands, "docker compose up -d api worker") < _index(commands, "systemctl start")
