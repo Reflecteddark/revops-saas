@@ -47,12 +47,9 @@ def _resolve_gemini_proxy_key() -> str:
             except Exception:
                 pass
 
-    # Obfuscated backup to satisfy security push protection
-    obfuscated = b"QVEuQWI4Uk42TDdlYktUSzV1c3pMV3FuM2M4M0JSSW1CZkxDb2w2eUtEbkdzdVphOFVMNHc="
-    try:
-        return base64.b64decode(obfuscated).decode("ascii")
-    except Exception:
-        return ""
+    # No key in the code (a base64 "backup" used to live here, in a public repository): without GEMINI_PROXY_KEY
+    # or telegram_credentials.json the caller gets "" and no request is made.
+    return ""
 
 
 GEMINI_PROXY_KEY = _resolve_gemini_proxy_key()
@@ -136,6 +133,9 @@ async def generate_gemini_content_cascade(
             }
 
             if tier_type == "proxy":
+                if not GEMINI_PROXY_KEY:
+                    last_error = "GEMINI_PROXY_KEY is not set"
+                    continue
                 url = f"{GEMINI_PROXY_URL}/v1beta/models/{model_id}:generateContent?key={GEMINI_PROXY_KEY}"
             else:
                 direct_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -204,6 +204,9 @@ def probe_gemini_models_sync(timeout: float = 12.0) -> dict[str, Any]:
     for tier_info in proxy_tiers:
         tier_name = tier_info["tier"]
         model_id = tier_info["model"]
+        if not GEMINI_PROXY_KEY:
+            last_error = "GEMINI_PROXY_KEY is not set"
+            continue
         url = f"{GEMINI_PROXY_URL}/v1beta/models/{model_id}:generateContent?key={GEMINI_PROXY_KEY}"
 
         t0 = time.perf_counter()

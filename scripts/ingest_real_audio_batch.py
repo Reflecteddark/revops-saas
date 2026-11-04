@@ -75,11 +75,9 @@ def resolve_gemini_proxy_key() -> str:
                     return str(data["gemini_proxy_key"]).strip()
             except Exception:
                 pass
-    obfuscated = b"QVEuQWI4Uk42TDdlYktUSzV1c3pMV3FuM2M4M0JSSW1CZkxDb2w2eUtEbkdzdVphOFVMNHc="
-    try:
-        return base64.b64decode(obfuscated).decode("ascii")
-    except Exception:
-        return ""
+    # No key in the code (a base64 "backup" used to live here, in a public repository): without GEMINI_PROXY_KEY
+    # or telegram_credentials.json the caller gets "" and no request is made.
+    return ""
 
 
 GEMINI_KEY = resolve_gemini_proxy_key()

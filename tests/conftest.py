@@ -14,6 +14,18 @@ os.environ.setdefault("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-a
 import tempfile
 from pathlib import Path
 
+# The suite must never spend the real Gemini quota. Until now ai_probe fell back to a key stored in the code and
+# test_ai_probe_sync_healthy / test_ai_cascade_success_tier1 (and every analyst test that did not patch the cascade)
+# called the real proxy on each local run and each CI run: ~75% of a day's traffic to the proxy. The tests keep a
+# non-empty dummy key (so the proxy tiers are entered and their failover is tested) and a closed local port, so a
+# request that is not mocked fails at once, offline.
+import packages.monitoring.ai_probe as _ai_probe
+
+_ai_probe.GEMINI_PROXY_URL = "http://127.0.0.1:9"
+_ai_probe.GEMINI_PROXY_KEY = "test-only-key"
+for _var in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GEMINI_PROXY_KEY"):
+    os.environ.pop(_var, None)
+
 # Hermetic tenant registry: tests must never write to real registry files. The app resolves
 # registry paths relative to the repo and to the developer's home (e.g. ../revops-enterprise-os/),
 # so without this a test that saves the registry silently overwrote the developer's real files,
