@@ -649,7 +649,7 @@ export function RnpStandupView({
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-rose-500" />
               <h3 className="text-sm font-semibold text-foreground">
-                Ключевые сделки с риском срыва регламента (&gt;48ч без движения)
+                Сделки в зоне риска по регламенту
               </h3>
             </div>
             <span className="font-mono text-xs text-rose-400">
@@ -675,7 +675,7 @@ export function RnpStandupView({
                       variant="outline"
                       className="border-rose-500/30 font-mono text-[10px] text-rose-400"
                     >
-                      {d.stage || 'Согласование КП'}
+                      {d.stage_name || d.stage || 'Этап не указан'}
                     </Badge>
                   </div>
                   <p className="text-[11px] text-tertiary">

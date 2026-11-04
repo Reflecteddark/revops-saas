@@ -223,4 +223,19 @@ describe('DailyHourlyHeatmap Component', () => {
       screen.queryByTestId('heatmap-team-totals-row')
     ).not.toBeInTheDocument();
   });
+
+  it('tells the user when calls of the day have no time (date-only source)', () => {
+    const dateOnly = { ...mockCalls[0], id: 'c-date-only', date: '2026-10-31' } as Call;
+    render(
+      <DailyHourlyHeatmap calls={[dateOnly]} managers={mockManagers} selectedDate="2026-10-31" />
+    );
+    expect(screen.getByTestId('heatmap-no-hour-note')).toHaveTextContent(/1 звонков без времени/);
+  });
+
+  it('does not show the note when every call has a time', () => {
+    render(
+      <DailyHourlyHeatmap calls={mockCalls} managers={mockManagers} selectedDate="2026-10-26" />
+    );
+    expect(screen.queryByTestId('heatmap-no-hour-note')).not.toBeInTheDocument();
+  });
 });

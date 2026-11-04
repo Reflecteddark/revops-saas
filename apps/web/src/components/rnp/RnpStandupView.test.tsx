@@ -172,7 +172,7 @@ describe('RnpStandupView', () => {
       />
     );
 
-    expect(screen.getByText(/Ключевые сделки с риском срыва регламента/i)).toBeInTheDocument();
+    expect(screen.getByText(/Сделки в зоне риска по регламенту/i)).toBeInTheDocument();
     expect(screen.getByText('Крупная поставка')).toBeInTheDocument();
     expect(screen.getByText(/500 000 ₽/i)).toBeInTheDocument();
   });

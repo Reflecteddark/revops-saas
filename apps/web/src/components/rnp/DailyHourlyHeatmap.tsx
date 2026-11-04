@@ -73,6 +73,12 @@ export const DailyHourlyHeatmap: React.FC<DailyHourlyHeatmapProps> = ({
     });
   }, [calls, activeDate]);
 
+  // Calls of the day whose time is unknown (e.g. the sheet stores only a date) cannot be placed on an hour
+  const noHourCount = useMemo(
+    () => dayCalls.filter((c) => extractCallHourAndDate(c).hour === null).length,
+    [dayCalls]
+  );
+
   // 3. Resolve manager list
   const managerList = useMemo(() => {
     if (managers.length > 0) return managers;
@@ -201,6 +207,15 @@ export const DailyHourlyHeatmap: React.FC<DailyHourlyHeatmapProps> = ({
             Почасовая интенсивность вызовов менеджеров: наборы звонков всего
             через слэш целевые разговоры от 60 секунд.
           </CardDescription>
+          {noHourCount > 0 && (
+            <p
+              className="mt-1 text-[11px] text-amber-500"
+              data-testid="heatmap-no-hour-note"
+            >
+              За этот день {noHourCount} звонков без времени (в источнике указана только дата) —
+              на часовую карту они не попали.
+            </p>
+          )}
         </div>
 
         {/* Date Selector & Peak Badge */}

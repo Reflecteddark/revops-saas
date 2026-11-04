@@ -62,7 +62,7 @@ export function RnpFinanceView({
     let sum = 0;
     for (const d of deals) {
       if (isWonOrLost(d)) continue;
-      const stName = (d.stage || '').toLowerCase();
+      const stName = (d.stage_name || d.stage || '').toLowerCase();
       // Match with configured stages or fallback heuristic
       let weight = 0.35;
       for (const [key, w] of Object.entries(stageWeights)) {
@@ -94,7 +94,7 @@ export function RnpFinanceView({
     const map: Record<string, { amount: number; count: number }> = {};
     for (const d of deals) {
       if (isWonOrLost(d)) continue;
-      const st = d.stage || 'Первый контакт';
+      const st = d.stage_name || d.stage || 'Этап не указан';
       if (!map[st]) map[st] = { amount: 0, count: 0 };
       map[st].amount += d.amount || 0;
       map[st].count += 1;

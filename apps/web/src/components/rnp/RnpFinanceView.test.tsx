@@ -95,4 +95,20 @@ describe('RnpFinanceView', () => {
     expect(screen.getByText(/КП отправлено/i)).toBeInTheDocument();
     expect(screen.getByText(/Счет на оплате/i)).toBeInTheDocument();
   });
+
+  it('names stages as the CRM does (stage_name), not by the internal enum', () => {
+    const deal = { ...mockDeals[0], stage: 'Входящий лид', stage_name: 'Первичный контакт' };
+    render(
+      <RnpFinanceView
+        deals={[deal]}
+        managers={mockManagers}
+        stages={mockStages}
+        planTarget={5000000}
+        revenue={0}
+      />
+    );
+
+    expect(screen.getByText(/Первичный контакт/)).toBeInTheDocument();
+    expect(screen.queryByText(/Входящий лид/)).not.toBeInTheDocument();
+  });
 });

@@ -536,7 +536,7 @@ export function PulsePage() {
         dealsCount={openDeals.length}
         callsCount={calls.length}
         hasPlan={hasPlan}
-        managersCount={uniqueManagersCount}
+        managersCount={settings?.managers?.length ?? 0}
         hasTelegram={Boolean(settingsQuery.data?.telegram?.bot_token || settingsQuery.data?.telegram?.chat_id)}
       />
 
@@ -763,7 +763,7 @@ export function PulsePage() {
           <ExpressScenarioCalculator
             initialLeads={Math.max(1, deals.length)}
             initialCheck={avgCheckRub > 0 ? avgCheckRub : 250000}
-            initialManagers={Math.max(1, uniqueManagersCount)}
+            initialManagers={Math.max(1, settings?.managers?.length || uniqueManagersCount)}
             realLeakPct={(insights as any)?.loss_rate_pct}
             realConversionPct={(insights as any)?.conversion_rate_pct}
           />
