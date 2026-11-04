@@ -325,17 +325,22 @@ def wait_for_ci(repo: str, commit_sha: str, timeout_sec: int = 300) -> bool:
         log(f"[CI Gate] Ожидание CI... ({elapsed}с / {timeout_sec}с) — {status_summary}", symbol="[i]")
         time.sleep(poll_interval)
 
-def check_ssh_reachability(timeout_sec: int = 4) -> bool:
-    """Быстрая проверка доступности SSH на VPS перед стримингом."""
-    try:
-        res = subprocess.run(
-            ["ssh", "-n", "-o", "StrictHostKeyChecking=no", "-o", f"ConnectTimeout={timeout_sec}", f"{VPS_USER}@{VPS_HOST}", "echo ok"],
-            capture_output=True,
-            timeout=timeout_sec + 2
-        )
-        return res.returncode == 0
-    except Exception:
-        return False
+def check_ssh_reachability(timeout_sec: int = 10, attempts: int = 2) -> bool:
+    """Проверка доступности SSH на VPS перед стримингом и операциями с повторными попытками."""
+    for attempt in range(1, attempts + 1):
+        try:
+            res = subprocess.run(
+                ["ssh", "-n", "-o", "StrictHostKeyChecking=no", "-o", f"ConnectTimeout={timeout_sec}", f"{VPS_USER}@{VPS_HOST}", "echo ok"],
+                capture_output=True,
+                timeout=timeout_sec + 2
+            )
+            if res.returncode == 0:
+                return True
+        except Exception:
+            pass
+        if attempt < attempts:
+            time.sleep(2)
+    return False
 
 def stream_to_vps(local_path: Path, vps_path: str, commit_hash: str) -> bool:
     """Создает tar-архив в памяти с фильтрацией и стримит через SSH напрямую на VPS."""
@@ -344,7 +349,7 @@ def stream_to_vps(local_path: Path, vps_path: str, commit_hash: str) -> bool:
     file_count = 0
     total_bytes = 0
 
-    if not check_ssh_reachability(timeout_sec=4):
+    if not check_ssh_reachability(timeout_sec=10, attempts=2):
         log(f"VPS {VPS_HOST} недоступен по SSH (тайм-аут соединения). Проверьте статус сервера в панели Aeza.", symbol="[-]")
         return False
 
@@ -647,7 +652,7 @@ def rollback_docker(vps_path: str, target_sha: str | None = None) -> bool:
     log(f"[i] Текущая активная версия в проде: {current_short}", symbol="[i]")
 
     # 1. Проверяем доступность SSH
-    if not check_ssh_reachability(timeout_sec=4):
+    if not check_ssh_reachability(timeout_sec=10, attempts=2):
         log(f"VPS {VPS_HOST} недоступен по SSH. Откат прерван.", symbol="[-]")
         return False
 
@@ -656,7 +661,7 @@ def rollback_docker(vps_path: str, target_sha: str | None = None) -> bool:
 
     # 3. Пуллим целевой образ и перезапускаем контейнер
     log(f"Загрузка образа {target_short} и перезапуск контейнера...", symbol="[^]")
-    docker_cmd = f"cd {vps_path} && docker compose pull && docker compose up -d --force-recreate --remove-orphans"
+    docker_cmd = f"cd {vps_path} && docker compose pull api worker && docker compose up -d api worker"
     res_docker = subprocess.run(
         ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
         capture_output=True,
@@ -756,7 +761,7 @@ def deploy_via_docker_compose(
     """
     log(f"Подготовка окружения и деплой Docker на VPS: {vps_path}...", symbol="[>]")
 
-    if not check_ssh_reachability(timeout_sec=4):
+    if not check_ssh_reachability(timeout_sec=10, attempts=2):
         log(f"VPS {VPS_HOST} недоступен по SSH. Проверьте сервер в панели Aeza.", symbol="[-]")
         return False
 
@@ -806,7 +811,7 @@ def deploy_via_docker_compose(
 
     # 5. Выполняем docker compose pull && docker compose up -d
     log(f"Обновление и запуск Docker-контейнеров (IMAGE_TAG={commit_hash[:7]})...", symbol="[^]")
-    docker_cmd = f"cd {vps_path} && docker compose pull && docker compose up -d --force-recreate --remove-orphans"
+    docker_cmd = f"cd {vps_path} && docker compose pull api worker && docker compose up -d api worker"
     res_docker = subprocess.run(
         ["ssh", "-n", "-o", "StrictHostKeyChecking=no", f"{VPS_USER}@{VPS_HOST}", docker_cmd],
         capture_output=True,
@@ -1031,7 +1036,10 @@ def main():
                 # Capture the running version before stream_to_vps() overwrites .deploy_info.json
                 pre_info = get_vps_deploy_info(proj["vps_path"])
                 running_sha = pre_info.get("current_sha") or pre_info.get("commit") or ""
-                stream_to_vps(proj["local_path"], proj["vps_path"], commit_h)
+                stream_ok = stream_to_vps(proj["local_path"], proj["vps_path"], commit_h)
+                if not stream_ok:
+                    log(f"[-] Ошибка стриминга файлов на VPS для {proj['name']}! Деплой остановлен. Прод не тронут.", symbol="[-]")
+                    sys.exit(1)
                 success = deploy_via_docker_compose(
                     proj["local_path"], proj["vps_path"], commit_h, full_hashes.get(t),
                     previous_sha=running_sha,
