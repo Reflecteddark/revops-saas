@@ -33,7 +33,7 @@ from ..cache_client import (
 )
 from ..schemas import SpeechEvaluationRequest
 from ..services.audio_duration import mp3_duration_seconds
-from ..services.call_scorecard import read_scorecard
+from ..services.call_scorecard import call_texts, read_scorecard
 from ..services.raw_calls_row import build_raw_calls_row
 from ..services.tz import local_str, tenant_tz, to_local
 from ..services.crm_deal_normalizer import parse_numeric_price
@@ -143,15 +143,14 @@ class CallIngestPayload(BaseModel):
     deal_title: str | None = None
     client: str | None = None
     manager: str | None = None
-    stage: str | None = "Первичный контакт"
+    stage: str | None = None
     duration_sec: int | None = None
     duration: str | None = None
     amount: str | None = None  # unknown stays unknown; it used to default to an invented "500 000 ₽"
     score: int | None = None
-    status: str | None = None
-    status_label: str | None = None
-    risk_amount: str | None = None
     next_step: int | None = None  # None -> taken from cr1; it used to default to 1 ("next step fixed")
+    audit_failed: int | None = None  # the AI could not read the call
+    is_unanswered: int | None = None  # nobody talked: IVR, voicemail, a drop
     zoom_scheduled: int | None = None
     cr: list[int] | None = None
     error_summary: str | None = None
@@ -160,6 +159,31 @@ class CallIngestPayload(BaseModel):
     sync_to_sheets: bool = True
     # Required: a call without a tenant must never silently land in another client's data.
     tenant_id: str
+
+
+def call_view(payload: CallIngestPayload) -> dict[str, Any]:
+    """The verdict of an incoming call: every path that receives a call shows it the same way."""
+    has_cr = bool(payload.cr and len(payload.cr) == 13)
+    if has_cr:
+        cr: list[int | None] = [int(x) if x is not None else None for x in payload.cr]  # type: ignore[union-attr]
+        score = payload.score if payload.score is not None else sum(c for c in cr if c is not None)
+        next_step = payload.next_step if payload.next_step is not None else cr[0]
+    else:
+        cr, score, next_step = [None] * 13, None, None
+
+    card = read_scorecard(
+        {
+            "cr": cr,
+            "score": score,
+            "next_step": next_step,
+            "audit_failed": payload.audit_failed,
+            "is_unanswered": payload.is_unanswered,
+        },
+        None,
+        error_summary=payload.error_summary,
+    )
+    card["risk_amount"] = (payload.amount or "0 ₽") if card["at_risk"] else "0 ₽"
+    return card
 
 
 def verify_internal_or_admin(request: Request) -> bool:
@@ -370,27 +394,22 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
             raw_ns = r[20].strip() if len(r) > 20 else ""
             next_step: int | None = int(raw_ns) if raw_ns in ("0", "1") else None
 
-            # Status derivation
-            if score is None or next_step is None:
-                status = "unknown"
-                status_label = "НЕТ ДАННЫХ"
-                risk_amt = "0 ₽"
-            elif score >= 10 and next_step == 1:
-                status = "won"
-                status_label = "ЭТАЛОН"
-                risk_amt = "0 ₽"
-            elif next_step == 0:
-                status = "risk"
-                status_label = "СЛИВ (НЕТ NEXT STEP)"
-                risk_amt = deal_amount_str
-            else:
-                status = "risk" if score < 8 else "won"
-                status_label = "СЛИВ" if score < 8 else "ЭТАЛОН"
-                risk_amt = deal_amount_str if score < 8 else "0 ₽"
-
             error_sum = r[21] if len(r) > 21 else ""
             rec = r[22] if len(r) > 22 else ""
             transcript = r[29] if len(r) > 29 else ""
+
+            card = read_scorecard(
+                {
+                    "cr": cr_list,
+                    "score": score,
+                    "next_step": next_step,
+                    "audit_failed": r[36] if len(r) > 36 else "",
+                    "is_unanswered": r[37] if len(r) > 37 else "",
+                },
+                None,
+                error_summary=error_sum,
+            )
+            error_sum, rec = call_texts(card["kind"], error_sum, rec)
 
             # Client name heuristic from transcript or deal title
             client_name = "Клиент"
@@ -415,16 +434,17 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                 "duration": duration_str,
                 "amount": deal_amount_str,
                 "amount_num": deal_amount_num,
-                "score": score,
-                "status": status,
-                "status_label": status_label,
-                "risk_amount": risk_amt,
-                "next_step": next_step,
+                "score": card["score"],
+                "kind": card["kind"],
+                "status": card["status"],
+                "status_label": card["status_label"],
+                "risk_amount": deal_amount_str if card["at_risk"] else "0 ₽",
+                "next_step": card["next_step"],
                 "date": r[3] if len(r) > 3 and r[3] else "",
-                "cr": cr_list,
+                "cr": card["cr"],
                 "zoom_scheduled": None,
-                "error_summary": error_sum or "Анализ завершен ИИ",
-                "recommendation": rec or "Следовать регламенту фиксации Next Step",
+                "error_summary": error_sum,
+                "recommendation": rec,
                 "transcript": transcript or "Транскрипт отсутствует"
             })
             if len(calls) >= limit:
@@ -612,26 +632,12 @@ def get_dashboard_calls_data(
             dur_secs = int(c.duration_seconds or 0)
             dur_str = f"{dur_secs // 60}:{dur_secs % 60:02d}"
 
-            card = read_scorecard(sc, float(c.overall_score) if c.overall_score is not None else None)
-            cr_val = card["cr"]
-            call_score = card["score"]
-            call_next_step = card["next_step"]
-
-            call_status = sc.get("status")
-            if not call_status:
-                if call_score is not None:
-                    call_status = "won" if call_score >= 10 else "risk"
-                else:
-                    call_status = "unknown"
-
-            call_status_label = sc.get("status_label")
-            if not call_status_label:
-                if call_status == "won":
-                    call_status_label = "ЭТАЛОН"
-                elif call_status == "risk":
-                    call_status_label = "СЛИВ"
-                else:
-                    call_status_label = "НЕТ ДАННЫХ"
+            error_summary = str(c.ai_summary or sc.get("error_summary") or "")
+            recommendation = str(c.next_action_extracted or sc.get("recommendation") or "")
+            card = read_scorecard(
+                sc, float(c.overall_score) if c.overall_score is not None else None, error_summary=error_summary
+            )
+            error_summary, recommendation = call_texts(card["kind"], error_summary, recommendation)
 
             if deal_budget is not None:
                 amount_num = float(deal_budget)
@@ -645,7 +651,7 @@ def get_dashboard_calls_data(
                     amount_num = 0.0
 
             amount_str = f"{int(amount_num):,} ₽".replace(",", " ") if amount_num > 0 else (sc.get("amount_str") or "0 ₽")
-            risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and call_status == "risk") else "0 ₽"
+            risk_amt_str = f"{int(amount_num):,} ₽".replace(",", " ") if (amount_num > 0 and card["at_risk"]) else "0 ₽"
 
             # Prioritize specific client/contact extracted from the call
             sc_client = sc.get("client")
@@ -674,18 +680,19 @@ def get_dashboard_calls_data(
                 "duration": dur_str,
                 "amount": amount_str,
                 "amount_num": amount_num,
-                "score": call_score,
-                "status": call_status,
-                "status_label": call_status_label,
+                "score": card["score"],
+                "kind": card["kind"],
+                "status": card["status"],
+                "status_label": card["status_label"],
                 "risk_amount": risk_amt_str,
-                "next_step": call_next_step,
+                "next_step": card["next_step"],
                 # DB stores naive UTC; the РОП works in the client's time zone, so a 22:30 UTC call (01:30 MSK) belongs
                 # to the next working day. The string is local wall time, same as dates written by n8n to Sheets.
                 "date": local_str(cast("datetime | None", c.created_at), call_tz),
-                "cr": cr_val,
+                "cr": card["cr"],
                 "zoom_scheduled": card["zoom_scheduled"],
-                "error_summary": c.ai_summary or sc.get("error_summary", "Анализ завершен ИИ"),
-                "recommendation": c.next_action_extracted or sc.get("recommendation", "Следовать регламенту фиксации Next Step"),
+                "error_summary": error_summary,
+                "recommendation": recommendation,
                 "transcript": c.transcript_text or "Транскрипт отсутствует"
             })
         return {
@@ -730,36 +737,11 @@ async def ingest_call_from_n8n(
             pass
     dur_str = payload.duration or f"{dur_sec // 60}:{dur_sec % 60:02d}"
 
-    has_cr = bool(payload.cr and len(payload.cr) == 13)
-    if has_cr:
-        cr_list: list[int | None] = [int(x) if x is not None else None for x in payload.cr]  # type: ignore[union-attr]
-        score = payload.score if payload.score is not None else sum(c for c in cr_list if c is not None)
-        next_step = payload.next_step if payload.next_step is not None else cr_list[0]
+    dur_str = payload.duration or f"{dur_sec // 60}:{dur_sec % 60:02d}"
 
-        if payload.status:
-            status = payload.status
-            status_label = payload.status_label or ("ЭТАЛОН" if status == "won" else "СЛИВ")
-            risk_amt = payload.risk_amount or ("0 ₽" if status == "won" else (payload.amount or "0 ₽"))
-        else:
-            if score is not None and score >= 10 and next_step == 1:
-                status = "won"
-                status_label = "ЭТАЛОН"
-                risk_amt = "0 ₽"
-            elif next_step == 0:
-                status = "risk"
-                status_label = "СЛИВ (НЕТ NEXT STEP)"
-                risk_amt = payload.amount or "0 ₽"
-            else:
-                status = "risk" if (score is not None and score < 8) else "won"
-                status_label = "СЛИВ" if (score is not None and score < 8) else "ЭТАЛОН"
-                risk_amt = payload.amount or "0 ₽" if (score is not None and score < 8) else "0 ₽"
-    else:
-        cr_list = [None] * 13
-        score = None
-        next_step = None
-        status = "unknown"
-        status_label = "НЕТ ДАННЫХ"
-        risk_amt = "0 ₽"
+    card = call_view(payload)
+    cr_list, score, next_step = card["cr"], card["score"], card["next_step"]
+    status, status_label, risk_amt = card["status"], card["status_label"], card["risk_amount"]
 
     formatted_call = {
         "id": call_id,
@@ -775,6 +757,9 @@ async def ingest_call_from_n8n(
         "status_label": status_label,
         "risk_amount": risk_amt,
         "next_step": next_step,
+        "kind": card["kind"],
+        "audit_failed": 1 if card["kind"] == "audit_failed" else 0,
+        "is_unanswered": 1 if card["kind"] == "unanswered" else 0,
         "cr": cr_list,
         "zoom_scheduled": payload.zoom_scheduled,
         "error_summary": payload.error_summary or "",
@@ -824,8 +809,9 @@ async def ingest_call_from_n8n(
                     title=(payload.deal_title or f"Сделка {payload.deal_id}")[:255],
                     company_name=(payload.client or "Клиент")[:255],
                     budget=amt_clean,
-                    stage=DealStage.QUALIFICATION if status == "won" else DealStage.LEAD_INCOMING,
-                    stage_name=payload.stage or ("Переговоры" if status == "won" else "Первичный контакт"),
+                    # The stage belongs to the CRM (the next sync fills it), it does not follow from how a call went.
+                    stage=DealStage.LEAD_INCOMING,
+                    stage_name=payload.stage or DealStage.UNKNOWN.value,
                     pipeline_name="Основная воронка",
                     pipeline_id="0",
                     avg_call_score=float(score) if score is not None else 0.0,
@@ -835,14 +821,19 @@ async def ingest_call_from_n8n(
                 db.add(deal)
                 db.flush()
             elif deal:
-                existing_call_scores = [
-                    float(c.overall_score)
-                    for c in db.query(CallRecording).filter(
-                        CallRecording.tenant_id == target_tenant,
-                        CallRecording.deal_id == deal.id
-                    ).all()
-                    if c.overall_score is not None and (c.duration_seconds or 0) >= 20 and c.id != call_id
-                ]
+                existing_call_scores = []
+                for c in db.query(CallRecording).filter(
+                    CallRecording.tenant_id == target_tenant,
+                    CallRecording.deal_id == deal.id
+                ).all():
+                    # Unrated, unanswered and failed calls are stored as overall_score 0.0: they are not zeros.
+                    prior = read_scorecard(
+                        c.scorecard_criteria,
+                        float(c.overall_score) if c.overall_score is not None else None,
+                        error_summary=str(c.ai_summary or ""),
+                    )["score"]
+                    if prior is not None and (c.duration_seconds or 0) >= 20 and c.id != call_id:
+                        existing_call_scores.append(float(prior))
                 if score is not None and dur_sec >= 20:
                     existing_call_scores.append(float(score))
 

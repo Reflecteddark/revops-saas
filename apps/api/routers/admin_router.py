@@ -3020,8 +3020,6 @@ async def simulate_telephony_call(payload: SimulateCallPayload):
 
     if payload.simulate_leak:
         score = 6
-        status_val = "risk"
-        status_label = "СЛИВ (НЕТ NEXT STEP)"
         next_step = 0
         cr = [0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1]
         error_summary = "Не зафиксирован следующий шаг (Next Step), перехват инициативы клиентом."
@@ -3029,8 +3027,6 @@ async def simulate_telephony_call(payload: SimulateCallPayload):
         transcript = f"Менеджер ({payload.manager_name}): Алло, здравствуйте. Отправил вам КП на почту. Клиент: Хорошо, я посмотрю когда будет время. Менеджер: Ну ладно, до свидания."
     else:
         score = 11
-        status_val = "won"
-        status_label = "ЭТАЛОН"
         next_step = 1
         cr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1]
         error_summary = "Незначительная заминка при презентации гарантийного SLA."
@@ -3048,9 +3044,6 @@ async def simulate_telephony_call(payload: SimulateCallPayload):
         duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
         amount="350 000 ₽",
         score=score,
-        status=status_val,
-        status_label=status_label,
-        risk_amount="0 ₽" if status_val == "won" else "350 000 ₽",
         next_step=next_step,
         cr=cr,
         error_summary=error_summary,
@@ -3629,8 +3622,6 @@ async def resolve_quarantined_call(req: QuarantineResolveRequest):
             duration=target.get("duration", "3:00"),
             amount="300 000 ₽",
             score=target.get("score", 10),
-            status="won" if target.get("score", 10) >= 10 else "warn",
-            status_label="ОДОБРЕНО ИЗ КАРАНТИНА",
             next_step=1,
             # Fallback — 0, не идеальный скор. Иначе админ-эмуляция показывает
             # 13/13 как будто звонок идеален.

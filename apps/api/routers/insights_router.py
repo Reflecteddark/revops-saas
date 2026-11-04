@@ -336,7 +336,6 @@ def compute_leak_metrics(
         c for c in calls
         if c.get("score") is not None
         and c.get("next_step") not in (1, None)
-        and c.get("status") not in ("won",)
     ]
     fake_yes_count = len(fake_yes_calls)
 

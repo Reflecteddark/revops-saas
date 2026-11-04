@@ -55,7 +55,7 @@ export function LostDealsBanner({
       if (!c) return false;
       const isLost =
         c.status === 'lost' || c.status === 'risk' || c.next_step === 0;
-      if (!isLost || c.status === 'won') return false;
+      if (!isLost) return false;
 
       if (!filterYesterdayOnly) return true;
 
