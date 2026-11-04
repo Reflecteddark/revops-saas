@@ -92,7 +92,7 @@ export function AdminClientsTab() {
   const [amoToken, setAmoToken] = React.useState('');
   const [b24Webhook, setB24Webhook] = React.useState('');
   const [nicheName, setNicheName] = React.useState('Универсальный B2B');
-  const [avgDealCheck, setAvgDealCheck] = React.useState('150000');
+  const [avgDealCheck, setAvgDealCheck] = React.useState('');
   const [sheetId, setSheetId] = React.useState('');
 
   // 1. Fetch tenants list
@@ -241,7 +241,7 @@ export function AdminClientsTab() {
       amo_token: crmType === 'amocrm' ? amoToken.trim() || undefined : undefined,
       crm_webhook: crmType === 'bitrix24' ? b24Webhook.trim() || undefined : undefined,
       niche_name: nicheName.trim(),
-      avg_deal_check: Number(avgDealCheck) || 150000,
+      avg_deal_check: Number(avgDealCheck) > 0 ? Number(avgDealCheck) : undefined,
       sheet_id: sheetId.trim() || undefined,
     });
   };
@@ -422,7 +422,7 @@ export function AdminClientsTab() {
                           <div className="text-[11px] text-tertiary">
                             {t.niche_name || 'Универсальный B2B'} • Чек:{' '}
                             <span className="font-mono font-medium text-secondary">
-                              {(t.avg_deal_check || 150000).toLocaleString('ru-RU')} ₽
+                              {t.avg_deal_check ? `${t.avg_deal_check.toLocaleString('ru-RU')} ₽` : '—'}
                             </span>
                           </div>
                         </div>
@@ -770,7 +770,7 @@ export function AdminClientsTab() {
                   <label className="text-[11px] font-medium text-secondary">Средний чек сделки (₽)</label>
                   <Input
                     type="number"
-                    placeholder="150000"
+                    placeholder="не задан"
                     value={avgDealCheck}
                     onChange={(e) => setAvgDealCheck(e.target.value)}
                     className="h-8 text-xs font-mono bg-subtle/50 border-subtle"

@@ -122,7 +122,7 @@ def save_tenants_registry(data: dict[str, Any], target_path: Path | None = None,
                     "crm_type": t_dict.get("crm_type", "bitrix24"),
                     "status": status,
                     "niche_name": t_dict.get("niche_name", "Универсальный B2B"),
-                    "avg_deal_check": t_dict.get("avg_deal_check", 150000),
+                    "avg_deal_check": t_dict.get("avg_deal_check"),  # None = not set; never assume 150 000
                 }
                 for extra in ("amo_domain", "amo_token", "bitrix_webhook_url", "custom_features", "is_template", "managers", "manager_kpis"):
                     if extra in t_dict:

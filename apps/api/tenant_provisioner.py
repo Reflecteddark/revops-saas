@@ -63,7 +63,7 @@ def provision_tenant(
     amo_domain: str | None = None,
     amo_token: str | None = None,
     niche_name: str = "Универсальный B2B",
-    avg_deal_check: float = 150000.0,
+    avg_deal_check: float | None = None,
     target_next_step: str = "Фиксация следующего контакта с датой и временем",
     **kwargs: Any,
 ) -> dict[str, Any]:

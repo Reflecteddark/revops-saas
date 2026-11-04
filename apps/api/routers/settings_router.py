@@ -56,12 +56,14 @@ def _clean_currency(raw: str, default: str) -> str:
 
 
 class GeneralSettings(BaseModel):
-    company_name: str | None = "Самозанятый"
-    currency: str | None = "RUB (₽)"
-    period_start: str | None = "2026-10-01"
-    period_end: str | None = "2026-10-31"
-    monthly_target: float | None = 5000000.0
-    project_start_date: str | None = "2026-10-03"
+    # No invented defaults: a field the caller did not send must never be written anywhere
+    # (a partial save used to overwrite the company name, currency, period and plan in the client's sheet).
+    company_name: str | None = None
+    currency: str | None = None
+    period_start: str | None = None
+    period_end: str | None = None
+    monthly_target: float | None = None
+    project_start_date: str | None = None
     # Average deal check of THIS company (₽). None = not set (nothing is assumed); 0/None in a save clears it.
     avg_deal_check: float | None = None
 
@@ -624,15 +626,16 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
         # 1. Update general settings if present
         if payload.general:
             g = payload.general
-            if g.company_name is not None:
+            sent = g.model_fields_set  # only what the caller really sent
+            if "company_name" in sent and g.company_name is not None:
                 ws_settings.update_acell("B3", g.company_name)
-            if g.currency is not None:
+            if "currency" in sent and g.currency is not None:
                 ws_settings.update_acell("B4", g.currency)
-            if g.period_start is not None:
+            if "period_start" in sent and g.period_start is not None:
                 ws_settings.update_acell("B6", g.period_start)
-            if g.period_end is not None:
+            if "period_end" in sent and g.period_end is not None:
                 ws_settings.update_acell("B7", g.period_end)
-            if g.monthly_target is not None:
+            if "monthly_target" in sent and g.monthly_target is not None:
                 target_str = f"{g.monthly_target:,.0f} ₽".replace(",", " ")
                 ws_settings.update_acell("B9", target_str)
 

@@ -50,8 +50,8 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
   const [amoToken, setAmoToken] = useState('');
   const [spreadsheetId, setSpreadsheetId] = useState('');
   const [nicheName, setNicheName] = useState('');
-  const [avgDealCheck, setAvgDealCheck] = useState<number | string>(150000);
-  const [monthlyTarget, setMonthlyTarget] = useState<number | string>(5000000);
+  const [avgDealCheck, setAvgDealCheck] = useState<number | string>('');
+  const [monthlyTarget, setMonthlyTarget] = useState<number | string>('');
   const [minutesQuota, setMinutesQuota] = useState<number | string>(1000);
   const [clientEmail, setClientEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -75,8 +75,8 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
       setAmoToken(tenant.amo_token || '');
       setSpreadsheetId(tenant.spreadsheet_id || '');
       setNicheName(tenant.niche_name || 'Универсальный B2B');
-      setAvgDealCheck(tenant.avg_deal_check ?? 150000);
-      setMonthlyTarget(tenant.monthly_target ?? 5000000);
+      setAvgDealCheck(tenant.avg_deal_check ?? '');
+      setMonthlyTarget(tenant.monthly_target ?? '');
       setMinutesQuota(tenant.minutes_quota ?? 1000);
 
       const firstClient = tenant.connected_clients?.[0];
@@ -165,8 +165,9 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
         amo_token: crmType === 'amocrm' ? amoToken.trim() : undefined,
         spreadsheet_id: spreadsheetId.trim() || undefined,
         niche_name: nicheName.trim() || undefined,
-        avg_deal_check: Number(avgDealCheck) || 150000,
-        monthly_target: Number(monthlyTarget) || 5000000,
+        // empty = not set: nothing is sent, nothing is assumed (an empty form used to push 150 000 and 5 000 000)
+        avg_deal_check: Number(avgDealCheck) > 0 ? Number(avgDealCheck) : undefined,
+        monthly_target: Number(monthlyTarget) > 0 ? Number(monthlyTarget) : undefined,
         minutes_quota: Number(minutesQuota) || 1000,
         client_email: clientEmail.trim() || undefined,
         new_password: newPassword.trim() || undefined,
@@ -468,6 +469,7 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
                   type="number"
                   value={avgDealCheck}
                   onChange={(e) => setAvgDealCheck(e.target.value)}
+                  placeholder="не задан"
                   className="font-mono text-xs bg-surface border-subtle"
                 />
               </div>
@@ -480,7 +482,7 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
                   value={monthlyTarget}
                   onChange={(e) => setMonthlyTarget(e.target.value)}
                   className="font-mono text-xs bg-surface border-subtle text-emerald-400 font-bold"
-                  placeholder="5000000"
+                  placeholder="не задан"
                 />
               </div>
 

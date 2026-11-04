@@ -153,6 +153,28 @@ describe('TenantEditModal', () => {
     expect(handleClose).toHaveBeenCalled();
   });
 
+  it('sends no plan and no average check when the form fields are empty (nothing is invented)', async () => {
+    vi.mocked(adminApi.updateTenant).mockResolvedValue({ success: true, message: 'Updated' });
+
+    render(
+      <TenantEditModal
+        tenant={{ ...mockTenant, avg_deal_check: undefined, monthly_target: undefined }}
+        isOpen={true}
+        onClose={vi.fn()}
+        onSuccess={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Сохранить изменения'));
+
+    await waitFor(() => {
+      expect(adminApi.updateTenant).toHaveBeenCalled();
+    });
+    const payload = vi.mocked(adminApi.updateTenant).mock.calls.at(-1)![1];
+    expect(payload.monthly_target).toBeUndefined();
+    expect(payload.avg_deal_check).toBeUndefined();
+  });
+
   it('triggers freeze action when clicking freeze button', async () => {
     vi.mocked(adminApi.setTenantStatus).mockResolvedValue({
       success: true,

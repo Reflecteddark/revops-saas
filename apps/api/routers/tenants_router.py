@@ -141,7 +141,7 @@ class RegisterTenantRequest(BaseModel):
     tg_chat_id: str | None = None
     niche_id: str | None = "general_b2b"
     niche_name: str | None = "Универсальный B2B"
-    avg_deal_check: float | None = 150000.0
+    avg_deal_check: float | None = None
     client_email: str | None = None
     contact_name: str | None = None
 
@@ -266,7 +266,7 @@ def get_tenant_passport(
     niche_info = NICHE_CATALOG.get(niche_id, {
         "niche_name": cfg.get("niche_name", "Универсальный B2B"),
         "icon": "💼",
-        "default_avg_check": cfg.get("avg_deal_check", 150000),
+        "default_avg_check": cfg.get("avg_deal_check"),
         "target_next_step": "Фиксация Zoom-встречи",
         "main_objection": "Дорого / подумаем"
     })
@@ -307,7 +307,7 @@ def get_tenant_passport(
             "niche_id": niche_id,
             "niche_name": niche_info.get("niche_name"),
             "icon": niche_info.get("icon", "💼"),
-            "avg_deal_check": cfg.get("avg_deal_check") or niche_info.get("default_avg_check", 150000),
+            "avg_deal_check": cfg.get("avg_deal_check") or niche_info.get("default_avg_check"),
             "target_next_step": niche_info.get("target_next_step"),
             "main_objection": niche_info.get("main_objection")
         },
@@ -669,7 +669,7 @@ def register_tenant(
         "contact_name": req.contact_name or "Руководитель",
         "niche_id": req.niche_id or "general_b2b",
         "niche_name": req.niche_name or "Универсальный B2B",
-        "avg_deal_check": req.avg_deal_check or 150000.0,  # fallback-allowed: new tenant default
+        "avg_deal_check": req.avg_deal_check or None,  # not set = nothing is assumed (the client sets it in Settings)
         "status": "active",
         "created_at": datetime.now().isoformat(),
         "version": "20.4"

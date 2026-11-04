@@ -1387,7 +1387,7 @@ class TenantProvisionRequest(BaseModel):
     amo_token: str | None = Field(None, description="Долгоживущий токен API v4")
     crm_webhook: str | None = Field(None, description="Входящий вебхук REST API Bitrix24")
     niche_name: str | None = Field("Универсальный B2B", description="Ниша / индустрия")
-    avg_deal_check: int | None = Field(150000, description="Средний чек сделки")
+    avg_deal_check: int | None = Field(None, description="Средний чек сделки (не задан = ничего не предполагается)")
     target_next_step: str | None = Field("Фиксация следующего контакта с датой и временем", description="Целевой Next Step")
     sheet_id: str | None = Field(None, description="Существующий ID таблицы Google (иначе авто-клон Clean Starter)")
 
@@ -1529,7 +1529,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
             amo_domain=req.amo_domain,
             amo_token=req.amo_token,
             niche_name=req.niche_name or "Универсальный B2B",
-            avg_deal_check=req.avg_deal_check or 150000,  # fallback-allowed: new tenant default
+            avg_deal_check=req.avg_deal_check or None,  # not set = nothing is assumed (the client sets it in Settings)
             target_next_step=req.target_next_step or "Фиксация следующего контакта с датой и временем",
         )
     except Exception as e:
