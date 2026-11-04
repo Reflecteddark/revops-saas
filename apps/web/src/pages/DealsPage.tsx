@@ -44,6 +44,7 @@ import { DealDetailsDrawer } from '@/components/DealDetailsDrawer';
 import {
   computeDealHealth,
   isDealClosed,
+  weightedForecast as calcWeightedForecast,
   cleanEntityTitle,
   DealHealthMetrics,
 } from '@/lib/dealHealth';
@@ -345,12 +346,8 @@ export function DealsPage() {
     (sum, d) => sum + (d.amount || 0),
     0
   );
-  const weightedForecast = Math.round(
-    openFilteredDeals.reduce(
-      (sum, d) => sum + (d.amount || 0) * (d.health.winProbability / 100),
-      0
-    )
-  );
+  // Same helper as the Pulse finance tab: one weighted forecast everywhere
+  const weightedForecast = calcWeightedForecast(openFilteredDeals);
   const pipelineAtRisk = filteredDeals
     .filter(
       (d) =>

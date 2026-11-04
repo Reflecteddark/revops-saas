@@ -310,6 +310,7 @@ export interface GeneralSettings {
   period_end: string;
   monthly_target: number;
   project_start_date: string;
+  avg_deal_check?: number | null; // company's average deal check, RUB (null = not set)
 }
 
 export interface StageConfig {

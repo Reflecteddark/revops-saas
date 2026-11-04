@@ -19,11 +19,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Deal, ManagerConfig, StageConfig } from '@/types/api';
+import { weightedForecast } from '@/lib/dealHealth';
 
 export interface RnpFinanceViewProps {
   deals: Deal[];
   managers: ManagerConfig[];
-  stages: StageConfig[];
+  stages?: StageConfig[]; // kept for compatibility; the forecast no longer uses stage weights
   planTarget: number;
   revenue: number;
 }
@@ -31,7 +32,6 @@ export interface RnpFinanceViewProps {
 export function RnpFinanceView({
   deals,
   managers,
-  stages,
   planTarget,
   revenue,
 }: RnpFinanceViewProps) {
@@ -48,36 +48,8 @@ export function RnpFinanceView({
       .reduce((acc, d) => acc + (d.amount || 0), 0);
   }, [deals, isWonOrLost]);
 
-  // Stage probability map
-  const stageWeights = React.useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const s of stages) {
-      map[s.name.toLowerCase()] = s.win_pct / 100;
-    }
-    return map;
-  }, [stages]);
-
-  // Weighted Pipeline: sum(deal.amount * stage_win_pct)
-  const weightedPipeline = React.useMemo(() => {
-    let sum = 0;
-    for (const d of deals) {
-      if (isWonOrLost(d)) continue;
-      const stName = (d.stage_name || d.stage || '').toLowerCase();
-      // Match with configured stages or fallback heuristic
-      let weight = 0.35;
-      for (const [key, w] of Object.entries(stageWeights)) {
-        if (stName.includes(key) || key.includes(stName)) {
-          weight = w;
-          break;
-        }
-      }
-      if (stName.includes('кп') || stName.includes('предлож')) weight = Math.max(weight, 0.55);
-      if (stName.includes('счет') || stName.includes('договор')) weight = Math.max(weight, 0.85);
-
-      sum += (d.amount || 0) * weight;
-    }
-    return Math.round(sum);
-  }, [deals, isWonOrLost, stageWeights]);
+  // Weighted forecast: the same shared helper as the Deals page (AI win probability per deal)
+  const weightedPipeline = React.useMemo(() => weightedForecast(deals), [deals]);
 
   // Remaining plan deficit
   const remainingTarget = Math.max(0, planTarget - revenue);
@@ -134,12 +106,12 @@ export function RnpFinanceView({
 
         <Card
           className="border-subtle bg-surface"
-          title="Пайплайн × вес этапа (упрощённый расчёт)"
+          title="Открытые сделки × вероятность закрытия ИИ (этап, звонки, SLA); та же цифра, что в «Сделках»"
         >
           <CardHeader className="pb-2">
             <CardDescription className="text-xs text-tertiary flex items-center justify-between">
               <span className="flex items-center gap-1">
-                <span>Взвешенный пайплайн (по этапам)</span>
+                <span>Взвешенный прогноз ИИ</span>
                 <span className="cursor-help text-tertiary hover:text-foreground">ⓘ</span>
               </span>
               <Scale className="h-4 w-4 text-sky-400" />
@@ -150,7 +122,7 @@ export function RnpFinanceView({
           </CardHeader>
           <CardContent>
             <span className="text-[11px] text-tertiary">
-              С учетом вероятности конверсии этапов
+              С учётом этапа и звонков
             </span>
           </CardContent>
         </Card>

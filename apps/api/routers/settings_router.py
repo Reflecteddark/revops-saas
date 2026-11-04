@@ -6,6 +6,7 @@ Synchronizes with Google Sheets (⚙️ Настройки, 📋 Паспорт_
 
 import logging
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -46,6 +47,14 @@ def get_service_account_path() -> Path | None:
     return None
 
 
+def _clean_currency(raw: str, default: str) -> str:
+    """A currency cell sometimes holds other text (e.g. a company name); accept it only if it looks like a currency."""
+    text = (raw or "").strip()
+    if text and re.search(r"(RUB|USD|EUR|KZT|BYN|UAH|₽|\$|€|руб|долл|евро)", text, re.IGNORECASE):
+        return text
+    return default
+
+
 class GeneralSettings(BaseModel):
     company_name: str | None = "Самозанятый"
     currency: str | None = "RUB (₽)"
@@ -53,6 +62,8 @@ class GeneralSettings(BaseModel):
     period_end: str | None = "2026-10-31"
     monthly_target: float | None = 5000000.0
     project_start_date: str | None = "2026-10-03"
+    # Average deal check of THIS company (₽). None = not set (nothing is assumed); 0/None in a save clears it.
+    avg_deal_check: float | None = None
 
 
 class StageSLA(BaseModel):
@@ -184,7 +195,7 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
                 if col1 and col1 not in ("[Название компании / Клиента]", "—", "-", ""):
                     company_name = col1
             elif "Валюта" in col0:
-                currency = col1 or currency
+                currency = _clean_currency(col1, currency)
             elif "Период: начало" in col0:
                 period_start = col1 or period_start
             elif "Период: конец" in col0:
@@ -316,7 +327,8 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
                 "period_start": period_start,
                 "period_end": period_end,
                 "monthly_target": monthly_target,
-                "project_start_date": project_start_date
+                "project_start_date": project_start_date,
+                "avg_deal_check": cfg.get("avg_deal_check"),
             },
             "stages": stages or fallback_data["stages"],
             "managers": managers if (managers or not is_master_or_template) else fallback_data["managers"],
@@ -511,7 +523,8 @@ def get_tenant_settings_or_fallback(tenant_id: str = "TNT-001") -> dict[str, Any
             "period_start": period_start,
             "period_end": period_end,
             "monthly_target": monthly_target,
-            "project_start_date": project_start_date
+            "project_start_date": project_start_date,
+            "avg_deal_check": cfg.get("avg_deal_check"),
         },
         "stages": stages,
         "managers": managers,
@@ -540,6 +553,11 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                     if "general_settings" not in t:
                         t["general_settings"] = {}
                     g_dict = payload.general.model_dump(exclude_unset=True)
+                    # the average check lives at the tenant top level (that is where insights read it)
+                    g_dict.pop("avg_deal_check", None)
+                    if "avg_deal_check" in payload.general.model_fields_set:
+                        v = payload.general.avg_deal_check
+                        t["avg_deal_check"] = float(v) if v and v > 0 else None
                     t["general_settings"].update(g_dict)
                     if payload.general.company_name:
                         t["name"] = payload.general.company_name

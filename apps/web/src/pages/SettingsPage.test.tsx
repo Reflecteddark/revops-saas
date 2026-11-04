@@ -177,6 +177,47 @@ describe('SettingsPage', () => {
     });
   });
 
+  it('lets the client set, read back and clear the average deal check', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue({
+      ...mockSettings,
+      general: { ...mockSettings.general, avg_deal_check: 150000 },
+    });
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue(mockSettings);
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    const input = (await screen.findByLabelText(/СРЕДНИЙ ЧЕК СДЕЛКИ/i)) as HTMLInputElement;
+    await waitFor(() => expect(input.value).toBe('150000'));
+
+    fireEvent.change(input, { target: { value: '99888' } });
+    fireEvent.click(screen.getByTestId('btn-save-avg-check'));
+    await waitFor(() => {
+      expect(settingsApi.updateGeneral).toHaveBeenCalledWith('TNT-001', { avg_deal_check: 99888 });
+    });
+
+    // empty field clears it (nothing is assumed)
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.click(screen.getByTestId('btn-save-avg-check'));
+    await waitFor(() => {
+      expect(settingsApi.updateGeneral).toHaveBeenCalledWith('TNT-001', { avg_deal_check: null });
+    });
+  });
+
+  it('rejects a negative average check without calling the API', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateGeneral).mockClear();
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    fireEvent.change(await screen.findByLabelText(/СРЕДНИЙ ЧЕК СДЕЛКИ/i), { target: { value: '-5' } });
+    fireEvent.click(screen.getByTestId('btn-save-avg-check'));
+
+    expect(await screen.findByText(/положительным числом/i)).toBeInTheDocument();
+    expect(settingsApi.updateGeneral).not.toHaveBeenCalled();
+  });
+
   it('triggers updateStages mutation when clicking "Сохранить регламент этапов"', async () => {
     vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
     vi.mocked(settingsApi.updateStages).mockResolvedValue(mockSettings);

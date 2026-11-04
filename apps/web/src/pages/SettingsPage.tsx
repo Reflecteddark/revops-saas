@@ -71,6 +71,7 @@ export function SettingsPage() {
 
   // Local form states
   const [editTarget, setEditTarget] = useState<string>('5000000');
+  const [editAvgCheck, setEditAvgCheck] = useState<string>('');
   const [companyName, setCompanyName] = useState<string>('');
   const [currency, setCurrency] = useState<string>('RUB (₽)');
   const [periodStart, setPeriodStart] = useState<string>('');
@@ -124,6 +125,9 @@ export function SettingsPage() {
         ) {
           setEditTarget(String(settings.general.monthly_target));
         }
+        setEditAvgCheck(
+          settings.general.avg_deal_check ? String(settings.general.avg_deal_check) : ''
+        );
       }
       if (settings.stages && settings.stages.length > 0) {
         setEditableStages(settings.stages);
@@ -157,6 +161,7 @@ export function SettingsPage() {
       currency?: string;
       period_start?: string;
       period_end?: string;
+      avg_deal_check?: number | null;
     }) => settingsApi.updateGeneral(tenantId!, payload),
     onSuccess: () => {
       setSaveStatus({
@@ -339,6 +344,21 @@ export function SettingsPage() {
       period_start: periodStart.trim() || undefined,
       period_end: periodEnd.trim() || undefined,
     });
+  };
+
+  // Average deal check: empty clears it (nothing is assumed), otherwise a positive number of rubles
+  const handleSaveAvgCheck = () => {
+    const raw = editAvgCheck.trim();
+    const val = raw === '' ? null : parseFloat(raw);
+    if (val !== null && (isNaN(val) || val <= 0)) {
+      setSaveStatus({
+        text: 'Введите средний чек сделки положительным числом в рублях (или оставьте поле пустым)',
+        type: 'error',
+      });
+      return;
+    }
+    setSaveStatus(null);
+    saveGeneralMutation.mutate({ avg_deal_check: val });
   };
 
   const handleStageChange = (
@@ -693,6 +713,46 @@ export function SettingsPage() {
                           ? 'Сохранение...'
                           : 'Сохранить план'}
                       </span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Average deal check: set by the client, used for revenue-at-risk estimates */}
+                <div
+                  className="flex flex-col gap-3 border-t border-subtle pt-3 sm:flex-row sm:items-center sm:justify-between"
+                  data-testid="avg-check-editor"
+                >
+                  <div>
+                    <label
+                      htmlFor="inputAvgDealCheck"
+                      className="mb-1 block text-xs font-bold text-foreground"
+                    >
+                      СРЕДНИЙ ЧЕК СДЕЛКИ (₽):
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Нужен для оценки потерь и сценариев. Пусто — значение не задано, ничего не предполагается.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="inputAvgDealCheck"
+                      type="number"
+                      step="10000"
+                      min="0"
+                      value={editAvgCheck}
+                      onChange={(e) => setEditAvgCheck(e.target.value)}
+                      placeholder="не задан"
+                      className="w-40 bg-background font-mono text-sm font-bold"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleSaveAvgCheck}
+                      disabled={saveGeneralMutation.isPending}
+                      className="h-9 gap-1.5 text-xs font-semibold"
+                      data-testid="btn-save-avg-check"
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                      <span>Сохранить чек</span>
                     </Button>
                   </div>
                 </div>

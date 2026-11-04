@@ -77,20 +77,26 @@ export function RnpStandupView({
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Filter yesterday's calls
-  const { yesterdayCalls, isFallback } = React.useMemo(() => {
-    // "Yesterday" = the previous Moscow business day (toISOString() is UTC: at 02:00 MSK it gave two days back).
+  // ONE reference day for the whole standup (totals AND every manager card):
+  // yesterday (previous Moscow business day) if it had calls, otherwise the latest day that has calls.
+  const { yesterdayCalls, isFallback, refDayKey } = React.useMemo(() => {
     const yStr = addDaysToKey(businessDayKey(), -1);
+    const dayOf = (c: (typeof calls)[number]) => callDayKey(c.date || c.created_at);
 
-    const filtered = calls.filter((c) => callDayKey(c.date || c.created_at) === yStr);
-
-    // Fallback: if today is Monday or yesterday had 0 calls, take the most recent 10 calls
-    const fallbackNeeded = filtered.length === 0;
+    const hasYesterday = calls.some((c) => dayOf(c) === yStr);
+    let ref = yStr;
+    if (!hasYesterday) {
+      const days = calls.map(dayOf).filter((d): d is string => Boolean(d)).sort();
+      ref = days.length > 0 ? days[days.length - 1] : yStr;
+    }
     return {
-      yesterdayCalls: fallbackNeeded ? calls.slice(0, 10) : filtered,
-      isFallback: fallbackNeeded && calls.length > 0,
+      yesterdayCalls: calls.filter((c) => dayOf(c) === ref),
+      isFallback: !hasYesterday && calls.length > 0,
+      refDayKey: ref,
     };
   }, [calls]);
+  // dd.mm for the badge
+  const refDayLabel = `${refDayKey.slice(8, 10)}.${refDayKey.slice(5, 7)}`;
 
   // Yesterday's metrics
   const targetCallsCount = yesterdayCalls.filter((c) => {
@@ -152,9 +158,8 @@ export function RnpStandupView({
             ) / 10
           : 0;
 
-      // Filter yesterday's calls for this manager
-      const yStr = addDaysToKey(businessDayKey(), -1);
-      const mgrYesterdayCalls = mgrCalls.filter((c) => callDayKey(c.date || c.created_at) === yStr);
+      // Calls of this manager on the same reference day as the totals above
+      const mgrYesterdayCalls = mgrCalls.filter((c) => callDayKey(c.date || c.created_at) === refDayKey);
       const yesterdayCallsCount = mgrYesterdayCalls.length;
 
       // Next Step strictly from Gemini AI Speech Audit
@@ -302,7 +307,7 @@ export function RnpStandupView({
         actionRecommendation,
       };
     });
-  }, [managers, calls, deals]);
+  }, [managers, calls, deals, refDayKey]);
 
   return (
     <div className="space-y-6" data-testid="rnp-standup-view">
@@ -328,7 +333,7 @@ export function RnpStandupView({
                   variant="outline"
                   className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-400"
                 >
-                  Вчера звонков не было — показаны последние
+                  Вчера звонков не было — показан последний день со звонками ({refDayLabel})
                 </Badge>
               )}
             </div>

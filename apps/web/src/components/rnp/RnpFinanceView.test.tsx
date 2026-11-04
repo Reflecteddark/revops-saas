@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { weightedForecast } from '@/lib/dealHealth';
 import { RnpFinanceView } from './RnpFinanceView';
 import type { Deal, ManagerConfig, StageConfig } from '@/types/api';
 
@@ -75,9 +76,24 @@ describe('RnpFinanceView', () => {
 
     expect(screen.getByText(/План выручки \(Цель\)/i)).toBeInTheDocument();
     expect(screen.getByText('5 000 000 ₽')).toBeInTheDocument();
-    expect(screen.getByText(/Взвешенный пайплайн/i)).toBeInTheDocument();
+    expect(screen.getByText(/Взвешенный прогноз/i)).toBeInTheDocument();
     expect(screen.getByText(/Покрытие плана \(Coverage\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Выручка на 1 менеджера/i)).toBeInTheDocument();
+  });
+
+  it('shows the same weighted forecast as the shared helper (one number across pages)', () => {
+    render(
+      <RnpFinanceView
+        deals={mockDeals}
+        managers={mockManagers}
+        planTarget={5000000}
+        revenue={0}
+      />
+    );
+
+    // the DOM text is whitespace-normalised (NBSP -> space), so normalise the expectation the same way
+    const expected = weightedForecast(mockDeals).toLocaleString('ru-RU').replace(/\s/g, ' ');
+    expect(screen.getByText(`${expected} ₽`)).toBeInTheDocument();
   });
 
   it('renders capitalization per stage breakdown', () => {

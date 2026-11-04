@@ -162,6 +162,24 @@ describe('RnpStandupView', () => {
     expect(screen.getByText(/Температурная карта звонков/i)).toBeInTheDocument();
   });
 
+  it('uses ONE reference day: manager cards count the same day the totals show', () => {
+    // all calls are on one old day, none yesterday
+    const oldDay = mockCalls.map((c) => ({ ...c, date: '2026-01-10 11:00' }));
+    const ivanCalls = oldDay.filter((c) => c.manager === 'Иван Петров').length;
+    render(
+      <RnpStandupView
+        calls={oldDay}
+        deals={mockDeals}
+        managers={mockManagers}
+        planTarget={2000000}
+      />
+    );
+
+    expect(screen.getByText(/показан последний день со звонками \(10\.01\)/i)).toBeInTheDocument();
+    // the manager's own calls of that day are shown, not a hard 0 for "yesterday"
+    expect(screen.getByTestId('manager-card-m1')).toHaveTextContent(`${ivanCalls} / 20`);
+  });
+
   it('displays critical SLA risk deals section', () => {
     render(
       <RnpStandupView

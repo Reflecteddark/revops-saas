@@ -304,3 +304,15 @@ export function computeDealHealth(deal: Deal): DealHealthMetrics {
     cleanTitle,
   };
 }
+
+/**
+ * THE weighted forecast, used by every page (Pulse finance tab and Deals): open deals only,
+ * each at its own AI win probability (stage + call quality + SLA). One definition, one number.
+ */
+export function weightedForecast(deals: Deal[]): number {
+  return Math.round(
+    deals
+      .filter((d) => !isDealClosed(d))
+      .reduce((sum, d) => sum + (d.amount || 0) * (computeDealHealth(d).winProbability / 100), 0)
+  );
+}
