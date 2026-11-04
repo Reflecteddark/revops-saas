@@ -7,6 +7,7 @@ from .prompt_builder import BASE_10_CRITERIA, DEFAULT_CUSTOM_3
 # tests/test_criteria_ssot.py keeps these titles equal to apps/web/src/lib/criteria.ts
 TITLES = {key: spec["title"] for key, spec in {**BASE_10_CRITERIA, **DEFAULT_CUSTOM_3}.items()}
 NO_DATA = "Детализированный срез по 13 критериям: недостаточно расширенных скорингов."
+NO_WEAK_SPOTS = "Узких мест нет: все оценённые критерии соблюдены в 100% звонков."
 
 
 def weak_criteria_summary(calls: list[dict[str, Any]], top: int = 3) -> str:
@@ -22,9 +23,12 @@ def weak_criteria_summary(calls: list[dict[str, Any]], top: int = 3) -> str:
                 seen.setdefault(f"cr{idx + 1}", []).append(int(val))
     if not seen:
         return NO_DATA
-    weakest = sorted(seen.items(), key=lambda kv: sum(kv[1]) / len(kv[1]))[:top]
+    # A criterion kept in every assessed call is not a weak spot; the rate is floored so one miss never reads 100%.
+    weakest = sorted(((k, v) for k, v in seen.items() if sum(v) < len(v)), key=lambda kv: sum(kv[1]) / len(kv[1]))[:top]
+    if not weakest:
+        return NO_WEAK_SPOTS
     lines = [
-        f"• {TITLES[key]} (CR{key[2:]}): соблюдается лишь в {round(sum(v) / len(v) * 100)}% оценённых звонков"
+        f"• {TITLES[key]} (CR{key[2:]}): соблюдается в {sum(v) * 100 // len(v)}% оценённых звонков"
         for key, v in weakest
     ]
     return "УЗКИЕ МЕСТА В ЗВОНКАХ ПО 13 КРИТЕРИЯМ B2B-АУДИТА:\n" + "\n".join(lines)
