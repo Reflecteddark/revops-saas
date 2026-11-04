@@ -31,15 +31,13 @@ interface TierMetrics {
 
 export function AiImpactCard({ calls = [], deals = [], className }: AiImpactCardProps) {
   const { tiers, fakeYesCalls, maxSpread } = React.useMemo(() => {
-    const lowCalls = calls.filter((c) => (c.score ?? 0) <= CALL_SCORE_THRESHOLDS.low.max);
-    const midCalls = calls.filter(
-      (c) =>
-        (c.score ?? 0) >= CALL_SCORE_THRESHOLDS.mid.min &&
-        (c.score ?? 0) <= CALL_SCORE_THRESHOLDS.mid.max
+    // A missed call or a failed audit has no score: it belongs to no tier (null used to read as 0 = "Срыв").
+    const scored = calls.filter((c): c is Call & { score: number } => typeof c.score === 'number');
+    const lowCalls = scored.filter((c) => c.score <= CALL_SCORE_THRESHOLDS.low.max);
+    const midCalls = scored.filter(
+      (c) => c.score >= CALL_SCORE_THRESHOLDS.mid.min && c.score <= CALL_SCORE_THRESHOLDS.mid.max
     );
-    const highCalls = calls.filter(
-      (c) => (c.score ?? 0) >= CALL_SCORE_THRESHOLDS.high.min
-    );
+    const highCalls = scored.filter((c) => c.score >= CALL_SCORE_THRESHOLDS.high.min);
 
     // Conversion = share of calls whose DEAL was actually won. A call's own score/status
     // (status 'won' just means "reference-quality call") must never define conversion.

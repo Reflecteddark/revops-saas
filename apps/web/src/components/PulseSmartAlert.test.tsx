@@ -49,4 +49,11 @@ describe('PulseSmartAlert', () => {
 
     expect(screen.getByText(/Регламент B2B-аудита RevOps/)).toBeInTheDocument();
   });
+
+  it('names the Next Step criterion CR1, as the audit tab does', () => {
+    render(<PulseSmartAlert stalledCount={5} stalledAmountRub={750000} />);
+    fireEvent.click(screen.getByText(/Почему это важно/));
+    expect(screen.getByText(/CR1 \(Твёрдый Next Step\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/cr10/)).not.toBeInTheDocument();
+  });
 });

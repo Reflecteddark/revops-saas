@@ -20,6 +20,7 @@ from packages.monitoring.ai_probe import generate_gemini_content_cascade
 from ..auth import get_current_user
 from ..services.deal_sla import deal_sla_state
 from ..services.revenue import won_revenue_by_month
+from ..services.weak_criteria import weak_criteria_summary as build_weak_criteria_summary
 from ..services.tz import local_month, tenant_tz
 from ..tenant_registry import DEFAULT_SPREADSHEET_ID, get_tenant_config
 
@@ -725,38 +726,8 @@ async def chat_with_analyst(
         else:
             managers_summary = "Менеджеры кабинета: Ответственные сотрудники в CRM"
 
-    # Analyze 13 criteria bottlenecks across calls
-    crit_accum: dict[str, list[int]] = {}
-    for c in calls_list:
-        cr_arr = c.get("cr")
-        if cr_arr and isinstance(cr_arr, list) and len(cr_arr) == 13:
-            for idx, val in enumerate(cr_arr):
-                crit_accum.setdefault(f"cr{idx+1}", []).append(1 if val else 0)
-
-    if crit_accum:
-        cr_meta = {
-            "cr1": "Приветствие и регламент диалога",
-            "cr2": "Программирование и цель разговора",
-            "cr3": "Квалификация ниши и масштаба компании",
-            "cr4": "Выявление истинных болей и текущей ситуации",
-            "cr5": "Выявление бюджета и финансовых рамок",
-            "cr6": "Квалификация схемы принятия решений (ЛПР)",
-            "cr7": "Презентация продукта через ценность и боли",
-            "cr8": "Озвучивание стоимости и вилки цен",
-            "cr9": "Отработка возражений («дорого», «подумаю»)",
-            "cr10": "Фиксация дедлайна следующего контакта (Next Step)",
-            "cr11": "Инициатива (менеджер задает встречные вопросы)",
-            "cr12": "Фиксация договоренностей в CRM",
-            "cr13": "Тональность, партнерская позиция и экспертность",
-        }
-        sorted_crit = sorted(crit_accum.items(), key=lambda kv: (sum(kv[1]) / len(kv[1])))
-        weak_criteria_list = [
-            f"• {cr_meta.get(k, k)} ({k}): соблюдается лишь в {int(sum(v)/len(v)*100)}% звонков"
-            for k, v in sorted_crit[:3]
-        ]
-        weak_criteria_summary = "УЗКИЕ МЕСТА В ЗВОНКАХ ПО 13 КРИТЕРИЯМ B2B-АУДИТА:\n" + "\n".join(weak_criteria_list)
-    else:
-        weak_criteria_summary = "Детализированный срез по 13 критериям: недостаточно расширенных скорингов."
+    # 13 criteria bottlenecks: the cabinet's names, assessed calls only
+    weak_criteria_summary = build_weak_criteria_summary(calls_list)
 
     # Unified leak computation
     leak_metrics = compute_leak_metrics(calls_list, deals_list, tenant_avg_check)

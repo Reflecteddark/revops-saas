@@ -33,3 +33,9 @@ def test_cr11_to_cr13_match_the_production_n8n_prompt():
     ts = _ts_labels()
     assert (ts["cr11"], ts["cr12"], ts["cr13"]) == (
         "Слушание клиента", "Фиксация договорённостей", "Защита маржинальности")
+
+
+def test_analyst_uses_the_prompt_titles_so_it_cannot_drift():
+    from apps.api.services.weak_criteria import TITLES
+
+    assert TITLES == {k: v for k, v in _ts_labels().items()}

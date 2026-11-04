@@ -100,17 +100,18 @@ def run_self_healing_audit():
     # 2. Agent 2 CCO Repairman: Audit calls & repair any defect
     calls = fetch_calls_from_sheets(limit=50)
     repaired_anomalies = 0
-    valid_audits = 0
     total_score = 0
     next_step_count = 0
     fake_yes_count = 0
 
-    for c in calls:
-        cr = c.get("cr", [])
-        score = c.get("score", 0)
+    # Only a call the AI really assessed has a score: missed calls and failed audits say nothing about the team.
+    assessed = [c for c in calls if c.get("score") is not None]
+    for c in assessed:
+        cr = c.get("cr") or []
+        score = c["score"]
         # Self-repair: ensure 13 items
         if len(cr) < 13:
-            cr += [0] * (13 - len(cr))
+            cr += [None] * (13 - len(cr))
             c["cr"] = cr
             repaired_anomalies += 1
 
@@ -122,11 +123,11 @@ def run_self_healing_audit():
             next_step_count += 1
 
         total_score += score
-        valid_audits += 1
 
-    total_count = len(calls) if calls else 10
-    avg_score = round(total_score / total_count, 1) if total_count > 0 else 9.1
-    next_step_pct = round((next_step_count / total_count) * 100, 1) if total_count > 0 else 70.0
+    valid_audits = len(assessed)
+    total_count = len(assessed)
+    avg_score = round(total_score / total_count, 1) if total_count > 0 else 0.0
+    next_step_pct = round((next_step_count / total_count) * 100, 1) if total_count > 0 else 0.0
 
     dur_ms = int((time.perf_counter() - t_start) * 1000)
 

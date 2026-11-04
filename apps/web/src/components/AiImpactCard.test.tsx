@@ -85,4 +85,12 @@ describe('AiImpactCard', () => {
     expect(screen.getByText('100.0%')).toBeInTheDocument();
     expect(screen.getByText('0.0%')).toBeInTheDocument();
   });
+
+  it('puts a missed call or a failed audit in no tier: no score is not a 0-point "Срыв"', () => {
+    render(<AiImpactCard calls={[mockCalls[0], { ...mockCalls[1], score: null, status: 'unanswered', next_step: null }]} />);
+
+    const risk = screen.getByText('Зона риска (Низкий балл)').parentElement as HTMLElement;
+    expect(risk).toHaveTextContent('0 звонков');
+    expect(screen.getByText('Эталонные переговоры').parentElement).toHaveTextContent('1 звонок');
+  });
 });
