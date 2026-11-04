@@ -145,6 +145,7 @@ class CallIngestPayload(BaseModel):
     client: str | None = None
     manager: str | None = None
     manager_crm_id: str | None = None  # the CRM user id of the call: the manager is resolved by it first
+    call_started_at: str | None = None  # ISO 8601 with a zone; without it the call is dated by its arrival
     stage: str | None = None
     duration_sec: int | None = None
     duration: str | None = None
@@ -161,6 +162,14 @@ class CallIngestPayload(BaseModel):
     sync_to_sheets: bool = True
     # Required: a call without a tenant must never silently land in another client's data.
     tenant_id: str
+
+
+def parse_call_time(value: Any) -> datetime | None:
+    """An ISO 8601 moment, or None when the value cannot be read."""
+    try:
+        return datetime.fromisoformat(str(value).strip()) if value else None
+    except ValueError:
+        return None
 
 
 def call_view(payload: CallIngestPayload) -> dict[str, Any]:
@@ -301,6 +310,15 @@ def get_service_account_path() -> Path | None:
         if p.exists():
             return p
     return None
+
+
+def _sheet_call_date(r: list[str]) -> str:
+    """call_date holds the day only; the hour is in call_hour (AG), so hourly views have something to work with."""
+    day = r[3].strip() if len(r) > 3 else ""
+    hour = r[32].strip() if len(r) > 32 else ""
+    if len(day) == 10 and hour.isdigit() and int(hour) < 24:
+        return f"{day} {int(hour):02d}:00:00"
+    return day
 
 
 def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list[dict[str, Any]]:
@@ -447,7 +465,7 @@ def fetch_calls_from_sheets(tenant_id: str = "TNT-001", limit: int = 50) -> list
                 "status_label": card["status_label"],
                 "risk_amount": deal_amount_str if card["at_risk"] else "0 ₽",
                 "next_step": card["next_step"],
-                "date": r[3] if len(r) > 3 and r[3] else "",
+                "date": _sheet_call_date(r),
                 "cr": card["cr"],
                 "zoom_scheduled": None,
                 "error_summary": error_sum,
@@ -652,7 +670,9 @@ def _format_db_call(c: CallRecording, tenant_cfg: dict[str, Any] | None, call_tz
         "next_step": card["next_step"],
         # DB stores naive UTC; the РОП works in the client's time zone, so a 22:30 UTC call (01:30 MSK) belongs
         # to the next working day. The string is local wall time, same as dates written by n8n to Sheets.
-        "date": local_str(cast("datetime | None", c.created_at), call_tz),
+        "date": local_str(
+            parse_call_time(sc.get("call_started_at")) or cast("datetime | None", c.created_at), call_tz
+        ),
         "cr": card["cr"],
         "zoom_scheduled": card["zoom_scheduled"],
         "error_summary": error_summary,
@@ -797,6 +817,7 @@ async def ingest_call_from_n8n(
         "client": payload.client or "Клиент",
         "manager": payload.manager or "",  # as received: the reader resolves it against the current team list
         "manager_crm_id": payload.manager_crm_id or "",
+        "call_started_at": payload.call_started_at or "",
         "stage": payload.stage or "Первичный контакт",
         "duration": dur_str,
         "amount": payload.amount or "0 ₽",
