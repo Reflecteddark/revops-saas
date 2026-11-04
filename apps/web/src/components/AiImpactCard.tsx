@@ -139,8 +139,7 @@ export function AiImpactCard({ calls = [], deals = [], className }: AiImpactCard
       (c) =>
         typeof c.score === 'number' &&
         c.next_step !== null &&
-        c.next_step !== 1 &&
-        c.status !== 'won'
+        c.next_step !== 1
     );
 
     return { tiers: tierList, fakeYesCalls: fakeYes, maxSpread };

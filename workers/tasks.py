@@ -70,17 +70,21 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
         from apps.api.routers.calls_router import (
             CallIngestPayload,
             append_call_to_sheets,
+            call_view,
         )
         from apps.api.routers.webhooks_router import update_webhook_status
         from apps.api.websocket_manager import manager
         
         # 1. Normalize call payload
         dur_sec = int(call_data.get("duration_sec", 120))
+        # No criteria means "not rated": this used to default to 13 ones, a perfect 13/13 for an unaudited call.
         raw_cr = call_data.get("cr")
-        cr_list: list[int] = list(raw_cr) if isinstance(raw_cr, (list, tuple)) and len(raw_cr) == 13 else [1]*13
+        has_cr = isinstance(raw_cr, (list, tuple)) and len(raw_cr) == 13 and all(c is not None for c in raw_cr)
+        cr_list: list[int] | None = [int(c) for c in raw_cr] if has_cr else None  # type: ignore[union-attr]
         raw_score = call_data.get("score")
-        score = int(raw_score) if raw_score is not None else sum(cr_list)
-        next_step = int(call_data.get("next_step", 1))
+        score = int(raw_score) if raw_score is not None else None
+        raw_next_step = call_data.get("next_step")
+        next_step = int(raw_next_step) if raw_next_step is not None else None
 
         payload = CallIngestPayload(
             id=call_id,
@@ -92,8 +96,6 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
             duration=call_data.get("duration") or f"{dur_sec // 60}:{dur_sec % 60:02d}",
             amount=call_data.get("amount") or "300 000 ₽",
             score=score,
-            status=call_data.get("status") or ("won" if next_step == 1 and score >= 10 else "risk"),
-            status_label=call_data.get("status_label") or ("ЭТАЛОН" if score >= 10 else "СЛИВ"),
             next_step=next_step,
             cr=cr_list,
             error_summary=call_data.get("error_summary") or "",
@@ -102,6 +104,8 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
             sync_to_sheets=bool(call_data.get("sync_to_sheets", True)),
             tenant_id=org_id
         )
+
+        view = call_view(payload)
 
         # 2. Persist in Database with Idempotent UPSERT (PostgreSQL / SQLite)
         try:
@@ -133,8 +137,8 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
                 transcript_text=payload.transcript,
                 ai_summary=payload.error_summary,
                 next_action_extracted=payload.recommendation,
-                overall_score=float(payload.score or 0.0),
-                scorecard_criteria={"cr": payload.cr, "score": payload.score, "next_step": payload.next_step},
+                overall_score=float(view["score"] or 0.0),
+                scorecard_criteria={"cr": view["cr"], "score": view["score"], "next_step": view["next_step"]},
                 reverse_etl_synced=payload.sync_to_sheets
             )
             db.merge(rec)
@@ -150,6 +154,7 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
 
         # 4. Real-time WebSocket Broadcast
         formatted = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
+        formatted.update({k: view[k] for k in ("cr", "score", "next_step", "kind", "status", "status_label", "risk_amount")})
         try:
             asyncio.run(manager.broadcast(org_id, {"type": "new_call", "call": formatted}))
         except Exception as wse:
@@ -166,8 +171,8 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
             "call_id": call_id,
             "tenant_id": org_id,
             "sheets_synced": sheets_ok,
-            "score": payload.score,
-            "next_step": payload.next_step
+            "score": view["score"],
+            "next_step": view["next_step"]
         }
 
     except Exception as exc:

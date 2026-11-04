@@ -25,6 +25,7 @@ from ..websocket_manager import manager
 from .calls_router import (
     CallIngestPayload,
     append_call_to_sheets,
+    call_view,
     verify_internal_or_admin,
 )
 
@@ -314,9 +315,6 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
                 duration_sec=dur_sec,
                 duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
                 score=None,
-                status="unknown",
-                status_label="НЕТ ДАННЫХ",
-                risk_amount="0 ₽",
                 next_step=None,
                 cr=None,
                 error_summary="Звонок принят из amoCRM",
@@ -350,9 +348,6 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
             duration_sec=dur_sec,
             duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
             score=body.get("score", parsed["score"]),
-            status=parsed["status"],
-            status_label=parsed["status_label"],
-            risk_amount="0 ₽" if parsed["status"] in ("won", "unknown") or parsed["score"] is None else (body.get("risk_amount") or "500 000 ₽"),
             next_step=body.get("next_step", parsed["next_step"]),
             cr=safe_cr_payload,
             error_summary=body.get("key_mistakes", body.get("error_summary", "Аудит завершен")),
@@ -365,12 +360,7 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
     # If call event processed: append to Google Sheets & push to dashboard!
     if call_payload:
         sheets_ok = append_call_to_sheets(call_payload)
-        if call_payload.status in ("won", "unknown") or call_payload.score is None:
-            cr_output: list[int | None] = [None] * 13 if (call_payload.status == "unknown" or call_payload.score is None) else (list(call_payload.cr) if call_payload.cr is not None else [None] * 13)
-            amo_risk_amount = "0 ₽"
-        else:
-            cr_output = list(call_payload.cr) if call_payload.cr is not None else (list(cr_arg) if cr_arg is not None else [None] * 13)
-            amo_risk_amount = call_payload.risk_amount or "500 000 ₽"
+        view = call_view(call_payload)
 
         formatted = {
             "id": call_payload.id,
@@ -381,12 +371,12 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
             "stage": call_payload.stage,
             "duration": call_payload.duration,
             "amount": call_payload.amount,
-            "score": call_payload.score,
-            "status": call_payload.status,
-            "status_label": call_payload.status_label,
-            "risk_amount": amo_risk_amount,
-            "next_step": call_payload.next_step,
-            "cr": cr_output,
+            "score": view["score"],
+            "status": view["status"],
+            "status_label": view["status_label"],
+            "risk_amount": view["risk_amount"],
+            "next_step": view["next_step"],
+            "cr": view["cr"],
             "error_summary": call_payload.error_summary,
             "recommendation": call_payload.recommendation,
             "transcript": call_payload.transcript
@@ -576,9 +566,6 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
             duration_sec=dur_sec,
             duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
             score=parsed["score"],
-            status=parsed["status"],
-            status_label=parsed["status_label"],
-            risk_amount="0 ₽" if parsed["status"] in ("won", "unknown") or parsed["score"] is None else "500 000 ₽",
             next_step=parsed["next_step"],
             cr=safe_cr_payload,
             error_summary=desc[:80] if desc else "Звонок зафиксирован в CRM",
@@ -589,12 +576,7 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
         )
 
         sheets_ok = append_call_to_sheets(call_payload)
-        if call_payload.status in ("won", "unknown") or call_payload.score is None:
-            b24_cr_output: list[int | None] = [None] * 13 if (call_payload.status == "unknown" or call_payload.score is None) else (list(call_payload.cr) if call_payload.cr is not None else [None] * 13)
-            b24_risk_amount = "0 ₽"
-        else:
-            b24_cr_output = list(call_payload.cr) if call_payload.cr is not None else (list(parsed_cr) if parsed_cr is not None else [None] * 13)
-            b24_risk_amount = call_payload.risk_amount or "500 000 ₽"
+        view = call_view(call_payload)
 
         formatted = {
             "id": call_payload.id,
@@ -605,12 +587,12 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
             "stage": call_payload.stage,
             "duration": call_payload.duration,
             "amount": call_payload.amount,
-            "score": call_payload.score,
-            "status": call_payload.status,
-            "status_label": call_payload.status_label,
-            "risk_amount": b24_risk_amount,
-            "next_step": call_payload.next_step,
-            "cr": b24_cr_output,
+            "score": view["score"],
+            "status": view["status"],
+            "status_label": view["status_label"],
+            "risk_amount": view["risk_amount"],
+            "next_step": view["next_step"],
+            "cr": view["cr"],
             "error_summary": call_payload.error_summary,
             "recommendation": call_payload.recommendation,
             "transcript": call_payload.transcript
@@ -806,10 +788,6 @@ async def _process_telephony_call(
     cr = body.get("cr") if body.get("cr") and len(body.get("cr")) == 13 else parsed["cr"]
     safe_cr_payload = None if (cr is None or any(c is None for c in cr)) else cr
 
-    status_val = "won" if next_step == 1 and score is not None and score >= 10 else ("warn" if score is not None and score >= 8 else ("risk" if score is not None else "unknown"))
-    status_label_val = "ЭТАЛОН" if score is not None and score >= 10 else ("СЛИВ (НЕТ NEXT STEP)" if next_step == 0 else ("В РАБОТЕ" if score is not None else "НЕТ ДАННЫХ"))
-    risk_val = "0 ₽" if status_val in ("won", "unknown") or score is None else (body.get("risk_amount") or "500 000 ₽")
-
     call_payload = CallIngestPayload(
         id=call_id,
         deal_id=deal_id,
@@ -820,9 +798,6 @@ async def _process_telephony_call(
         duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
         amount=body.get("amount") or "300 000 ₽",
         score=score,
-        status=status_val,
-        status_label=status_label_val,
-        risk_amount=risk_val,
         next_step=next_step,
         cr=safe_cr_payload,
         error_summary=body.get("error_summary") or "Аудит завершен ИИ",
@@ -833,8 +808,8 @@ async def _process_telephony_call(
     )
 
     call_dict = call_payload.model_dump() if hasattr(call_payload, "model_dump") else call_payload.dict()
-    call_dict["cr"] = [None] * 13 if (status_val == "unknown" or score is None) else (cr or [None] * 13)
-    call_dict["risk_amount"] = risk_val
+    view = call_view(call_payload)
+    call_dict.update({k: view[k] for k in ("cr", "score", "next_step", "kind", "status", "status_label", "risk_amount")})
     task_id = None
     queue_driver = "celery"
 
@@ -904,9 +879,6 @@ async def test_amocrm_call_simulation(request: Request, tenant_id: str | None = 
         duration="2:45",
         amount="500 000 ₽",
         score=11,
-        status="won",
-        status_label="ЭТАЛОН",
-        risk_amount="0 ₽",
         next_step=1,
         cr=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
         error_summary="Незначительная заминка при презентации SLA",
@@ -940,9 +912,6 @@ async def test_bitrix24_call_simulation(request: Request, tenant_id: str | None 
         duration="3:15",
         amount="500 000 ₽",
         score=12,
-        status="won",
-        status_label="ЭТАЛОН",
-        risk_amount="0 ₽",
         next_step=1,
         cr=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         error_summary="Ошибок нет. Эталонный скрипт закрытия на следующий шаг.",
@@ -1029,15 +998,6 @@ async def replay_webhook(
     cr = raw_cr if isinstance(raw_cr, list) and len(raw_cr) == 13 else parsed["cr"]
     safe_cr_payload = None if (cr is None or any(c is None for c in cr)) else cr
 
-    if score is None or next_step is None:
-        status_val = "unknown"
-        status_label_val = "НЕТ ДАННЫХ"
-        risk_val = "0 ₽"
-    else:
-        status_val = "won" if next_step == 1 and score >= 10 else ("warn" if score >= 8 else "risk")
-        status_label_val = "ЭТАЛОН" if score >= 10 else ("СЛИВ (НЕТ NEXT STEP)" if next_step == 0 else "В РАБОТЕ")
-        risk_val = "0 ₽" if status_val == "won" else (replay_payload.get("risk_amount") or "500 000 ₽")
-
     call_payload = CallIngestPayload(
         id=call_id,
         deal_id=deal_id,
@@ -1048,9 +1008,6 @@ async def replay_webhook(
         duration=f"{dur_sec // 60}:{dur_sec % 60:02d}",
         amount=replay_payload.get("amount") or "300 000 ₽",
         score=score,
-        status=status_val,
-        status_label=status_label_val,
-        risk_amount=risk_val,
         next_step=next_step,
         cr=safe_cr_payload,
         error_summary=replay_payload.get("error_summary") or "Повторный прогон через очередь DLQ",
