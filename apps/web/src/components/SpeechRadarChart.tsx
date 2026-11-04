@@ -44,13 +44,17 @@ export function SpeechRadarChart({
   const activeRep = selectedRep && reps.includes(selectedRep) ? selectedRep : null;
 
   // 13 criteria pass rates for the active selection
-  const { actualValues, assessedCount } = React.useMemo(() => {
+  const { actualValues, percents, assessedCount } = React.useMemo(() => {
     const scope = activeRep ? calls.filter((c) => hasCrmManager(c) && c.manager.trim() === activeRep) : calls;
+    // null = no call was assessed on this criterion: it is drawn in the centre but never worded as "0%"
+    const percents = criterionRates(scope).map((r) => (r.rate === null ? null : Math.round(r.rate * 100)));
     return {
-      actualValues: criterionRates(scope).map((r) => (r.rate === null ? 0 : Math.round(r.rate * 100))),
+      actualValues: percents.map((p) => p ?? 0),
+      percents,
       assessedCount: summarizeCalls(scope).assessed,
     };
   }, [calls, activeRep]);
+  const pctText = (i: number) => (percents[i] === null ? 'нет оценённых звонков' : `${percents[i]}% соблюдения`);
 
   // Geometry parameters
   const size = 360;
@@ -166,8 +170,10 @@ export function SpeechRadarChart({
           <div className="flex items-center gap-1.5">
             <span className="font-mono font-bold text-primary">CR{activeCrIndex + 1}</span>
             <span className="font-semibold">{activeCrDef.label}:</span>
-            <span className="font-mono font-bold tabular-nums text-primary">{actualValues[activeCrIndex]}%</span>
-            <span className="text-secondary">соблюдения</span>
+            <span className="font-mono font-bold tabular-nums text-primary" data-testid="radar-hint-value">
+              {percents[activeCrIndex] === null ? '—' : `${percents[activeCrIndex]}%`}
+            </span>
+            <span className="text-secondary">{percents[activeCrIndex] === null ? 'нет оценённых звонков' : 'соблюдения'}</span>
           </div>
           <span className="text-[11px] font-medium text-primary underline underline-offset-2">
             {selectedCriterion === activeCrIndex ? 'Фильтр активен (сбросить)' : 'Фильтровать звонки →'}
@@ -285,7 +291,7 @@ export function SpeechRadarChart({
                 onMouseLeave={() => onHoverCriterion?.(null)}
                 onClick={() => onSelectCriterion?.(i)}
               >
-                <title>{`${def.label} (CR${i + 1}): ${actualValues[i]}% соблюдения • Кликните для фильтрации`}</title>
+                <title>{`${def.label} (CR${i + 1}): ${pctText(i)} • Кликните для фильтрации`}</title>
                 <text
                   x={lx}
                   y={ly}

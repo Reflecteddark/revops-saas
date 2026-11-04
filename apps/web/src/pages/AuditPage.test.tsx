@@ -228,6 +228,34 @@ describe('AuditPage', () => {
       expect(screen.getAllByRole('row')[1]).not.toHaveTextContent('Клиент');
     });
 
+    it('clicking a criterion on the heatmap header filters the table, and clicking it again clears the filter', async () => {
+      const failsCr6 = ratedCalls('Иван Петров', 5, 2, { client: 'ООО Провал' });
+      const passesAll = ratedCalls('Иван Петров', 13, 1, { client: 'ООО Успех' });
+      vi.mocked(callsApi.list).mockResolvedValue([...failsCr6, ...passesAll]);
+      renderWithClient(<AuditPage />);
+
+      await waitFor(() => expect(screen.getByTestId('calls-count')).toHaveTextContent('3'));
+      const header = within(screen.getByTestId('skills-heatmap')).getByRole('button', { name: 'CR6' });
+
+      fireEvent.click(header);
+      await waitFor(() => expect(screen.getByTestId('calls-count')).toHaveTextContent('2'));
+      expect(screen.queryByText('ООО Успех')).not.toBeInTheDocument();
+
+      fireEvent.click(header);
+      await waitFor(() => expect(screen.getByTestId('calls-count')).toHaveTextContent('3'));
+    });
+
+    it('hovering a heatmap column highlights the same criterion on the radar', async () => {
+      vi.mocked(callsApi.list).mockResolvedValue(ratedCalls('Иван Петров', 5, 3));
+      renderWithClient(<AuditPage />);
+
+      await waitFor(() => expect(screen.getByTestId('kpi-total')).toHaveTextContent('3'));
+      fireEvent.mouseEnter(within(screen.getByTestId('skills-heatmap')).getByRole('button', { name: 'CR7' }));
+
+      expect(await screen.findByTestId('radar-hint-value')).toHaveTextContent('0%'); // CR7 fails in a 5/13 call
+      expect(within(screen.getByTestId('speech-radar-chart')).getByText('Презентация через кейсы и цифры:')).toBeInTheDocument();
+    });
+
     it('shows the client and stage columns as soon as one call has them', async () => {
       vi.mocked(callsApi.list).mockResolvedValue([makeCall({ client: 'ООО Тест', stage: 'КП', manager: 'Иван Петров' }), makeCall({ manager: 'Иван Петров' })]);
       renderWithClient(<AuditPage />);

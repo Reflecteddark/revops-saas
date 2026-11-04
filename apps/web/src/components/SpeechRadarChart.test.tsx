@@ -53,4 +53,46 @@ describe('SpeechRadarChart', () => {
     expect(screen.getByTestId('speech-radar-chart')).toHaveTextContent('нет оценённых звонков');
     expect(container.querySelectorAll('polygon[fill="rgba(139, 92, 246, 0.22)"]')).toHaveLength(0);
   });
+
+  describe('cross-highlight with the heatmap', () => {
+    it('hovering an axis reports the hovered criterion and shows its real rate', () => {
+      const onHover = vi.fn();
+      const calls = ratedCalls('Иван Петров', 5, 3); // CR1..CR5 passed, CR6..CR13 failed
+      render(<SpeechRadarChart calls={calls} hoveredCriterion={1} onHoverCriterion={onHover} />);
+
+      expect(screen.getByTestId('radar-hint-value')).toHaveTextContent('100%');
+      expect(screen.getByText('Твёрдый Next Step:')).toBeInTheDocument();
+
+      fireEvent.mouseEnter(screen.getByText('Next Step').closest('g') as Element);
+      expect(onHover).toHaveBeenCalledWith(1);
+      fireEvent.mouseLeave(screen.getByText('Next Step').closest('g') as Element);
+      expect(onHover).toHaveBeenLastCalledWith(null);
+    });
+
+    it('a real 0% is "0%", and a criterion nobody assessed is a dash, not "0%"', () => {
+      const calls = ratedCalls('Иван Петров', 5, 3, { cr: [1, 0, ...Array(11).fill(null)] as never });
+      const { rerender } = render(<SpeechRadarChart calls={calls} hoveredCriterion={2} />);
+      expect(screen.getByTestId('radar-hint-value')).toHaveTextContent('0%');
+
+      rerender(<SpeechRadarChart calls={calls} hoveredCriterion={3} />);
+      expect(screen.getByTestId('radar-hint-value')).toHaveTextContent('—');
+      expect(screen.getByTestId('speech-radar-chart')).toHaveTextContent('нет оценённых звонков');
+    });
+
+    it('clicking an axis selects its criterion, clicking the hint bar too', () => {
+      const onSelect = vi.fn();
+      render(<SpeechRadarChart calls={ratedCalls('Иван Петров', 5, 3)} hoveredCriterion={4} onSelectCriterion={onSelect} />);
+
+      fireEvent.click(screen.getByText('Боли').closest('g') as Element);
+      expect(onSelect).toHaveBeenCalledWith(3);
+
+      fireEvent.click(screen.getByText(/Фильтровать звонки/));
+      expect(onSelect).toHaveBeenLastCalledWith(3);
+    });
+
+    it('says a filter is active when the hovered criterion is the selected one', () => {
+      render(<SpeechRadarChart calls={ratedCalls('Иван Петров', 5, 3)} selectedCriterion={2} />);
+      expect(screen.getByText('Фильтр активен (сбросить)')).toBeInTheDocument();
+    });
+  });
 });
