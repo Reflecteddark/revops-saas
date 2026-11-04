@@ -27,3 +27,11 @@ def test_a_missed_call_and_a_failed_audit_do_not_crash_or_count():
 def test_no_calls_is_zero_not_an_invented_result():
     cco = run([])["agent_cco"]
     assert (cco["audits_checked"], cco["avg_score"], cco["next_step_pct"]) == (0, 0.0, 0.0)
+
+
+def test_the_log_shows_no_invented_figures():
+    logs = run([{"cr": [1] * 13, "score": 13, "next_step": 1}])["logs"]
+    text = " ".join(logs.values())
+    assert "5 000 000" not in text and "Дрифт" not in text and "100% точность" not in text
+    assert "Сверка amoCRM" not in text  # no reconciliation is performed, so none is claimed
+    assert "оценённых звонков: 1" in text

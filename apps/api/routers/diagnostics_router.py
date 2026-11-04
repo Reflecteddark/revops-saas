@@ -133,7 +133,7 @@ def run_self_healing_audit():
 
     # 3. Build structured logs for UI
     step1_html = (
-        f'<div style="color: var(--accent-cyan);">[{ts}] L1/L2 DevOps Healer (PID {pid}): Сканирование портов 8000 (FastAPI), 5678 (n8n)...</div>'
+        f'<div style="color: var(--accent-cyan);">[{ts}] L1/L2 DevOps Healer (PID {pid}): Проверка состояния API...</div>'
         f'<div style="color: #64748b; padding-left: 12px;">├─ Healthcheck HTTP 200 OK • Memory RSS {mem_mb}MB • Latency {latency_ms}ms • Google Sheets: {"Connected" if sheets_ok else "Local DWH"}</div>'
     )
 
@@ -146,9 +146,7 @@ def run_self_healing_audit():
     step3_html = (
         f'<div style="color: var(--accent-cyan);">[{ts}] L1/L2 DevOps Healer: OK (latency {latency_ms}ms)</div>'
         f'<div style="color: #34d399; margin-top: 4px;">[{ts}] Agent 2 CCO (RevOps Neural Core): {valid_audits}/{total_count} Валидировано ({repaired_anomalies} дефектов восстановлено)</div>'
-        f'<div style="color: #fbbf24; margin-top: 6px;">[{ts}] Agent 3 Sync Guardian (L3 Orchestrator): Сверка amoCRM + Bitrix24 + raw_calls...</div>'
-        f'<div style="color: #64748b; padding-left: 12px;">├─ Сделок в реестре: {total_count} • Выручка SSOT: 5 000 000 ₽ • Won: 500 000 ₽ • Дрифт кассы: 0.00 ₽ (100% точность)</div>'
-        f'<div style="color: #10b981; font-weight: 700; margin-top: 8px;">ВЕРДИКТ: Все 3 агента экипажа синхронизированы в SSOT. Целостность контура подтверждена.</div>'
+        f'<div style="color: #10b981; font-weight: 700; margin-top: 8px;">ИТОГ: проверено оценённых звонков: {total_count}, исправлено дефектов: {repaired_anomalies}. Сверка с CRM и таблицами здесь не выполняется.</div>'
     )
 
     return {
