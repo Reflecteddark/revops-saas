@@ -1,0 +1,82 @@
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    container_name: revops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: revops_user
+      POSTGRES_PASSWORD: SecurePass2026!
+      POSTGRES_DB: revops_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U revops_user -d revops_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: revops-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  revops-api:
+    image: ghcr.io/reflecteddark/revops-saas:8c446c7d8345865bb3f59a58e694b27940f5dd96
+    container_name: revops-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./secrets/.env
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=sqlite:////app/data/revops_saas.db
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_ENABLED=true
+      - TENANTS_REGISTRY_PATH=/app/tenants_registry.json
+      - GOOGLE_SERVICE_ACCOUNT_PATH=/app/service_account.json
+      - TELEGRAM_CREDENTIALS_PATH=/app/telegram_credentials.json
+    volumes:
+      - ./data:/app/data
+      - ./secrets/tenants_registry.json:/app/tenants_registry.json:ro
+      - ./secrets/service_account.json:/app/service_account.json:ro
+      - ./secrets/telegram_credentials.json:/app/telegram_credentials.json:ro
+    depends_on:
+      - redis
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.43.8
+    container_name: revops-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres_db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n_db
+      - DB_POSTGRESDB_USER=revops_user
+      - DB_POSTGRESDB_PASSWORD=SecurePass2026!
+      - GENERIC_TIMEZONE=Europe/Moscow
+      - TZ=Europe/Moscow
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_PORT=5678
+      - WEBHOOK_URL=https://webhook.ai-rop.ru/
+      - N8N_WEBHOOK_URL=https://webhook.ai-rop.ru/
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+      - "C:/Users/strel/.gemini/antigravity/scratch/revops-enterprise-os:/home/node/.gemini/antigravity/scratch/revops-enterprise-os:ro"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
