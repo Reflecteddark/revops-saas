@@ -59,6 +59,11 @@ def _clean_currency(raw: str, default: str) -> str:
     return default
 
 
+def _real_chat_id(cell: str) -> str:
+    """The sheet template ships sample chats in B54:B56, so a client's copy holds them until somebody types real ones."""
+    return "" if cell in ("-1001234567890", "-1009876543210", "-1005554443332") else cell
+
+
 def _autonomy_for(tenant_id: str) -> dict[str, bool]:
     """The autonomy flags the AI engine really obeys (the policy registry behind PATCH /settings/autonomy).
     The registry JSON never held them, so /settings used to show a passive mode for an autonomous tenant."""
@@ -129,9 +134,9 @@ class LossReason(BaseModel):
 
 class TelegramSettings(BaseModel):
     bot_token: str | None = "Script Properties"
-    rop_chat_id: str | None = "-1001234567890"
-    ceo_chat_id: str | None = "-1009876543210"
-    team_chat_id: str | None = "-1005554443332"
+    rop_chat_id: str | None = None
+    ceo_chat_id: str | None = None
+    team_chat_id: str | None = None
     dispatcher_schedule: str | None = "Каждый час (L1/L2/L3) + 09:15"
     dispatcher_status: bool | None = True
 
@@ -294,9 +299,9 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
         # Parse Telegram settings
         telegram = {
             "bot_token": "Защищено в Script Properties",
-            "rop_chat_id": "-1001234567890",
-            "ceo_chat_id": "-1009876543210",
-            "team_chat_id": "-1005554443332",
+            "rop_chat_id": "",  # never an invented chat: an empty field means "not set"
+            "ceo_chat_id": "",
+            "team_chat_id": "",
             "dispatcher_schedule": "Каждый час (L1/L2/L3) + 09:15",
             "dispatcher_status": True
         }
@@ -306,11 +311,11 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
             c0 = r[0].strip() if len(r) > 0 else ""
             c1 = r[1].strip() if len(r) > 1 else ""
             if "ROP_CHAT_ID" in c0:
-                telegram["rop_chat_id"] = c1
+                telegram["rop_chat_id"] = _real_chat_id(c1)
             elif "CEO_CHAT_ID" in c0:
-                telegram["ceo_chat_id"] = c1
+                telegram["ceo_chat_id"] = _real_chat_id(c1)
             elif "TEAM_CHAT_ID" in c0:
-                telegram["team_chat_id"] = c1
+                telegram["team_chat_id"] = _real_chat_id(c1)
             elif "DISPATCHER_SCHEDULE" in c0:
                 telegram["dispatcher_schedule"] = c1
             elif "DISPATCHER_STATUS" in c0:
@@ -406,9 +411,9 @@ def get_fallback_settings() -> dict[str, Any]:
         ],
         "telegram": {
             "bot_token": "Защищено в Script Properties",
-            "rop_chat_id": "-1001234567890",
-            "ceo_chat_id": "-1009876543210",
-            "team_chat_id": "-1005554443332",
+            "rop_chat_id": "",  # never an invented chat: an empty field means "not set"
+            "ceo_chat_id": "",
+            "team_chat_id": "",
             "dispatcher_schedule": "Каждый час (L1/L2/L3) + 09:15",
             "dispatcher_status": True
         },
@@ -456,10 +461,11 @@ def get_tenant_settings_or_fallback(tenant_id: str = "TNT-001") -> dict[str, Any
         cfg.get("tenant_name") or cfg.get("name") or (fb["general"]["company_name"] if is_master_or_template else f"Клиент {clean_tenant}")
     )
     currency = gen.get("currency", fb["general"]["currency"])
-    period_start = gen.get("period_start", fb["general"]["period_start"])
-    period_end = gen.get("period_end", fb["general"]["period_end"])
+    # the demo period and project start belong to the shared master/template only; a real client's missing dates stay empty
+    period_start = gen.get("period_start", fb["general"]["period_start"] if is_master_or_template else "")
+    period_end = gen.get("period_end", fb["general"]["period_end"] if is_master_or_template else "")
     monthly_target = gen.get("monthly_target", fb["general"]["monthly_target"] if is_master_or_template else 0.0)
-    project_start_date = gen.get("project_start_date", fb["general"]["project_start_date"])
+    project_start_date = gen.get("project_start_date", fb["general"]["project_start_date"] if is_master_or_template else "")
 
     raw_managers = cfg.get("managers")
     if not raw_managers or not isinstance(raw_managers, list) or len(raw_managers) == 0:
