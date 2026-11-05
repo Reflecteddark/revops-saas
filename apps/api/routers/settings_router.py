@@ -30,6 +30,10 @@ router = APIRouter(prefix="/settings", tags=["Settings & Business Parameters"])
 # In-memory settings cache keyed by tenant_id (TTL: 15s)
 _SETTINGS_CACHE: dict[str, dict[str, Any]] = {}
 
+# When the cabinet last asked for an automatic (page-load) CRM managers sync, per tenant
+_AUTO_SYNC_AT: dict[str, float] = {}
+_AUTO_SYNC_EVERY_SEC = 600
+
 
 def get_service_account_path() -> Path | None:
     env_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_PATH")
@@ -719,13 +723,26 @@ async def sync_managers(
     request: Request,
     tenant_id: str | None = Query(None),
     tenant: str | None = Query(None),
+    auto: bool = Query(False),
 ):
     """
     Auto-discovers and imports managers from connected CRM (amoCRM / Bitrix24).
     Safe non-destructive sync: preserves existing manager targets and plans,
     adds new team members with standard RevOps presets.
+    auto=true is the cabinet's own call on page load: it runs at most once per 10 minutes per tenant,
+    the "sync" button (auto=false) always runs.
     """
     clean_tenant = _authorized_tenant(request, tenant_id or tenant)
+    now = time.time()
+    if auto and now - _AUTO_SYNC_AT.get(clean_tenant, 0.0) < _AUTO_SYNC_EVERY_SEC:
+        return {
+            "status": "skipped",
+            "message": "Команда уже синхронизирована с CRM недавно",
+            "crm_type": "",
+            "added_count": 0,
+            "total_count": 0,
+        }
+    _AUTO_SYNC_AT[clean_tenant] = now
     from ..services.crm_users_sync import sync_tenant_crm_managers
     res = await sync_tenant_crm_managers(clean_tenant)
 
@@ -746,7 +763,7 @@ async def sync_managers(
 
 @router.post("/tenants/{tenant_id}/managers/sync")
 async def sync_tenant_managers_route(tenant_id: str, request: Request):
-    return await sync_managers(request=request, tenant_id=tenant_id)
+    return await sync_managers(request=request, tenant_id=tenant_id, tenant=None, auto=False)
 
 
 @router.post("")
