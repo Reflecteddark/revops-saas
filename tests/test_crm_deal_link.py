@@ -20,6 +20,14 @@ def test_amocrm_deal_link():
     assert crm_deal_url({"amo_domain": "https://Client.AmoCRM.ru/"}, 5272089) == "https://client.amocrm.ru/leads/detail/5272089"  # crm_type missing
 
 
+def test_the_deal_id_as_n8n_stores_it_has_a_link():
+    """Found on production: calls ingested by n8n keep the amoCRM deal as "AMO-5272089", and had no link."""
+    assert crm_deal_url(AMO, "AMO-5272089") == "https://client.amocrm.ru/leads/detail/5272089"
+    assert crm_deal_url(AMO, "amo-5272089") == "https://client.amocrm.ru/leads/detail/5272089"
+    assert crm_deal_url(AMO, "B24-5272089") is None  # a Bitrix id is not an amoCRM deal
+    assert crm_deal_url(AMO, "AMO-") is None and crm_deal_url(AMO, "AMO-abc") is None
+
+
 def test_bitrix_link_takes_the_host_of_the_webhook_and_never_its_secret():
     url = crm_deal_url(B24, "B24-77")
     assert url == "https://portal.bitrix24.ru/crm/deal/details/77/"

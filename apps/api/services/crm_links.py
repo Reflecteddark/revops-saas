@@ -15,7 +15,7 @@ from .workspaces import normalize_crm_type
 
 _HOST = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$")
 OWN_DOMAIN = "ai-rop.ru"  # our own webhook address is not the client's CRM
-_AMO_ID = re.compile(r"^\d{1,15}$")
+_AMO_ID = re.compile(r"^(?:AMO-)?(\d{1,15})$", re.IGNORECASE)  # n8n stores the amoCRM deal as "AMO-<number>"
 _B24_ID = re.compile(r"^(?:B24-)?(\d{1,15})$", re.IGNORECASE)
 
 
@@ -37,7 +37,8 @@ def crm_deal_url(cfg: dict[str, Any] | None, external_id: Any) -> str | None:
     crm = normalize_crm_type(cfg.get("crm_type")) or ("amocrm" if cfg.get("amo_domain") else None)
     if crm == "amocrm":
         host = _host(cfg.get("amo_domain"))
-        return f"https://{host}/leads/detail/{deal}" if host and _AMO_ID.match(deal) else None
+        number = _AMO_ID.match(deal)
+        return f"https://{host}/leads/detail/{number[1]}" if host and number else None
     if crm == "bitrix24":
         number = _B24_ID.match(deal)
         if not number:
