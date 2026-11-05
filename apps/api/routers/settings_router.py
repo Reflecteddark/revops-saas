@@ -886,8 +886,8 @@ def get_autonomy_settings(
     clean_tenant = (tenant_id or "TNT-001").strip()
     from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
 
-    # Cross-tenant permission check
-    if current_user.role not in (UserRole.ADMIN, UserRole.CEO):
+    # Cross-tenant permission check. Only the platform ADMIN crosses tenants: CEO owns ONE company.
+    if current_user.role != UserRole.ADMIN:
         t_user = db.query(Tenant).filter(Tenant.id == current_user.tenant_id).first()
         allowed_tids = {current_user.tenant_id, "*"}
         if t_user:
@@ -925,8 +925,8 @@ def patch_autonomy_settings(
             detail=f"Tenant '{clean_tenant}' not found in database",
         )
 
-    # Cross-tenant permission check
-    if current_user.role not in (UserRole.ADMIN, UserRole.CEO):
+    # Cross-tenant permission check. Only the platform ADMIN crosses tenants: CEO owns ONE company.
+    if current_user.role != UserRole.ADMIN:
         allowed_tids = {tenant_obj.id, "*"}
         if tenant_obj.slug:
             allowed_tids.add(tenant_obj.slug)

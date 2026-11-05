@@ -3,6 +3,7 @@ Authentication, Password Hashing, JWT, and Multi-Tenant Context for RevOps SaaS.
 """
 
 import os
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -19,6 +20,8 @@ _raw_secret = os.getenv("SECRET_KEY")
 if not _raw_secret or len(_raw_secret) < 32:
     raise RuntimeError("SECRET_KEY is required and must be at least 32 characters")
 SECRET_KEY: str = _raw_secret
+
+_ROP_WORD = re.compile(r"(?<!\w)(rop|роп)(?!\w)")  # a whole word, so "Европа" is not a РОП
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days (matches session cookie duration)
@@ -95,10 +98,11 @@ def get_current_user(
     role_raw = str(payload.get("role") or "").lower()
     if "admin" in role_raw or "супервайзер" in role_raw:
         assigned_role = UserRole.ADMIN
+    elif _ROP_WORD.search(role_raw):
+        # checked BEFORE the CEO words: the client label "РОП • Руководитель ОП" is a head of sales, not an owner
+        assigned_role = UserRole.ROP
     elif "ceo" in role_raw or "руководитель" in role_raw or "директор" in role_raw:
         assigned_role = UserRole.CEO
-    elif "rop" in role_raw or "роп" in role_raw:
-        assigned_role = UserRole.ROP
     else:
         assigned_role = UserRole.KAM
 
