@@ -37,6 +37,7 @@ from ..services import call_audio
 from ..services.audio_duration import mp3_duration_seconds
 from ..services.call_audit_extras import audit_extras, clean_audio_url, has_audio, pick_extras
 from ..services.call_manager import in_crm_team, resolve_call_manager
+from ..services.methodology_eval import evaluate_call_safely
 from ..services.call_scorecard import MAY_NOT_APPLY, call_texts, read_scorecard, scaled_score
 from ..services.raw_calls_row import build_raw_calls_row
 from ..services.tz import local_str, tenant_tz, to_local
@@ -967,6 +968,9 @@ async def ingest_call_from_n8n(
         logger.error(f"Error persisting ingested call {call_id} for {target_tenant}: {db_err}")
         db.rollback()
         raise HTTPException(status_code=500, detail="Call was not persisted")
+
+    # Methodology: judge the saved call against the company's speech standard. It never fails or delays the ingest.
+    evaluate_call_safely(db, db_call, resolve_call_manager(tenant_cfg, payload.manager_crm_id, payload.manager))
 
     # A call that reached the cabinet is never audited again, whichever path delivered it.
     try:

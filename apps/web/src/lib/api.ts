@@ -47,7 +47,7 @@ import type {
   ScriptModulesResponse,
   HeatmapResponse,
   XRayResponse,
-  GatekeeperLabResponse,
+  BackfillResponse,
   VersionComparisonResponse,
   Tenant,
   TenantHealthDiagnostic,
@@ -749,7 +749,7 @@ export const methodologyApi = {
   },
 
   createVersion: async (
-    payload: { version_tag: string; title: string; hypothesis?: string; set_active?: boolean },
+    payload: { version_tag: string; title: string; hypothesis?: string; set_active?: boolean; base_version_id?: string },
     tenantId?: string
   ): Promise<{ status: string; version_id: string; version_tag: string; is_active: boolean }> => {
     const effectiveTenant = requireTenantId(tenantId);
@@ -838,20 +838,6 @@ export const methodologyApi = {
     return res.data;
   },
 
-  getGatekeeperLab: async (
-    versionId?: string,
-    tenantId?: string
-  ): Promise<GatekeeperLabResponse> => {
-    const effectiveTenant = requireTenantId(tenantId);
-    const res = await api.get<GatekeeperLabResponse>('/methodology/gatekeeper-lab', {
-      params: {
-        tenant_id: effectiveTenant,
-        ...(versionId ? { version_id: versionId } : {}),
-      },
-    });
-    return res.data;
-  },
-
   compareVersions: async (
     v1Id?: string,
     v2Id?: string,
@@ -864,6 +850,15 @@ export const methodologyApi = {
         ...(v1Id ? { v1_id: v1Id } : {}),
         ...(v2Id ? { v2_id: v2Id } : {}),
       },
+    });
+    return res.data;
+  },
+
+  /** Judge the calls the company already has (up to 500 per run); safe to repeat. */
+  backfill: async (tenantId?: string): Promise<BackfillResponse> => {
+    const effectiveTenant = requireTenantId(tenantId);
+    const res = await api.post<BackfillResponse>('/methodology/backfill', {}, {
+      params: { tenant_id: effectiveTenant },
     });
     return res.data;
   },

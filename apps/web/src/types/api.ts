@@ -892,6 +892,9 @@ export interface ScriptModuleItem {
 
 export interface ScriptModulesResponse {
   version_id: string;
+  /** The version was applied to calls: it is history and cannot be edited, a change is a new version. */
+  locked: boolean;
+  applied_calls: number;
   modules: ScriptModuleItem[];
 }
 
@@ -900,7 +903,9 @@ export type MethodologyVerdict =
   | 'SABOTAGE_HIDDEN_GEM'
   | 'HYPOTHESIS_FAILED'
   | 'FREESTYLE_STRONGER'
-  | 'COLLECTING_DATA';
+  | 'NO_SIGNAL'
+  | 'COLLECTING_DATA'
+  | 'NOT_SCRIPTED';
 
 export interface HeatmapMatrixRow {
   criterion: string;
@@ -917,12 +922,32 @@ export interface HeatmapMatrixRow {
   verdict_status: MethodologyVerdict;
   is_sabotage: boolean;
   delta_pct: number;
+  /** false for a criterion the code measures itself (cr11): there is no phrase to follow. */
+  has_standard: boolean;
+  /** enough calls in both groups for a verdict. */
+  enough_data: boolean;
+  calls_needed: number;
+}
+
+export interface MethodologyCoverage {
+  calls_with_transcript: number;
+  calls_evaluated: number;
 }
 
 export interface HeatmapResponse {
   tenant_id: string;
   version_id: string;
   matrix: HeatmapMatrixRow[];
+  coverage: MethodologyCoverage;
+  thresholds: { min_calls: number; min_cohort: number; lift_margin: number; hidden_gem_margin: number };
+}
+
+export interface BackfillResponse {
+  tenant_id: string;
+  evaluated: number;
+  /** calls that cannot be judged, by reason: no_labels, not_assessed, no_transcript, error */
+  skipped: Record<string, number>;
+  coverage: MethodologyCoverage;
 }
 
 export interface XRayManager {
@@ -939,8 +964,11 @@ export interface XRayGoldenQuote {
   call_id: string;
   manager_name: string;
   quote: string;
-  timestamp_sec: number;
+  /** the second of the phrase, only when the transcript carries a timestamp. */
+  timestamp_sec: number | null;
   matched_anchors: string[];
+  call_date: string | null;
+  has_audio: boolean;
 }
 
 export interface XRayResponse {
@@ -964,21 +992,11 @@ export interface XRayResponse {
     swr_pct: number;
     fwr_pct: number;
     script_lift_pct: number;
+    enough_data: boolean;
+    calls_needed: number;
   };
   managers: XRayManager[];
   golden_quotes: XRayGoldenQuote[];
-}
-
-export interface GatekeeperHook {
-  hook_category: string;
-  phrase: string;
-  gatekeeper_prompt?: string;
-  manager_speech?: string;
-  psychological_trigger?: string;
-  success_rate_pct: number;
-  uses_count: number;
-  timestamp_sec: number;
-  pattern_type: string;
 }
 
 export interface VersionComparisonMetrics {
@@ -997,6 +1015,8 @@ export type InterventionVerdict =
   | 'HYPOTHESIS_FAILED'
   | 'STABLE_NEUTRAL'
   | 'COLLECTING_DATA';
+
+export type ComparisonStatus = 'NET_POSITIVE' | 'NET_NEGATIVE' | 'NEUTRAL' | 'COLLECTING_DATA';
 
 export interface VersionComparisonRow {
   criterion: string;
@@ -1026,28 +1046,14 @@ export interface VersionComparisonResponse {
   };
   comparison: VersionComparisonRow[];
   summary: {
-    overall_status: string;
+    overall_status: ComparisonStatus;
     summary_verdict: string;
     improved_criteria_count: number;
     degraded_criteria_count: number;
     neutral_criteria_count: number;
+    compared_criteria_count: number;
+    note?: string;
     avg_lift_delta_pct: number;
     avg_defect_reduction_pct: number;
   };
-}
-
-export interface GatekeeperKillerPhrase {
-  phrase: string;
-  drop_rate_pct: number;
-  reason: string;
-}
-
-export interface GatekeeperLabResponse {
-  tenant_id: string;
-  version_id: string;
-  total_attempts: number;
-  bypassed_count: number;
-  pass_rate_pct: number;
-  winning_hooks: GatekeeperHook[];
-  banned_killer_phrases: GatekeeperKillerPhrase[];
 }

@@ -168,87 +168,13 @@ def sync_methodology_evaluations_for_call(
     manager_id: Optional[str] = None,
     manager_name: Optional[str] = None,
 ) -> None:
-    """
-    Evaluates call transcript against active ScriptVersion semantic anchors
-    and writes rows to call_module_evaluations table in the database.
-    """
-    try:
-        from packages.database.models import ScriptVersion, ScriptModule, CallModuleEvaluation
-        active_ver = (
-            db.query(ScriptVersion)
-            .filter(ScriptVersion.tenant_id == tenant_id, ScriptVersion.is_active == True)
-            .first()
-        )
-        if not active_ver:
-            return
+    """Judge the saved call against the company's speech standard: the shared logic of /calls/ingest (never raises)."""
+    from apps.api.services.methodology_eval import evaluate_call_safely
+    from packages.database.models import CallRecording
 
-        modules = (
-            db.query(ScriptModule)
-            .filter(ScriptModule.script_version_id == active_ver.id)
-            .all()
-        )
-        if not modules:
-            return
-
-        transcript = str(audit_json.get("transcript") or "").lower()
-        mgr_name = manager_name or audit_json.get("manager_name") or "Менеджер"
-
-        for mod in modules:
-            cr_key = str(mod.target_criterion).lower()
-            achieved = bool(criteria_scores.get(cr_key, 0))
-
-            # Cascade relevance check:
-            # If cr6 (gatekeeper) fails, lower funnel criteria (cr7..cr10) were not reached
-            is_relevant = True
-            if cr_key in ["cr7", "cr8", "cr9", "cr10"] and not bool(criteria_scores.get("cr6", 1)):
-                is_relevant = False
-
-            # Semantic anchors adherence evaluation
-            matched_anchors = []
-            anchors = mod.semantic_anchors or []
-            for anc in anchors:
-                anc_words = [w for w in anc.lower().split() if len(w) > 3]
-                if any(w in transcript for w in anc_words):
-                    matched_anchors.append(anc)
-
-            # Check banned triggers
-            banned = mod.banned_triggers or []
-            detected_banned = [b for b in banned if b.lower() in transcript]
-
-            min_req = mod.min_anchors_required or 2
-            adhered = (len(matched_anchors) >= min_req) and (len(detected_banned) == 0)
-
-            # Insert or update evaluation
-            existing = (
-                db.query(CallModuleEvaluation)
-                .filter(
-                    CallModuleEvaluation.call_id == call_id,
-                    CallModuleEvaluation.target_criterion == cr_key,
-                )
-                .first()
-            )
-            if not existing:
-                eval_record = CallModuleEvaluation(
-                    id=str(uuid.uuid4()),
-                    call_id=call_id,
-                    tenant_id=tenant_id,
-                    script_version_id=active_ver.id,
-                    target_criterion=cr_key,
-                    is_relevant=is_relevant,
-                    adhered=adhered,
-                    achieved=achieved,
-                    matched_anchors=matched_anchors,
-                    detected_banned=detected_banned,
-                    evidence_quote=f"Этап {cr_key}: {mod.stage_name}",
-                    timestamp_sec=15,
-                    manager_id=manager_id,
-                    manager_name=mgr_name,
-                    created_at=datetime.now(timezone.utc),
-                )
-                db.add(eval_record)
-        db.commit()
-    except Exception as e:
-        logger.warning(f"Could not sync methodology evaluations for call {call_id}: {e}")
+    call = db.query(CallRecording).filter(CallRecording.id == call_id, CallRecording.tenant_id == tenant_id).first()
+    if call is not None:
+        evaluate_call_safely(db, call, manager_name)
 
 
 def _park_in_dlq(

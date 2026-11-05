@@ -1,29 +1,22 @@
 """
-Methodology & Script Engineering Router:
-Closed-Loop RevOps Optimization, 13-Criteria Heatmap, Gatekeeper Lab & Semantic Anchors.
+Methodology router: the speech standard of a company, and what it does to the real calls.
 
-Features:
-- Versioning of sales scripts (v1.0, v2.1) with explicit change hypotheses
-- 13 B2B criteria modules with Semantic Anchors and Banned Triggers
-- Single-pass SQL aggregation of Adherence Rate (AR), Script Win Rate (SWR), Freestyle Win Rate (FWR)
-- Automatic 4-verdict diagnostic matrix:
-  1. 🟢 WORKING_STANDARD (Рабочий стандарт)
-  2. 🟡 SABOTAGE_HIDDEN_GEM (Саботаж / Скрытый алмаз)
-  3. 🔴 HYPOTHESIS_FAILED (Гипотеза провалилась)
-  4. 🔵 FREESTYLE_STRONGER (Отсебятина сильнее)
-- X-Ray Drawer endpoint: manager adherence breakdown & click-to-play audio quotes
-- Gatekeeper Lab endpoint: winning hooks extraction & secretary pass-rate
+- versions of the standard (v1.0, v2.0 ...) with the hypothesis behind each; a version that has been applied to calls
+  is history and cannot be edited, a change is a new version
+- one module per speakable audit criterion (phrases to say, stop phrases): apps/api/services/methodology_defaults.py
+- every number comes from rows written for REAL calls (apps/api/services/methodology_eval.py): the manager said the
+  standard or not (`adhered`), the audit passed the criterion or not (`achieved`). Nothing is invented: no calls, no
+  quotes, no percentages. Too few calls means "collecting data" (apps/api/services/methodology_stats.py).
 """
 
 import logging
-import random
 import uuid
 from datetime import datetime, timezone
-from typing import Any, List, Optional
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import text
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from packages.database.models import (
@@ -36,138 +29,35 @@ from packages.database.models import (
 )
 from packages.database.session import get_db
 
+from ..services.call_audit_extras import has_audio
+from ..services.call_manager import UNKNOWN_MANAGER
+from ..services.methodology_defaults import CRITERIA_IDS, NOT_SCRIPTED, criterion_meta
+from ..services.methodology_eval import add_default_modules, backfill_tenant, coverage, ensure_tenant_script_baseline
+from ..services.methodology_stats import (
+    COLLECTING,
+    HIDDEN_GEM_MARGIN,
+    LIFT_MARGIN,
+    MIN_CALLS,
+    MIN_COHORT,
+    MIN_COMPARE,
+    VERDICT_LABELS,
+    Counts,
+    manager_flags,
+    pct,
+    verdict_for,
+)
 from .settings_router import get_current_user_or_admin
 
 logger = logging.getLogger("methodology_router")
 
 router = APIRouter(prefix="/methodology", tags=["Methodology & Script Engineering"])
 
-CRITERIA_METADATA = {
-    "cr1": {"title": "Приветствие и регламент", "stage": "Вход в контакт"},
-    "cr2": {"title": "Программирование диалога", "stage": "Управление целью"},
-    "cr3": {"title": "Ниша и масштаб компании", "stage": "Квалификация"},
-    "cr4": {"title": "Выявление истинных болей", "stage": "Исследование ситуации"},
-    "cr5": {"title": "Бюджет и финрамки", "stage": "Квалификация бюджета"},
-    "cr6": {"title": "Схема принятия решений (ЛПР)", "stage": "Обход секретаря / Выход на ЛПР"},
-    "cr7": {"title": "Презентация через боли", "stage": "Презентация ценности"},
-    "cr8": {"title": "Стоимость и вилка цен", "stage": "Ценообразование"},
-    "cr9": {"title": "Отработка возражений", "stage": "Изоляция возражений"},
-    "cr10": {"title": "Hard Next Step (дедлайн)", "stage": "Фиксация следующего шага"},
-    "cr11": {"title": "Инициатива менеджера", "stage": "Удержание руля"},
-    "cr12": {"title": "Фиксация в CRM", "stage": "CRM гигиена"},
-    "cr13": {"title": "Партнерская позиция", "stage": "Тональность и экспертность"},
-}
-
-DEFAULT_MODULES_SPECS = [
-    {
-        "target_criterion": "cr1",
-        "stage_name": "Вход в контакт",
-        "recommended_speech": "Добрый день, [Имя]! Меня зовут [Имя], компания RevOps OS. У нас с вами запланировано 15 минут для сверки регламента, всё в силе?",
-        "semantic_anchors": ["Приветствие по имени", "Обозначение тайминга и регламента звонка", "Получение согласия на диалог"],
-        "banned_triggers": ["Вас беспокоит компания", "Удобно говорить?"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr2",
-        "stage_name": "Управление целью",
-        "recommended_speech": "Предлагаю поступить так: я задам 3 коротких вопроса по процессам в отделе продаж, покажу, как мы решаем такие задачи, и если увидим взаимный интерес — наметим следующий шаг. Договорились?",
-        "semantic_anchors": ["Озвучивание пошагового плана диалога", "Указание цели разговора", "Фиксация правил диалога (программирование)"],
-        "banned_triggers": ["Я вам просто расскажу о нас", "Не займу много времени"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr3",
-        "stage_name": "Квалификация ниши",
-        "recommended_speech": "Подскажите, сколько у вас сейчас менеджеров в активном отделе продаж и на каких чеках в B2B вы работаете?",
-        "semantic_anchors": ["Вопрос о количестве менеджеров или объеме отдела", "Уточнение ниши и профиля клиентов"],
-        "banned_triggers": [],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr4",
-        "stage_name": "Исследование болей",
-        "recommended_speech": "С какими основными трудностями сталкиваетесь при контроле звонков? Сколько лидов или сделок зависает без назначенного следующего шага?",
-        "semantic_anchors": ["Выявление узкого горлышка в конверсии", "Раскопка цены ошибки и потерь от зависших сделок", "Вопрос об опыте решения проблемы"],
-        "banned_triggers": ["У вас наверное все хорошо", "Мы лучше всех"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr5",
-        "stage_name": "Квалификация бюджета",
-        "recommended_speech": "Какие финансовые рамки или бюджет обычно закладываете на автоматизацию аналитики? В каких вилках комфортно двигаться?",
-        "semantic_anchors": ["Ориентир по финансовым ожиданиям", "Определение вилки бюджета без давления", "Уточнение формата оплаты"],
-        "banned_triggers": ["У нас очень дешево", "Денег надо немного"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr6",
-        "stage_name": "Обход секретаря / Выход на ЛПР",
-        "recommended_speech": "По вопросу сокращения кассовых разрывов и регламента встреч: подскажите, с кем помимо вас мы будем согласовывать запуск — с коммерческим или генеральным директором?",
-        "semantic_anchors": ["Определение лиц, принимающих решения (ЛПР)", "Уточнение процедуры защиты проекта перед руководством", "Экспертный заход в обход секретаря"],
-        "banned_triggers": ["Вы сами всё решаете?", "Соедините с кем-нибудь главным"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr7",
-        "stage_name": "Презентация ценности",
-        "recommended_speech": "Исходя из того, что вы сказали о потерях на этапе квалификации: наш модуль сразу подсвечивает РОПу саботаж скрипта, экономя до 30% бюджета на лиды...",
-        "semantic_anchors": ["Презентация решения строго через названную боль", "Показ выгоды в деньгах или сохраненных сделках", "Демонстрация конкретной функции как ответа на проблему"],
-        "banned_triggers": ["У нас уникальный инновационный продукт", "Мы на рынке 10 лет"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr8",
-        "stage_name": "Ценообразование",
-        "recommended_speech": "Внедрение платформы с аудитом звонков и контролем дисциплины составляет от 45 до 85 тысяч рублей в месяц. Насколько это укладывается в вашу финмодель?",
-        "semantic_anchors": ["Озвучивание четкой вилки стоимости или тарифа", "Обоснование состава тарифа", "Вопрос-крючок о сопоставимости с планом"],
-        "banned_triggers": ["Цена обсуждается индивидуально", "Сделаем вам скидку прямо сейчас"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr9",
-        "stage_name": "Изоляция возражений",
-        "recommended_speech": "Понимаю, вопрос бюджета важный. Давайте посчитаем, сколько вы сейчас теряете на слитых лидах без контроля — если закрыть хотя бы 2 сделки, система окупается в первую же неделю. С какими цифрами сейчас работаете?",
-        "semantic_anchors": ["Присоединение к возражению без прямого спора", "Перевод фокуса со стоимости софта на цену потерь бизнеса от бездействия", "Вопрос-крючок о текущем объеме потерь клиента в месяц"],
-        "banned_triggers": ["Могу согласовать вам скидку", "У нас на самом деле дешево", "Ну тогда перезвоните, как появятся деньги"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr10",
-        "stage_name": "Фиксация следующего шага",
-        "recommended_speech": "Предлагаю зафиксировать встречу в Zoom на 20 минут в четверг в 11:00 или в 15:00, разберем аудит на ваших реальных звонках. Какое время вам удобнее внести в календарь?",
-        "semantic_anchors": ["Предложение конкретной даты и времени встречи", "Обозначение ценности следующего контакта (разбор звонков)", "Фиксация дедлайна с отправкой приглашения в календарь"],
-        "banned_triggers": ["Ну вы подумайте и наберите", "Я вам скину на почту, а вы посмотрите"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr11",
-        "stage_name": "Удержание руля",
-        "recommended_speech": "Отличный вопрос! Отвечу детально: [ответ]. А подскажите, как у вас сейчас устроена передача лида от SDR к клоузеру?",
-        "semantic_anchors": ["Ответ на реплику клиента", "Мгновенный возврат инициативы встречным открытым вопросом", "Удержание структуры диалога"],
-        "banned_triggers": ["Что вам еще рассказать?", "Спрашивайте, я слушаю"],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr12",
-        "stage_name": "CRM гигиена",
-        "recommended_speech": "Я зафиксировал все договоренности в карточке сделки, назначил задачу на подготовку аудита и отправил вам подтверждение в мессенджер.",
-        "semantic_anchors": ["Фиксация договоренностей в CRM", "Назначение следующего шага с датой", "Сверка контактных данных"],
-        "banned_triggers": [],
-        "min_anchors_required": 2,
-    },
-    {
-        "target_criterion": "cr13",
-        "stage_name": "Тональность и экспертность",
-        "recommended_speech": "Мы смотрим на ваш отдел продаж как партнеры: наша цель — не просто продать лицензии, а поднять конверсию из звонка во встречу до плановых 40%.",
-        "semantic_anchors": ["Партнерская позиция на равных", "Экспертные рекомендации вместо заискивания", "Фокус на бизнес-результате клиента"],
-        "banned_triggers": ["Будем очень благодарны, если купите", "Мы маленький стартап"],
-        "min_anchors_required": 2,
-    },
-]
+CME = CallModuleEvaluation
+NOT_SCRIPTED_VERDICT = "NOT_SCRIPTED"  # measured by the code (cr11), there is no speech standard to follow
 
 
-def clean_tenant_id(tenant_id: Optional[str]) -> str:
-    return (tenant_id or "TNT-001").strip().upper()
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def resolve_tenant(user: User, tenant_id: Optional[str]) -> str:
@@ -188,182 +78,66 @@ def tenant_version_id(db: Session, tenant: str, version_id: Optional[str], activ
     """The version asked for must belong to this tenant, otherwise another company's script leaks."""
     if not version_id:
         return str(active.id)
-    found = (
-        db.query(ScriptVersion.id)
-        .filter(ScriptVersion.id == version_id, ScriptVersion.tenant_id == tenant)
-        .first()
-    )
+    found = db.query(ScriptVersion.id).filter(ScriptVersion.id == version_id, ScriptVersion.tenant_id == tenant).first()
     if not found:
         raise HTTPException(status_code=404, detail="Script version not found")
     return str(version_id)
 
 
-def ensure_tenant_script_baseline(db: Session, tenant_id: str) -> ScriptVersion:
-    """Guarantees a tenant has at least one active ScriptVersion with all 13 criteria modules."""
-    clean_tenant = clean_tenant_id(tenant_id)
-    version = (
-        db.query(ScriptVersion)
-        .filter(ScriptVersion.tenant_id == clean_tenant, ScriptVersion.is_active == True)
-        .first()
+def _applied_calls(db: Session, version_id: str) -> int:
+    return int(db.query(func.count(func.distinct(CME.call_id))).filter(CME.script_version_id == version_id).scalar() or 0)
+
+
+def _flag(condition: Any) -> Any:
+    return func.sum(case((condition, 1), else_=0))
+
+
+def _counts(db: Session, tenant: str, version_id: str) -> dict[str, Counts]:
+    """One pass over the rows of a version: the cohorts of every criterion."""
+    adhered, achieved = CME.adhered.is_(True), CME.achieved.is_(True)
+    rows = (
+        db.query(
+            CME.target_criterion,
+            func.count(CME.id),
+            _flag(adhered),
+            _flag(achieved),
+            _flag(adhered & achieved),
+            _flag(CME.adhered.is_(False) & achieved),
+        )
+        .filter(CME.tenant_id == tenant, CME.script_version_id == version_id, CME.is_relevant.is_(True))
+        .group_by(CME.target_criterion)
+        .all()
     )
-    if not version:
-        version = (
-            db.query(ScriptVersion)
-            .filter(ScriptVersion.tenant_id == clean_tenant)
-            .order_by(ScriptVersion.created_at.desc())
-            .first()
-        )
-    if not version:
-        version = ScriptVersion(
-            id=str(uuid.uuid4()),
-            tenant_id=clean_tenant,
-            version_tag="v1.0",
-            title="Базовый речевой стандарт B2B (Эталон)",
-            hypothesis="Базовая калибровка 13 критериев B2B-аудита и смысловых якорей",
-            is_active=True,
-            activated_at=datetime.now(timezone.utc),
-            created_at=datetime.now(timezone.utc),
-        )
-        db.add(version)
-        db.flush()
-
-        for spec in DEFAULT_MODULES_SPECS:
-            mod = ScriptModule(
-                id=str(uuid.uuid4()),
-                script_version_id=version.id,
-                target_criterion=spec["target_criterion"],
-                stage_name=spec["stage_name"],
-                recommended_speech=spec["recommended_speech"],
-                semantic_anchors=spec["semantic_anchors"],
-                banned_triggers=spec["banned_triggers"],
-                min_anchors_required=spec["min_anchors_required"],
-            )
-            db.add(mod)
-        db.commit()
-        db.refresh(version)
-
-    return version
+    return {str(r[0]): Counts(int(r[1]), int(r[2] or 0), int(r[3] or 0), int(r[4] or 0), int(r[5] or 0)) for r in rows}
 
 
-def seed_realistic_evaluations(db: Session, tenant_id: str, version_id: str):
-    """Demo/test data only: nothing in production calls this. A client must never see invented calls."""
-    managers = [
-        {"id": "mgr-1", "name": "Александр Иванов", "saboteur": True},
-        {"id": "mgr-2", "name": "Дмитрий Смирнов", "saboteur": True},
-        {"id": "mgr-3", "name": "Виктор Кузнецов", "saboteur": False},
-        {"id": "mgr-4", "name": "Мария Петрова", "saboteur": False, "champion": True},
-        {"id": "mgr-5", "name": "Елена Соколова", "saboteur": False},
-    ]
+# ----------------------------------------------------------------------------------------------- schemas
 
-    quotes_by_criterion = {
-        "cr1": ("Добрый день, Алексей! Меня зовут Мария, компания RevOps OS. У нас с вами запланировано 15 минут, верно?", 8),
-        "cr2": ("Предлагаю поступить так: я задам 3 вопроса по воронке, покажу решение, и наметим следующий шаг. Договорились?", 24),
-        "cr3": ("Подскажите, сколько менеджеров в отделе и на каких сделках специализируетесь?", 42),
-        "cr4": ("Сколько сделок сейчас зависает без следующего шага и во сколько это обходится компании?", 78),
-        "cr5": ("Какие вилки бюджета закладываете на решение этого вопроса?", 110),
-        "cr6": ("По вопросу сокращения кассовых разрывов в филиалах, соедините, пожалуйста, с финансовым директором.", 18),
-        "cr7": ("Наш аудит сразу подсветит РОПу саботаж регламента и сохранит до 30% бюджета лидов.", 145),
-        "cr8": ("Внедрение платформы составляет 65 000 рублей в месяц, окупается с 2 дополнительных сделок.", 190),
-        "cr9": ("Понимаю, вопрос бюджета важный. Давайте посчитаем, сколько теряется на слитых лидах без контроля...", 215),
-        "cr10": ("Предлагаю зафиксировать Zoom в четверг в 11:00, разберем аудит на ваших реальных звонках.", 260),
-        "cr11": ("Отличный вопрос! Отвечаю: [ответ]. А как у вас устроена передача лида клоузеру?", 130),
-        "cr12": ("Все договоренности зафиксировал в сделке и отправил вам подтверждение в мессенджер.", 290),
-        "cr13": ("Мы смотрим на ваш отдел продаж как партнеры с целью поднять конверсию до 40%.", 65),
-    }
-
-    # Generate 120 calls
-    rng = random.Random(42)  # own generator: deterministic for tests, no effect on the rest of the process
-    for i in range(120):
-        call_id = f"{version_id[:8]}-call-{i+1:03d}"
-        mgr = rng.choice(managers)
-        
-        # Determine how deep the call progressed
-        # 15% drop on gatekeeper
-        dropped_early = (rng.random() < 0.15)
-
-        for cr_idx in range(1, 14):
-            cr_key = f"cr{cr_idx}"
-            quote_text, timestamp = quotes_by_criterion[cr_key]
-
-            # Relevance rule: if dropped early, cr7..cr13 are not relevant
-            if dropped_early and cr_idx > 6:
-                is_rel = False
-                adhered = False
-                achieved = False
-            else:
-                is_rel = True
-                
-                # Criterion-specific characteristics
-                if cr_key == "cr6":
-                    # SABOTAGE / HIDDEN GEM scenario
-                    if mgr.get("saboteur"):
-                        adhered = rng.random() < 0.10  # Saboteurs don't use speech module
-                    elif mgr.get("champion"):
-                        adhered = rng.random() < 0.90  # Champions follow strictly
-                    else:
-                        adhered = rng.random() < 0.35
-
-                    # SWR is 68%, FWR is 19%
-                    if adhered:
-                        achieved = (rng.random() < 0.68)
-                    else:
-                        achieved = (rng.random() < 0.19)
-
-                elif cr_key == "cr1":
-                    # WORKING STANDARD scenario
-                    adhered = rng.random() < 0.85
-                    achieved = (rng.random() < 0.92) if adhered else (rng.random() < 0.65)
-
-                elif cr_key == "cr5":
-                    # HYPOTHESIS FAILED scenario (text is awkward, clients withdraw)
-                    adhered = rng.random() < 0.75
-                    achieved = (rng.random() < 0.22) if adhered else (rng.random() < 0.35)
-
-                elif cr_key == "cr9":
-                    # FREESTYLE STRONGER scenario (top reps have a killer organic response)
-                    adhered = rng.random() < 0.35
-                    achieved = (rng.random() < 0.45) if adhered else (rng.random() < 0.72)
-
-                else:
-                    adhered = rng.random() < 0.60
-                    achieved = (rng.random() < 0.65) if adhered else (rng.random() < 0.45)
-
-            eval_entry = CallModuleEvaluation(
-                id=str(uuid.uuid4()),
-                call_id=call_id,
-                tenant_id=tenant_id,
-                script_version_id=version_id,
-                target_criterion=cr_key,
-                is_relevant=is_rel,
-                adhered=adhered,
-                achieved=achieved,
-                evidence_quote=quote_text if adhered else "Разговор своими словами без регламентных смысловых якорей",
-                timestamp_sec=timestamp + rng.randint(-3, 3),
-                manager_id=mgr["id"],
-                manager_name=mgr["name"],
-                matched_anchors=["Присоединение без спора", "Фокус на потерях"] if adhered else [],
-                detected_banned=["Могу дать скидку"] if (not adhered and rng.random() < 0.2) else [],
-                created_at=datetime.now(timezone.utc),
-            )
-            db.add(eval_entry)
-
-    db.commit()
-
-
-# Pydantic Schemas
 class CreateVersionRequest(BaseModel):
-    version_tag: str = Field(..., description="e.g. v2.1")
-    title: str = Field(..., description="Descriptive title of script update")
-    hypothesis: Optional[str] = Field(None, description="Why this change improves conversion")
+    version_tag: str = Field(..., min_length=1, max_length=50, description="e.g. v2.1")
+    title: str = Field(..., min_length=1, max_length=255, description="Descriptive title of the change")
+    hypothesis: Optional[str] = Field(None, max_length=2000, description="Why this change should improve the result")
     set_active: bool = Field(True, description="Whether to activate immediately")
+    base_version_id: Optional[str] = Field(None, description="Version to copy the modules from; the active one by default")
 
 
 class UpdateModuleRequest(BaseModel):
-    recommended_speech: str
-    semantic_anchors: List[str]
-    banned_triggers: List[str] = []
-    min_anchors_required: int = 2
+    recommended_speech: str = Field(..., max_length=2000)
+    semantic_anchors: list[str] = Field(default_factory=list, max_length=20)
+    banned_triggers: list[str] = Field(default_factory=list, max_length=20)
+    min_anchors_required: int = Field(2, ge=0, le=20)
 
+
+def _clean_list(items: list[str]) -> list[str]:
+    out: list[str] = []
+    for item in items:
+        text = " ".join(str(item).split())[:200]
+        if text and text not in out:
+            out.append(text)
+    return out
+
+
+# ----------------------------------------------------------------------------------------------- versions
 
 @router.get("/versions")
 def get_script_versions(
@@ -371,20 +145,13 @@ def get_script_versions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_or_admin),
 ):
-    """Lists all script versions for a tenant with active version highlighted."""
-    clean_tenant = resolve_tenant(current_user, tenant_id)
-    active_version = ensure_tenant_script_baseline(db, clean_tenant)
-
-    versions = (
-        db.query(ScriptVersion)
-        .filter(ScriptVersion.tenant_id == clean_tenant)
-        .order_by(ScriptVersion.created_at.desc())
-        .all()
-    )
-
+    """Lists the versions of the standard of a company, the active one highlighted."""
+    tenant = resolve_tenant(current_user, tenant_id)
+    active = ensure_tenant_script_baseline(db, tenant)
+    versions = db.query(ScriptVersion).filter(ScriptVersion.tenant_id == tenant).order_by(ScriptVersion.created_at.desc()).all()
     return {
-        "tenant_id": clean_tenant,
-        "active_version_id": active_version.id,
+        "tenant_id": tenant,
+        "active_version_id": active.id,
         "versions": [
             {
                 "id": v.id,
@@ -407,84 +174,50 @@ def create_script_version(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_or_admin),
 ):
-    """Creates a new script version, copying existing modules as starting point."""
-    clean_tenant = resolve_tenant(current_user, tenant_id)
-    active_version = ensure_tenant_script_baseline(db, clean_tenant)
-
-    # Check for duplicate version tag
-    existing = (
-        db.query(ScriptVersion)
-        .filter(
-            ScriptVersion.tenant_id == clean_tenant,
-            ScriptVersion.version_tag == payload.version_tag.strip(),
-        )
-        .first()
-    )
-    if existing:
-        raise HTTPException(status_code=400, detail=f"Version {payload.version_tag} already exists.")
+    """A new version, starting as a copy of another one (the active one unless base_version_id says otherwise)."""
+    tenant = resolve_tenant(current_user, tenant_id)
+    active = ensure_tenant_script_baseline(db, tenant)
+    base_id = tenant_version_id(db, tenant, payload.base_version_id, active)
+    tag = payload.version_tag.strip()
+    if not tag or not payload.title.strip():
+        raise HTTPException(status_code=422, detail="Тег и название версии не могут быть пустыми")
+    if db.query(ScriptVersion.id).filter(ScriptVersion.tenant_id == tenant, ScriptVersion.version_tag == tag).first():
+        raise HTTPException(status_code=409, detail=f"Версия {tag} уже существует")
 
     if payload.set_active:
-        db.query(ScriptVersion).filter(ScriptVersion.tenant_id == clean_tenant).update(
-            {"is_active": False}
-        )
-
-    new_version = ScriptVersion(
+        db.query(ScriptVersion).filter(ScriptVersion.tenant_id == tenant).update({"is_active": False})
+    version = ScriptVersion(
         id=str(uuid.uuid4()),
-        tenant_id=clean_tenant,
-        version_tag=payload.version_tag.strip(),
+        tenant_id=tenant,
+        version_tag=tag,
         title=payload.title.strip(),
         hypothesis=payload.hypothesis,
         is_active=payload.set_active,
-        activated_at=datetime.now(timezone.utc) if payload.set_active else None,
-        created_at=datetime.now(timezone.utc),
+        activated_at=_now() if payload.set_active else None,
+        created_at=_now(),
     )
-    db.add(new_version)
+    db.add(version)
     db.flush()
 
-    # Clone modules from active version or fallback to default template
-    prev_modules = (
-        db.query(ScriptModule)
-        .filter(ScriptModule.script_version_id == active_version.id)
-        .all()
-    )
-    if prev_modules:
-        for pm in prev_modules:
+    base_modules = db.query(ScriptModule).filter(ScriptModule.script_version_id == base_id).all()
+    if base_modules:
+        for m in base_modules:
             db.add(
                 ScriptModule(
                     id=str(uuid.uuid4()),
-                    script_version_id=new_version.id,
-                    target_criterion=pm.target_criterion,
-                    stage_name=pm.stage_name,
-                    recommended_speech=pm.recommended_speech,
-                    semantic_anchors=list(pm.semantic_anchors or []),
-                    banned_triggers=list(pm.banned_triggers or []),
-                    min_anchors_required=pm.min_anchors_required,
+                    script_version_id=version.id,
+                    target_criterion=m.target_criterion,
+                    stage_name=m.stage_name,
+                    recommended_speech=m.recommended_speech,
+                    semantic_anchors=list(m.semantic_anchors or []),
+                    banned_triggers=list(m.banned_triggers or []),
+                    min_anchors_required=m.min_anchors_required,
                 )
             )
     else:
-        for spec in DEFAULT_MODULES_SPECS:
-            db.add(
-                ScriptModule(
-                    id=str(uuid.uuid4()),
-                    script_version_id=new_version.id,
-                    target_criterion=spec["target_criterion"],
-                    stage_name=spec["stage_name"],
-                    recommended_speech=spec["recommended_speech"],
-                    semantic_anchors=spec["semantic_anchors"],
-                    banned_triggers=spec["banned_triggers"],
-                    min_anchors_required=spec["min_anchors_required"],
-                )
-            )
-
+        add_default_modules(db, str(version.id))
     db.commit()
-    db.refresh(new_version)
-
-    return {
-        "status": "created",
-        "version_id": new_version.id,
-        "version_tag": new_version.version_tag,
-        "is_active": new_version.is_active,
-    }
+    return {"status": "created", "version_id": version.id, "version_tag": version.version_tag, "is_active": version.is_active}
 
 
 @router.put("/versions/{version_id}/activate")
@@ -494,25 +227,19 @@ def activate_script_version(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_or_admin),
 ):
-    """Sets a specific script version as active for the tenant."""
-    clean_tenant = resolve_tenant(current_user, tenant_id)
-    version = (
-        db.query(ScriptVersion)
-        .filter(ScriptVersion.id == version_id, ScriptVersion.tenant_id == clean_tenant)
-        .first()
-    )
+    """From now on new calls are judged by this version."""
+    tenant = resolve_tenant(current_user, tenant_id)
+    version = db.query(ScriptVersion).filter(ScriptVersion.id == version_id, ScriptVersion.tenant_id == tenant).first()
     if not version:
         raise HTTPException(status_code=404, detail="Script version not found")
-
-    db.query(ScriptVersion).filter(ScriptVersion.tenant_id == clean_tenant).update(
-        {"is_active": False}
-    )
-    setattr(version, "is_active", True)
-    setattr(version, "activated_at", datetime.now(timezone.utc))
+    db.query(ScriptVersion).filter(ScriptVersion.tenant_id == tenant).update({"is_active": False})
+    version.is_active = True  # type: ignore[assignment]
+    version.activated_at = _now()  # type: ignore[assignment]
     db.commit()
-
     return {"status": "activated", "version_id": version.id, "version_tag": version.version_tag}
 
+
+# ----------------------------------------------------------------------------------------------- modules
 
 @router.get("/modules")
 def get_script_modules(
@@ -521,39 +248,29 @@ def get_script_modules(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_or_admin),
 ):
-    """Returns 13 script modules with semantic anchors and banned triggers."""
-    clean_tenant = resolve_tenant(current_user, tenant_id)
-    active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
-
-    modules = (
-        db.query(ScriptModule)
-        .filter(ScriptModule.script_version_id == target_version_id)
-        .all()
-    )
-
-    # Sort cr1..cr13
-    sorted_modules = sorted(
-        modules,
-        key=lambda m: int(m.target_criterion.replace("cr", ""))
-        if m.target_criterion.replace("cr", "").isdigit()
-        else 99,
-    )
-
+    """The speech modules of a version. `locked` = the version has been applied to calls, so it is history."""
+    tenant = resolve_tenant(current_user, tenant_id)
+    active = ensure_tenant_script_baseline(db, tenant)
+    target = tenant_version_id(db, tenant, version_id, active)
+    modules = db.query(ScriptModule).filter(ScriptModule.script_version_id == target).all()
+    modules.sort(key=lambda m: int(m.target_criterion[2:]) if str(m.target_criterion)[2:].isdigit() else 99)
+    applied = _applied_calls(db, target)
     return {
-        "version_id": target_version_id,
+        "version_id": target,
+        "locked": applied > 0,
+        "applied_calls": applied,
         "modules": [
             {
                 "id": m.id,
                 "target_criterion": m.target_criterion,
-                "title": CRITERIA_METADATA.get(str(m.target_criterion), {}).get("title", str(m.target_criterion)),
+                "title": criterion_meta(str(m.target_criterion))["title"],
                 "stage_name": m.stage_name,
                 "recommended_speech": m.recommended_speech,
                 "semantic_anchors": m.semantic_anchors or [],
                 "banned_triggers": m.banned_triggers or [],
                 "min_anchors_required": m.min_anchors_required,
             }
-            for m in sorted_modules
+            for m in modules
         ],
     }
 
@@ -567,31 +284,31 @@ def update_script_module(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_or_admin),
 ):
-    """Updates speech template, semantic anchors, and banned triggers for a specific criterion."""
-    clean_tenant = resolve_tenant(current_user, tenant_id)
-    clean_cr = criterion.strip().lower()
-    active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
-
-    module = (
-        db.query(ScriptModule)
-        .filter(
-            ScriptModule.script_version_id == target_version_id,
-            ScriptModule.target_criterion == clean_cr,
-        )
-        .first()
-    )
+    """Edit a module. Only a version that has not been applied to any call: the numbers of the past must stay true."""
+    tenant = resolve_tenant(current_user, tenant_id)
+    key = criterion.strip().lower()
+    active = ensure_tenant_script_baseline(db, tenant)
+    target = tenant_version_id(db, tenant, version_id, active)
+    module = db.query(ScriptModule).filter(ScriptModule.script_version_id == target, ScriptModule.target_criterion == key).first()
     if not module:
-        raise HTTPException(status_code=404, detail=f"Module for {clean_cr} not found")
-
-    setattr(module, "recommended_speech", payload.recommended_speech.strip())
-    setattr(module, "semantic_anchors", [a.strip() for a in payload.semantic_anchors if a.strip()])
-    setattr(module, "banned_triggers", [b.strip() for b in payload.banned_triggers if b.strip()])
-    setattr(module, "min_anchors_required", max(1, payload.min_anchors_required))
-
+        raise HTTPException(status_code=404, detail=f"Module for {key} not found")
+    applied = _applied_calls(db, target)
+    if applied:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Эта версия уже применялась к {applied} звонкам, её нельзя менять. Создайте новую версию («Новая гипотеза») и правьте её.",
+        )
+    anchors, banned = _clean_list(payload.semantic_anchors), _clean_list(payload.banned_triggers)
+    if not anchors and not banned:
+        raise HTTPException(status_code=422, detail="Добавьте хотя бы одну формулировку или стоп-фразу: пустой модуль ничего не проверяет")
+    if payload.min_anchors_required > len(anchors):
+        raise HTTPException(status_code=422, detail=f"Порог ({payload.min_anchors_required}) больше числа формулировок ({len(anchors)})")
+    module.recommended_speech = payload.recommended_speech.strip()  # type: ignore[assignment]
+    module.semantic_anchors = anchors  # type: ignore[assignment]
+    module.banned_triggers = banned  # type: ignore[assignment]
+    module.min_anchors_required = payload.min_anchors_required  # type: ignore[assignment]
     db.commit()
     db.refresh(module)
-
     return {
         "status": "updated",
         "id": module.id,
@@ -603,6 +320,33 @@ def update_script_module(
     }
 
 
+# ----------------------------------------------------------------------------------------------- numbers
+
+def _row(cr: str, c: Counts) -> dict[str, Any]:
+    meta = criterion_meta(cr)
+    scripted = cr not in NOT_SCRIPTED
+    verdict = verdict_for(c) if scripted else NOT_SCRIPTED_VERDICT
+    return {
+        "criterion": cr,
+        "title": meta["title"],
+        "stage": meta["stage"],
+        "has_standard": scripted,
+        "total_relevant_calls": c.total,
+        "script_calls": c.script,
+        "freestyle_calls": c.free,
+        "ar_pct": c.ar,
+        "swr_pct": c.swr,
+        "fwr_pct": c.fwr,
+        "total_win_pct": c.win,
+        "script_lift_pct": c.lift,
+        "enough_data": c.enough,
+        "calls_needed": max(0, MIN_CALLS - c.total),
+        "verdict_status": verdict,
+        "is_sabotage": verdict == "SABOTAGE_HIDDEN_GEM",
+        "delta_pct": c.lift,
+    }
+
+
 @router.get("/heatmap")
 def get_methodology_heatmap(
     version_id: Optional[str] = Query(None),
@@ -610,105 +354,17 @@ def get_methodology_heatmap(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_or_admin),
 ):
-    """
-    High-performance single-pass calculation of Heatmap metrics:
-    Adherence Rate (AR), Script Win Rate (SWR), Freestyle Win Rate (FWR), Script Lift and 4 Verdicts.
-    """
-    clean_tenant = resolve_tenant(current_user, tenant_id)
-    active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
-
-    # Single-pass SQL aggregation with FILTER (WHERE ...)
-    sql = text("""
-        WITH stats AS (
-            SELECT
-                target_criterion,
-                script_version_id,
-                COUNT(*) AS total_relevant_calls,
-                COUNT(*) FILTER (WHERE adhered = TRUE) AS script_calls,
-                COUNT(*) FILTER (WHERE adhered = FALSE) AS freestyle_calls,
-                ROUND(100.0 * COUNT(*) FILTER (WHERE adhered = TRUE) / NULLIF(COUNT(*), 0), 1) AS ar_pct,
-                ROUND(100.0 * COUNT(*) FILTER (WHERE adhered = TRUE AND achieved = TRUE) 
-                      / NULLIF(COUNT(*) FILTER (WHERE adhered = TRUE), 0), 1) AS swr_pct,
-                ROUND(100.0 * COUNT(*) FILTER (WHERE adhered = FALSE AND achieved = TRUE) 
-                      / NULLIF(COUNT(*) FILTER (WHERE adhered = FALSE), 0), 1) AS fwr_pct,
-                ROUND(100.0 * COUNT(*) FILTER (WHERE achieved = TRUE) / NULLIF(COUNT(*), 0), 1) AS total_win_pct
-            FROM call_module_evaluations
-            WHERE tenant_id = :tenant_id
-              AND script_version_id = :version_id
-              AND is_relevant = TRUE
-            GROUP BY target_criterion, script_version_id
-        )
-        SELECT
-            target_criterion,
-            total_relevant_calls,
-            script_calls,
-            freestyle_calls,
-            COALESCE(ar_pct, 0.0) AS ar_pct,
-            COALESCE(swr_pct, 0.0) AS swr_pct,
-            COALESCE(fwr_pct, 0.0) AS fwr_pct,
-            COALESCE(total_win_pct, 0.0) AS total_win_pct,
-            ROUND(COALESCE(swr_pct, 0.0) - COALESCE(fwr_pct, 0.0), 1) AS script_lift_pct,
-            CASE
-                WHEN total_relevant_calls > 30 AND fwr_pct > swr_pct THEN 'FREESTYLE_STRONGER'
-                WHEN ar_pct < 40 AND swr_pct > (fwr_pct + 15)        THEN 'SABOTAGE_HIDDEN_GEM'
-                WHEN ar_pct >= 65 AND swr_pct <= fwr_pct             THEN 'HYPOTHESIS_FAILED'
-                WHEN ar_pct >= 65 AND swr_pct > fwr_pct              THEN 'WORKING_STANDARD'
-                ELSE 'COLLECTING_DATA'
-            END AS verdict_status
-        FROM stats
-    """)
-
-    rows = db.execute(sql, {"tenant_id": clean_tenant, "version_id": target_version_id}).fetchall()
-    row_map = {r[0]: r for r in rows}
-
-    matrix = []
-    for cr_idx in range(1, 14):
-        cr_key = f"cr{cr_idx}"
-        meta = CRITERIA_METADATA.get(cr_key, {"title": cr_key, "stage": cr_key})
-
-        if cr_key in row_map:
-            r = row_map[cr_key]
-            # r indices: 0: target_criterion, 1: total_relevant_calls, 2: script_calls, 3: freestyle_calls,
-            # 4: ar_pct, 5: swr_pct, 6: fwr_pct, 7: total_win_pct, 8: script_lift_pct, 9: verdict_status
-            matrix.append({
-                "criterion": cr_key,
-                "title": meta["title"],
-                "stage": meta["stage"],
-                "total_relevant_calls": int(r[1]),
-                "script_calls": int(r[2]),
-                "freestyle_calls": int(r[3]),
-                "ar_pct": float(r[4]),
-                "swr_pct": float(r[5]),
-                "fwr_pct": float(r[6]),
-                "total_win_pct": float(r[7]),
-                "script_lift_pct": float(r[8]),
-                "verdict_status": str(r[9]),
-                "is_sabotage": str(r[9]) == "SABOTAGE_HIDDEN_GEM",
-                "delta_pct": float(r[8]),  # Delta represents the script lift
-            })
-        else:
-            matrix.append({
-                "criterion": cr_key,
-                "title": meta["title"],
-                "stage": meta["stage"],
-                "total_relevant_calls": 0,
-                "script_calls": 0,
-                "freestyle_calls": 0,
-                "ar_pct": 0.0,
-                "swr_pct": 0.0,
-                "fwr_pct": 0.0,
-                "total_win_pct": 0.0,
-                "script_lift_pct": 0.0,
-                "verdict_status": "COLLECTING_DATA",
-                "is_sabotage": False,
-                "delta_pct": 0.0,
-            })
-
+    """The 13 audit criteria: how often the standard was said (AR), how the call went with it (SWR) and without it (FWR)."""
+    tenant = resolve_tenant(current_user, tenant_id)
+    active = ensure_tenant_script_baseline(db, tenant)
+    target = tenant_version_id(db, tenant, version_id, active)
+    counts = _counts(db, tenant, target)
     return {
-        "tenant_id": clean_tenant,
-        "version_id": target_version_id,
-        "matrix": matrix,
+        "tenant_id": tenant,
+        "version_id": target,
+        "matrix": [_row(cr, counts.get(cr, Counts())) for cr in CRITERIA_IDS],
+        "coverage": coverage(db, tenant),
+        "thresholds": {"min_calls": MIN_CALLS, "min_cohort": MIN_COHORT, "lift_margin": LIFT_MARGIN, "hidden_gem_margin": HIDDEN_GEM_MARGIN},
     }
 
 
@@ -720,367 +376,235 @@ def get_methodology_xray(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_or_admin),
 ):
-    """
-    Detailed X-Ray inspection drawer for a single criterion:
-    Cohorts (Script vs Freestyle), Manager breakdown with Saboteur highlighting, and 3 Click-to-Play quotes.
-    """
-    clean_tenant = resolve_tenant(current_user, tenant_id)
-    clean_cr = criterion.strip().lower()
-    active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
+    """One criterion in detail: the two cohorts, the managers, and real quotes of calls where the standard worked."""
+    tenant = resolve_tenant(current_user, tenant_id)
+    key = criterion.strip().lower()
+    if key not in CRITERIA_IDS:
+        raise HTTPException(status_code=404, detail="Unknown criterion")
+    active = ensure_tenant_script_baseline(db, tenant)
+    target = tenant_version_id(db, tenant, version_id, active)
+    meta = criterion_meta(key)
+    module = db.query(ScriptModule).filter(ScriptModule.script_version_id == target, ScriptModule.target_criterion == key).first()
 
-    meta = CRITERIA_METADATA.get(clean_cr, {"title": clean_cr, "stage": clean_cr})
+    c = _counts(db, tenant, target).get(key, Counts())
+    verdict = verdict_for(c) if key not in NOT_SCRIPTED else NOT_SCRIPTED_VERDICT
 
-    # Retrieve module definition
-    module = (
-        db.query(ScriptModule)
-        .filter(
-            ScriptModule.script_version_id == target_version_id,
-            ScriptModule.target_criterion == clean_cr,
-        )
-        .first()
-    )
-
-    # Aggregates for cohorts
-    evals = (
-        db.query(CallModuleEvaluation)
-        .filter(
-            CallModuleEvaluation.tenant_id == clean_tenant,
-            CallModuleEvaluation.script_version_id == target_version_id,
-            CallModuleEvaluation.target_criterion == clean_cr,
-            CallModuleEvaluation.is_relevant == True,
-        )
+    adhered, achieved = CME.adhered.is_(True), CME.achieved.is_(True)
+    mgr_rows = (
+        db.query(CME.manager_name, func.count(CME.id), _flag(adhered), _flag(achieved))
+        .filter(CME.tenant_id == tenant, CME.script_version_id == target, CME.target_criterion == key, CME.is_relevant.is_(True))
+        .group_by(CME.manager_name)
         .all()
     )
+    managers: list[dict[str, Any]] = []
+    for name, total, script, wins in mgr_rows:
+        total, script, wins = int(total), int(script or 0), int(wins or 0)
+        known = bool(name) and name != UNKNOWN_MANAGER
+        saboteur, champion = manager_flags(total, script, wins) if known else (False, False)
+        managers.append(
+            {
+                "name": name or UNKNOWN_MANAGER,
+                "total_calls": total,
+                "script_calls": script,
+                "ar_pct": pct(script, total),
+                "win_pct": pct(wins, total),
+                "is_saboteur": saboteur,
+                "is_champion": champion,
+            }
+        )
+    managers.sort(key=lambda m: (not m["is_saboteur"], m["ar_pct"], -m["total_calls"]))
 
-    total_calls = len(evals)
-    script_calls = [e for e in evals if e.adhered]
-    freestyle_calls = [e for e in evals if not e.adhered]
-
-    script_wins = [e for e in script_calls if e.achieved]
-    freestyle_wins = [e for e in freestyle_calls if e.achieved]
-
-    ar_pct = round(100.0 * len(script_calls) / total_calls, 1) if total_calls > 0 else 0.0
-    swr_pct = round(100.0 * len(script_wins) / len(script_calls), 1) if script_calls else 0.0
-    fwr_pct = round(100.0 * len(freestyle_wins) / len(freestyle_calls), 1) if freestyle_calls else 0.0
-    script_lift_pct = round(swr_pct - fwr_pct, 1)
-
-    # Verdict determination
-    if total_calls > 30 and fwr_pct > swr_pct:
-        verdict = "FREESTYLE_STRONGER"
-        verdict_label = "Отсебятина сильнее (Звезды нашли живой крючок)"
-    elif ar_pct < 40 and swr_pct > (fwr_pct + 15):
-        verdict = "SABOTAGE_HIDDEN_GEM"
-        verdict_label = "Саботаж (Скрытый алмаз: скрипт пушка, но не говорят)"
-    elif ar_pct >= 65 and swr_pct <= fwr_pct:
-        verdict = "HYPOTHESIS_FAILED"
-        verdict_label = "Гипотеза провалилась (Формулировка отталкивает)"
-    elif ar_pct >= 65 and swr_pct > fwr_pct:
-        verdict = "WORKING_STANDARD"
-        verdict_label = "Рабочий стандарт (Скрипт принят и стабильно бьет в цель)"
-    else:
-        verdict = "COLLECTING_DATA"
-        verdict_label = "Сбор данных (Выборка накапливается)"
-
-    # Managers breakdown
-    managers_map: dict[str, dict[str, int]] = {}
-    for e in evals:
-        m_name = str(e.manager_name or "Неизвестный менеджер")
-        if m_name not in managers_map:
-            managers_map[m_name] = {"total": 0, "script": 0, "achieved": 0}
-        managers_map[m_name]["total"] += 1
-        if bool(e.adhered):
-            managers_map[m_name]["script"] += 1
-        if bool(e.achieved):
-            managers_map[m_name]["achieved"] += 1
-
-    managers_list: list[dict[str, Any]] = []
-    for name, m_stats in managers_map.items():
-        m_tot = m_stats["total"]
-        m_scr = m_stats["script"]
-        m_ach = m_stats["achieved"]
-        m_ar = round(100.0 * m_scr / m_tot, 1) if m_tot > 0 else 0.0
-        m_win = round(100.0 * m_ach / m_tot, 1) if m_tot > 0 else 0.0
-        managers_list.append({
-            "name": name,
-            "total_calls": m_tot,
-            "script_calls": m_scr,
-            "ar_pct": m_ar,
-            "win_pct": m_win,
-            "is_saboteur": m_ar < 40.0,
-            "is_champion": m_ar >= 80.0 and m_win >= 60.0,
-        })
-    # Sort: saboteurs first, then by total calls
-    managers_list.sort(key=lambda x: (not x["is_saboteur"], x["ar_pct"]))
-
-    # 3 Golden quotes (adhered=True, achieved=True) with audio timestamps
-    golden_evals = [e for e in script_wins if e.evidence_quote and len(str(e.evidence_quote)) > 10][:3]
-    quotes: list[dict[str, Any]] = [
-        {
-            "call_id": str(g.call_id),
-            "manager_name": str(g.manager_name or ""),
-            "quote": str(g.evidence_quote or ""),
-            "timestamp_sec": int(g.timestamp_sec or 15),
-            "matched_anchors": list(g.matched_anchors or []),
-        }
-        for g in golden_evals
-    ]
+    quote_rows = (
+        db.query(CME, CallRecording)
+        .join(CallRecording, CallRecording.id == CME.call_id)
+        .filter(
+            CME.tenant_id == tenant,
+            CME.script_version_id == target,
+            CME.target_criterion == key,
+            adhered,
+            achieved,
+            CME.evidence_quote.isnot(None),
+        )
+        .order_by(CME.created_at.desc())
+        .limit(3)
+        .all()
+    )
+    quotes: list[dict[str, Any]] = []
+    for ev, call in quote_rows:
+        sc: Any = call.scorecard_criteria if isinstance(call.scorecard_criteria, dict) else {}
+        quotes.append(
+            {
+                "call_id": str(ev.call_id),
+                "manager_name": str(ev.manager_name or UNKNOWN_MANAGER),
+                "quote": str(ev.evidence_quote or ""),
+                "timestamp_sec": ev.timestamp_sec,
+                "matched_anchors": list(ev.matched_anchors or []),
+                "call_date": str(sc.get("call_started_at") or "") or (call.created_at.isoformat() if call.created_at else None),
+                "has_audio": has_audio(sc, call.audio_s3_url),
+            }
+        )
 
     return {
-        "criterion": clean_cr,
+        "criterion": key,
         "title": meta["title"],
         "stage": meta["stage"],
         "verdict": verdict,
-        "verdict_label": verdict_label,
+        "verdict_label": VERDICT_LABELS.get(verdict, "Для этого критерия нет речевого стандарта: его считает код"),
         "module": {
             "recommended_speech": module.recommended_speech if module else "",
             "semantic_anchors": module.semantic_anchors if module else [],
             "banned_triggers": module.banned_triggers if module else [],
         },
         "stats": {
-            "total_calls": total_calls,
-            "script_calls": len(script_calls),
-            "freestyle_calls": len(freestyle_calls),
-            "script_wins": len(script_wins),
-            "freestyle_wins": len(freestyle_wins),
-            "ar_pct": ar_pct,
-            "swr_pct": swr_pct,
-            "fwr_pct": fwr_pct,
-            "script_lift_pct": script_lift_pct,
+            "total_calls": c.total,
+            "script_calls": c.script,
+            "freestyle_calls": c.free,
+            "script_wins": c.script_wins,
+            "freestyle_wins": c.free_wins,
+            "ar_pct": c.ar,
+            "swr_pct": c.swr,
+            "fwr_pct": c.fwr,
+            "script_lift_pct": c.lift,
+            "enough_data": c.enough,
+            "calls_needed": max(0, MIN_CALLS - c.total),
         },
-        "managers": managers_list,
+        "managers": managers,
         "golden_quotes": quotes,
     }
 
 
-@router.get("/gatekeeper-lab")
-def get_gatekeeper_lab(
-    version_id: Optional[str] = Query(None),
-    tenant_id: Optional[str] = Query(None),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_or_admin),
-):
-    """
-    Gatekeeper & Secretary Bypass Lab:
-    Identifies exact manager phrasing that broke past the secretary, pass rate %, and killer anti-patterns.
-    """
-    clean_tenant = resolve_tenant(current_user, tenant_id)
-    active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
+# ----------------------------------------------------------------------------------------------- compare
 
-    # Retrieve all cr6 evaluations
-    evals = (
-        db.query(CallModuleEvaluation)
-        .filter(
-            CallModuleEvaluation.tenant_id == clean_tenant,
-            CallModuleEvaluation.script_version_id == target_version_id,
-            CallModuleEvaluation.target_criterion == "cr6",
-            CallModuleEvaluation.is_relevant == True,
-        )
-        .all()
-    )
-
-    total_attempts = len(evals)
-    bypassed = [e for e in evals if e.achieved]
-    pass_rate = round(100.0 * len(bypassed) / total_attempts, 1) if total_attempts > 0 else 0.0
-
-    # Hooks and killer phrases need real transcripts of the secretary step; until they are extracted nothing is shown
-    # (the former hard-coded list with 74.2% / 91% was the same for every client and not measured).
-    winning_hooks: list[dict[str, Any]] = []
-    banned_killer_phrases: list[dict[str, Any]] = []
-
+def _metrics(c: Counts) -> dict[str, Any]:
     return {
-        "tenant_id": clean_tenant,
-        "version_id": target_version_id,
-        "total_attempts": total_attempts,
-        "bypassed_count": len(bypassed),
-        "pass_rate_pct": pass_rate,
-        "winning_hooks": winning_hooks,
-        "banned_killer_phrases": banned_killer_phrases,
+        "total_calls": c.total,
+        "script_calls": c.script,
+        "ar_pct": c.ar,
+        "swr_pct": c.swr,
+        "fwr_pct": c.fwr,
+        "lift_pct": c.lift,
+        "defect_rate_pct": c.defect,
     }
 
 
 @router.get("/versions/compare")
 def compare_script_versions(
-    v1_id: Optional[str] = Query(None, description="Previous version ID (before intervention)"),
-    v2_id: Optional[str] = Query(None, description="New version ID (after intervention)"),
+    v1_id: Optional[str] = Query(None, description="Earlier version (the base)"),
+    v2_id: Optional[str] = Query(None, description="Later version (after the change)"),
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_or_admin),
 ):
-    """
-    Cohort-based Side-by-Side comparison of two script versions (v1.0 vs v2.0):
-    Answers: 'How did the intervention in the script improve the 13 criteria and reduce audit defects?'
-    """
-    clean_tenant = resolve_tenant(current_user, tenant_id)
-    active_version = ensure_tenant_script_baseline(db, clean_tenant)
-
-    # 1. Resolve v2 (target/newer version)
-    target_v2_id = v2_id or active_version.id
-    v2 = db.query(ScriptVersion).filter(ScriptVersion.tenant_id == clean_tenant, ScriptVersion.id == target_v2_id).first()
+    """Two versions side by side. They are judged on DIFFERENT calls (before / after), so the season and the mix of calls
+    can move the numbers too; a criterion is compared only when both versions have enough calls."""
+    tenant = resolve_tenant(current_user, tenant_id)
+    active = ensure_tenant_script_baseline(db, tenant)
+    v2 = db.query(ScriptVersion).filter(ScriptVersion.tenant_id == tenant, ScriptVersion.id == (v2_id or active.id)).first()
     if not v2:
-        v2 = active_version
-
-    # 2. Resolve v1 (baseline/preceding version)
+        raise HTTPException(status_code=404, detail="Script version not found")
     if v1_id:
-        v1 = db.query(ScriptVersion).filter(ScriptVersion.tenant_id == clean_tenant, ScriptVersion.id == v1_id).first()
+        v1 = db.query(ScriptVersion).filter(ScriptVersion.tenant_id == tenant, ScriptVersion.id == v1_id).first()
+        if not v1:
+            raise HTTPException(status_code=404, detail="Script version not found")
     else:
         v1 = (
             db.query(ScriptVersion)
-            .filter(ScriptVersion.tenant_id == clean_tenant, ScriptVersion.created_at < v2.created_at)
+            .filter(ScriptVersion.tenant_id == tenant, ScriptVersion.created_at < v2.created_at)
             .order_by(ScriptVersion.created_at.desc())
             .first()
-        )
-    if not v1:
-        v1 = v2  # Fallback to same version if only one exists
+        ) or v2
 
-    # 3. Single-pass SQL aggregation for both cohorts
-    sql = text("""
-        WITH stats AS (
-            SELECT
-                target_criterion,
-                script_version_id,
-                COUNT(*) AS total_relevant_calls,
-                COUNT(*) FILTER (WHERE adhered = TRUE) AS script_calls,
-                COUNT(*) FILTER (WHERE adhered = FALSE) AS freestyle_calls,
-                ROUND(100.0 * COUNT(*) FILTER (WHERE adhered = TRUE) / NULLIF(COUNT(*), 0), 1) AS ar_pct,
-                ROUND(100.0 * COUNT(*) FILTER (WHERE adhered = TRUE AND achieved = TRUE) 
-                      / NULLIF(COUNT(*) FILTER (WHERE adhered = TRUE), 0), 1) AS swr_pct,
-                ROUND(100.0 * COUNT(*) FILTER (WHERE adhered = FALSE AND achieved = TRUE) 
-                      / NULLIF(COUNT(*) FILTER (WHERE adhered = FALSE), 0), 1) AS fwr_pct,
-                ROUND(100.0 * COUNT(*) FILTER (WHERE achieved = FALSE) 
-                      / NULLIF(COUNT(*), 0), 1) AS defect_rate_pct
-            FROM call_module_evaluations
-            WHERE tenant_id = :tenant_id
-              AND script_version_id IN (:v1_id, :v2_id)
-              AND is_relevant = TRUE
-            GROUP BY target_criterion, script_version_id
-        )
-        SELECT
-            target_criterion,
-            script_version_id,
-            total_relevant_calls,
-            script_calls,
-            COALESCE(ar_pct, 0.0) AS ar_pct,
-            COALESCE(swr_pct, 0.0) AS swr_pct,
-            COALESCE(fwr_pct, 0.0) AS fwr_pct,
-            ROUND(COALESCE(swr_pct, 0.0) - COALESCE(fwr_pct, 0.0), 1) AS lift_pct,
-            COALESCE(defect_rate_pct, 0.0) AS defect_rate_pct
-        FROM stats
-    """)
-
-    rows = db.execute(sql, {
-        "tenant_id": clean_tenant,
-        "v1_id": v1.id,
-        "v2_id": v2.id,
-    }).fetchall()
-
-    data_map = {}
-    for r in rows:
-        data_map[(str(r[0]), str(r[1]))] = {
-            "total_calls": int(r[2]),
-            "script_calls": int(r[3]),
-            "ar_pct": float(r[4]),
-            "swr_pct": float(r[5]),
-            "fwr_pct": float(r[6]),
-            "lift_pct": float(r[7]),
-            "defect_rate_pct": float(r[8]),
-        }
-
-    comparison = []
-    improved_count = 0
-    degraded_count = 0
-    neutral_count = 0
-    total_lift_delta = 0.0
-    total_defect_reduction = 0.0
-
-    for idx in range(1, 14):
-        cr_key = f"cr{idx}"
-        meta = CRITERIA_METADATA.get(cr_key, {"title": cr_key, "stage": cr_key})
-
-        s1 = data_map.get((cr_key, str(v1.id)), {
-            "total_calls": 0, "script_calls": 0, "ar_pct": 0.0, "swr_pct": 0.0,
-            "fwr_pct": 0.0, "lift_pct": 0.0, "defect_rate_pct": 0.0
-        })
-        s2 = data_map.get((cr_key, str(v2.id)), {
-            "total_calls": 0, "script_calls": 0, "ar_pct": 0.0, "swr_pct": 0.0,
-            "fwr_pct": 0.0, "lift_pct": 0.0, "defect_rate_pct": 0.0
-        })
-
-        delta_lift = round(s2["lift_pct"] - s1["lift_pct"], 1)
-        delta_defect = round(s2["defect_rate_pct"] - s1["defect_rate_pct"], 1)
-
-        total_lift_delta += delta_lift
-        total_defect_reduction += (-delta_defect)
-
-        if s2["total_calls"] == 0 and s1["total_calls"] == 0:
-            verdict = "COLLECTING_DATA"
-            label = "Сбор данных по когортам"
-            neutral_count += 1
-        elif delta_lift >= 10.0 or delta_defect <= -15.0:
-            verdict = "IMPROVEMENT_CONFIRMED"
-            label = f"🟢 Улучшение подтверждено ({delta_lift:+.1f}% Lift)"
-            improved_count += 1
-        elif s2["swr_pct"] >= 60.0 and s2["ar_pct"] < 40.0:
-            verdict = "SABOTAGE_NEW_VERSION"
-            label = "🟡 Саботаж новой версии (Скрипт мощный, но игнорируют)"
-            neutral_count += 1
-        elif s2["ar_pct"] >= 50.0 and delta_lift < -10.0:
-            verdict = "HYPOTHESIS_FAILED"
-            label = f"🔴 Гипотеза провалилась ({delta_lift:+.1f}% Lift)"
-            degraded_count += 1
+    c1, c2 = _counts(db, tenant, str(v1.id)), _counts(db, tenant, str(v2.id))
+    comparison: list[dict[str, Any]] = []
+    improved = degraded = compared = 0
+    lift_sum = defect_sum = 0.0
+    for cr in CRITERIA_IDS:
+        if cr in NOT_SCRIPTED:
+            continue
+        meta = criterion_meta(cr)
+        s1, s2 = c1.get(cr, Counts()), c2.get(cr, Counts())
+        d_lift = round(s2.lift - s1.lift, 1)
+        d_defect = round(s2.defect - s1.defect, 1)
+        if v1.id == v2.id or min(s1.total, s2.total) < MIN_COMPARE:
+            verdict, label = "COLLECTING_DATA", f"Сбор данных: нужно от {MIN_COMPARE} звонков в каждой версии"
         else:
-            verdict = "STABLE_NEUTRAL"
-            label = "⚪ Без существенных изменений"
-            neutral_count += 1
+            compared += 1
+            lift_sum += d_lift
+            defect_sum += -d_defect
+            if d_lift >= LIFT_MARGIN or d_defect <= -15.0:
+                verdict, label = "IMPROVEMENT_CONFIRMED", f"Улучшение: буст {d_lift:+.1f}%, брак {d_defect:+.1f}%"
+                improved += 1
+            elif s2.ar < 40.0 and s2.swr >= 60.0:
+                verdict, label = "SABOTAGE_NEW_VERSION", "Скрипт новой версии сильный, но его говорят редко"
+            elif s2.ar >= 50.0 and d_lift <= -LIFT_MARGIN:
+                verdict, label = "HYPOTHESIS_FAILED", f"Гипотеза не сработала: буст {d_lift:+.1f}%"
+                degraded += 1
+            else:
+                verdict, label = "STABLE_NEUTRAL", "Без существенных изменений"
+        comparison.append(
+            {
+                "criterion": cr,
+                "title": meta["title"],
+                "stage": meta["stage"],
+                "v1_metrics": _metrics(s1),
+                "v2_metrics": _metrics(s2),
+                "delta_lift_pct": d_lift,
+                "delta_defect_rate_pct": d_defect,
+                "intervention_verdict": verdict,
+                "verdict_label": label,
+            }
+        )
 
-        comparison.append({
-            "criterion": cr_key,
-            "title": meta["title"],
-            "stage": meta["stage"],
-            "v1_metrics": s1,
-            "v2_metrics": s2,
-            "delta_lift_pct": delta_lift,
-            "delta_defect_rate_pct": delta_defect,
-            "intervention_verdict": verdict,
-            "verdict_label": label,
-        })
-
-    avg_lift_delta = round(total_lift_delta / 13.0, 1)
-    avg_defect_reduction = round(total_defect_reduction / 13.0, 1)
-
-    if improved_count > degraded_count and avg_lift_delta > 0:
-        overall_status = "NET_POSITIVE"
-        summary_verdict = f"🟢 Обновление успешно: {improved_count} критериев улучшены, средний буст +{avg_lift_delta}%"
-    elif degraded_count > improved_count:
-        overall_status = "NET_NEGATIVE"
-        summary_verdict = f"🔴 Обновление ухудшило показатели ({degraded_count} критериев просели). Рекомендуется откат."
+    avg_lift = round(lift_sum / compared, 1) if compared else 0.0
+    avg_defect = round(defect_sum / compared, 1) if compared else 0.0
+    if v1.id == v2.id:
+        status, text = "NEUTRAL", "Выбрана одна и та же версия: сравнивать нечего"
+    elif not compared:
+        status, text = "COLLECTING_DATA", f"Пока мало данных: нужно от {MIN_COMPARE} звонков по критерию в обеих версиях"
+    elif improved > degraded and avg_lift > 0:
+        status, text = "NET_POSITIVE", f"Обновление помогло: улучшено критериев {improved}, средний буст {avg_lift:+.1f}%"
+    elif degraded > improved:
+        status, text = "NET_NEGATIVE", f"Обновление не помогло: просело критериев {degraded}. Стоит вернуться к прежней версии"
     else:
-        overall_status = "NEUTRAL"
-        summary_verdict = "⚪ Показатели версий стабильны"
+        status, text = "NEUTRAL", "Показатели версий близки"
+
+    def _ver(v: ScriptVersion) -> dict[str, Any]:
+        return {"id": v.id, "version_tag": v.version_tag, "title": v.title, "created_at": v.created_at.isoformat() if v.created_at else None}
 
     return {
-        "tenant_id": clean_tenant,
-        "v1": {
-            "id": v1.id,
-            "version_tag": v1.version_tag,
-            "title": v1.title,
-            "created_at": v1.created_at.isoformat() if v1.created_at else None,
-        },
-        "v2": {
-            "id": v2.id,
-            "version_tag": v2.version_tag,
-            "title": v2.title,
-            "created_at": v2.created_at.isoformat() if v2.created_at else None,
-        },
+        "tenant_id": tenant,
+        "v1": _ver(v1),
+        "v2": _ver(v2),
         "comparison": comparison,
         "summary": {
-            "overall_status": overall_status,
-            "summary_verdict": summary_verdict,
-            "improved_criteria_count": improved_count,
-            "degraded_criteria_count": degraded_count,
-            "neutral_criteria_count": neutral_count,
-            "avg_lift_delta_pct": avg_lift_delta,
-            "avg_defect_reduction_pct": avg_defect_reduction,
+            "overall_status": status,
+            "summary_verdict": text,
+            "improved_criteria_count": improved,
+            "degraded_criteria_count": degraded,
+            "neutral_criteria_count": compared - improved - degraded,
+            "compared_criteria_count": compared,
+            "avg_lift_delta_pct": avg_lift,
+            "avg_defect_reduction_pct": avg_defect,
+            "note": "Версии оцениваются на разных звонках (до и после), на цифры влияют сезон и состав звонков.",
         },
+    }
+
+
+# ----------------------------------------------------------------------------------------------- history
+
+@router.post("/backfill")
+def backfill_history(
+    tenant_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
+):
+    """Judge the calls the company already has (up to 500 per run) that have not been judged yet. Safe to repeat."""
+    tenant = resolve_tenant(current_user, tenant_id)
+    ensure_tenant_script_baseline(db, tenant)
+    counts = backfill_tenant(db, tenant)
+    return {
+        "tenant_id": tenant,
+        "evaluated": counts.get("evaluated", 0) + counts.get("no_applicable", 0),
+        "skipped": {k: v for k, v in counts.items() if k not in ("evaluated", "no_applicable")},
+        "coverage": coverage(db, tenant),
     }
