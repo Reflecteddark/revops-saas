@@ -62,30 +62,31 @@ class GeneralSettings(BaseModel):
     currency: str | None = None
     period_start: str | None = None
     period_end: str | None = None
-    monthly_target: float | None = None
+    monthly_target: float | None = Field(default=None, ge=0, le=1e12)
     project_start_date: str | None = None
     # Average deal check of THIS company (₽). None = not set (nothing is assumed); 0/None in a save clears it.
-    avg_deal_check: float | None = None
+    avg_deal_check: float | None = Field(default=None, ge=0, le=1e12)
 
 
 class StageSLA(BaseModel):
     id: int
     name: str
-    sla_hours: int
-    win_pct: int
+    sla_hours: int = Field(ge=0, le=720)
+    win_pct: int = Field(ge=0, le=100)
 
 
 class ManagerCapacity(BaseModel):
+    # the ranges are the same as in PATCH /managers/{id}/kpis
     id: str
     name: str
     role: str
-    capacity: int = 40
-    revenue_target: float | None = None          # ₽ / месяц
-    daily_calls_target: int | None = None      # целевых звонков (>= 60 сек) / день
-    daily_dials_target: int | None = None      # всего наборов / день
-    monthly_meetings_target: int | None = None # встреч / месяц
+    capacity: int = Field(default=40, ge=0, le=500)
+    revenue_target: float | None = Field(default=None, ge=0, le=1e12)          # ₽ / месяц
+    daily_calls_target: int | None = Field(default=None, ge=0, le=200)      # целевых звонков (>= 60 сек) / день
+    daily_dials_target: int | None = Field(default=None, ge=0, le=500)      # всего наборов / день
+    monthly_meetings_target: int | None = Field(default=None, ge=0, le=500) # встреч / месяц
     meetings_enabled: bool = True              # учитывать ли встречи в нормативах и алертах
-    next_step_target_pct: int | None = None    # % разговоров с зафиксированным Next Step
+    next_step_target_pct: int | None = Field(default=None, ge=0, le=100)    # % разговоров с зафиксированным Next Step
     updated_at: str | None = None
 
 
@@ -102,7 +103,7 @@ class ManagerKpiPatch(BaseModel):
 class LossReason(BaseModel):
     code: str
     reason: str
-    reactivation_prob: int
+    reactivation_prob: int = Field(ge=0, le=100)
 
 
 class TelegramSettings(BaseModel):
