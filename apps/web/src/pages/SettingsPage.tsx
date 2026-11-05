@@ -568,8 +568,9 @@ export function SettingsPage() {
             Настройки
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Конфигурация регламентов, этапов воронки, уведомлений и системных
-            модулей.
+            {showUnfinished
+              ? 'Конфигурация регламентов, этапов воронки, уведомлений и системных модулей.'
+              : 'План и реквизиты компании, команда с нормативами и режим вмешательства ИИ.'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -692,9 +693,6 @@ export function SettingsPage() {
                       {displayCompanyName}
                     </span>
                   </span>
-                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-mono text-xs font-bold text-emerald-500">
-                    Утвержденный план: {formattedPlan}
-                  </span>
                 </div>
               </CardTitle>
               <CardDescription>
@@ -714,7 +712,7 @@ export function SettingsPage() {
                       🎯 ПЛАН ВЫРУЧКИ НА МЕСЯЦ (₽):
                     </label>
                     <p className="text-[11px] text-muted-foreground">
-                      Автоматически синхронизируется с Google Таблицей вашей компании.
+                      Пусто — план не задан.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -741,6 +739,27 @@ export function SettingsPage() {
                       </span>
                     </Button>
                   </div>
+                </div>
+
+                {/* Quick plan presets: they fill the PLAN field above, so they sit right under it */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    Быстрые суммы для плана:
+                  </span>
+                  {[3000000, 5000000, 10000000, 15000000, 20000000].map(
+                    (preset) => (
+                      <Button
+                        key={preset}
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        className="h-6 px-2.5 text-[11px] font-medium"
+                        onClick={() => setEditTarget(String(preset))}
+                      >
+                        {(preset / 1000000).toFixed(0)} млн ₽
+                      </Button>
+                    )
+                  )}
                 </div>
 
                 {/* Average deal check: set by the client, used for revenue-at-risk estimates */}
@@ -783,26 +802,6 @@ export function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Quick Presets */}
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <span className="text-[11px] text-muted-foreground">
-                    Быстрые суммы:
-                  </span>
-                  {[3000000, 5000000, 10000000, 15000000, 20000000].map(
-                    (preset) => (
-                      <Button
-                        key={preset}
-                        variant="outline"
-                        size="sm"
-                        type="button"
-                        className="h-6 px-2.5 text-[11px] font-medium"
-                        onClick={() => setEditTarget(String(preset))}
-                      >
-                        {(preset / 1000000).toFixed(0)} млн ₽
-                      </Button>
-                    )
-                  )}
-                </div>
               </div>
 
               {/* General Business Form */}
@@ -905,10 +904,10 @@ export function SettingsPage() {
                 <div>
                   <CardTitle className="flex items-center gap-2 text-base">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <span>Автономия ИИ & Режим вмешательства в CRM (Zero-Touch Policy)</span>
+                    <span>Автономия ИИ & Режим вмешательства в CRM</span>
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Управление правами доступа ИИ-ревизора. По умолчанию включен безопасный пассивный режим (только аудит и рекомендации).
+                    Что ИИ-ревизор может делать в вашей CRM сам. По умолчанию включён пассивный режим.
                   </CardDescription>
                 </div>
                 <Badge
@@ -924,12 +923,12 @@ export function SettingsPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="crm-mutations-toggle" className="text-sm font-semibold cursor-pointer">
-                      1. Запись и мутации в CRM (amoCRM / Bitrix24)
+                      Задачи и поля сделок в CRM (amoCRM / Bitrix24)
                     </Label>
                     <p className="text-xs text-muted-foreground">
                       {allowCrmMutations
-                        ? "ВКЛЮЧЕНО: ИИ разрешено менять поля, двигать этапы сделок и ставить задачи в CRM."
-                        : "🔒 ВЫКЛЮЧЕНО (По умолчанию): ИИ работает строго в режиме чтения. Все действия формируются как рекомендации в ЛК без изменений в CRM."}
+                        ? "ВКЛЮЧЕНО: ИИ создаёт задачи менеджерам и заполняет поля сделки (оценка звонка, следующий шаг) в вашей CRM."
+                        : "🔒 ВЫКЛЮЧЕНО (по умолчанию): ИИ не создаёт задачи и не заполняет поля сделок. Разбор звонка по-прежнему добавляется в сделку примечанием."}
                     </p>
                   </div>
                   <input
@@ -942,6 +941,8 @@ export function SettingsPage() {
                   />
                 </div>
 
+                {/* Telegram approvals and client messaging belong to the agent engine that no production flow calls yet */}
+                {showUnfinished && (
                 <div className="border-t border-subtle pt-4 flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="telegram-notifications-toggle" className="text-sm font-semibold cursor-pointer">
@@ -962,7 +963,9 @@ export function SettingsPage() {
                     className="h-5 w-5 rounded border-subtle text-primary cursor-pointer accent-primary"
                   />
                 </div>
+                )}
 
+                {showUnfinished && (
                 <div className="border-t border-subtle pt-4 flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="client-communication-toggle" className="text-sm font-semibold cursor-pointer">
@@ -983,6 +986,7 @@ export function SettingsPage() {
                     className="h-5 w-5 rounded border-subtle text-primary cursor-pointer accent-primary"
                   />
                 </div>
+                )}
               </div>
 
               <div className="flex justify-end">
@@ -1181,7 +1185,8 @@ export function SettingsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Плашка распределения плана компании */}
+              {/* Плашка распределения плана компании: без плана распределять нечего, красная тревога была бы ложной */}
+              {companyPlan > 0 && (
               <div
                 className={`rounded-xl border p-4 transition-all duration-150 ${
                   distributionPct >= 95 && distributionPct <= 105
@@ -1286,6 +1291,7 @@ export function SettingsPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               {isAddingManager && (
                 <div

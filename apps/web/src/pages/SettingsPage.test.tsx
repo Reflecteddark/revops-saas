@@ -788,6 +788,59 @@ describe('SettingsPage, what a client sees by default', () => {
     expect(screen.getByTestId('tab-telegram')).toBeInTheDocument();
     expect(screen.getByTestId('tab-modules')).toBeInTheDocument();
   });
+
+  it('describes the page by what it really contains, not by the hidden tabs', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    expect(screen.getByText(/режим вмешательства ИИ/)).toBeInTheDocument();
+    expect(screen.queryByText(/этапов воронки, уведомлений и системных модулей/)).not.toBeInTheDocument();
+  });
+
+  it('shows the plan once, with the quick sums under the plan field', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    expect(screen.queryByText(/Утвержденный план/)).not.toBeInTheDocument();
+    expect(screen.getByText('Быстрые суммы для плана:')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '10 млн ₽' }));
+    expect((screen.getByLabelText(/ПЛАН ВЫРУЧКИ/) as HTMLInputElement).value).toBe('10000000');
+  });
+
+  it('offers only the autonomy switch that really controls the CRM', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-autonomy'), { key: 'Enter' });
+
+    expect(await screen.findByTestId('crm-mutations-toggle')).toBeInTheDocument();
+    // Telegram approvals and client messaging belong to an engine no production flow calls yet
+    expect(screen.queryByTestId('telegram-notifications-toggle')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('client-communication-toggle')).not.toBeInTheDocument();
+    // the text must not claim that nothing is written to the CRM: the call note is always added to the deal
+    expect(screen.getByText(/Разбор звонка по-прежнему добавляется в сделку примечанием/)).toBeInTheDocument();
+    expect(screen.queryByText(/без изменений в CRM/)).not.toBeInTheDocument();
+  });
+
+  it('does not show a red "plan not distributed" alarm when no plan is set', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue({
+      ...mockSettings,
+      general: { ...mockSettings.general, monthly_target: 0 },
+    });
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
+
+    expect(await screen.findByTestId('input-manager-name-m1')).toBeInTheDocument();
+    expect(screen.queryByTestId('company-plan-distribution-banner')).not.toBeInTheDocument();
+  });
+
+  it('still shows the distribution banner once a plan is set', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
+
+    expect(await screen.findByTestId('company-plan-distribution-banner')).toBeInTheDocument();
+  });
 });
 
 
