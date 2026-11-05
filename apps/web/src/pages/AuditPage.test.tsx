@@ -98,6 +98,7 @@ const daysAgo = (n: number) => `${addDaysToKey(businessDayKey(), -n)} 12:00:00`;
 describe('AuditPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState(null, '', '/'); // the filters live in the address: a test must not see the previous one's
     useRevOpsStore.setState({ activeTenantId: 'TNT-001' });
   });
 
@@ -280,6 +281,125 @@ describe('AuditPage', () => {
     expect(screen.queryByTestId('calls-count')).not.toBeInTheDocument();
     expect(screen.queryByText(/Аудированных звонков пока нет/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Все звонки оценены/)).not.toBeInTheDocument();
+  });
+
+  it('the card links to the deal in the CRM, and only when the server knows the address', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue([{ ...mockCalls[0], crm_url: 'https://client.amocrm.ru/leads/detail/5272089' }, mockCalls[1]]);
+    renderWithClient(<AuditPage />);
+
+    fireEvent.click(await screen.findByText('ООО АгроХим'));
+    expect(await screen.findByTestId('crm-deal-link')).toHaveAttribute('href', 'https://client.amocrm.ru/leads/detail/5272089');
+    fireEvent.keyDown(screen.getByTestId('audit-dialog'), { key: 'Escape' });
+
+    fireEvent.click(await screen.findByText('АО СтройМаш'));
+    await screen.findByTestId('audit-dialog');
+    expect(screen.queryByTestId('crm-deal-link')).not.toBeInTheDocument();
+  });
+
+  it('a link or a bookmark with filters in the address opens the table already filtered', async () => {
+    window.history.replaceState(null, '', '/audit?status=risk');
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    renderWithClient(<AuditPage />);
+
+    expect(await screen.findByText('АО СтройМаш')).toBeInTheDocument();
+    expect(screen.queryByText('ООО АгроХим')).not.toBeInTheDocument();
+    expect(screen.getByTestId('calls-count')).toHaveTextContent('1');
+  });
+
+  it('a nonsense value in the address is ignored, not trusted', async () => {
+    window.history.replaceState(null, '', '/audit?status=hacked&cr=99&period=yesterday');
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    renderWithClient(<AuditPage />);
+
+    expect(await screen.findByText('ООО АгроХим')).toBeInTheDocument();
+    expect(screen.getByText('АО СтройМаш')).toBeInTheDocument();
+    expect(screen.getByTestId('calls-count')).toHaveTextContent('2');
+    expect(window.location.search).toBe(''); // and the address is cleaned of it
+  });
+
+  it('a very long search text in the address is cut to 80 letters', async () => {
+    window.history.replaceState(null, '', '/audit?q=' + 'я'.repeat(200));
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    renderWithClient(<AuditPage />);
+
+    await screen.findByTestId('filter-search');
+    expect((screen.getByTestId('filter-search') as HTMLInputElement).value).toHaveLength(80);
+  });
+
+  it('the address follows the filters and is clean again after "Сбросить"', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    renderWithClient(<AuditPage />);
+    await screen.findByText('ООО АгроХим');
+
+    await pick('filter-status', 'Срыв (0–5)');
+    expect(window.location.search).toBe('?status=risk');
+
+    fireEvent.change(screen.getByTestId('filter-search'), { target: { value: 'СтройМаш' } });
+    expect(new URLSearchParams(window.location.search).get('q')).toBe('СтройМаш');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Сбросить' }));
+    expect(window.location.search).toBe('');
+    expect(screen.getByTestId('filter-search')).toHaveValue('');
+  });
+
+  it('the search finds a call by client, deal or manager, in any case', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    renderWithClient(<AuditPage />);
+    await screen.findByText('ООО АгроХим');
+
+    fireEvent.change(screen.getByTestId('filter-search'), { target: { value: 'агрохим' } });
+    expect(screen.getByTestId('calls-count')).toHaveTextContent('1');
+    expect(screen.queryByText('АО СтройМаш')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId('filter-search'), { target: { value: 'смирнова' } }); // a manager
+    expect(screen.getByText('АО СтройМаш')).toBeInTheDocument();
+    expect(screen.queryByText('ООО АгроХим')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId('filter-search'), { target: { value: 'нет такого' } });
+    expect(screen.getByText(/не найдено/)).toBeInTheDocument();
+  });
+
+  it('the CSV carries the gist, the remarks and the advice, and a text that looks like a formula is made plain', async () => {
+    let csv = '';
+    URL.createObjectURL = vi.fn((b: Blob) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        csv = String(reader.result);
+      };
+      reader.readAsText(b);
+      return 'blob:csv';
+    });
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    vi.mocked(callsApi.list).mockResolvedValue([
+      {
+        ...mockCalls[0],
+        summary: 'Клиент просит КП',
+        error_summary: '=HYPERLINK("http://evil")',
+        recommendation: 'Строка 1\nстрока 2',
+      },
+    ]);
+    renderWithClient(<AuditPage />);
+    await screen.findByText('ООО АгроХим');
+
+    fireEvent.click(screen.getByTestId('btn-export-csv'));
+    await waitFor(() => expect(csv).not.toBe(''));
+
+    const lines = csv.replace('﻿', '').split('\r\n');
+    expect(lines[0]).toContain('Следующий шаг');
+    expect(lines[0].endsWith('Суть звонка;Замечания ИИ;Рекомендация')).toBe(true);
+    expect(lines[1]).toContain('"Клиент просит КП"');
+    expect(lines[1]).toContain(`"'=HYPERLINK(`);
+    expect(lines[1]).toContain('"Строка 1 строка 2"'); // one line per call
+    click.mockRestore();
+  });
+
+  it('the CSV button is off when there is nothing to export', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue([]);
+    renderWithClient(<AuditPage />);
+
+    await screen.findByText(/Аудированных звонков пока нет/);
+    expect(screen.getByTestId('btn-export-csv')).toBeDisabled();
   });
 
   it('a click on a podium card brings the filtered table into view', async () => {

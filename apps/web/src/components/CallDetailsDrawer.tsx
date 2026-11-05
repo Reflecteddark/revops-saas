@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { CALL_SCORE_THRESHOLDS } from '@/lib/thresholds';
 import { CallAudioPlayer } from '@/components/CallAudioPlayer';
 import { CallCriteriaChecklist } from '@/components/CallCriteriaChecklist';
+import { CrmDealLink } from '@/components/CrmDealLink';
 import { cn } from '@/lib/utils';
 import type { Call } from '@/types/api';
 
@@ -115,6 +116,7 @@ export function CallDetailsDrawer({ call, open, onOpenChange }: CallDetailsDrawe
 
               {/* Metadata row */}
               <div className="flex items-center gap-4 text-xs text-secondary flex-wrap">
+                <CrmDealLink url={call.crm_url} />
                 <div className="flex items-center gap-1.5">
                   <User className="h-3.5 w-3.5 text-tertiary" />
                   <span>{call.manager || 'Менеджер'}</span>

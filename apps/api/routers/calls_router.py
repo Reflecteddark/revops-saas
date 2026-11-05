@@ -41,6 +41,7 @@ from ..services.call_scorecard import MAY_NOT_APPLY, call_texts, read_scorecard,
 from ..services.raw_calls_row import build_raw_calls_row
 from ..services.tz import local_str, tenant_tz, to_local
 from ..services.crm_deal_normalizer import parse_numeric_price
+from ..services.crm_links import crm_deal_url
 from ..services.deal_keys import deal_pk_for, find_tenant_deal
 from ..services.deal_sla import deal_sla_state
 from ..services.workspaces import get_or_create_workspace, normalize_crm_type
@@ -683,6 +684,8 @@ def _format_db_call(c: CallRecording, tenant_cfg: dict[str, Any] | None, call_tz
         **pick_extras(sc),
         # The link itself never leaves the server (it may be signed): the player asks /calls/{id}/audio.
         "has_audio": has_audio(sc, c.audio_s3_url),
+        # the deal in the client's own CRM; never built from anything but the host of the tenant's CRM address
+        "crm_url": crm_deal_url(tenant_cfg, (call_deal.external_crm_id if call_deal else None) or sc.get("deal_id")),
     }
 
 
@@ -712,7 +715,7 @@ def load_tenant_calls(db: Session, tenant_id: str, limit: int) -> tuple[list[dic
         .limit(limit)
         .all()
     )
-    tenant_cfg = get_tenant_config(effective_tenant) if rows else None
+    tenant_cfg = get_tenant_config(effective_tenant)
     call_tz = tenant_tz(tenant_cfg)
     db_calls = [_format_db_call(c, tenant_cfg, call_tz) for c in rows]
 
@@ -722,6 +725,8 @@ def load_tenant_calls(db: Session, tenant_id: str, limit: int) -> tuple[list[dic
         c for c in fetch_calls_from_sheets(tenant_id=effective_tenant, limit=limit)
         if str(c.get("id")) not in known_ids
     ]
+    # copies: the sheet rows may be the shared cached ones
+    history = [{**h, "crm_url": h.get("crm_url") or crm_deal_url(tenant_cfg, h.get("deal_id"))} for h in history]
 
     if db_calls and history:
         source = "database+google_sheets"

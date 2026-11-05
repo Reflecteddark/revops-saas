@@ -116,8 +116,11 @@ export function SkillsHeatmap({
         </span>
       </div>
 
+      {/* The 13 cells of a manager stay in one line under their CR labels; a narrow card scrolls sideways */}
+      <div className="overflow-x-auto">
+      <div className="min-w-[670px] space-y-2">
       <div className="hidden items-center justify-between gap-3 px-3 text-[10px] font-semibold text-tertiary md:flex">
-        <div className="min-w-[190px] shrink-0 uppercase tracking-wider">Менеджер / Статус</div>
+        <div className="w-[170px] shrink-0 uppercase tracking-wider">Менеджер / Статус</div>
         <div className="flex flex-1 items-center justify-center gap-1.5 px-1">
           {CR_DEFINITIONS.map((cr, idx) => {
             const isColHovered = hoveredCriterion === idx + 1;
@@ -170,7 +173,7 @@ export function SkillsHeatmap({
               )}
               data-testid={`skill-row-${rep.name}`}
             >
-              <div className="flex min-w-[190px] shrink-0 items-center gap-2.5">
+              <div className="flex w-[170px] shrink-0 items-center gap-2.5">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-subtle bg-hover text-xs font-bold text-foreground">
                   {rep.name.charAt(0).toUpperCase()}
                 </div>
@@ -202,7 +205,7 @@ export function SkillsHeatmap({
                 </div>
               </div>
 
-              <div className="flex flex-1 flex-wrap items-center justify-start gap-1.5 px-1 md:justify-center">
+              <div className="flex flex-1 flex-nowrap items-center justify-start gap-1.5 px-1 md:justify-center">
                 {rep.criteriaRates.map((cr) => {
                   const crDef = CR_DEFINITIONS[cr.index];
                   const pct = cr.rate === null ? null : Math.round(cr.rate * 100);
@@ -249,7 +252,7 @@ export function SkillsHeatmap({
                 })}
               </div>
 
-              <div className="shrink-0 pl-2 text-right">
+              <div className="w-[50px] shrink-0 text-right">
                 <div className={cn('font-mono text-sm font-bold tabular-nums', scoreColor)}>
                   {rep.avgScore === null ? '—' : rep.avgScore.toFixed(1)}
                 </div>
@@ -258,6 +261,8 @@ export function SkillsHeatmap({
             </div>
           );
         })}
+      </div>
+      </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-subtle pt-2 text-[11px] text-tertiary">

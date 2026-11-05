@@ -291,6 +291,8 @@ export interface Call {
   date: string;
   /** The recording is played through GET /calls/{id}/audio; the link itself never reaches the browser. */
   has_audio?: boolean;
+  /** The deal in the client's own CRM (built by the server from the CRM host); absent when it cannot be told. */
+  crm_url?: string | null;
   cr: CriterionScore[];
   /** Audit contract v2. `cr` holds null where a criterion did not apply; passed/applicable say how the score was counted. */
   passed?: number | null;
