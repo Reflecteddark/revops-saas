@@ -288,7 +288,10 @@ def load_tenants_registry() -> dict[str, Any]:
     for item in db_tenants:
         tid = str(item.get("tenant_id", "")).strip().upper()
         if tid:
-            merged[tid] = item  # БД перезаписывает JSON-запись тем же tenant_id
+            # The DB wins for the keys it stores, but it stores only a few: replacing the whole JSON record
+            # used to drop secret, stages, general_settings, telegram_settings, modules, custom_prompt_context...
+            # and the next save wrote that stripped record back to the JSON file for every tenant.
+            merged[tid] = {**merged.get(tid, {}), **item}
 
     # 4. Fallback для TNT-001, если его нет ни там, ни там (защита от полного сноса)
     if "TNT-001" not in merged:

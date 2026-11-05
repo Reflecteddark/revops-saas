@@ -4,7 +4,7 @@
  * Unit tests for SettingsPage component.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ vi.mock('@/lib/api', () => ({
     updateManagers: vi.fn(),
     updateTelegram: vi.fn(),
     updateModules: vi.fn(),
+    syncCrmManagers: vi.fn(),
   },
 }));
 
@@ -88,6 +89,12 @@ describe('SettingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useRevOpsStore.setState({ activeTenantId: 'TNT-001' });
+    // these tests exercise every tab, including the ones a client does not see by default
+    vi.stubEnv('VITE_SHOW_UNFINISHED_SETTINGS', 'true');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('renders general settings parameters', async () => {
@@ -688,6 +695,98 @@ describe('SettingsPage', () => {
         ])
       );
     });
+  });
+
+  it('says "saved" plainly when the sheet write worked', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue({
+      ...mockSettings,
+      save_status: 'ok',
+    });
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+
+    expect(
+      await screen.findByText(/Общие параметры и план продаж сохранены!/)
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/не удалось/)).not.toBeInTheDocument();
+  });
+
+  it('warns that the Google Sheet was not written instead of claiming a sync', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue({
+      ...mockSettings,
+      save_status: 'partial_ok',
+    });
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+
+    expect(
+      await screen.findByText(/записать в Google Таблицу не удалось/)
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/синхронизированы/)).not.toBeInTheDocument();
+  });
+
+  it('asks for the page-load sync as automatic and keeps the managers table when the server skips it', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.syncCrmManagers).mockResolvedValue({
+      status: 'skipped',
+      message: 'Команда уже синхронизирована с CRM недавно',
+      crm_type: '',
+      added_count: 0,
+      total_count: 0,
+      managers: [],
+    });
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(settingsApi.syncCrmManagers).toHaveBeenCalledWith('TNT-001', true);
+    });
+
+    fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
+    const name = (await screen.findByTestId('input-manager-name-m1')) as HTMLInputElement;
+    expect(name.value).toBe('Сергей Иванов');
+  });
+});
+
+describe('SettingsPage, what a client sees by default', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    useRevOpsStore.setState({ activeTenantId: 'TNT-001' });
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('shows only the settings that work: General, AI autonomy and Managers', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    expect(screen.getByTestId('tab-general')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-autonomy')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-managers')).toBeInTheDocument();
+    // nothing reads these yet, so a client must not be given switches that do nothing
+    expect(screen.queryByTestId('tab-stages')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tab-telegram')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tab-modules')).not.toBeInTheDocument();
+  });
+
+  it('brings the unfinished tabs back with VITE_SHOW_UNFINISHED_SETTINGS=true', async () => {
+    vi.stubEnv('VITE_SHOW_UNFINISHED_SETTINGS', 'true');
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    expect(screen.getByTestId('tab-stages')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-telegram')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-modules')).toBeInTheDocument();
   });
 });
 

@@ -30,6 +30,10 @@ router = APIRouter(prefix="/settings", tags=["Settings & Business Parameters"])
 # In-memory settings cache keyed by tenant_id (TTL: 15s)
 _SETTINGS_CACHE: dict[str, dict[str, Any]] = {}
 
+# When the cabinet last asked for an automatic (page-load) CRM managers sync, per tenant
+_AUTO_SYNC_AT: dict[str, float] = {}
+_AUTO_SYNC_EVERY_SEC = 600
+
 
 def get_service_account_path() -> Path | None:
     env_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_PATH")
@@ -53,6 +57,28 @@ def _clean_currency(raw: str, default: str) -> str:
     if text and re.search(r"(RUB|USD|EUR|KZT|BYN|UAH|₽|\$|€|руб|долл|евро)", text, re.IGNORECASE):
         return text
     return default
+
+
+def _real_chat_id(cell: str) -> str:
+    """The sheet template ships sample chats in B54:B56, so a client's copy holds them until somebody types real ones."""
+    return "" if cell in ("-1001234567890", "-1009876543210", "-1005554443332") else cell
+
+
+def _autonomy_for(tenant_id: str) -> dict[str, bool]:
+    """The autonomy flags the AI engine really obeys (the policy registry behind PATCH /settings/autonomy).
+    The registry JSON never held them, so /settings used to show a passive mode for an autonomous tenant."""
+    try:
+        from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
+
+        cfg = TenantPolicyRegistry.get_config(tenant_id)
+        return {
+            "allow_crm_mutations": bool(cfg.allow_crm_mutations),
+            "enable_telegram_notifications": bool(cfg.enable_telegram_notifications),
+            "allow_client_communication": bool(cfg.allow_client_communication),
+        }
+    except Exception as e:
+        logger.warning(f"Could not read the autonomy policy of {tenant_id}: {e}")
+        return {"allow_crm_mutations": False, "enable_telegram_notifications": False, "allow_client_communication": False}
 
 
 class GeneralSettings(BaseModel):
@@ -108,9 +134,9 @@ class LossReason(BaseModel):
 
 class TelegramSettings(BaseModel):
     bot_token: str | None = "Script Properties"
-    rop_chat_id: str | None = "-1001234567890"
-    ceo_chat_id: str | None = "-1009876543210"
-    team_chat_id: str | None = "-1005554443332"
+    rop_chat_id: str | None = None
+    ceo_chat_id: str | None = None
+    team_chat_id: str | None = None
     dispatcher_schedule: str | None = "Каждый час (L1/L2/L3) + 09:15"
     dispatcher_status: bool | None = True
 
@@ -273,9 +299,9 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
         # Parse Telegram settings
         telegram = {
             "bot_token": "Защищено в Script Properties",
-            "rop_chat_id": "-1001234567890",
-            "ceo_chat_id": "-1009876543210",
-            "team_chat_id": "-1005554443332",
+            "rop_chat_id": "",  # never an invented chat: an empty field means "not set"
+            "ceo_chat_id": "",
+            "team_chat_id": "",
             "dispatcher_schedule": "Каждый час (L1/L2/L3) + 09:15",
             "dispatcher_status": True
         }
@@ -285,11 +311,11 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
             c0 = r[0].strip() if len(r) > 0 else ""
             c1 = r[1].strip() if len(r) > 1 else ""
             if "ROP_CHAT_ID" in c0:
-                telegram["rop_chat_id"] = c1
+                telegram["rop_chat_id"] = _real_chat_id(c1)
             elif "CEO_CHAT_ID" in c0:
-                telegram["ceo_chat_id"] = c1
+                telegram["ceo_chat_id"] = _real_chat_id(c1)
             elif "TEAM_CHAT_ID" in c0:
-                telegram["team_chat_id"] = c1
+                telegram["team_chat_id"] = _real_chat_id(c1)
             elif "DISPATCHER_SCHEDULE" in c0:
                 telegram["dispatcher_schedule"] = c1
             elif "DISPATCHER_STATUS" in c0:
@@ -338,7 +364,8 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
             "managers": managers if (managers or not is_master_or_template) else fallback_data["managers"],
             "loss_reasons": loss_reasons or fallback_data["loss_reasons"],
             "telegram": telegram,
-            "modules": modules or fallback_data["modules"]
+            "modules": modules or fallback_data["modules"],
+            "autonomy": _autonomy_for(clean_tenant),
         }
 
         _SETTINGS_CACHE[clean_tenant] = {
@@ -384,9 +411,9 @@ def get_fallback_settings() -> dict[str, Any]:
         ],
         "telegram": {
             "bot_token": "Защищено в Script Properties",
-            "rop_chat_id": "-1001234567890",
-            "ceo_chat_id": "-1009876543210",
-            "team_chat_id": "-1005554443332",
+            "rop_chat_id": "",  # never an invented chat: an empty field means "not set"
+            "ceo_chat_id": "",
+            "team_chat_id": "",
             "dispatcher_schedule": "Каждый час (L1/L2/L3) + 09:15",
             "dispatcher_status": True
         },
@@ -434,10 +461,11 @@ def get_tenant_settings_or_fallback(tenant_id: str = "TNT-001") -> dict[str, Any
         cfg.get("tenant_name") or cfg.get("name") or (fb["general"]["company_name"] if is_master_or_template else f"Клиент {clean_tenant}")
     )
     currency = gen.get("currency", fb["general"]["currency"])
-    period_start = gen.get("period_start", fb["general"]["period_start"])
-    period_end = gen.get("period_end", fb["general"]["period_end"])
+    # the demo period and project start belong to the shared master/template only; a real client's missing dates stay empty
+    period_start = gen.get("period_start", fb["general"]["period_start"] if is_master_or_template else "")
+    period_end = gen.get("period_end", fb["general"]["period_end"] if is_master_or_template else "")
     monthly_target = gen.get("monthly_target", fb["general"]["monthly_target"] if is_master_or_template else 0.0)
-    project_start_date = gen.get("project_start_date", fb["general"]["project_start_date"])
+    project_start_date = gen.get("project_start_date", fb["general"]["project_start_date"] if is_master_or_template else "")
 
     raw_managers = cfg.get("managers")
     if not raw_managers or not isinstance(raw_managers, list) or len(raw_managers) == 0:
@@ -486,11 +514,7 @@ def get_tenant_settings_or_fallback(tenant_id: str = "TNT-001") -> dict[str, Any
         "loss_reasons": loss_reasons,
         "telegram": telegram,
         "modules": modules,
-        "autonomy": {
-            "allow_crm_mutations": bool((cfg.get("autonomy") or {}).get("allow_crm_mutations", cfg.get("allow_crm_mutations", False))),
-            "enable_telegram_notifications": bool((cfg.get("autonomy") or {}).get("enable_telegram_notifications", cfg.get("enable_telegram_notifications", False))),
-            "allow_client_communication": bool((cfg.get("autonomy") or {}).get("allow_client_communication", cfg.get("allow_client_communication", False)))
-        }
+        "autonomy": _autonomy_for(clean_tenant),
     }
 
 
@@ -499,6 +523,7 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
     now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
     # 1. UNCONDITIONAL LOCAL PERSISTENCE FIRST (registry + DB)
+    persist_failed = False
     try:
         from ..tenant_registry import load_tenants_registry, save_tenants_registry
         reg = load_tenants_registry()
@@ -547,24 +572,36 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                 if payload.modules is not None:
                     t["modules"] = [mod.model_dump() for mod in payload.modules]
 
-                save_tenants_registry(reg)
+                persist_failed = save_tenants_registry(reg) is False
                 break
     except Exception as e:
-        logger.warning(f"Failed to persist settings in local registry: {e}")
+        logger.error(f"Failed to persist settings in local registry: {e}")
+        persist_failed = True
 
-    # Immediately refresh cache for this tenant
+    if persist_failed:
+        # The cabinet's own copy is the one that counts: never answer "saved" when it was not.
+        raise HTTPException(status_code=500, detail="Не удалось сохранить настройки. Попробуйте ещё раз.")
+
+    mirrored = _mirror_to_google_sheet(payload, clean_tenant)
+
+    # Refresh the cache AFTER the sheet write: reading before it kept the old sheet values for the next 15 seconds.
     fresh_data = fetch_settings_from_sheets(tenant_id=clean_tenant, force_refresh=True)
     _SETTINGS_CACHE[clean_tenant] = {
         "data": fresh_data,
         "timestamp": time.time()
     }
+    return mirrored
 
-    # 2. GOOGLE SHEETS MIRROR (SAFE NON-BLOCKING)
+
+def _mirror_to_google_sheet(payload: SettingsPayload, clean_tenant: str) -> bool:
+    """Copies the saved settings into the client's Google Sheet (a safe, non-blocking mirror).
+    True: copied, or there is no sheet to copy to. False: the copy failed (the settings are saved in the cabinet)."""
     sa_path = get_service_account_path()
     if not sa_path:
         logger.info(f"service_account.json not found for settings save (tenant: {clean_tenant}); saved locally")
         return True
 
+    modules_failed = False
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
@@ -646,12 +683,13 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                     ws_modules.batch_update(updates)
             except Exception as e:
                 logger.error(f"Failed to batch update modules: {e}")
+                modules_failed = True
 
-        return True
+        return not modules_failed
 
     except Exception as e:
         logger.warning(f"Google Sheets sync failed for {clean_tenant}, but local settings saved: {e}")
-        return True
+        return False
 
 
 # ============================================================================
@@ -691,13 +729,26 @@ async def sync_managers(
     request: Request,
     tenant_id: str | None = Query(None),
     tenant: str | None = Query(None),
+    auto: bool = Query(False),
 ):
     """
     Auto-discovers and imports managers from connected CRM (amoCRM / Bitrix24).
     Safe non-destructive sync: preserves existing manager targets and plans,
     adds new team members with standard RevOps presets.
+    auto=true is the cabinet's own call on page load: it runs at most once per 10 minutes per tenant,
+    the "sync" button (auto=false) always runs.
     """
     clean_tenant = _authorized_tenant(request, tenant_id or tenant)
+    now = time.time()
+    if auto and now - _AUTO_SYNC_AT.get(clean_tenant, 0.0) < _AUTO_SYNC_EVERY_SEC:
+        return {
+            "status": "skipped",
+            "message": "Команда уже синхронизирована с CRM недавно",
+            "crm_type": "",
+            "added_count": 0,
+            "total_count": 0,
+        }
+    _AUTO_SYNC_AT[clean_tenant] = now
     from ..services.crm_users_sync import sync_tenant_crm_managers
     res = await sync_tenant_crm_managers(clean_tenant)
 
@@ -718,7 +769,7 @@ async def sync_managers(
 
 @router.post("/tenants/{tenant_id}/managers/sync")
 async def sync_tenant_managers_route(tenant_id: str, request: Request):
-    return await sync_managers(request=request, tenant_id=tenant_id)
+    return await sync_managers(request=request, tenant_id=tenant_id, tenant=None, auto=False)
 
 
 @router.post("")
@@ -743,7 +794,11 @@ async def save_settings(
 
     return {
         "status": "ok" if success else "partial_ok",
-        "message": "Настройки успешно сохранены в Google Таблицу и транслированы в систему",
+        "message": (
+            "Настройки сохранены в личном кабинете и в Google Таблице"
+            if success
+            else "Настройки сохранены в личном кабинете, но в Google Таблицу записать не удалось"
+        ),
         "settings": fresh_settings
     }
 
@@ -950,6 +1005,9 @@ def patch_autonomy_settings(
     st["autonomy"] = auto_block
     setattr(tenant_obj, 'settings', st)
     db.commit()
+    # /settings carries the autonomy flags and is cached for 15 s: the cabinet reloads it right after this call
+    for cache_key in {clean_tenant.upper(), str(tenant_obj.id).upper()}:
+        _SETTINGS_CACHE.pop(cache_key, None)
 
     t_id_str = str(tenant_obj.id)
     cfg = TenantPolicyRegistry.get_config(t_id_str, db=db)

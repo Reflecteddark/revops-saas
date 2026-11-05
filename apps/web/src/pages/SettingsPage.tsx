@@ -14,6 +14,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   CheckCircle2,
   Save,
   Sliders,
@@ -48,14 +49,36 @@ import { useActiveTenantSafe } from '@/hooks/useActiveTenant';
 import { settingsApi } from '@/lib/api';
 import type { ManagerConfig, ModuleFlag, StageConfig } from '@/types/api';
 
+// The server answers "partial_ok" when the settings are saved in the cabinet but the Google Sheet write failed:
+// the banner must say that, not "synchronized".
+function savedStatus(
+  result: { save_status?: string },
+  okText: string
+): { text: string; type: 'success' | 'warning' } {
+  if (result.save_status === 'partial_ok') {
+    return {
+      text: '⚠ Сохранено в личном кабинете, но записать в Google Таблицу не удалось. Повторите сохранение позже.',
+      type: 'warning',
+    };
+  }
+  return { text: okText, type: 'success' };
+}
+
 function maskChatId(id?: string): string {
   if (!id) return '—';
   if (id.length <= 4) return '••••';
   return `••••${id.slice(-4)}`;
 }
 
+// Stages (SLA / win %), Telegram chat IDs and the 19 modules are saved but nothing reads them yet: a client must not
+// configure switches that do nothing. The tabs come back with VITE_SHOW_UNFINISHED_SETTINGS=true (read at render).
+function showUnfinishedTabs(): boolean {
+  return import.meta.env.VITE_SHOW_UNFINISHED_SETTINGS === 'true';
+}
+
 export function SettingsPage() {
   const tenantId = useActiveTenantSafe();
+  const showUnfinished = showUnfinishedTabs();
   const queryClient = useQueryClient();
 
   const {
@@ -108,7 +131,7 @@ export function SettingsPage() {
   // Feedback banner state
   const [saveStatus, setSaveStatus] = useState<{
     text: string;
-    type: 'success' | 'error';
+    type: 'success' | 'warning' | 'error';
   } | null>(null);
 
   // Sync state from query data
@@ -163,11 +186,8 @@ export function SettingsPage() {
       period_end?: string;
       avg_deal_check?: number | null;
     }) => settingsApi.updateGeneral(tenantId!, payload),
-    onSuccess: () => {
-      setSaveStatus({
-        text: '✓ Общие параметры и план продаж сохранены и синхронизированы с Google Таблицей!',
-        type: 'success',
-      });
+    onSuccess: (saved) => {
+      setSaveStatus(savedStatus(saved, '✓ Общие параметры и план продаж сохранены!'));
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['insights', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
@@ -183,11 +203,8 @@ export function SettingsPage() {
   const saveStagesMutation = useMutation({
     mutationFn: (stages: StageConfig[]) =>
       settingsApi.updateStages(tenantId!, stages),
-    onSuccess: () => {
-      setSaveStatus({
-        text: '✓ Регламент этапов воронки (SLA и конверсия) успешно сохранен!',
-        type: 'success',
-      });
+    onSuccess: (saved) => {
+      setSaveStatus(savedStatus(saved, '✓ Регламент этапов воронки (SLA и конверсия) успешно сохранен!'));
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
     },
@@ -202,11 +219,8 @@ export function SettingsPage() {
   const saveManagersMutation = useMutation({
     mutationFn: (managers: ManagerConfig[]) =>
       settingsApi.updateManagers(tenantId!, managers),
-    onSuccess: () => {
-      setSaveStatus({
-        text: '✓ Лимиты и вместимость менеджеров успешно сохранены!',
-        type: 'success',
-      });
+    onSuccess: (saved) => {
+      setSaveStatus(savedStatus(saved, '✓ Лимиты и вместимость менеджеров успешно сохранены!'));
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
     },
@@ -219,9 +233,11 @@ export function SettingsPage() {
   });
 
   const syncCrmManagersMutation = useMutation({
-    mutationFn: (_silent: boolean = false) =>
-      settingsApi.syncCrmManagers(tenantId!),
+    mutationFn: (silent: boolean = false) =>
+      settingsApi.syncCrmManagers(tenantId!, silent),
     onSuccess: (data, silent) => {
+      // "skipped": the server did nothing, so the table the user may be editing must stay as it is
+      if (data.status === 'skipped') return;
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['managers', tenantId] });
       if (data.managers && Array.isArray(data.managers)) {
@@ -269,11 +285,8 @@ export function SettingsPage() {
       team_chat_id?: string;
       dispatcher_status?: boolean;
     }) => settingsApi.updateTelegram(tenantId!, telegramPayload),
-    onSuccess: () => {
-      setSaveStatus({
-        text: '✓ Конфигурация Telegram-уведомлений успешно сохранена!',
-        type: 'success',
-      });
+    onSuccess: (saved) => {
+      setSaveStatus(savedStatus(saved, '✓ Конфигурация Telegram-уведомлений успешно сохранена!'));
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
     },
@@ -310,11 +323,8 @@ export function SettingsPage() {
   const saveModulesMutation = useMutation({
     mutationFn: (modules: ModuleFlag[]) =>
       settingsApi.updateModules(tenantId!, modules),
-    onSuccess: () => {
-      setSaveStatus({
-        text: '✓ Настройки системных модулей обновлены в реестре и таблице!',
-        type: 'success',
-      });
+    onSuccess: (saved) => {
+      setSaveStatus(savedStatus(saved, '✓ Настройки системных модулей сохранены!'));
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       setTimeout(() => setSaveStatus(null), 4000);
     },
@@ -588,12 +598,16 @@ export function SettingsPage() {
           className={`py-2.5 ${
             saveStatus.type === 'success'
               ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-              : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
+              : saveStatus.type === 'warning'
+                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
           }`}
         >
           <div className="flex items-center gap-2">
             {saveStatus.type === 'success' ? (
               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+            ) : saveStatus.type === 'warning' ? (
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
             ) : (
               <XCircle className="h-4 w-4 shrink-0 text-rose-400" />
             )}
@@ -605,7 +619,11 @@ export function SettingsPage() {
       )}
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid h-auto w-full grid-cols-2 p-1 sm:w-auto sm:grid-cols-6">
+        <TabsList
+          className={`grid h-auto w-full grid-cols-2 p-1 sm:w-auto ${
+            showUnfinished ? 'sm:grid-cols-6' : 'sm:grid-cols-3'
+          }`}
+        >
           <TabsTrigger
             value="general"
             data-testid="tab-general"
@@ -620,13 +638,15 @@ export function SettingsPage() {
           >
             Автономия ИИ
           </TabsTrigger>
-          <TabsTrigger
-            value="stages"
-            data-testid="tab-stages"
-            className="text-xs"
-          >
-            Этапы воронки
-          </TabsTrigger>
+          {showUnfinished && (
+            <TabsTrigger
+              value="stages"
+              data-testid="tab-stages"
+              className="text-xs"
+            >
+              Этапы воронки
+            </TabsTrigger>
+          )}
           <TabsTrigger
             value="managers"
             data-testid="tab-managers"
@@ -634,20 +654,24 @@ export function SettingsPage() {
           >
             Менеджеры
           </TabsTrigger>
-          <TabsTrigger
-            value="telegram"
-            data-testid="tab-telegram"
-            className="text-xs"
-          >
-            Telegram
-          </TabsTrigger>
-          <TabsTrigger
-            value="modules"
-            data-testid="tab-modules"
-            className="text-xs"
-          >
-            Модули
-          </TabsTrigger>
+          {showUnfinished && (
+            <TabsTrigger
+              value="telegram"
+              data-testid="tab-telegram"
+              className="text-xs"
+            >
+              Telegram
+            </TabsTrigger>
+          )}
+          {showUnfinished && (
+            <TabsTrigger
+              value="modules"
+              data-testid="tab-modules"
+              className="text-xs"
+            >
+              Модули
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ========================================================================= */}

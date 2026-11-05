@@ -89,6 +89,13 @@ def get_current_user_or_admin(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+def _require_platform_admin(current_user: User, action: str) -> None:
+    """These endpoints act on the whole platform (every tenant's agents, canary state, captured production traces).
+    A client's CEO or РОП owns one company, so they never pass: only the platform ADMIN does."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Platform administrator only: {action}")
+
+
 router = APIRouter(prefix="/agents", tags=["AgentOps & Anti-Drift Engine"])
 
 
@@ -1013,8 +1020,7 @@ def emergency_rollback(
     db: Session = Depends(get_db),
 ):
     """Rolls back an agent harness to its previous verified version."""
-    if current_user.role not in (UserRole.ADMIN, UserRole.CEO, UserRole.ROP):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions for rollback")
+    _require_platform_admin(current_user, "rollback")
 
     active_harness = (
         db.query(HarnessRegistry)
@@ -1053,8 +1059,7 @@ def emergency_kill_switch(
     current_user: User = Depends(get_current_user_or_admin),
     db: Session = Depends(get_db),
 ):
-    if current_user.role not in (UserRole.ADMIN, UserRole.CEO, UserRole.ROP):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions for kill-switch")
+    _require_platform_admin(current_user, "kill-switch")
     """Emergency kill-switch: pauses all autonomous actions for the specified agent."""
     active_harnesses = (
         db.query(HarnessRegistry)
@@ -1122,6 +1127,7 @@ def list_pending_vcr_scenarios(
     db: Session = Depends(get_db),
 ):
     """Returns candidate test scenarios captured from production HARD_FAILURE incidents."""
+    _require_platform_admin(current_user, "vcr/pending")  # traces of every tenant
     items = (
         db.query(PendingVCRScenario)
         .filter(PendingVCRScenario.status == "PENDING")
@@ -1151,6 +1157,7 @@ def generate_vcr_test_endpoint(
     db: Session = Depends(get_db),
 ):
     """Converts a pending scenario into Golden Set test and VCR cassette files."""
+    _require_platform_admin(current_user, "vcr/generate")  # writes files on the server
     try:
         result = VCRScenarioGenerator.generate_test_artifacts(db, scenario_id)
         return result
@@ -1164,7 +1171,8 @@ def review_vcr_scenario_endpoint(
     current_user: User = Depends(get_current_user_or_admin),
     db: Session = Depends(get_db),
 ):
-    """Processes ROP approval or rejection of an auto-generated test scenario."""
+    """Processes the approval or rejection of an auto-generated test scenario."""
+    _require_platform_admin(current_user, "vcr/review")
     try:
         result = VCRScenarioGenerator.review_pending_scenario(db, req.scenario_id, req.decision)
         return result
@@ -1178,6 +1186,7 @@ def get_vcr_stats_endpoint(
     db: Session = Depends(get_db),
 ):
     """Returns aggregated metrics on auto-captured tests for /golden_stats."""
+    _require_platform_admin(current_user, "vcr/stats")
     return VCRScenarioGenerator.get_golden_stats(db)
 
 
@@ -1236,8 +1245,7 @@ def configure_canary_endpoint(
     req: CanaryConfigureRequest,
     current_user: User = Depends(get_current_user_or_admin),
 ):
-    if current_user.role not in (UserRole.ADMIN, UserRole.CEO):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only ADMIN or CEO can configure canary parameters")
+    _require_platform_admin(current_user, "configure canary")
     """Dynamically adjusts canary traffic weight (0-100%) or resets tripped rollback state."""
     return canary_router.configure(
         weight_pct=req.weight_pct,
@@ -1353,6 +1361,7 @@ def get_policy_tuning_recommendations_endpoint(
     db: Session = Depends(get_db),
 ):
     """Returns data-driven Guardrail tuning recommendations derived from HITL approvals."""
+    _require_platform_admin(current_user, "policy/recommendations")  # any tenant_id, or all tenants when omitted
     recs = PolicyAutoTuner.analyze_tuning_opportunities(
         db=db,
         tenant_id=tenant_id,
