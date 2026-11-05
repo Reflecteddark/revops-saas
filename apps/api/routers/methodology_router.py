@@ -94,7 +94,8 @@ def _flag(condition: Any) -> Any:
 
 def _counts(db: Session, tenant: str, version_id: str) -> dict[str, Counts]:
     """One pass over the rows of a version: the cohorts of every criterion."""
-    adhered, achieved = CME.adhered.is_(True), CME.achieved.is_(True)
+    adhered: Any = CME.adhered.is_(True)
+    achieved: Any = CME.achieved.is_(True)
     rows = (
         db.query(
             CME.target_criterion,
@@ -389,7 +390,8 @@ def get_methodology_xray(
     c = _counts(db, tenant, target).get(key, Counts())
     verdict = verdict_for(c) if key not in NOT_SCRIPTED else NOT_SCRIPTED_VERDICT
 
-    adhered, achieved = CME.adhered.is_(True), CME.achieved.is_(True)
+    adhered: Any = CME.adhered.is_(True)
+    achieved: Any = CME.achieved.is_(True)
     mgr_rows = (
         db.query(CME.manager_name, func.count(CME.id), _flag(adhered), _flag(achieved))
         .filter(CME.tenant_id == tenant, CME.script_version_id == target, CME.target_criterion == key, CME.is_relevant.is_(True))

@@ -34,6 +34,11 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _items(value: Any) -> list[str]:
+    """The non-empty strings of a JSON column (a module keeps its formulations and stop phrases as lists)."""
+    return [s for s in (str(x).strip() for x in (value or [])) if s]
+
+
 def clean_tenant_id(tenant_id: str | None) -> str:
     return (tenant_id or "").strip().upper()
 
@@ -62,7 +67,7 @@ def _find_version(db: Session, tenant: str) -> ScriptVersion | None:
 def _upgrade_legacy_modules(db: Session, tenant: str) -> None:
     """A version made before the audit numbering was adopted (cr1 = "Вход в контакт") and never applied to a call gets the
     current modules. A version that already has evaluations is history and stays as it is."""
-    legacy = (
+    legacy: list[Any] = (
         db.query(ScriptModule.script_version_id)
         .join(ScriptVersion, ScriptVersion.id == ScriptModule.script_version_id)
         .filter(
@@ -131,7 +136,7 @@ def evaluate_call(db: Session, call: CallRecording, manager_name: str | None = N
     if card["kind"] != "assessed":
         _clear_call(db, call_id)
         return "not_assessed"
-    transcript = call.transcript_text or ""
+    transcript = str(call.transcript_text or "")
     if len(transcript.strip()) < MIN_TRANSCRIPT:
         _clear_call(db, call_id)
         return "no_transcript"
@@ -156,8 +161,8 @@ def evaluate_call(db: Session, call: CallRecording, manager_name: str | None = N
         idx = int(key[2:]) - 1
         if not 0 <= idx < len(cr) or cr[idx] is None:  # the criterion did not apply to this call
             continue
-        anchors = [str(a).strip() for a in (mod.semantic_anchors or []) if str(a).strip()]
-        banned = [str(b).strip() for b in (mod.banned_triggers or []) if str(b).strip()]
+        anchors = _items(mod.semantic_anchors)
+        banned = _items(mod.banned_triggers)
         if not anchors and not banned:
             continue
         res = evaluate_module(anchors, banned, int(mod.min_anchors_required or 0), turns)
