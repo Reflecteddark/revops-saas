@@ -126,7 +126,7 @@ class Tenant(Base):
             "crm_type": st.get("crm_type", "bitrix24"),
             "status": "active" if self.is_active else st.get("status", "offboarded"),
             "niche_name": st.get("niche_name", "Универсальный B2B"),
-            "avg_deal_check": st.get("avg_deal_check", 150000),
+            "avg_deal_check": st.get("avg_deal_check"),  # None = not set: no invented 150 000
             "amo_domain": st.get("amo_domain"),
             "amo_token": st.get("amo_token"),
             "bitrix_webhook_url": st.get("bitrix_webhook_url"),

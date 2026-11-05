@@ -834,6 +834,14 @@ describe('SettingsPage, what a client sees by default', () => {
     expect(screen.queryByTestId('company-plan-distribution-banner')).not.toBeInTheDocument();
   });
 
+  it('says that the norms of imported managers are defaults the client should replace', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
+
+    expect(await screen.findByText(/подставляются по умолчанию \(20 звонков/)).toBeInTheDocument();
+  });
+
   it('still shows the distribution banner once a plan is set', async () => {
     renderWithClient(<SettingsPage />);
     expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();

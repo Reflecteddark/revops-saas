@@ -1130,7 +1130,10 @@ export function SettingsPage() {
                 </CardTitle>
                 <CardDescription>
                   Персональные планы выручки, нормативы звонков и встреч,
-                  вместимость сделок и качество Next Step.
+                  вместимость сделок и качество Next Step. Нормативы новых
+                  сотрудников из CRM подставляются по умолчанию (20 звонков и 40
+                  наборов в день, 15 встреч в месяц, 80% Next Step): задайте
+                  свои.
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">
