@@ -11,9 +11,8 @@ if "%ERRORLEVEL%"=="0" (
     echo [OK] Ollama is already running.
 ) else (
     echo [*] Starting Ollama with models at C:\Ollama...
-    set OLLAMA_MODELS=C:\Ollama
     start "Ollama Engine" /min cmd /c "set OLLAMA_MODELS=C:\Ollama && ollama serve"
-    timeout /t 3 >nul
+    ping 127.0.0.1 -n 4 >nul
 )
 
 echo [2/5] Starting Local AI Audit Service (Whisper CUDA + Ollama)...
@@ -23,7 +22,7 @@ if "%ERRORLEVEL%"=="0" (
 ) else (
     echo [*] Launching Local AI Audit Service...
     start "RevOps AI Audit Engine" /min cmd /c "C:\Users\strel\local_audit\run_service.bat"
-    timeout /t 3 >nul
+    ping 127.0.0.1 -n 4 >nul
 )
 
 echo [3/5] Starting Docker Stack (Postgres, Redis, FastAPI, n8n)...
@@ -59,4 +58,4 @@ echo      - API: https://report.ai-rop.ru (http://localhost:8000)
 echo      - Webhooks: https://webhook.ai-rop.ru (http://localhost:5678)
 echo      - Local Audit Engine: http://127.0.0.1:8765
 echo ===================================================
-timeout /t 5
+ping 127.0.0.1 -n 4 >nul
