@@ -19,6 +19,8 @@ import { CallCriteriaChecklist } from '@/components/CallCriteriaChecklist';
 import { DataTable } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { CrmDealLink } from '@/components/CrmDealLink';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -61,6 +63,22 @@ const STATUS_OPTIONS: [string, string][] = [
   ['audit_failed', 'Сбой анализа'],
   ['unknown', 'Нет данных'],
 ];
+
+/** The filters live in the address (?status=risk&manager=...&q=...): a view of the table can be sent to a colleague. */
+function readFilters(search: string) {
+  const params = new URLSearchParams(search);
+  const pick = (key: string, ok: (v: string) => boolean = () => true) => {
+    const v = params.get(key);
+    return v && ok(v) ? v : null;
+  };
+  return {
+    status: pick('status', (v) => STATUS_OPTIONS.some(([s]) => s === v)) ?? 'all',
+    manager: pick('manager') ?? 'all',
+    period: pick('period', (v) => v === '7d' || v === '30d') ?? 'all',
+    cr: pick('cr', (v) => /^(?:[0-9]|1[0-2])$/.test(v)) ?? 'all',
+    q: (params.get('q') ?? '').slice(0, 80),
+  };
+}
 
 const fmtDate = (d?: string) => {
   const m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/.exec(d || '');
@@ -121,7 +139,7 @@ const auditColumns: ColumnDef<Call, unknown>[] = [
   },
   {
     accessorKey: 'next_step',
-    header: 'Next Step',
+    header: 'Следующий шаг',
     cell: ({ row }) => {
       const c = row.original;
       return (
@@ -165,10 +183,28 @@ export function AuditPage() {
   const tenantId = useActiveTenantSafe();
   const [selectedCall, setSelectedCall] = React.useState<Call | null>(null);
 
-  const [statusFilter, setStatusFilter] = React.useState<string>('all');
-  const [managerFilter, setManagerFilter] = React.useState<string>('all');
-  const [periodFilter, setPeriodFilter] = React.useState<string>('all');
-  const [crFilter, setCrFilter] = React.useState<string>('all');
+  const fromUrl = React.useMemo(() => readFilters(window.location.search), []);
+  const [statusFilter, setStatusFilter] = React.useState<string>(fromUrl.status);
+  const [managerFilter, setManagerFilter] = React.useState<string>(fromUrl.manager);
+  const [periodFilter, setPeriodFilter] = React.useState<string>(fromUrl.period);
+  const [crFilter, setCrFilter] = React.useState<string>(fromUrl.cr);
+  const [query, setQuery] = React.useState<string>(fromUrl.q);
+
+  // keep the address in step with the filters (other parameters of the address stay as they are)
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    ['status', 'manager', 'period', 'cr', 'q'].forEach((k) => params.delete(k));
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (managerFilter !== 'all') params.set('manager', managerFilter);
+    if (periodFilter !== 'all') params.set('period', periodFilter);
+    if (crFilter !== 'all') params.set('cr', crFilter);
+    if (query.trim()) params.set('q', query.trim());
+    const qs = params.toString();
+    const url = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash;
+    if (url !== window.location.pathname + window.location.search + window.location.hash) {
+      window.history.replaceState(window.history.state, '', url);
+    }
+  }, [statusFilter, managerFilter, periodFilter, crFilter, query]);
   const [hoveredCriterion, setHoveredCriterion] = React.useState<number | null>(null);
 
   const {
@@ -217,6 +253,10 @@ export function AuditPage() {
       periodCalls.filter((call) => {
         if (statusFilter !== 'all' && call.status !== statusFilter) return false;
         if (managerFilter !== 'all' && call.manager !== managerFilter) return false;
+        const needle = query.trim().toLowerCase();
+        if (needle && ![call.client, call.deal_title, call.manager, call.stage].some((v) => (v || '').toLowerCase().includes(needle))) {
+          return false;
+        }
         // criterion filter: calls where this criterion was assessed and failed (index '0'..'12')
         if (crFilter !== 'all') {
           const crIndex = parseInt(crFilter, 10);
@@ -224,7 +264,7 @@ export function AuditPage() {
         }
         return true;
       }),
-    [periodCalls, statusFilter, managerFilter, crFilter]
+    [periodCalls, statusFilter, managerFilter, crFilter, query]
   );
 
   const filtersRef = React.useRef<HTMLDivElement>(null);
@@ -235,9 +275,9 @@ export function AuditPage() {
         <div className="mb-4 rounded-full bg-muted p-4">
           <ClipboardCheck className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h2 className="text-lg font-semibold tracking-tight">Тенант не выбран</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Компания не выбрана</h2>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Выберите тенант в шапке приложения для просмотра таблицы аудита звонков.
+          Выберите компанию в шапке приложения, чтобы увидеть таблицу аудита звонков.
         </p>
       </div>
     );
@@ -252,11 +292,18 @@ export function AuditPage() {
       'Этап',
       'Длительность',
       'Оценка',
-      'Next Step',
+      'Следующий шаг',
       'Статус',
       ...CR_DEFINITIONS.map((c) => `${c.id.toUpperCase()}_${c.shortLabel}`),
+      'Суть звонка',
+      'Замечания ИИ',
+      'Рекомендация',
     ];
-    const quote = (v: string) => `"${(v || '').replace(/"/g, '""')}"`;
+    const oneLine = (v?: string) => (v || '').replace(/\s+/g, ' ').trim();
+    const quote = (v: string) => {
+      const text = (v || '').replace(/"/g, '""');
+      return `"${/^[=+\-@\t\r]/.test(text) ? "'" : ''}${text}"`; // a leading = + - @ would be run as a formula by Excel
+    };
     const rows = filteredCalls.map((c) => [
       fmtDate(c.date || c.created_at),
       quote(c.client),
@@ -267,6 +314,9 @@ export function AuditPage() {
       nextStepText(c),
       statusOf(c).label,
       ...CR_DEFINITIONS.map((_, idx) => (c.cr && c.cr[idx] !== undefined && c.cr[idx] !== null ? c.cr[idx] : '')),
+      quote(oneLine(c.summary)),
+      quote(oneLine(c.error_summary)),
+      quote(oneLine(c.recommendation)),
     ]);
     const csvContent = '﻿' + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -280,7 +330,7 @@ export function AuditPage() {
     document.body.removeChild(link);
   };
 
-  const hasFilters = statusFilter !== 'all' || managerFilter !== 'all' || periodFilter !== 'all' || crFilter !== 'all';
+  const hasFilters = statusFilter !== 'all' || managerFilter !== 'all' || periodFilter !== 'all' || crFilter !== 'all' || query.trim() !== '';
   const notRated = summary.total - summary.assessed;
   const avgBand = getCallScoreBand(summary.avgScore);
   const kind = selectedCall ? callKind(selectedCall) : 'assessed';
@@ -359,7 +409,7 @@ export function AuditPage() {
           testId="kpi-avg"
         />
         <KpiTile
-          label="Next Step назначен"
+          label="Следующий шаг назначен"
           value={summary.nextStepPct === null ? '—' : `${summary.nextStepPct}%`}
           tone={
             summary.nextStepPct === null
@@ -444,6 +494,17 @@ export function AuditPage() {
           <span>Фильтры:</span>
         </div>
 
+        <div className="w-[230px]">
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск: клиент, сделка, менеджер"
+            aria-label="Поиск по звонкам"
+            data-testid="filter-search"
+          />
+        </div>
+
         <div className="w-[170px]">
           <Select value={periodFilter} onValueChange={setPeriodFilter}>
             <SelectTrigger className="h-8 text-xs" data-testid="filter-period" title="Период меняет всю страницу">
@@ -498,7 +559,7 @@ export function AuditPage() {
               <SelectItem value="all" className="text-xs">Все критерии</SelectItem>
               {CR_DEFINITIONS.map((cr, idx) => (
                 <SelectItem key={cr.id} value={String(idx)} className="text-xs">
-                  Провал: {cr.id.toUpperCase()} ({cr.shortLabel})
+                  Не выполнен: {cr.shortLabel} ({cr.id.toUpperCase()})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -514,6 +575,7 @@ export function AuditPage() {
               setManagerFilter('all');
               setPeriodFilter('all');
               setCrFilter('all');
+              setQuery('');
             }}
             className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
@@ -526,6 +588,8 @@ export function AuditPage() {
           size="sm"
           className="h-8 gap-1.5 text-xs font-medium sm:ml-auto"
           onClick={handleExportCsv}
+          disabled={filteredCalls.length === 0}
+          title={filteredCalls.length === 0 ? 'Нет звонков для выгрузки' : undefined}
           data-testid="btn-export-csv"
         >
           <Download className="h-3.5 w-3.5" />
@@ -569,9 +633,11 @@ export function AuditPage() {
             </DialogTitle>
             <DialogDescription>
               Менеджер: {selectedCall?.manager || '—'} | Дата: {fmtDate(selectedCall?.date)} | Длительность:{' '}
-              {fmtDuration(selectedCall?.duration)} | Next Step: {selectedCall ? nextStepText(selectedCall) : '—'}
+              {fmtDuration(selectedCall?.duration)} | Следующий шаг: {selectedCall ? nextStepText(selectedCall) : '—'}
             </DialogDescription>
           </DialogHeader>
+
+          {selectedCall && <CrmDealLink url={selectedCall.crm_url} className="mt-1" />}
 
           {selectedCall && (
             <div className="mt-3">

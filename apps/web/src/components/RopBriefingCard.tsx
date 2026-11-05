@@ -64,7 +64,7 @@ export function RopBriefingCard({ calls = [], onSelectRep, onSelectCriterion, cl
     const text = `⚡ Планёрка ОП — Фокус дня (RevOps):
 
 🚨 Слабое место отдела:
-${worstCrDef.label} (CR${worstCr.index + 1}) — соблюдается в ${worstPct}% оценённых звонков (${worstCr.assessed - worstCr.pass} из ${worstCr.assessed} без зачёта, всего оценено ${assessed}).
+${worstCrDef.label} (CR${worstCr.index + 1}) — соблюдается в ${worstPct}% оценённых звонков (не выполнено в ${worstCr.assessed - worstCr.pass} из ${worstCr.assessed}, всего оценено ${assessed}).
 
 🏆 Кого похвалить:
 ${topRep ? `${topRep.name} — балл ${topRep.avgScore?.toFixed(1)}/13, ${nextStep(topRep.nextStepPct)}.` : '—'}
@@ -156,8 +156,8 @@ ${coachingStr}
             <span className="font-mono text-xs font-semibold text-rose-500">(CR{worstCr.index + 1})</span>
           </div>
           <p className="mt-1 text-[11px] leading-relaxed text-secondary">
-            Соблюдается в <span className="font-bold text-rose-500">{passPct}%</span> оценённых звонков (
-            {worstCr.assessed - worstCr.pass} из {worstCr.assessed} без зачёта).
+            Соблюдается в <span className="font-bold text-rose-500">{passPct}%</span> оценённых звонков (не выполнено в{' '}
+            {worstCr.assessed - worstCr.pass} из {worstCr.assessed}).
           </p>
         </div>
 

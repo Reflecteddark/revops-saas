@@ -32,7 +32,7 @@ describe('RopBriefingCard', () => {
     // The weakest criterion: CR13 is passed in none of the 8 calls
     expect(screen.getByText('Слабое место отдела:')).toBeInTheDocument();
     expect(screen.getByText('Защита маржинальности')).toBeInTheDocument();
-    expect(screen.getByText(/Соблюдается в/)).toHaveTextContent('0% оценённых звонков (8 из 8 без зачёта)');
+    expect(screen.getByText(/Соблюдается в/)).toHaveTextContent('0% оценённых звонков (не выполнено в 8 из 8)');
 
     expect(screen.getByText('Кого похвалить на планёрке:')).toBeInTheDocument();
     expect(screen.getByText('Ася')).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe('RopBriefingCard', () => {
     render(<RopBriefingCard calls={calls} />);
 
     expect(screen.getByText(/По 3 оценённым звонкам/)).toBeInTheDocument();
-    expect(screen.getByText(/Соблюдается в/)).toHaveTextContent('100% оценённых звонков (0 из 3 без зачёта)');
+    expect(screen.getByText(/Соблюдается в/)).toHaveTextContent('100% оценённых звонков (не выполнено в 0 из 3)');
   });
 
   it('shows the empty state when no call was rated', () => {
