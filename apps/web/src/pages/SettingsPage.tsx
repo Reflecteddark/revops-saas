@@ -70,8 +70,15 @@ function maskChatId(id?: string): string {
   return `••••${id.slice(-4)}`;
 }
 
+// Stages (SLA / win %), Telegram chat IDs and the 19 modules are saved but nothing reads them yet: a client must not
+// configure switches that do nothing. The tabs come back with VITE_SHOW_UNFINISHED_SETTINGS=true (read at render).
+function showUnfinishedTabs(): boolean {
+  return import.meta.env.VITE_SHOW_UNFINISHED_SETTINGS === 'true';
+}
+
 export function SettingsPage() {
   const tenantId = useActiveTenantSafe();
+  const showUnfinished = showUnfinishedTabs();
   const queryClient = useQueryClient();
 
   const {
@@ -612,7 +619,11 @@ export function SettingsPage() {
       )}
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid h-auto w-full grid-cols-2 p-1 sm:w-auto sm:grid-cols-6">
+        <TabsList
+          className={`grid h-auto w-full grid-cols-2 p-1 sm:w-auto ${
+            showUnfinished ? 'sm:grid-cols-6' : 'sm:grid-cols-3'
+          }`}
+        >
           <TabsTrigger
             value="general"
             data-testid="tab-general"
@@ -627,13 +638,15 @@ export function SettingsPage() {
           >
             Автономия ИИ
           </TabsTrigger>
-          <TabsTrigger
-            value="stages"
-            data-testid="tab-stages"
-            className="text-xs"
-          >
-            Этапы воронки
-          </TabsTrigger>
+          {showUnfinished && (
+            <TabsTrigger
+              value="stages"
+              data-testid="tab-stages"
+              className="text-xs"
+            >
+              Этапы воронки
+            </TabsTrigger>
+          )}
           <TabsTrigger
             value="managers"
             data-testid="tab-managers"
@@ -641,20 +654,24 @@ export function SettingsPage() {
           >
             Менеджеры
           </TabsTrigger>
-          <TabsTrigger
-            value="telegram"
-            data-testid="tab-telegram"
-            className="text-xs"
-          >
-            Telegram
-          </TabsTrigger>
-          <TabsTrigger
-            value="modules"
-            data-testid="tab-modules"
-            className="text-xs"
-          >
-            Модули
-          </TabsTrigger>
+          {showUnfinished && (
+            <TabsTrigger
+              value="telegram"
+              data-testid="tab-telegram"
+              className="text-xs"
+            >
+              Telegram
+            </TabsTrigger>
+          )}
+          {showUnfinished && (
+            <TabsTrigger
+              value="modules"
+              data-testid="tab-modules"
+              className="text-xs"
+            >
+              Модули
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ========================================================================= */}
