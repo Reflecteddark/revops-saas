@@ -230,16 +230,70 @@ describe('AuditPage', () => {
     expect(screen.getByTestId('cr-detail-5')).toHaveTextContent('клиент не говорил, что дорого');
   });
 
-  it('does not call a criterion of an unanswered call "н/п"', async () => {
-    vi.mocked(callsApi.list).mockResolvedValue([missedCall({ id: 'm-1', manager: 'Иван Петров', client: 'Автоответчик', cr: Array(13).fill(null) as Call['cr'] })]);
+  it('a call nobody talked on has no list of 13 dashes, no "н/п" and no empty transcript block', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue([missedCall({ id: 'm-1', manager: 'Иван Петров', client: 'Автоответчик', cr: Array(13).fill(null) as Call['cr'], transcript: '' })]);
 
     renderWithClient(<AuditPage />);
     fireEvent.click(await screen.findByText('Автоответчик'));
-    await screen.findByTestId('cr-criteria-grid');
+    await screen.findByTestId('audit-notice-unanswered');
 
-    expect(screen.getByTestId('cr-item-5')).toHaveTextContent('—');
-    expect(screen.getByTestId('cr-item-5')).not.toHaveTextContent('н/п');
+    expect(screen.queryByTestId('cr-criteria-grid')).not.toBeInTheDocument();
     expect(screen.queryByTestId('cr-basis')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('audit-call-transcript')).not.toBeInTheDocument();
+    expect(screen.getByTestId('audit-card-verdict')).toHaveTextContent('НЕДОЗВОН');
+    expect(screen.queryByTestId('audit-card-score')).not.toBeInTheDocument();
+  });
+
+  it('the card opens with the verdict and the score, and the gist comes before the 13 criteria', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue([{ ...mockCalls[0], summary: 'Клиент просит КП до пятницы' }]);
+
+    renderWithClient(<AuditPage />);
+    fireEvent.click(await screen.findByText('ООО АгроХим'));
+
+    expect(await screen.findByTestId('audit-card-verdict')).toHaveTextContent('ЭТАЛОН');
+    expect(screen.getByTestId('audit-card-score')).toHaveTextContent('11/13');
+    const summary = screen.getByTestId('audit-call-summary');
+    const grid = screen.getByTestId('cr-criteria-grid');
+    expect(summary.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('a row opens from the keyboard (Enter), not only with the mouse', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+
+    renderWithClient(<AuditPage />);
+    const row = (await screen.findByText('ООО АгроХим')).closest('tr') as HTMLElement;
+    expect(row).toHaveAttribute('tabindex', '0');
+    fireEvent.keyDown(row, { key: 'Enter' });
+
+    expect(await screen.findByTestId('audit-dialog')).toBeInTheDocument();
+  });
+
+  it('a failed load shows the error and its way out, not zeros and "no calls yet"', async () => {
+    vi.mocked(callsApi.list).mockRejectedValue(new Error('500'));
+
+    renderWithClient(<AuditPage />);
+
+    const alert = await screen.findByTestId('audit-error');
+    expect(alert).toHaveTextContent('не загрузились');
+    expect(within(alert).getByRole('button', { name: 'Повторить' })).toBeInTheDocument();
+    expect(screen.queryByTestId('audit-kpis')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('calls-count')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Аудированных звонков пока нет/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Все звонки оценены/)).not.toBeInTheDocument();
+  });
+
+  it('a click on a podium card brings the filtered table into view', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue([
+      ...ratedCalls('Иван Петров', 12, 3, { date: daysAgo(1) }),
+      ...ratedCalls('Ольга Смирнова', 8, 3, { date: daysAgo(1) }),
+      ...ratedCalls('Пётр Сидоров', 5, 3, { date: daysAgo(1) }),
+    ]);
+    renderWithClient(<AuditPage />);
+
+    fireEvent.click(await screen.findByTestId('podium-card-1'));
+
+    await waitFor(() => expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalled());
+    expect(screen.getByTestId('calls-count')).toHaveTextContent('3');
   });
 
   it('visualizes 13 CR criteria correctly: 1 as green, 0 as red, null as gray', async () => {

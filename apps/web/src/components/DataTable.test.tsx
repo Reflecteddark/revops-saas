@@ -54,6 +54,37 @@ describe('DataTable', () => {
     expect(screen.getByText('Сделок не найдено')).toBeInTheDocument();
   });
 
+  it('a clickable row is reachable with Tab and opens with Enter or Space', () => {
+    const onRowClick = vi.fn();
+    render(<DataTable columns={columns} data={mockData} onRowClick={onRowClick} />);
+
+    const row = screen.getByText('Борис').closest('tr') as HTMLElement;
+    expect(row).toHaveAttribute('tabindex', '0');
+    fireEvent.keyDown(row, { key: 'Enter' });
+    fireEvent.keyDown(row, { key: ' ' });
+    fireEvent.keyDown(row, { key: 'a' });
+
+    expect(onRowClick).toHaveBeenCalledTimes(2);
+    expect(onRowClick).toHaveBeenCalledWith(mockData[0]);
+  });
+
+  it('a row without a click handler is not a tab stop', () => {
+    render(<DataTable columns={columns} data={mockData} />);
+    expect(screen.getByText('Борис').closest('tr')).not.toHaveAttribute('tabindex');
+  });
+
+  it('a key pressed inside a row (a button in a cell) does not open the row', () => {
+    const onRowClick = vi.fn();
+    const withButton: ColumnDef<TestItem, unknown>[] = [
+      { accessorKey: 'name', header: 'Имя', cell: ({ row }) => <button>{row.original.name}</button> },
+    ];
+    render(<DataTable columns={withButton} data={mockData} onRowClick={onRowClick} />);
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Борис' }), { key: 'Enter' });
+
+    expect(onRowClick).not.toHaveBeenCalled();
+  });
+
   it('renders skeleton rows when loading is true and hides empty message', () => {
     render(
       <DataTable

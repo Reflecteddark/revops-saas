@@ -227,6 +227,8 @@ export function AuditPage() {
     [periodCalls, statusFilter, managerFilter, crFilter]
   );
 
+  const filtersRef = React.useRef<HTMLDivElement>(null);
+
   if (!tenantId) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center p-8 text-center" data-testid="empty-tenant-state">
@@ -282,6 +284,22 @@ export function AuditPage() {
   const notRated = summary.total - summary.assessed;
   const avgBand = getCallScoreBand(summary.avgScore);
   const kind = selectedCall ? callKind(selectedCall) : 'assessed';
+  // The list did not load: no zeros, no "all calls are rated", no "no calls yet" in its place
+  const failed = isError && calls.length === 0;
+
+  // A click on a podium card, a radar axis or a heat-map cell filters the table far below the fold:
+  // bring the filters and the table into view, otherwise the click seems to do nothing.
+  const showTable = () =>
+    window.requestAnimationFrame(() => filtersRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }));
+  const pickRep = (rep: string | null) => {
+    setManagerFilter(rep || 'all');
+    if (rep) showTable();
+  };
+  const toggleCriterion = (crIdx: number) => {
+    const on = crFilter !== String(crIdx);
+    setCrFilter(on ? String(crIdx) : 'all');
+    if (on) showTable();
+  };
 
   return (
     <div className="space-y-6">
@@ -293,14 +311,16 @@ export function AuditPage() {
             <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
               13 критериев B2B
             </span>
-            <Badge
-              variant="outline"
-              className="font-mono text-xs tabular-nums"
-              data-testid="calls-count"
-              title="Звонков в таблице с учётом фильтров"
-            >
-              {filteredCalls.length}
-            </Badge>
+            {!failed && (
+              <Badge
+                variant="outline"
+                className="font-mono text-xs tabular-nums"
+                data-testid="calls-count"
+                title="Звонков в таблице с учётом фильтров"
+              >
+                {filteredCalls.length}
+              </Badge>
+            )}
           </div>
           <p className="mt-0.5 text-pretty text-sm text-muted-foreground">
             Автоматический речевой аудит, выявление системных сливов и подготовка повестки утренней планёрки РОПа.
@@ -312,7 +332,7 @@ export function AuditPage() {
         <Alert variant="destructive" className="flex items-center justify-between" data-testid="audit-error">
           <div>
             <AlertTitle>Ошибка загрузки</AlertTitle>
-            <AlertDescription>Не удалось загрузить реестр звонков для тенанта {tenantId}.</AlertDescription>
+            <AlertDescription>Звонки не загрузились, поэтому цифры не показаны: ноль здесь был бы неправдой. Проверьте соединение и повторите.</AlertDescription>
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-4 shrink-0">
             Повторить
@@ -320,6 +340,8 @@ export function AuditPage() {
         </Alert>
       )}
 
+      {!failed && (
+        <>
       {/* KPI row: the numbers behind everything below, for the chosen period */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5" data-testid="audit-kpis">
         <KpiTile label="Звонков за период" value={isLoading ? '—' : String(summary.total)} testId="kpi-total" />
@@ -373,7 +395,7 @@ export function AuditPage() {
       <RopPodium
         calls={periodCalls}
         selectedRep={managerFilter !== 'all' ? managerFilter : null}
-        onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+        onSelectRep={pickRep}
       />
 
       {/* Speech radar & briefing (left) + skills heatmap (right) */}
@@ -382,18 +404,19 @@ export function AuditPage() {
           <SpeechRadarChart
             calls={periodCalls}
             selectedRep={managerFilter !== 'all' ? managerFilter : null}
-            onSelectRep={(rep) => setManagerFilter(rep || 'all')}
+            onSelectRep={pickRep}
             hoveredCriterion={hoveredCriterion}
             onHoverCriterion={setHoveredCriterion}
             selectedCriterion={crFilter !== 'all' ? parseInt(crFilter, 10) : null}
-            onSelectCriterion={(crIdx) => {
-              setCrFilter(crFilter === String(crIdx) ? 'all' : String(crIdx));
-            }}
+            onSelectCriterion={toggleCriterion}
           />
           <RopBriefingCard
             calls={periodCalls}
-            onSelectRep={(rep) => setManagerFilter(rep || 'all')}
-            onSelectCriterion={(crIdx) => setCrFilter(String(crIdx))}
+            onSelectRep={pickRep}
+            onSelectCriterion={(crIdx) => {
+              setCrFilter(String(crIdx));
+              showTable();
+            }}
           />
         </div>
         <div className="lg:col-span-7">
@@ -403,20 +426,19 @@ export function AuditPage() {
             selectedCriterion={crFilter !== 'all' ? parseInt(crFilter, 10) : null}
             hoveredCriterion={hoveredCriterion}
             onHoverCriterion={setHoveredCriterion}
-            onSelectRep={(rep) => setManagerFilter(rep || 'all')}
-            onSelectCriterion={(crIdx) => {
-              setCrFilter(crFilter === String(crIdx) ? 'all' : String(crIdx));
-            }}
+            onSelectRep={pickRep}
+            onSelectCriterion={toggleCriterion}
             onSelectCell={(rep, crIdx) => {
               setManagerFilter(rep);
               setCrFilter(String(crIdx));
+              showTable();
             }}
           />
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="surface flex flex-wrap items-center gap-3 p-3">
+      <div ref={filtersRef} className="surface flex scroll-mt-4 flex-wrap items-center gap-3 p-3">
         <div className="mr-1 flex items-center space-x-2 text-xs font-medium text-muted-foreground">
           <Filter className="h-4 w-4" />
           <span>Фильтры:</span>
@@ -523,12 +545,28 @@ export function AuditPage() {
         onRowClick={(call) => setSelectedCall(call)}
         pageSize={20}
       />
+        </>
+      )}
 
       {/* Call detail dialog with the 13 criteria */}
       <Dialog open={Boolean(selectedCall)} onOpenChange={(open) => !open && setSelectedCall(null)}>
         <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col" data-testid="audit-dialog">
           <DialogHeader>
-            <DialogTitle>{selectedCall?.deal_title || selectedCall?.client || 'Звонок'}</DialogTitle>
+            <DialogTitle className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>{selectedCall?.deal_title || selectedCall?.client || 'Звонок'}</span>
+              {selectedCall && (
+                <>
+                  <Badge variant="outline" className={cn('font-semibold', statusOf(selectedCall).className)} data-testid="audit-card-verdict">
+                    {statusOf(selectedCall).label}
+                  </Badge>
+                  {selectedCall.score !== null && selectedCall.score !== undefined && (
+                    <span className={cn('font-mono text-base tabular-nums', BAND_TEXT[getCallScoreBand(selectedCall.score)])} data-testid="audit-card-score">
+                      {selectedCall.score}/13
+                    </span>
+                  )}
+                </>
+              )}
+            </DialogTitle>
             <DialogDescription>
               Менеджер: {selectedCall?.manager || '—'} | Дата: {fmtDate(selectedCall?.date)} | Длительность:{' '}
               {fmtDuration(selectedCall?.duration)} | Next Step: {selectedCall ? nextStepText(selectedCall) : '—'}
@@ -555,26 +593,22 @@ export function AuditPage() {
               </div>
             )}
 
-            {/* 13 CR criteria */}
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  13 Критериев аудита (CR1 – CR13)
-                </h4>
-                {selectedCall?.score !== null && selectedCall?.score !== undefined && (
-                  <span className="text-xs font-semibold text-foreground">Итоговый балл: {selectedCall.score}/13</span>
-                )}
-              </div>
-
-              {selectedCall && <CallCriteriaChecklist call={selectedCall} />}
-            </div>
-
             {selectedCall?.summary && kind === 'assessed' && (
               <div>
                 <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Суть звонка</h4>
                 <p className="rounded-md border border-subtle bg-hover p-3 text-xs text-foreground" data-testid="audit-call-summary">
                   {selectedCall.summary}
                 </p>
+              </div>
+            )}
+
+            {/* 13 CR criteria: a call nobody talked on, or one the AI could not read, has nothing to check */}
+            {kind === 'assessed' && (
+              <div>
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  13 Критериев аудита (CR1 – CR13)
+                </h4>
+                {selectedCall && <CallCriteriaChecklist call={selectedCall} />}
               </div>
             )}
 
@@ -596,15 +630,17 @@ export function AuditPage() {
               </div>
             )}
 
-            <div>
-              <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Транскрипт звонка</h4>
-              <div
-                className="bg-muted/40 max-h-[300px] overflow-y-auto whitespace-pre-wrap rounded-md border p-4 font-sans text-xs leading-relaxed text-foreground"
-                data-testid="audit-call-transcript"
-              >
-                {selectedCall?.transcript || 'Транскрипт отсутствует'}
+            {(selectedCall?.transcript || kind === 'assessed') && (
+              <div>
+                <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Транскрипт звонка</h4>
+                <div
+                  className="bg-muted/40 max-h-[300px] overflow-y-auto whitespace-pre-wrap rounded-md border p-4 font-sans text-xs leading-relaxed text-foreground"
+                  data-testid="audit-call-transcript"
+                >
+                  {selectedCall?.transcript || 'Транскрипт отсутствует'}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
