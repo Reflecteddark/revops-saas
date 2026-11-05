@@ -159,7 +159,8 @@ async def fetch_bitrix24_users(webhook_url: str, timeout: float = 8.0) -> list[d
             return active_users
 
     except Exception as e:
-        logger.error(f"Error fetching Bitrix24 users from {url_clean}: {e}")
+        # the webhook URL carries the access key: it must not reach the logs
+        logger.error(f"Error fetching Bitrix24 users: {str(e).replace(url_clean, '<webhook>')}")
         return []
 
 
