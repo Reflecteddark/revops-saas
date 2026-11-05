@@ -220,6 +220,8 @@ async def sync_tenant_crm_managers(tenant_id: str) -> dict[str, Any]:
     kpis_map: dict[str, Any] = dict(cfg.get("manager_kpis") or {})
 
     active_crm_ids = {str(c["id"]).strip() for c in crm_users}
+    # people the user deleted in the cabinet: an automatic sync must not bring them back (the import button clears this)
+    dismissed_ids = {str(i) for i in (cfg.get("dismissed_manager_ids") or [])}
     now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
     added_count = 0
@@ -251,6 +253,9 @@ async def sync_tenant_crm_managers(tenant_id: str) -> dict[str, Any]:
         u_name = str(c_user["name"]).strip()
         u_role = c_user.get("role") or "Менеджер ОП"
         is_rop = "РОП" in u_role or "Клоузер" in u_role
+
+        if u_id in dismissed_ids and u_id not in existing_by_id:
+            continue
 
         matched_mgr = existing_by_id.get(u_id)
         if not matched_mgr:

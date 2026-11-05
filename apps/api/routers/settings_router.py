@@ -59,6 +59,14 @@ def _clean_currency(raw: str, default: str) -> str:
     return default
 
 
+def _iso_date(raw: str) -> str:
+    """The sheet template keeps dates as 01.10.2026, the cabinet's date field wants 2026-10-01: without this the
+    period filled in the sheet looked empty in the cabinet."""
+    text = (raw or "").strip()
+    m = re.fullmatch(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", text)
+    return f"{m.group(3)}-{int(m.group(2)):02d}-{int(m.group(1)):02d}" if m else text
+
+
 def _real_chat_id(cell: str) -> str:
     """The sheet template ships sample chats in B54:B56, so a client's copy holds them until somebody types real ones."""
     return "" if cell in ("-1001234567890", "-1009876543210", "-1005554443332") else cell
@@ -79,6 +87,17 @@ def _autonomy_for(tenant_id: str) -> dict[str, bool]:
     except Exception as e:
         logger.warning(f"Could not read the autonomy policy of {tenant_id}: {e}")
         return {"allow_crm_mutations": False, "enable_telegram_notifications": False, "allow_client_communication": False}
+
+
+def _forget_dismissed_managers(tenant_id: str) -> None:
+    from ..tenant_registry import load_tenants_registry, save_tenants_registry
+
+    reg = load_tenants_registry()
+    for t in reg.get("tenants", []):
+        if str(t.get("tenant_id", "")).upper() == tenant_id.upper() and t.get("dismissed_manager_ids"):
+            t["dismissed_manager_ids"] = []
+            save_tenants_registry(reg)
+            return
 
 
 def _mirror_mutation_flag_to_registry(tenant_id: str, allowed: bool) -> None:
@@ -242,9 +261,9 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
             elif "Валюта" in col0:
                 currency = _clean_currency(col1, currency)
             elif "Период: начало" in col0:
-                period_start = col1 or period_start
+                period_start = _iso_date(col1) or period_start
             elif "Период: конец" in col0:
-                period_end = col1 or period_end
+                period_end = _iso_date(col1) or period_end
             elif "План выручки" in col0:
                 val = col1.replace("₽", "").replace(" ", "").replace(",", "").strip()
                 try:
@@ -252,7 +271,7 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
                 except:
                     pass
             elif "Дата старта" in col0:
-                project_start_date = col1 or project_start_date
+                project_start_date = _iso_date(col1) or project_start_date
 
         # Parse stages (Rows 12-18)
         stages = []
@@ -561,6 +580,10 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                     t["stages"] = [s.model_dump() for s in payload.stages]
 
                 if payload.managers is not None:
+                    # a manager the user deleted must not come back with the next automatic CRM sync
+                    old_ids = {str(m.get("id")) for m in (t.get("managers") or []) if m.get("id") is not None}
+                    new_ids = {m.id for m in payload.managers}
+                    t["dismissed_manager_ids"] = sorted((set(t.get("dismissed_manager_ids") or []) | (old_ids - new_ids)) - new_ids)
                     t["managers"] = [m.model_dump() for m in payload.managers]
                     if "manager_kpis" not in t:
                         t["manager_kpis"] = {}
@@ -764,6 +787,8 @@ async def sync_managers(
             "total_count": 0,
         }
     _AUTO_SYNC_AT[clean_tenant] = now
+    if not auto:
+        _forget_dismissed_managers(clean_tenant)  # the import button brings back people the user had deleted
     from ..services.crm_users_sync import sync_tenant_crm_managers
     res = await sync_tenant_crm_managers(clean_tenant)
 
