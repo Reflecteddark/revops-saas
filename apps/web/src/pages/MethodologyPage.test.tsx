@@ -15,6 +15,7 @@ import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MethodologyPage } from './MethodologyPage';
+import { apiClient } from '@/lib/api';
 vi.mock('@/lib/api', () => ({
   apiClient: {
     methodology: {
@@ -321,6 +322,58 @@ describe('MethodologyPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('version-comparison-container')).toBeInTheDocument();
       expect(screen.getByText(/Итоговый вердикт внедрения/i)).toBeInTheDocument();
+    });
+  });
+
+  it('shows an honest empty state when there are no scored calls yet', async () => {
+    vi.mocked(apiClient.methodology.getHeatmap).mockResolvedValueOnce({
+      tenant_id: 'TNT-001',
+      version_id: 'ver-1',
+      matrix: [
+        {
+          criterion: 'cr6',
+          title: 'Схема принятия решений (ЛПР)',
+          stage: 'Обход секретаря / Выход на ЛПР',
+          total_relevant_calls: 0,
+          script_calls: 0,
+          freestyle_calls: 0,
+          ar_pct: 0,
+          swr_pct: 0,
+          fwr_pct: 0,
+          total_win_pct: 0,
+          script_lift_pct: 0,
+          verdict_status: 'COLLECTING_DATA',
+          is_sabotage: false,
+          delta_pct: 0,
+        },
+      ],
+    });
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('methodology-empty-state')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Нет данных')).toBeInTheDocument();
+  });
+
+  it('says there are no secretary hooks yet instead of showing canned ones', async () => {
+    vi.mocked(apiClient.methodology.getGatekeeperLab).mockResolvedValueOnce({
+      tenant_id: 'TNT-001',
+      version_id: 'ver-1',
+      total_attempts: 0,
+      bypassed_count: 0,
+      pass_rate_pct: 0,
+      winning_hooks: [],
+      banned_killer_phrases: [],
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('heatmap-cell-cr6')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('tab-gatekeeper'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('gatekeeper-no-hooks')).toBeInTheDocument();
     });
   });
 });

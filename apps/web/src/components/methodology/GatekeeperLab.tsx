@@ -136,6 +136,11 @@ export function GatekeeperLab({ versionId, tenantId }: GatekeeperLabProps) {
             </div>
           ) : (
             <div className="space-y-3">
+              {!data?.winning_hooks?.length && (
+                <p className="text-xs text-secondary" data-testid="gatekeeper-no-hooks">
+                  Пока нет связок: они появятся, когда разговоры с секретарём будут разобраны по расшифровкам.
+                </p>
+              )}
               {data?.winning_hooks?.map((hook, idx) => (
                 <div
                   key={idx}
@@ -252,6 +257,11 @@ export function GatekeeperLab({ versionId, tenantId }: GatekeeperLabProps) {
             </div>
           ) : (
             <div className="space-y-3">
+              {!data?.banned_killer_phrases?.length && (
+                <p className="text-xs text-secondary">
+                  Пока нет данных о фразах, после которых секретарь не соединяет.
+                </p>
+              )}
               {data?.banned_killer_phrases?.map((killer, idx) => (
                 <div
                   key={idx}

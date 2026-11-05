@@ -119,9 +119,10 @@ export function MethodologyHeatmap({
 
   // Aggregate stats
   const totalCalls = matrix.length > 0 ? Math.max(...matrix.map((r) => r.total_relevant_calls)) : 0;
+  const withData = matrix.filter((r) => r.total_relevant_calls > 0);
   const avgDiscipline =
-    matrix.length > 0
-      ? Math.round(matrix.reduce((acc, r) => acc + r.ar_pct, 0) / matrix.length)
+    withData.length > 0
+      ? Math.round(withData.reduce((acc, r) => acc + r.ar_pct, 0) / withData.length)
       : 0;
   const sabotageCount = matrix.filter((r) => r.is_sabotage).length;
   const workingCount = matrix.filter((r) => r.verdict_status === 'WORKING_STANDARD').length;
@@ -262,6 +263,17 @@ export function MethodologyHeatmap({
             </Card>
           </div>
 
+          {!loading && totalCalls === 0 && (
+            <Card
+              className="p-4 bg-surface border-subtle text-xs text-secondary"
+              data-testid="methodology-empty-state"
+            >
+              <strong className="text-foreground">Оценок по скрипту пока нет.</strong>{' '}
+              Цифры появятся, когда звонки вашей компании начнут оцениваться по речевым модулям.
+              Нули ниже означают отсутствие данных, а не результат.
+            </Card>
+          )}
+
           {/* Filter Tabs */}
           <div className="flex items-center justify-between border-b border-subtle pb-3">
             <div className="flex items-center gap-1.5">
@@ -361,6 +373,10 @@ export function MethodologyHeatmap({
                         <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/40 text-[10px] px-2 py-0.5 gap-1 shrink-0">
                           <Sparkles className="h-3 w-3" />
                           Отсебятина
+                        </Badge>
+                      ) : item.total_relevant_calls === 0 ? (
+                        <Badge variant="outline" className="border-subtle text-tertiary text-[10px] px-2 py-0.5 shrink-0">
+                          Нет данных
                         </Badge>
                       ) : null}
                     </div>

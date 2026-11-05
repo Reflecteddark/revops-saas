@@ -31,8 +31,12 @@ from packages.database.models import (
     CallRecording,
     ScriptModule,
     ScriptVersion,
+    User,
+    UserRole,
 )
 from packages.database.session import get_db
+
+from .settings_router import get_current_user_or_admin
 
 logger = logging.getLogger("methodology_router")
 
@@ -166,6 +170,34 @@ def clean_tenant_id(tenant_id: Optional[str]) -> str:
     return (tenant_id or "TNT-001").strip().upper()
 
 
+def resolve_tenant(user: User, tenant_id: Optional[str]) -> str:
+    """A client works only with its own company; only the platform admin may name another one."""
+    requested = (tenant_id or "").strip().upper()
+    own = (user.tenant_id or "").strip().upper()
+    if user.role == UserRole.ADMIN:
+        target = requested or ("" if own == "*" else own)
+        if not target:
+            raise HTTPException(status_code=400, detail="tenant_id is required")
+        return target
+    if requested and requested != own:
+        raise HTTPException(status_code=403, detail="Доступ к методологии другой компании запрещён")
+    return own
+
+
+def tenant_version_id(db: Session, tenant: str, version_id: Optional[str], active: ScriptVersion) -> str:
+    """The version asked for must belong to this tenant, otherwise another company's script leaks."""
+    if not version_id:
+        return str(active.id)
+    found = (
+        db.query(ScriptVersion.id)
+        .filter(ScriptVersion.id == version_id, ScriptVersion.tenant_id == tenant)
+        .first()
+    )
+    if not found:
+        raise HTTPException(status_code=404, detail="Script version not found")
+    return str(version_id)
+
+
 def ensure_tenant_script_baseline(db: Session, tenant_id: str) -> ScriptVersion:
     """Guarantees a tenant has at least one active ScriptVersion with all 13 criteria modules."""
     clean_tenant = clean_tenant_id(tenant_id)
@@ -210,23 +242,11 @@ def ensure_tenant_script_baseline(db: Session, tenant_id: str) -> ScriptVersion:
         db.commit()
         db.refresh(version)
 
-    # Check if call evaluations exist for this version; if not, seed realistic telemetry
-    eval_count = (
-        db.query(CallModuleEvaluation)
-        .filter(
-            CallModuleEvaluation.tenant_id == clean_tenant,
-            CallModuleEvaluation.script_version_id == version.id,
-        )
-        .count()
-    )
-    if eval_count == 0:
-        seed_realistic_evaluations(db, clean_tenant, str(version.id))
-
     return version
 
 
 def seed_realistic_evaluations(db: Session, tenant_id: str, version_id: str):
-    """Seeds realistic call evaluations to immediately light up Heatmap & X-Ray analytics."""
+    """Demo/test data only: nothing in production calls this. A client must never see invented calls."""
     managers = [
         {"id": "mgr-1", "name": "Александр Иванов", "saboteur": True},
         {"id": "mgr-2", "name": "Дмитрий Смирнов", "saboteur": True},
@@ -252,14 +272,14 @@ def seed_realistic_evaluations(db: Session, tenant_id: str, version_id: str):
     }
 
     # Generate 120 calls
-    random.seed(42)  # Deterministic seed for reproducible tests
+    rng = random.Random(42)  # own generator: deterministic for tests, no effect on the rest of the process
     for i in range(120):
         call_id = f"{version_id[:8]}-call-{i+1:03d}"
-        mgr = random.choice(managers)
+        mgr = rng.choice(managers)
         
         # Determine how deep the call progressed
         # 15% drop on gatekeeper
-        dropped_early = (random.random() < 0.15)
+        dropped_early = (rng.random() < 0.15)
 
         for cr_idx in range(1, 14):
             cr_key = f"cr{cr_idx}"
@@ -277,36 +297,36 @@ def seed_realistic_evaluations(db: Session, tenant_id: str, version_id: str):
                 if cr_key == "cr6":
                     # SABOTAGE / HIDDEN GEM scenario
                     if mgr.get("saboteur"):
-                        adhered = random.random() < 0.10  # Saboteurs don't use speech module
+                        adhered = rng.random() < 0.10  # Saboteurs don't use speech module
                     elif mgr.get("champion"):
-                        adhered = random.random() < 0.90  # Champions follow strictly
+                        adhered = rng.random() < 0.90  # Champions follow strictly
                     else:
-                        adhered = random.random() < 0.35
+                        adhered = rng.random() < 0.35
 
                     # SWR is 68%, FWR is 19%
                     if adhered:
-                        achieved = (random.random() < 0.68)
+                        achieved = (rng.random() < 0.68)
                     else:
-                        achieved = (random.random() < 0.19)
+                        achieved = (rng.random() < 0.19)
 
                 elif cr_key == "cr1":
                     # WORKING STANDARD scenario
-                    adhered = random.random() < 0.85
-                    achieved = (random.random() < 0.92) if adhered else (random.random() < 0.65)
+                    adhered = rng.random() < 0.85
+                    achieved = (rng.random() < 0.92) if adhered else (rng.random() < 0.65)
 
                 elif cr_key == "cr5":
                     # HYPOTHESIS FAILED scenario (text is awkward, clients withdraw)
-                    adhered = random.random() < 0.75
-                    achieved = (random.random() < 0.22) if adhered else (random.random() < 0.35)
+                    adhered = rng.random() < 0.75
+                    achieved = (rng.random() < 0.22) if adhered else (rng.random() < 0.35)
 
                 elif cr_key == "cr9":
                     # FREESTYLE STRONGER scenario (top reps have a killer organic response)
-                    adhered = random.random() < 0.35
-                    achieved = (random.random() < 0.45) if adhered else (random.random() < 0.72)
+                    adhered = rng.random() < 0.35
+                    achieved = (rng.random() < 0.45) if adhered else (rng.random() < 0.72)
 
                 else:
-                    adhered = random.random() < 0.60
-                    achieved = (random.random() < 0.65) if adhered else (random.random() < 0.45)
+                    adhered = rng.random() < 0.60
+                    achieved = (rng.random() < 0.65) if adhered else (rng.random() < 0.45)
 
             eval_entry = CallModuleEvaluation(
                 id=str(uuid.uuid4()),
@@ -318,11 +338,11 @@ def seed_realistic_evaluations(db: Session, tenant_id: str, version_id: str):
                 adhered=adhered,
                 achieved=achieved,
                 evidence_quote=quote_text if adhered else "Разговор своими словами без регламентных смысловых якорей",
-                timestamp_sec=timestamp + random.randint(-3, 3),
+                timestamp_sec=timestamp + rng.randint(-3, 3),
                 manager_id=mgr["id"],
                 manager_name=mgr["name"],
                 matched_anchors=["Присоединение без спора", "Фокус на потерях"] if adhered else [],
-                detected_banned=["Могу дать скидку"] if (not adhered and random.random() < 0.2) else [],
+                detected_banned=["Могу дать скидку"] if (not adhered and rng.random() < 0.2) else [],
                 created_at=datetime.now(timezone.utc),
             )
             db.add(eval_entry)
@@ -349,9 +369,10 @@ class UpdateModuleRequest(BaseModel):
 def get_script_versions(
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
 ):
     """Lists all script versions for a tenant with active version highlighted."""
-    clean_tenant = clean_tenant_id(tenant_id)
+    clean_tenant = resolve_tenant(current_user, tenant_id)
     active_version = ensure_tenant_script_baseline(db, clean_tenant)
 
     versions = (
@@ -384,9 +405,10 @@ def create_script_version(
     payload: CreateVersionRequest,
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
 ):
     """Creates a new script version, copying existing modules as starting point."""
-    clean_tenant = clean_tenant_id(tenant_id)
+    clean_tenant = resolve_tenant(current_user, tenant_id)
     active_version = ensure_tenant_script_baseline(db, clean_tenant)
 
     # Check for duplicate version tag
@@ -470,9 +492,10 @@ def activate_script_version(
     version_id: str,
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
 ):
     """Sets a specific script version as active for the tenant."""
-    clean_tenant = clean_tenant_id(tenant_id)
+    clean_tenant = resolve_tenant(current_user, tenant_id)
     version = (
         db.query(ScriptVersion)
         .filter(ScriptVersion.id == version_id, ScriptVersion.tenant_id == clean_tenant)
@@ -496,11 +519,12 @@ def get_script_modules(
     version_id: Optional[str] = Query(None),
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
 ):
     """Returns 13 script modules with semantic anchors and banned triggers."""
-    clean_tenant = clean_tenant_id(tenant_id)
+    clean_tenant = resolve_tenant(current_user, tenant_id)
     active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = version_id or active_version.id
+    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
 
     modules = (
         db.query(ScriptModule)
@@ -541,12 +565,13 @@ def update_script_module(
     version_id: Optional[str] = Query(None),
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
 ):
     """Updates speech template, semantic anchors, and banned triggers for a specific criterion."""
-    clean_tenant = clean_tenant_id(tenant_id)
+    clean_tenant = resolve_tenant(current_user, tenant_id)
     clean_cr = criterion.strip().lower()
     active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = version_id or active_version.id
+    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
 
     module = (
         db.query(ScriptModule)
@@ -583,14 +608,15 @@ def get_methodology_heatmap(
     version_id: Optional[str] = Query(None),
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
 ):
     """
     High-performance single-pass calculation of Heatmap metrics:
     Adherence Rate (AR), Script Win Rate (SWR), Freestyle Win Rate (FWR), Script Lift and 4 Verdicts.
     """
-    clean_tenant = clean_tenant_id(tenant_id)
+    clean_tenant = resolve_tenant(current_user, tenant_id)
     active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = version_id or active_version.id
+    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
 
     # Single-pass SQL aggregation with FILTER (WHERE ...)
     sql = text("""
@@ -692,15 +718,16 @@ def get_methodology_xray(
     version_id: Optional[str] = Query(None),
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
 ):
     """
     Detailed X-Ray inspection drawer for a single criterion:
     Cohorts (Script vs Freestyle), Manager breakdown with Saboteur highlighting, and 3 Click-to-Play quotes.
     """
-    clean_tenant = clean_tenant_id(tenant_id)
+    clean_tenant = resolve_tenant(current_user, tenant_id)
     clean_cr = criterion.strip().lower()
     active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = version_id or active_version.id
+    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
 
     meta = CRITERIA_METADATA.get(clean_cr, {"title": clean_cr, "stage": clean_cr})
 
@@ -831,14 +858,15 @@ def get_gatekeeper_lab(
     version_id: Optional[str] = Query(None),
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
 ):
     """
     Gatekeeper & Secretary Bypass Lab:
     Identifies exact manager phrasing that broke past the secretary, pass rate %, and killer anti-patterns.
     """
-    clean_tenant = clean_tenant_id(tenant_id)
+    clean_tenant = resolve_tenant(current_user, tenant_id)
     active_version = ensure_tenant_script_baseline(db, clean_tenant)
-    target_version_id = version_id or active_version.id
+    target_version_id = tenant_version_id(db, clean_tenant, version_id, active_version)
 
     # Retrieve all cr6 evaluations
     evals = (
@@ -856,60 +884,10 @@ def get_gatekeeper_lab(
     bypassed = [e for e in evals if e.achieved]
     pass_rate = round(100.0 * len(bypassed) / total_attempts, 1) if total_attempts > 0 else 0.0
 
-    # Winning hooks extracted from successful calls with Causality Engine (Secretary ➔ Manager ➔ Trigger)
-    winning_hooks = [
-        {
-            "hook_category": "Экспертный запрос по проблеме",
-            "gatekeeper_prompt": "По какому вы вопросу?",
-            "manager_speech": "По вопросу сокращения кассовых разрывов в филиалах, соедините, пожалуйста, с финансовым директором.",
-            "phrase": "По вопросу сокращения кассовых разрывов в филиалах, соедините, пожалуйста, с финансовым директором.",
-            "psychological_trigger": "Снятие личной ответственности: секретарь боится блокировать финансовый риск компании.",
-            "success_rate_pct": 74.2,
-            "uses_count": 38,
-            "timestamp_sec": 18,
-            "pattern_type": "EXPERT_VALUE",
-        },
-        {
-            "hook_category": "Директивная простота без вопросов",
-            "gatekeeper_prompt": "Его нет на месте, что передать?",
-            "manager_speech": "Добрый день, соедините с Ириной Васильевной. Смирнов из Ревопс по аналитическому отчету.",
-            "phrase": "Добрый день, соедините с Ириной Васильевной. Смирнов из Ревопс по аналитическому отчету.",
-            "psychological_trigger": "Имитация знакомого партнёра: спокойный директивный тон и ссылка на конкретный документ.",
-            "success_rate_pct": 68.0,
-            "uses_count": 25,
-            "timestamp_sec": 12,
-            "pattern_type": "DIRECTIVE_FAMILIARITY",
-        },
-        {
-            "hook_category": "Ссылка на согласованный аудит",
-            "gatekeeper_prompt": "С кем согласован ваш звонок?",
-            "manager_speech": "Мы готовили справку по конверсии воронки для коммерческого директора, переключите на него.",
-            "phrase": "Мы готовили справку по конверсии воронки для коммерческого директора, переключите на него.",
-            "psychological_trigger": "Легитимность задачи: позиционирование звонка как передачи готового материала первому лицу.",
-            "success_rate_pct": 62.5,
-            "uses_count": 16,
-            "timestamp_sec": 22,
-            "pattern_type": "AUDIT_REFERENCE",
-        },
-    ]
-
-    banned_killer_phrases = [
-        {
-            "phrase": "Удобно сейчас говорить?",
-            "drop_rate_pct": 91.0,
-            "reason": "Мгновенно идентифицирует холодный спам, секретарь отправляет на info@.",
-        },
-        {
-            "phrase": "Я по поводу сотрудничества...",
-            "drop_rate_pct": 88.5,
-            "reason": "Стандартный триггер секретаря 'Отправьте коммерческое на почту'.",
-        },
-        {
-            "phrase": "Соедините с кем-нибудь из руководства",
-            "drop_rate_pct": 85.0,
-            "reason": "Показывает полное незнание структуры компании.",
-        },
-    ]
+    # Hooks and killer phrases need real transcripts of the secretary step; until they are extracted nothing is shown
+    # (the former hard-coded list with 74.2% / 91% was the same for every client and not measured).
+    winning_hooks: list[dict[str, Any]] = []
+    banned_killer_phrases: list[dict[str, Any]] = []
 
     return {
         "tenant_id": clean_tenant,
@@ -928,12 +906,13 @@ def compare_script_versions(
     v2_id: Optional[str] = Query(None, description="New version ID (after intervention)"),
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_or_admin),
 ):
     """
     Cohort-based Side-by-Side comparison of two script versions (v1.0 vs v2.0):
     Answers: 'How did the intervention in the script improve the 13 criteria and reduce audit defects?'
     """
-    clean_tenant = clean_tenant_id(tenant_id)
+    clean_tenant = resolve_tenant(current_user, tenant_id)
     active_version = ensure_tenant_script_baseline(db, clean_tenant)
 
     # 1. Resolve v2 (target/newer version)
