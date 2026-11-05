@@ -275,3 +275,89 @@ def test_the_size_cap_stops_a_huge_file(monkeypatch):
     _serve(monkeypatch, lambda req: httpx.Response(200, headers={"content-type": "audio/mpeg", "content-length": str(call_audio.MAX_BYTES + 1)}, content=b"x"))
     with pytest.raises(call_audio.AudioUnavailable):
         _fetch("https://8.8.8.8/a.mp3")
+
+
+# --- found by the review of the branch -------------------------------------------------------------------------
+
+def test_null_outside_cr5_cr6_cr13_is_refused_at_ingest(tid):
+    body = {"id": "C-RV-1", "tenant_id": tid, "cr": [None] + [1] * 12, "sync_to_sheets": False}
+    res = internal.post("/api/v1/calls/ingest", json=body, headers={"x-admin-key": ADMIN_KEY})
+    assert res.status_code == 422, res.text[:200]
+    body["cr"] = [1, 1, 1, 1, None, 1, 1, 1, 1, 1, 1, 1, None]
+    assert internal.post("/api/v1/calls/ingest", json=body, headers={"x-admin-key": ADMIN_KEY}).status_code == 200
+
+
+def test_without_a_score_the_sum_is_brought_to_13(tid):
+    body = {"id": "C-RV-2", "tenant_id": tid, "cr": [1, 1, 1, 1, None, 1, 1, 1, 1, 1, 1, 1, None], "sync_to_sheets": False}
+    call = internal.post("/api/v1/calls/ingest", json=body, headers={"x-admin-key": ADMIN_KEY}).json()["call"]
+    assert call["score"] == 13 and (call["passed"], call["applicable"]) == (11, 11)
+
+
+def test_scaled_score_rounds_half_up_like_node_18():
+    from apps.api.services.call_scorecard import scaled_score
+
+    assert scaled_score([1] * 5 + [0] * 3 + [None] * 2 + [0, 0, 0]) == 6  # 13 * 5 / 11 = 5.9 -> 6
+    assert scaled_score([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, None, None, None]) == 7  # 6.5 -> 7, Python's round() gives 6
+    assert scaled_score([None] * 13) == 0
+
+
+def test_valid_cr_is_the_one_rule_of_every_way_in():
+    from apps.api.services.call_scorecard import valid_cr
+
+    assert valid_cr([1] * 13) and valid_cr([1, 1, 1, 1, None, None, 1, 1, 1, 1, 1, 1, None])
+    assert not valid_cr([None] + [1] * 12) and not valid_cr([1] * 12) and not valid_cr(None) and not valid_cr("x" * 13)
+
+
+def test_a_rating_with_na_survives_the_other_ways_in():
+    """webhooks_router and workers/tasks.py used to drop the whole cr as soon as it held a None."""
+    from apps.api.routers.calls_router import CallIngestPayload, call_view
+
+    cr = [1, 1, 0, 1, None, 0, 1, 1, 1, 0, 1, 1, None]
+    view = call_view(CallIngestPayload(tenant_id="TNT-X", cr=cr, score=9))
+    assert view["status"] != "unknown" and view["score"] == 9 and view["cr"][4] is None
+
+
+def test_a_gap_outside_cr5_cr6_cr13_has_no_basis():
+    card = read_scorecard({"cr": [None] + [1] * 12, "score": 12}, 12.0)
+    assert (card["passed"], card["applicable"]) == (None, None)
+
+
+def test_has_audio_only_for_a_recording_the_player_can_play():
+    from apps.api.services.call_audit_extras import has_audio
+
+    assert has_audio({"audio_url": "https://rec.example.ru/1.mp3"}, None)
+    assert has_audio(None, "/api/v1/calls/audio/tnt_abc.mp3")
+    assert not has_audio({"audio_url": "http://rec.example.ru/1.mp3"}, None)  # the proxy takes https only
+    assert not has_audio({"audio_url": "https://rec.example.ru:8443/1.mp3"}, None)
+    assert not has_audio({"audio_url": "https://[bad/x.mp3"}, None)
+    assert not has_audio(None, None)
+
+
+def test_a_broken_link_is_unavailable_not_a_500(tid, monkeypatch):
+    assert call_audio.local_file("https://[bad/x.mp3", __import__("pathlib").Path(".")) is None
+    with pytest.raises(call_audio.AudioUnavailable):
+        asyncio.run(call_audio.assert_public_https("https://[bad/x.mp3"))
+    cid = _make_call(tid, scorecard_criteria={"audio_url": "https://[bad/x.mp3"})
+    assert _get_audio(cid, tid).status_code == 404
+
+
+def test_an_invalid_url_error_of_httpx_closes_the_client(monkeypatch):
+    closed = []
+
+    class Boom:
+        def __init__(self, *a, **k):
+            pass
+
+        def build_request(self, *a, **k):
+            raise httpx.InvalidURL("bad")
+
+        async def send(self, *a, **k):  # pragma: no cover - never reached
+            raise AssertionError
+
+        async def aclose(self):
+            closed.append(1)
+
+    monkeypatch.setattr(call_audio.httpx, "AsyncClient", Boom)
+    with pytest.raises(call_audio.AudioUnavailable):
+        asyncio.run(call_audio.open_remote("https://8.8.8.8/a.mp3"))
+    assert closed == [1]

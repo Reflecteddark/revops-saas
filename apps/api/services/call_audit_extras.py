@@ -9,6 +9,8 @@ arrives from the outside, so it is cut to size and checked before it is stored o
 from types import SimpleNamespace
 from typing import Any
 
+from .call_audio import is_playable
+
 N_CRITERIA = 13
 TEXT_MAX = 400  # one reason or one quote
 SUMMARY_MAX = 800
@@ -43,7 +45,9 @@ def clean_audio_url(value: Any) -> str | None:
 
 
 def has_audio(sc: Any, audio_column: Any) -> bool:
-    return bool(clean_audio_url(sc.get("audio_url") if isinstance(sc, dict) else None) or audio_column)
+    """True only for a recording the player can really play, so the button is not a promise that always ends in an error."""
+    links = (clean_audio_url(sc.get("audio_url") if isinstance(sc, dict) else None), clean_audio_url(audio_column))
+    return any(link and is_playable(link) for link in links)
 
 
 def without_audio_link(sc: Any) -> dict[str, Any]:

@@ -20,12 +20,29 @@ from typing import Any
 
 N_CRITERIA = 13
 
+MAY_NOT_APPLY = (4, 5, 12)  # CR5, CR6, CR13 (zero-based): only there None means "the situation did not come up"
+
 SCORE_HIGH_MIN = 9  # apps/web/src/lib/thresholds.ts (test_call_verdict keeps them equal)
 SCORE_MID_MIN = 6
 
 # Exact texts written by n8n node 18: rows made before the flags existed have nothing else to tell them apart.
 AUDIT_FAILED_SUMMARY = "JSON parse error from Gemini response"
 UNANSWERED_SUMMARY = "Недозвон / IVR автоответчик / короткий сброс"
+
+
+def valid_cr(cr: Any) -> bool:
+    """13 marks with None only where a criterion may not apply. Anything else is not a set of criteria."""
+    return (
+        isinstance(cr, (list, tuple))
+        and len(cr) == N_CRITERIA
+        and all(v is not None or i in MAY_NOT_APPLY for i, v in enumerate(cr))
+    )
+
+
+def scaled_score(cr: Any) -> int:
+    """round(13 * passed / applicable), half up like Math.round in n8n node 18 (Python's round(6.5) is 6)."""
+    known = [int(v) for v in cr if v is not None]
+    return int(N_CRITERIA * sum(known) / len(known) + 0.5) if known else 0
 
 
 def call_verdict(kind: str, score: int | None) -> tuple[str, str]:
@@ -108,8 +125,9 @@ def read_scorecard(sc: Any, overall_score: float | None, error_summary: str | No
 
     status, status_label = call_verdict(kind, score)
     # "Passed 6 of 10 applicable": a criterion that did not apply (None) is neither passed nor failed.
+    # Only a None in CR5/6/13 counts: a gap anywhere else is missing data, and there is no basis to show.
     known = [v for v in cr if v is not None]
-    passed, applicable = (sum(known), len(known)) if kind == "assessed" and known else (None, None)
+    passed, applicable = (sum(known), len(known)) if kind == "assessed" and valid_cr(cr) and known else (None, None)
     return {
         "cr": cr,
         "passed": passed,

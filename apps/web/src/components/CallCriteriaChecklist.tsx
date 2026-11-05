@@ -1,7 +1,8 @@
 /**
  * apps/web/src/components/CallCriteriaChecklist.tsx
  *
- * The 13 criteria of one call, the same in every card (audit page, Pulse, deal).
+ * The 13 criteria of one call, the same in the audit page and in the Pulse panel. (The deal card reads the criteria of
+ * its calls with its own parser, lib/dealHealth.ts: it shows "н/п" and no marks for an unrated call, nothing more.)
  * - 1 passed, 0 failed, "н/п" the criterion did not apply to this call (CR5, CR6, CR13: the client did not raise the
  *   topic), "—" no data (an old call, or no rating);
  * - a criterion with the AI's reason and quote opens on click; the quote was checked against the transcript on the

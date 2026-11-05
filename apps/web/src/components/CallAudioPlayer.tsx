@@ -23,31 +23,37 @@ export function CallAudioPlayer({ callId, hasAudio, testId = 'call-audio-player'
   const [state, setState] = React.useState<PlayerState>('idle');
   const [src, setSrc] = React.useState<string | null>(null);
   const srcRef = React.useRef<string | null>(null);
+  const askRef = React.useRef(0); // which request is the current one: an answer of an older one is dropped
 
   const release = React.useCallback(() => {
     if (srcRef.current) URL.revokeObjectURL(srcRef.current);
     srcRef.current = null;
   }, []);
 
-  // another call opened in the same card, or the card closed: drop the previous file
+  // another call opened in the same card, or the card closed: drop the previous file and any request still on its way
   React.useEffect(() => {
     setState('idle');
     setSrc(null);
-    return release;
+    return () => {
+      askRef.current += 1;
+      release();
+    };
   }, [callId, release]);
 
   if (!hasAudio) return null;
 
   const load = async () => {
+    const ask = ++askRef.current;
     setState('loading');
     try {
       const blob = await callsApi.audio(callId);
+      if (ask !== askRef.current) return; // the card moved on while the file was coming
       release();
       srcRef.current = URL.createObjectURL(blob);
       setSrc(srcRef.current);
       setState('ready');
     } catch {
-      setState('error');
+      if (ask === askRef.current) setState('error');
     }
   };
 

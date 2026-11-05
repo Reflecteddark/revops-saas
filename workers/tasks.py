@@ -72,6 +72,7 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
             append_call_to_sheets,
             call_view,
         )
+        from apps.api.services.call_scorecard import valid_cr
         from apps.api.routers.webhooks_router import update_webhook_status
         from apps.api.websocket_manager import manager
         
@@ -79,8 +80,7 @@ def process_call_audio_task(self, call_data: dict[str, Any], org_id: str = "TNT-
         dur_sec = int(call_data.get("duration_sec") or 0)
         # No criteria means "not rated": this used to default to 13 ones, a perfect 13/13 for an unaudited call.
         raw_cr = call_data.get("cr")
-        has_cr = isinstance(raw_cr, (list, tuple)) and len(raw_cr) == 13 and all(c is not None for c in raw_cr)
-        cr_list: list[int] | None = [int(c) for c in raw_cr] if has_cr else None  # type: ignore[union-attr]
+        cr_list: list[int | None] | None = [None if c is None else int(c) for c in raw_cr] if valid_cr(raw_cr) else None  # type: ignore[union-attr]
         raw_score = call_data.get("score")
         score = int(raw_score) if raw_score is not None else None
         raw_next_step = call_data.get("next_step")

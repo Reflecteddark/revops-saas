@@ -54,14 +54,14 @@ def score(d):
     share = client_share(d.get("transcript"))
     passed = applicable = 0
     for i, v in cr.items():
-        if v is None and i in NULLABLE:
+        if v is None and i in NULLABLE and f"cr{i}" in d:  # a MISSING field is a 0 in node 18, only an explicit null is n/a
             continue
         one = 1 if v in (1, "1", True) else 0
         if i == 11 and share is not None:
             one = 1 if share >= 0.3 else 0
         passed += one
         applicable += 1
-    return passed, applicable, round(13 * passed / applicable)
+    return passed, applicable, int(13 * passed / applicable + 0.5)  # Math.round of node 18, not Python's round
 
 
 def band(s):
@@ -71,7 +71,7 @@ def band(s):
 rows = []
 for path in [a for a in sys.argv[1:] if not a.startswith("--")]:
     rows += [json.loads(x) for x in open(path, encoding="utf-8")]
-ok = [r for r in rows if r.get("http") == 200]
+ok = [r for r in rows if r.get("http") == 200 and r.get("variant") == "B"]
 parsed = {(r["call_id"], r["run"], r.get("modelVersion")): parse(r.get("text")) for r in ok}  # the same call/run/model from two files counts once
 good = {k: d for k, d in parsed.items() if d}
 print(f"answers: {len(rows)} | http200: {len(ok)} | distinct: {len(parsed)} | parsed: {len(good)} | PARSE ERRORS: {len(parsed) - len(good)} (threshold 0)")
@@ -92,7 +92,7 @@ print(f"both roles labelled: {labels}/{len(good)} = {100 * labels // max(1, len(
 nulls = collections.Counter()
 for d in good.values():
     for i in NULLABLE:
-        nulls[i] += d.get(f"cr{i}") is None
+        nulls[i] += f"cr{i}" in d and d[f"cr{i}"] is None
 bad_null = [(k[0][-6:], i) for k, d in good.items() for i in (1, 2, 3, 4, 7, 8, 9, 10, 11, 12) if d.get(f"cr{i}") is None]
 print(f"null in CR5/CR6/CR13: {dict(nulls)} of {len(good)} answers | null in a criterion that may not be null: {len(bad_null)} {bad_null[:5]}")
 

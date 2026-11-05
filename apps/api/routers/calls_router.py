@@ -18,7 +18,7 @@ from typing import Any, cast
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import DateTime, bindparam, text
 from sqlalchemy.orm import Session
 
@@ -37,7 +37,7 @@ from ..services import call_audio
 from ..services.audio_duration import mp3_duration_seconds
 from ..services.call_audit_extras import audit_extras, clean_audio_url, has_audio, pick_extras
 from ..services.call_manager import in_crm_team, resolve_call_manager
-from ..services.call_scorecard import call_texts, read_scorecard
+from ..services.call_scorecard import MAY_NOT_APPLY, call_texts, read_scorecard, scaled_score
 from ..services.raw_calls_row import build_raw_calls_row
 from ..services.tz import local_str, tenant_tz, to_local
 from ..services.crm_deal_normalizer import parse_numeric_price
@@ -175,6 +175,13 @@ class CallIngestPayload(BaseModel):
     # Required: a call without a tenant must never silently land in another client's data.
     tenant_id: str
 
+    @field_validator("cr")
+    @classmethod
+    def only_cr5_cr6_cr13_may_be_null(cls, value: Sequence[int | None] | None) -> Sequence[int | None] | None:
+        if value is not None and len(value) == 13 and any(v is None and i not in MAY_NOT_APPLY for i, v in enumerate(value)):
+            raise ValueError("only CR5, CR6 and CR13 may be null")
+        return value
+
 
 def parse_call_time(value: Any) -> datetime | None:
     """An ISO 8601 moment, or None when the value cannot be read."""
@@ -189,7 +196,7 @@ def call_view(payload: CallIngestPayload) -> dict[str, Any]:
     has_cr = bool(payload.cr and len(payload.cr) == 13)
     if has_cr:
         cr: list[int | None] = [int(x) if x is not None else None for x in payload.cr]  # type: ignore[union-attr]
-        score = payload.score if payload.score is not None else sum(c for c in cr if c is not None)
+        score = payload.score if payload.score is not None else scaled_score(cr)
         next_step = payload.next_step if payload.next_step is not None else cr[0]
     else:
         cr, score, next_step = [None] * 13, None, None
@@ -836,7 +843,7 @@ async def ingest_call_from_n8n(
         "recommendation": payload.recommendation or "",
         "transcript": payload.transcript or "",
         **audit_extras(payload),
-        "has_audio": bool(audio_url),
+        "has_audio": has_audio(None, audio_url),
     }
 
     sheets_synced = False
@@ -853,7 +860,7 @@ async def ingest_call_from_n8n(
             if not audio_url:  # a re-audit without a link keeps the recording it already had
                 kept: dict[str, Any] = db_call.scorecard_criteria if isinstance(db_call.scorecard_criteria, dict) else {}
                 audio_url = clean_audio_url(kept.get("audio_url")) or cast("str | None", db_call.audio_s3_url)
-                formatted_call["has_audio"] = bool(audio_url)
+                formatted_call["has_audio"] = has_audio(None, audio_url)
             setattr(db_call, "transcript_text", payload.transcript or getattr(db_call, "transcript_text", ""))
             setattr(db_call, "ai_summary", payload.error_summary or getattr(db_call, "ai_summary", ""))
             setattr(db_call, "next_action_extracted", payload.recommendation or getattr(db_call, "next_action_extracted", ""))
@@ -1132,6 +1139,7 @@ async def play_call_audio(
     url = clean_audio_url(sc.get("audio_url")) or cast("str | None", row.audio_s3_url)
     if not url:
         raise HTTPException(status_code=404, detail="Запись недоступна")
+    db.close()  # the stream can last minutes on slow telephony storage: it must not hold a pooled connection
 
     local = call_audio.local_file(url, AUDIO_STORAGE_DIR)
     if local:

@@ -3,7 +3,7 @@ n8n workflow "Analysis of sales department calls": audit contract v2, the prompt
 Spec: docs/audit/spec_contract_v2.md section 2. The text is the one tried in the pilot: scripts/pilot/prompts/B_v2.txt
 (harness_contract_v2_prompt.cjs compares the two line by line).
 
-Usage: python3 patch_wf_contract_v2_prompt.py <exported.json> <patched.json>
+Usage: python3 patch_wf_contract_v2_prompt.py <exported.json> <patched.json> [<node_check.js>]
 
 Changes in every one of the four copies (they are identical, the script stops if they are not):
 - the transcript is written with a new line per turn, signed "Менеджер:" / "Клиент:" (needed for CR11 by code);
@@ -108,4 +108,10 @@ for n in nodes:
     n["parameters"]["jsonBody"] = body
 
 json.dump([wf], open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+
+if len(sys.argv) > 3:  # for `node --check` in deploy_n8n_patch.sh: the n8n expression as a function body
+    assert body.startswith("={{") and body.rstrip().endswith("}}")
+    with open(sys.argv[3], "w", encoding="utf-8") as f:
+        f.write("(function ($json, $now) {\n  return (" + body[3:].rstrip()[:-2] + ");\n})\n")
+
 print("patched:", ", ".join(n["name"][:4].strip() for n in nodes))

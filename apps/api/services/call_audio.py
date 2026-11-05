@@ -32,9 +32,24 @@ class AudioUnavailable(Exception):
     """The recording cannot be played: no link, a closed link, a forbidden address, not an audio file."""
 
 
+def is_playable(url: str) -> bool:
+    """Whether the player can ever play this link: our own storage, or a link that passes the rules of the proxy."""
+    try:
+        parts = urlsplit(url)
+        port = parts.port
+    except ValueError:
+        return False
+    if parts.path.startswith(LOCAL_PREFIXES):
+        return True
+    return parts.scheme == "https" and bool(parts.hostname) and not parts.username and not parts.password and port in (None, 443)
+
+
 def local_file(url: str, storage_dir: Path) -> Path | None:
     """The file of our own storage that the link points to, if it is there."""
-    path = urlsplit(url).path
+    try:
+        path = urlsplit(url).path
+    except ValueError:
+        return None
     if not path.startswith(LOCAL_PREFIXES):
         return None
     name = Path(path).name
@@ -50,12 +65,10 @@ def _is_public(address: str) -> bool:
 
 
 async def assert_public_https(url: str) -> None:
+    if not is_playable(url) or urlsplit(url).scheme != "https":
+        raise AudioUnavailable("only plain https links on the standard port are played")
     parts = urlsplit(url)
-    if parts.scheme != "https" or not parts.hostname or parts.username or parts.password:
-        raise AudioUnavailable("only plain https links are played")
     try:
-        if parts.port not in (None, 443):
-            raise AudioUnavailable("only the standard https port is allowed")
         infos = await asyncio.get_running_loop().getaddrinfo(parts.hostname, 443, type=socket.SOCK_STREAM)
         addresses = {str(info[4][0]) for info in infos}
     except (OSError, ValueError) as err:
@@ -88,7 +101,7 @@ async def open_remote(url: str, range_header: str | None = None) -> tuple[httpx.
             await resp.aclose()
             raise AudioUnavailable(f"the storage answered {resp.status_code} {ctype or 'without a type'}")
         return resp, client
-    except httpx.HTTPError as err:
+    except (httpx.HTTPError, httpx.InvalidURL, ValueError) as err:  # InvalidURL is not an HTTPError
         await client.aclose()
         raise AudioUnavailable(f"the storage is not reachable: {err}") from err
     except AudioUnavailable:

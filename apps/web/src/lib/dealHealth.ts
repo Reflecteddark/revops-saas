@@ -68,6 +68,11 @@ export function parse13Criteria(raw: unknown): ParsedCriterion[] {
 
   const obj = raw as Record<string, unknown>;
 
+  // A call nobody talked on, or one the AI could not read, has no marks: showing 13 red crosses would be a verdict.
+  if (obj.kind === 'unanswered' || obj.kind === 'audit_failed' || obj.kind === 'unrated') {
+    return [];
+  }
+
   // Case A: raw.cr is an array of 13 binary numbers/booleans [0, 1, 0, ...]
   if (Array.isArray(obj.cr) && obj.cr.length > 0) {
     const crArray = obj.cr as unknown[];
