@@ -91,6 +91,8 @@ def provision_tenant(
         "amo_token": amo_token,
         "custom_features": kwargs.get("custom_features", {}),
         "is_template": False,
+        # a new client starts in the passive mode; n8n treats a MISSING key as "on", so it is written explicitly
+        "enable_crm_mutations": False,
     }
 
     if "tenants" not in registry or not isinstance(registry["tenants"], list):

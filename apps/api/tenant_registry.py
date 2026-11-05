@@ -293,6 +293,12 @@ def load_tenants_registry() -> dict[str, Any]:
             # and the next save wrote that stripped record back to the JSON file for every tenant.
             merged[tid] = {**merged.get(tid, {}), **item}
 
+    # n8n reads enable_crm_mutations from the registry file and treats a MISSING key as "on" (it creates ROP tasks and
+    # fills deal fields in the client's CRM). A tenant that never switched it on must be explicitly off: the next
+    # save of the registry writes this to the file, and the cabinet switch changes it from there.
+    for tenant_entry in merged.values():
+        tenant_entry.setdefault("enable_crm_mutations", False)
+
     # 4. Fallback для TNT-001, если его нет ни там, ни там (защита от полного сноса)
     if "TNT-001" not in merged:
         merged["TNT-001"] = {

@@ -81,6 +81,21 @@ def _autonomy_for(tenant_id: str) -> dict[str, bool]:
         return {"allow_crm_mutations": False, "enable_telegram_notifications": False, "allow_client_communication": False}
 
 
+def _mirror_mutation_flag_to_registry(tenant_id: str, allowed: bool) -> None:
+    """n8n creates ROP tasks and fills deal fields in the client's CRM only when enable_crm_mutations is true in
+    tenants_registry.json. The cabinet switch used to change only the policy registry, which n8n never reads."""
+    from ..tenant_registry import load_tenants_registry, save_tenants_registry
+
+    reg = load_tenants_registry()
+    for t in reg.get("tenants", []):
+        if str(t.get("tenant_id", "")).upper() == tenant_id.upper():
+            t["enable_crm_mutations"] = bool(allowed)
+            if save_tenants_registry(reg) is False:
+                raise HTTPException(status_code=500, detail="Не удалось сохранить режим вмешательства. Попробуйте ещё раз.")
+            return
+    logger.warning(f"Tenant {tenant_id} is not in the registry: the CRM mutations flag was not mirrored for n8n")
+
+
 class GeneralSettings(BaseModel):
     # No invented defaults: a field the caller did not send must never be written anywhere
     # (a partial save used to overwrite the company name, currency, period and plan in the client's sheet).
@@ -988,6 +1003,10 @@ def patch_autonomy_settings(
             allowed_tids.add(tenant_obj.slug)
         if current_user.tenant_id not in allowed_tids:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Изменение настроек другого тенанта запрещено")
+
+    if payload.allow_crm_mutations is not None:
+        # first: if the registry file cannot be written, nothing changes and the user gets an error
+        _mirror_mutation_flag_to_registry(str(tenant_obj.id), payload.allow_crm_mutations)
 
     st = dict(tenant_obj.settings or {}) if tenant_obj.settings else {}
     auto_block = dict(st.get("autonomy") or {})
