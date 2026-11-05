@@ -22,6 +22,7 @@ vi.mock('@/lib/api', () => ({
     updateManagers: vi.fn(),
     updateTelegram: vi.fn(),
     updateModules: vi.fn(),
+    updateAutonomy: vi.fn(),
     syncCrmManagers: vi.fn(),
   },
 }));
@@ -103,7 +104,8 @@ describe('SettingsPage', () => {
     renderWithClient(<SettingsPage />);
 
     expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
-    expect(screen.getByText('5 000 000 ₽')).toBeInTheDocument();
+    // the plan is shown once, in its own field (the read-only duplicate tile is gone)
+    expect((screen.getByLabelText(/ПЛАН ВЫРУЧКИ/) as HTMLInputElement).value).toBe('5000000');
   });
 
   it('switches between tabs and displays stages data', async () => {
@@ -155,7 +157,7 @@ describe('SettingsPage', () => {
 
     const activeModuleBadge = screen.getByTestId('module-status-call_audit');
     expect(activeModuleBadge).toHaveTextContent('Активен');
-    expect(activeModuleBadge).toHaveClass('text-emerald-500');
+    expect(activeModuleBadge).toHaveClass('text-emerald-700'); // darker green in the light theme (contrast)
 
     const inactiveModuleBadge = screen.getByTestId(
       'module-status-auto_webhook'
@@ -369,7 +371,7 @@ describe('SettingsPage', () => {
 
     // Fill form
     fireEvent.change(screen.getByTestId('input-new-manager-id'), {
-      target: { value: '105' },
+      target: { value: 'm105' },
     });
     fireEvent.change(screen.getByTestId('input-new-manager-name'), {
       target: { value: 'Алексей Смирнов' },
@@ -385,7 +387,7 @@ describe('SettingsPage', () => {
     fireEvent.click(screen.getByTestId('btn-confirm-add-manager'));
 
     // Check new row appears
-    expect(await screen.findByTestId('manager-row-105')).toBeInTheDocument();
+    expect(await screen.findByTestId('manager-row-m105')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Алексей Смирнов')).toBeInTheDocument();
 
     // Click Save
@@ -398,7 +400,7 @@ describe('SettingsPage', () => {
         expect.arrayContaining([
           expect.objectContaining({ id: 'm1', name: 'Сергей Иванов' }),
           expect.objectContaining({
-            id: '105',
+            id: 'm105',
             name: 'Алексей Смирнов',
             role: 'Клоузер',
             capacity: 35,
@@ -423,7 +425,19 @@ describe('SettingsPage', () => {
     // Empty submit
     fireEvent.click(screen.getByTestId('btn-confirm-add-manager'));
     expect(screen.getByTestId('add-manager-error')).toHaveTextContent(
-      /Укажите ID сотрудника/i
+      /Укажите код сотрудника/i
+    );
+
+    // a numeric id is issued by the CRM: the import would delete such a hand-made employee
+    fireEvent.change(screen.getByTestId('input-new-manager-id'), {
+      target: { value: '104' },
+    });
+    fireEvent.change(screen.getByTestId('input-new-manager-name'), {
+      target: { value: 'Числовой Код' },
+    });
+    fireEvent.click(screen.getByTestId('btn-confirm-add-manager'));
+    expect(screen.getByTestId('add-manager-error')).toHaveTextContent(
+      /Числовые ID выдаёт CRM/i
     );
 
     // Provide existing ID m1 and a name
@@ -456,10 +470,15 @@ describe('SettingsPage', () => {
     const deleteBtn = screen.getByTestId('btn-delete-manager-m1');
     fireEvent.click(deleteBtn);
 
+    // the first click only asks "Удалить?": the person is still there
+    expect(screen.getByTestId('manager-row-m1')).toBeInTheDocument();
+    expect(screen.getByText('Удалить?')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('btn-delete-manager-m1'));
+
     // Check row removed and empty state displayed
     expect(screen.queryByTestId('manager-row-m1')).not.toBeInTheDocument();
     expect(
-      screen.getByText(/В реестре пока нет сотрудников/i)
+      screen.getByText(/В команде пока нет добавленных сотрудников/i)
     ).toBeInTheDocument();
 
     // Click save and verify empty list sent
@@ -709,7 +728,7 @@ describe('SettingsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
 
     expect(
-      await screen.findByText(/Общие параметры и план продаж сохранены!/)
+      await screen.findByText(/План выручки сохранён/)
     ).toBeInTheDocument();
     expect(screen.queryByText(/не удалось/)).not.toBeInTheDocument();
   });
@@ -848,6 +867,237 @@ describe('SettingsPage, what a client sees by default', () => {
     fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
 
     expect(await screen.findByTestId('company-plan-distribution-banner')).toBeInTheDocument();
+  });
+
+  // ---- QA findings -------------------------------------------------------------------------------------------------
+
+  it('shows the real reason of a failed save, not "undefined"', async () => {
+    // the API client rejects with { detail, status_code }, not with an Error
+    vi.mocked(settingsApi.updateGeneral).mockRejectedValue({ detail: 'Лимит записи в Таблицу исчерпан', status_code: 500 });
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+
+    expect(await screen.findByText(/Лимит записи в Таблицу исчерпан/)).toBeInTheDocument();
+    expect(screen.queryByText(/undefined/)).not.toBeInTheDocument();
+  });
+
+  it('shows a friendly text for a validation error list (422)', async () => {
+    vi.mocked(settingsApi.updateGeneral).mockRejectedValue({ detail: [{ msg: 'Input should be >= 0', loc: ['body', 'general'] }], status_code: 422 });
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+
+    expect(await screen.findByText(/Проверьте значения полей/)).toBeInTheDocument();
+  });
+
+  it('closes an error with its close button', async () => {
+    vi.mocked(settingsApi.updateGeneral).mockRejectedValue({ detail: 'Сбой' });
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+    expect(await screen.findByText(/Сбой/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Закрыть сообщение' }));
+    expect(screen.queryByText(/Сбой/)).not.toBeInTheDocument();
+  });
+
+  it('does not save a plan of 0 when the plan field holds text that is not a number', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/ПЛАН ВЫРУЧКИ/), { target: { value: '12e' } });
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+
+    expect(await screen.findByText(/Введите сумму плана цифрами/)).toBeInTheDocument();
+    expect(settingsApi.updateGeneral).not.toHaveBeenCalled();
+  });
+
+  it('accepts a plan typed with spaces and sends only the plan', async () => {
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue(mockSettings);
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/ПЛАН ВЫРУЧКИ/), { target: { value: '3 000 000' } });
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+
+    await waitFor(() => {
+      expect(settingsApi.updateGeneral).toHaveBeenCalledWith('TNT-001', { monthly_target: 3000000 });
+    });
+  });
+
+  it('keeps the unsaved plan when another block is saved and the settings are reloaded', async () => {
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue(mockSettings);
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/ПЛАН ВЫРУЧКИ/), { target: { value: '7000000' } });
+    expect(await screen.findByTestId('unsaved-changes')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/СРЕДНИЙ ЧЕК/), { target: { value: '90000' } });
+    fireEvent.click(screen.getByTestId('btn-save-avg-check'));
+    await waitFor(() => expect(settingsApi.updateGeneral).toHaveBeenCalledWith('TNT-001', { avg_deal_check: 90000 }));
+    await waitFor(() => expect(settingsApi.get).toHaveBeenCalledTimes(2)); // the page reloaded the settings
+
+    expect((screen.getByLabelText(/ПЛАН ВЫРУЧКИ/) as HTMLInputElement).value).toBe('7000000');
+  });
+
+  it('forgets the unsaved mark once the plan is saved', async () => {
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue(mockSettings);
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/ПЛАН ВЫРУЧКИ/), { target: { value: '7000000' } });
+    expect(await screen.findByTestId('unsaved-changes')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+
+    await waitFor(() => expect(screen.queryByTestId('unsaved-changes')).not.toBeInTheDocument());
+  });
+
+  it('clears the period by sending it empty, and refuses a period that ends before it starts', async () => {
+    vi.stubEnv('VITE_SHOW_UNFINISHED_SETTINGS', 'true');
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue(mockSettings);
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Окончание расчетного периода'), { target: { value: '2026-09-01' } });
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить реквизиты/i }));
+    expect(await screen.findByText(/Конец расчётного периода раньше его начала/)).toBeInTheDocument();
+    expect(settingsApi.updateGeneral).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Начало расчетного периода'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('Окончание расчетного периода'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить реквизиты/i }));
+
+    await waitFor(() => {
+      expect(settingsApi.updateGeneral).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.objectContaining({ period_start: '', period_end: '' })
+      );
+    });
+  });
+
+  it('saves the requisites on their own, without the plan', async () => {
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue(mockSettings);
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Название компании'), { target: { value: 'ООО Новое имя' } });
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить реквизиты/i }));
+
+    await waitFor(() => {
+      expect(settingsApi.updateGeneral).toHaveBeenCalledWith('TNT-001', expect.objectContaining({ company_name: 'ООО Новое имя' }));
+    });
+    const sent = vi.mocked(settingsApi.updateGeneral).mock.calls[0][1] as Record<string, unknown>;
+    expect(sent).not.toHaveProperty('monthly_target');
+    expect(sent.company_name).toBe('ООО Новое имя');
+  });
+
+  it('does not offer the currency, the period and the project start to a client', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+
+    expect(screen.getByLabelText('Название компании')).toBeInTheDocument();
+    expect(screen.queryByText('Валюта отчетов')).not.toBeInTheDocument();
+    expect(screen.queryByText('Начало расчетного периода')).not.toBeInTheDocument();
+    expect(screen.queryByText('Дата запуска проекта')).not.toBeInTheDocument();
+  });
+
+  it('turns the CRM writes on only after a second, confirming click', async () => {
+    vi.mocked(settingsApi.updateAutonomy).mockResolvedValue({});
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-autonomy'), { key: 'Enter' });
+
+    fireEvent.click(await screen.findByTestId('crm-mutations-toggle'));
+    expect(screen.getByText('🔒 Безопасный пассивный режим')).toBeInTheDocument(); // the badge shows what is SAVED
+    expect(screen.getByTestId('autonomy-unsaved-note')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('save-autonomy-btn'));
+    expect(settingsApi.updateAutonomy).not.toHaveBeenCalled();
+    expect(screen.getByTestId('autonomy-confirm-note')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('save-autonomy-btn'));
+    await waitFor(() => {
+      expect(settingsApi.updateAutonomy).toHaveBeenCalledWith(
+        'TNT-001',
+        expect.objectContaining({ allow_crm_mutations: true })
+      );
+    });
+  });
+
+  it('turns the CRM writes off with one click: switching off needs no confirmation', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue({
+      ...mockSettings,
+      autonomy: { allow_crm_mutations: true, enable_telegram_notifications: false, allow_client_communication: false },
+    });
+    vi.mocked(settingsApi.updateAutonomy).mockResolvedValue({});
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-autonomy'), { key: 'Enter' });
+
+    const toggle = (await screen.findByTestId('crm-mutations-toggle')) as HTMLInputElement;
+    await waitFor(() => expect(toggle.checked).toBe(true));
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByTestId('save-autonomy-btn'));
+
+    await waitFor(() => {
+      expect(settingsApi.updateAutonomy).toHaveBeenCalledWith('TNT-001', expect.objectContaining({ allow_crm_mutations: false }));
+    });
+  });
+
+  it('refuses to save a manager whose numbers are out of range, and says which one', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
+
+    fireEvent.change(await screen.findByTestId('input-manager-capacity-m1'), { target: { value: '0' } });
+    fireEvent.click(screen.getByTestId('btn-save-managers'));
+
+    expect(await screen.findByText(/Сергей Иванов: вместимость должна быть от 1 до 500/)).toBeInTheDocument();
+    expect(settingsApi.updateManagers).not.toHaveBeenCalled();
+  });
+
+  it('does not run the import over unsaved edits of the managers table', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
+    await waitFor(() => expect(settingsApi.syncCrmManagers).toHaveBeenCalledTimes(1)); // the page-load sync
+    vi.mocked(settingsApi.syncCrmManagers).mockClear();
+
+    fireEvent.change(await screen.findByTestId('input-manager-calls-m1'), { target: { value: '25' } });
+    fireEvent.click(screen.getByTestId('btn-sync-crm-managers'));
+
+    expect(await screen.findByText(/Сначала сохраните изменения в таблице менеджеров/)).toBeInTheDocument();
+    expect(settingsApi.syncCrmManagers).not.toHaveBeenCalled();
+  });
+
+  it('keeps the name of a CRM employee read-only (the import overwrites it) and lets a hand-made one be edited', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue({
+      ...mockSettings,
+      managers: [
+        { id: '14384026', name: 'Дмитрий', role: 'РОП', capacity: 50 },
+        { id: 'm5', name: 'Вручную', role: 'Менеджер', capacity: 40 },
+      ],
+    });
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
+
+    expect(((await screen.findByTestId('input-manager-name-14384026')) as HTMLInputElement).readOnly).toBe(true);
+    expect((screen.getByTestId('input-manager-name-m5') as HTMLInputElement).readOnly).toBe(false);
+  });
+
+  it('gives every manager input a name for a screen reader', async () => {
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
+
+    expect(await screen.findByLabelText('Вместимость в сделках, сотрудник m1')).toBeInTheDocument();
+    expect(screen.getByLabelText('Next Step в процентах, сотрудник m1')).toBeInTheDocument();
+    expect(screen.getByLabelText('Удалить сотрудника m1')).toBeInTheDocument();
   });
 });
 

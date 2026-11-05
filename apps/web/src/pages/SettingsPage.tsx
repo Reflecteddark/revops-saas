@@ -11,7 +11,7 @@
  * Guarantees zero secret leakage (bot_token always masked with ••••••••, chat IDs masked).
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
@@ -64,6 +64,45 @@ function savedStatus(
   return { text: okText, type: 'success' };
 }
 
+// The API client rejects with { detail, status_code } (detail is a string, or a list for a 422), not with an Error:
+// reading err.message printed "…: undefined" for every failed save.
+function errorText(err: unknown): string {
+  const detail = (err as { detail?: unknown } | null)?.detail;
+  if (typeof detail === 'string' && detail) return detail;
+  if (Array.isArray(detail)) {
+    return 'Проверьте значения полей: одно из них вне допустимых пределов.';
+  }
+  return (err as Error | null)?.message || 'Неизвестная ошибка';
+}
+
+// type="number" answers "" for text like "12e", and the page took that for "empty" and saved a plan of 0.
+// The money fields are plain text now and parsed strictly: null = empty, 'bad' = not a plain number.
+function parseMoney(raw: string): number | null | 'bad' {
+  const t = raw.replace(/[\s ]/g, '');
+  if (t === '') return null;
+  if (!/^\d+([.,]\d+)?$/.test(t)) return 'bad';
+  return parseFloat(t.replace(',', '.'));
+}
+
+// Numeric ids are issued by the CRM: the import deletes the numeric ids it does not find, so a hand-made employee
+// must have a code like m5.
+const isCrmId = (id: string) => /^\d+$/.test(id);
+
+function validateManagers(list: ManagerConfig[]): string | null {
+  const inRange = (v: number | null | undefined, lo: number, hi: number) =>
+    v === null || v === undefined || (v >= lo && v <= hi);
+  for (const m of list) {
+    const who = m.name || m.id;
+    if (!(m.capacity >= 1 && m.capacity <= 500)) return `${who}: вместимость должна быть от 1 до 500 сделок`;
+    if (!inRange(m.revenue_target, 0, 1e12)) return `${who}: план выручки не может быть отрицательным`;
+    if (!inRange(m.daily_calls_target, 0, 200)) return `${who}: звонков в день — от 0 до 200`;
+    if (!inRange(m.daily_dials_target, 0, 500)) return `${who}: наборов в день — от 0 до 500`;
+    if (!inRange(m.monthly_meetings_target, 0, 500)) return `${who}: встреч в месяц — от 0 до 500`;
+    if (!inRange(m.next_step_target_pct, 0, 100)) return `${who}: Next Step — от 0 до 100%`;
+  }
+  return null;
+}
+
 function maskChatId(id?: string): string {
   if (!id) return '—';
   if (id.length <= 4) return '••••';
@@ -85,6 +124,7 @@ export function SettingsPage() {
     data: settings,
     isLoading,
     isError,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: ['settings', tenantId],
@@ -128,34 +168,60 @@ export function SettingsPage() {
   const [editableModules, setEditableModules] = useState<ModuleFlag[]>([]);
   const [hasAutoSynced, setHasAutoSynced] = useState<boolean>(false);
 
-  // Feedback banner state
-  const [saveStatus, setSaveStatus] = useState<{
-    text: string;
-    type: 'success' | 'warning' | 'error';
-  } | null>(null);
+  // Unsaved edits per block: a refetch (the save of another block, a websocket event) must not overwrite them
+  const [planDirty, setPlanDirty] = useState(false);
+  const [checkDirty, setCheckDirty] = useState(false);
+  const [reqDirty, setReqDirty] = useState(false);
+  const [managersDirty, setManagersDirty] = useState(false);
+  const [autonomyDirty, setAutonomyDirty] = useState(false);
+  const [confirmEnable, setConfirmEnable] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const hasUnsaved = planDirty || checkDirty || reqDirty || managersDirty || autonomyDirty;
+
+  // Feedback banner: ONE timer, so that a success never wipes a newer message. An error stays until it is closed,
+  // a warning (the sheet was not written) stays long enough to be read.
+  type SaveStatus = { text: string; type: 'success' | 'warning' | 'error' };
+  const [saveStatus, setSaveStatusRaw] = useState<SaveStatus | null>(null);
+  const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setSaveStatus = (next: SaveStatus | null) => {
+    if (statusTimer.current) clearTimeout(statusTimer.current);
+    setSaveStatusRaw(next);
+    if (next && next.type !== 'error') {
+      statusTimer.current = setTimeout(
+        () => setSaveStatusRaw(null),
+        next.type === 'success' ? 4000 : 12000
+      );
+    }
+  };
 
   // Sync state from query data
   useEffect(() => {
     if (settings) {
       if (settings.general) {
-        setCompanyName(settings.general.company_name || '');
-        setCurrency(settings.general.currency || 'RUB (₽)');
-        setPeriodStart(settings.general.period_start || '');
-        setPeriodEnd(settings.general.period_end || '');
+        if (!reqDirty) {
+          setCompanyName(settings.general.company_name || '');
+          setCurrency(settings.general.currency || 'RUB (₽)');
+          setPeriodStart(settings.general.period_start || '');
+          setPeriodEnd(settings.general.period_end || '');
+        }
         // 0 / missing = no plan set: the field stays empty (nothing is assumed)
-        setEditTarget(
-          settings.general.monthly_target && settings.general.monthly_target > 0
-            ? String(settings.general.monthly_target)
-            : ''
-        );
-        setEditAvgCheck(
-          settings.general.avg_deal_check ? String(settings.general.avg_deal_check) : ''
-        );
+        if (!planDirty) {
+          setEditTarget(
+            settings.general.monthly_target && settings.general.monthly_target > 0
+              ? String(settings.general.monthly_target)
+              : ''
+          );
+        }
+        if (!checkDirty) {
+          setEditAvgCheck(
+            settings.general.avg_deal_check ? String(settings.general.avg_deal_check) : ''
+          );
+        }
       }
       if (settings.stages && settings.stages.length > 0) {
         setEditableStages(settings.stages);
       }
-      if (settings.managers) {
+      if (settings.managers && !managersDirty) {
         setEditableManagers(settings.managers);
         setIsManagersInitialized(true);
       }
@@ -168,7 +234,7 @@ export function SettingsPage() {
       if (settings.modules && settings.modules.length > 0) {
         setEditableModules(settings.modules);
       }
-      if (settings.autonomy) {
+      if (settings.autonomy && !autonomyDirty) {
         setAllowCrmMutations(Boolean(settings.autonomy.allow_crm_mutations));
         setEnableTelegramNotifications(Boolean(settings.autonomy.enable_telegram_notifications));
         setAllowClientCommunication(Boolean(settings.autonomy.allow_client_communication));
@@ -186,15 +252,27 @@ export function SettingsPage() {
       period_end?: string;
       avg_deal_check?: number | null;
     }) => settingsApi.updateGeneral(tenantId!, payload),
-    onSuccess: (saved) => {
-      setSaveStatus(savedStatus(saved, '✓ Общие параметры и план продаж сохранены!'));
+    onSuccess: (saved, vars) => {
+      // only the blocks that were really sent are saved now: the other blocks keep their unsaved edits
+      if ('monthly_target' in vars) setPlanDirty(false);
+      if ('avg_deal_check' in vars) setCheckDirty(false);
+      if ('company_name' in vars || 'currency' in vars || 'period_start' in vars) setReqDirty(false);
+      setSaveStatus(
+        savedStatus(
+          saved,
+          'monthly_target' in vars
+            ? '✓ План выручки сохранён'
+            : 'avg_deal_check' in vars
+              ? '✓ Средний чек сохранён'
+              : '✓ Реквизиты компании сохранены'
+        )
+      );
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['insights', tenantId] });
-      setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
       setSaveStatus({
-        text: `Ошибка сохранения параметров: ${err.message}`,
+        text: `Ошибка сохранения параметров: ${errorText(err)}`,
         type: 'error',
       });
     },
@@ -206,11 +284,10 @@ export function SettingsPage() {
     onSuccess: (saved) => {
       setSaveStatus(savedStatus(saved, '✓ Регламент этапов воронки (SLA и конверсия) успешно сохранен!'));
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
-      setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
       setSaveStatus({
-        text: `Ошибка сохранения регламента этапов: ${err.message}`,
+        text: `Ошибка сохранения регламента этапов: ${errorText(err)}`,
         type: 'error',
       });
     },
@@ -220,13 +297,13 @@ export function SettingsPage() {
     mutationFn: (managers: ManagerConfig[]) =>
       settingsApi.updateManagers(tenantId!, managers),
     onSuccess: (saved) => {
+      setManagersDirty(false);
       setSaveStatus(savedStatus(saved, '✓ Лимиты и вместимость менеджеров успешно сохранены!'));
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
-      setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
       setSaveStatus({
-        text: `Ошибка сохранения менеджеров: ${err.message}`,
+        text: `Ошибка сохранения менеджеров: ${errorText(err)}`,
         type: 'error',
       });
     },
@@ -249,7 +326,6 @@ export function SettingsPage() {
           text: `✓ ${data.message || `Импортировано новых сотрудников: ${data.added_count}`}`,
           type: 'success',
         });
-        setTimeout(() => setSaveStatus(null), 5000);
       } else if (!silent) {
         setSaveStatus({
           text:
@@ -257,18 +333,30 @@ export function SettingsPage() {
             'Все сотрудники из CRM уже синхронизированы в реестре.',
           type: 'success',
         });
-        setTimeout(() => setSaveStatus(null), 4000);
       }
     },
     onError: (err: Error, silent) => {
       if (!silent) {
         setSaveStatus({
-          text: `Ошибка синхронизации с CRM: ${err.message}`,
+          text: `Ошибка синхронизации с CRM: ${errorText(err)}`,
           type: 'error',
         });
       }
     },
   });
+
+  // Another company was chosen: the unsaved edits and the "already synced" flag of the previous one must not stay
+  useEffect(() => {
+    setHasAutoSynced(false);
+    setIsManagersInitialized(false);
+    setPlanDirty(false);
+    setCheckDirty(false);
+    setReqDirty(false);
+    setManagersDirty(false);
+    setAutonomyDirty(false);
+    setConfirmEnable(false);
+    setConfirmDeleteId(null);
+  }, [tenantId]);
 
   // Auto-sync managers from CRM once on page load
   useEffect(() => {
@@ -277,6 +365,17 @@ export function SettingsPage() {
       syncCrmManagersMutation.mutate(true);
     }
   }, [tenantId, hasAutoSynced]);
+
+  // Leaving the page with unsaved edits: the browser asks first
+  useEffect(() => {
+    if (!hasUnsaved) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasUnsaved]);
 
   const saveTelegramMutation = useMutation({
     mutationFn: (telegramPayload: {
@@ -288,11 +387,10 @@ export function SettingsPage() {
     onSuccess: (saved) => {
       setSaveStatus(savedStatus(saved, '✓ Конфигурация Telegram-уведомлений успешно сохранена!'));
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
-      setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
       setSaveStatus({
-        text: `Ошибка сохранения настроек Telegram: ${err.message}`,
+        text: `Ошибка сохранения настроек Telegram: ${errorText(err)}`,
         type: 'error',
       });
     },
@@ -305,16 +403,17 @@ export function SettingsPage() {
       allow_client_communication: boolean;
     }) => settingsApi.updateAutonomy(tenantId!, autonomyPayload),
     onSuccess: () => {
+      setAutonomyDirty(false);
+      setConfirmEnable(false);
       setSaveStatus({
         text: '✓ Параметры автономии и вмешательства ИИ успешно сохранены!',
         type: 'success',
       });
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
-      setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
       setSaveStatus({
-        text: `Ошибка сохранения параметров автономии: ${err.message}`,
+        text: `Ошибка сохранения параметров автономии: ${errorText(err)}`,
         type: 'error',
       });
     },
@@ -326,43 +425,35 @@ export function SettingsPage() {
     onSuccess: (saved) => {
       setSaveStatus(savedStatus(saved, '✓ Настройки системных модулей сохранены!'));
       queryClient.invalidateQueries({ queryKey: ['settings', tenantId] });
-      setTimeout(() => setSaveStatus(null), 4000);
     },
     onError: (err: Error) => {
       setSaveStatus({
-        text: `Ошибка обновления модулей: ${err.message}`,
+        text: `Ошибка обновления модулей: ${errorText(err)}`,
         type: 'error',
       });
     },
   });
 
   // Handlers
-  const handleSaveGeneral = () => {
-    // An empty field clears the plan (0 = not set); otherwise a positive number of rubles
-    const rawTarget = editTarget.trim();
-    const targetVal = rawTarget === '' ? 0 : parseFloat(rawTarget);
-    if (isNaN(targetVal) || targetVal < 0) {
+  // The plan is saved on its own: it used to travel together with the company name, the period and the currency
+  const handleSavePlan = () => {
+    // An empty field clears the plan (0 = not set); a plain number of rubles otherwise
+    const target = parseMoney(editTarget);
+    if (target === 'bad') {
       setSaveStatus({
-        text: 'Введите корректную сумму плана выручки в рублях (или оставьте поле пустым)',
+        text: 'Введите сумму плана цифрами, например 3000000 (или оставьте поле пустым)',
         type: 'error',
       });
       return;
     }
     setSaveStatus(null);
-    saveGeneralMutation.mutate({
-      monthly_target: targetVal,
-      company_name: companyName.trim() || undefined,
-      currency: currency.trim() || undefined,
-      period_start: periodStart.trim() || undefined,
-      period_end: periodEnd.trim() || undefined,
-    });
+    saveGeneralMutation.mutate({ monthly_target: target ?? 0 });
   };
 
   // Average deal check: empty clears it (nothing is assumed), otherwise a positive number of rubles
   const handleSaveAvgCheck = () => {
-    const raw = editAvgCheck.trim();
-    const val = raw === '' ? null : parseFloat(raw);
-    if (val !== null && (isNaN(val) || val <= 0)) {
+    const val = parseMoney(editAvgCheck);
+    if (val === 'bad' || (val !== null && val <= 0)) {
       setSaveStatus({
         text: 'Введите средний чек сделки положительным числом в рублях (или оставьте поле пустым)',
         type: 'error',
@@ -371,6 +462,61 @@ export function SettingsPage() {
     }
     setSaveStatus(null);
     saveGeneralMutation.mutate({ avg_deal_check: val });
+  };
+
+  const handleSaveRequisites = () => {
+    if (!companyName.trim()) {
+      setSaveStatus({ text: 'Укажите название компании', type: 'error' });
+      return;
+    }
+    if (periodStart && periodEnd && periodEnd < periodStart) {
+      setSaveStatus({ text: 'Конец расчётного периода раньше его начала', type: 'error' });
+      return;
+    }
+    setSaveStatus(null);
+    // empty period fields are sent as empty strings: that is how the client clears a period
+    saveGeneralMutation.mutate({
+      company_name: companyName.trim(),
+      currency: currency.trim() || undefined,
+      period_start: periodStart.trim(),
+      period_end: periodEnd.trim(),
+    });
+  };
+
+  // The import would replace the table, so the edits that are not saved yet must not be lost by it
+  const runImport = () => {
+    if (managersDirty) {
+      setSaveStatus({
+        text: 'Сначала сохраните изменения в таблице менеджеров, затем повторите импорт: иначе они потеряются.',
+        type: 'warning',
+      });
+      return;
+    }
+    syncCrmManagersMutation.mutate(false);
+  };
+
+  const handleSaveManagers = () => {
+    const problem = validateManagers(managers);
+    if (problem) {
+      setSaveStatus({ text: problem, type: 'error' });
+      return;
+    }
+    saveManagersMutation.mutate(managers);
+  };
+
+  // Turning the CRM writes ON needs a second click: the AI starts creating tasks and filling deal fields
+  const handleSaveAutonomy = () => {
+    const savedOn = Boolean(settings?.autonomy?.allow_crm_mutations);
+    if (allowCrmMutations && !savedOn && !confirmEnable) {
+      setConfirmEnable(true);
+      return;
+    }
+    setConfirmEnable(false);
+    saveAutonomyMutation.mutate({
+      allow_crm_mutations: allowCrmMutations,
+      enable_telegram_notifications: enableTelegramNotifications,
+      allow_client_communication: allowClientCommunication,
+    });
   };
 
   const handleStageChange = (
@@ -393,18 +539,27 @@ export function SettingsPage() {
       return base.map((m) => (m.id === id ? { ...m, [field]: val } : m));
     });
     setIsManagersInitialized(true);
+    setManagersDirty(true);
   };
 
   const handleManagerChange = (id: string, capacity: number) => {
     handleManagerFieldChange(id, 'capacity', capacity);
   };
 
+  // Deleting a person takes two clicks: the first asks "Удалить?" for four seconds
   const handleDeleteManager = (id: string) => {
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      setTimeout(() => setConfirmDeleteId((cur) => (cur === id ? null : cur)), 4000);
+      return;
+    }
+    setConfirmDeleteId(null);
     setEditableManagers((prev) => {
       const base = isManagersInitialized ? prev : settings?.managers || [];
       return base.filter((m) => m.id !== id);
     });
     setIsManagersInitialized(true);
+    setManagersDirty(true);
   };
 
   const handleAddManagerSubmit = () => {
@@ -413,7 +568,13 @@ export function SettingsPage() {
     const cleanRole = newManagerRole.trim() || 'Менеджер ОП';
 
     if (!cleanId) {
-      setAddManagerError('Укажите ID сотрудника (например: 104 или m5)');
+      setAddManagerError('Укажите код сотрудника (например: m5)');
+      return;
+    }
+    if (isCrmId(cleanId)) {
+      setAddManagerError(
+        'Числовые ID выдаёт CRM, их подтягивает импорт. Для сотрудника, добавленного вручную, используйте код вида m5'
+      );
       return;
     }
     if (!cleanName) {
@@ -451,6 +612,7 @@ export function SettingsPage() {
     };
     setEditableManagers([...currentList, newEntry]);
     setIsManagersInitialized(true);
+    setManagersDirty(true);
     setIsAddingManager(false);
     setNewManagerId('');
     setNewManagerName('');
@@ -481,11 +643,10 @@ export function SettingsPage() {
           <Sliders className="h-8 w-8 text-muted-foreground" />
         </div>
         <h2 className="text-lg font-semibold tracking-tight">
-          Тенант не выбран
+          Компания не выбрана
         </h2>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Выберите тенант в шапке приложения для управления настройками воронки
-          и интеграций.
+          Выберите компанию в шапке приложения, чтобы управлять её настройками.
         </p>
       </div>
     );
@@ -511,7 +672,7 @@ export function SettingsPage() {
         <div>
           <AlertTitle>Ошибка загрузки</AlertTitle>
           <AlertDescription>
-            Не удалось загрузить настройки для тенанта {tenantId}.
+            Не удалось загрузить настройки компании {tenantId}.
           </AlertDescription>
         </div>
         <Button
@@ -533,6 +694,7 @@ export function SettingsPage() {
     ? editableManagers
     : settings?.managers || [];
   const telegram = settings?.telegram;
+  const savedCrm = Boolean(settings?.autonomy?.allow_crm_mutations);
   const modules: ModuleFlag[] =
     editableModules.length > 0 ? editableModules : settings?.modules || [];
 
@@ -544,10 +706,7 @@ export function SettingsPage() {
         ? 'Импортировать из Битрикс24'
         : 'Импортировать из amoCRM / Битрикс24';
 
-  const formattedPlan = general?.monthly_target
-    ? `${general.monthly_target.toLocaleString('ru-RU')} ₽`
-    : 'не задан';
-  const displayCompanyName = general?.company_name || 'RevOps Демо';
+  const displayCompanyName = general?.company_name || 'Ваша компания';
 
   const companyPlan = general?.monthly_target || 0;
   const totalPersonalPlans = managers.reduce(
@@ -573,22 +732,32 @@ export function SettingsPage() {
               : 'План и реквизиты компании, команда с нормативами и режим вмешательства ИИ.'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {hasUnsaved && (
+            <span
+              className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-400"
+              data-testid="unsaved-changes"
+            >
+              Есть несохранённые изменения
+            </span>
+          )}
           <Badge
             variant="outline"
-            className="border-primary/20 bg-primary/5 px-2.5 py-1 text-xs text-primary"
+            className="max-w-[16rem] truncate border-primary/20 bg-primary/5 px-2.5 py-1 text-xs text-primary"
+            title={`${displayCompanyName} (${tenantId})`}
           >
-            Компания: {displayCompanyName} ({tenantId})
+            Компания: {displayCompanyName}
           </Badge>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => refetch()}
+            disabled={isFetching}
             className="h-8 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-            title="Обновить настройки из Google Таблицы"
+            title="Перечитать настройки с сервера. Несохранённые правки в формах не затираются."
           >
-            <RefreshCw className="h-3.5 w-3.5" />
-            <span>Синхронизировать</span>
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+            <span>{isFetching ? 'Обновление...' : 'Обновить'}</span>
           </Button>
         </div>
       </div>
@@ -598,31 +767,39 @@ export function SettingsPage() {
         <Alert
           className={`py-2.5 ${
             saveStatus.type === 'success'
-              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
               : saveStatus.type === 'warning'
-                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-                : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
+                ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                : 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400'
           }`}
         >
           <div className="flex items-center gap-2">
             {saveStatus.type === 'success' ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400" />
             ) : saveStatus.type === 'warning' ? (
-              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
             ) : (
-              <XCircle className="h-4 w-4 shrink-0 text-rose-400" />
+              <XCircle className="h-4 w-4 shrink-0 text-rose-700 dark:text-rose-400" />
             )}
-            <AlertDescription className="text-xs font-medium">
+            <AlertDescription className="flex-1 text-xs font-medium">
               {saveStatus.text}
             </AlertDescription>
+            <button
+              type="button"
+              onClick={() => setSaveStatus(null)}
+              aria-label="Закрыть сообщение"
+              className="shrink-0 rounded p-0.5 opacity-70 hover:opacity-100"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           </div>
         </Alert>
       )}
 
       <Tabs defaultValue="general" className="w-full">
         <TabsList
-          className={`grid h-auto w-full grid-cols-2 p-1 sm:w-auto ${
-            showUnfinished ? 'sm:grid-cols-6' : 'sm:grid-cols-3'
+          className={`grid h-auto w-full p-1 sm:w-auto ${
+            showUnfinished ? 'grid-cols-2 sm:grid-cols-6' : 'grid-cols-3'
           }`}
         >
           <TabsTrigger
@@ -684,7 +861,7 @@ export function SettingsPage() {
               <CardTitle className="flex flex-col gap-2 text-base sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-primary" />
-                  <span>Параметры компании & План продаж</span>
+                  <span>Параметры компании и план продаж</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium text-muted-foreground">
@@ -709,25 +886,35 @@ export function SettingsPage() {
                       htmlFor="inputMonthlyTarget"
                       className="mb-1 block text-xs font-bold text-foreground"
                     >
-                      🎯 ПЛАН ВЫРУЧКИ НА МЕСЯЦ (₽):
+                      ПЛАН ВЫРУЧКИ НА МЕСЯЦ (₽):
                     </label>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Пусто — план не задан.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <form
+                    className="flex items-center gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSavePlan();
+                    }}
+                  >
                     <Input
                       id="inputMonthlyTarget"
-                      type="number"
-                      step="100000"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
                       value={editTarget}
-                      onChange={(e) => setEditTarget(e.target.value)}
+                      onChange={(e) => {
+                        setEditTarget(e.target.value);
+                        setPlanDirty(true);
+                      }}
                       placeholder="не задан"
-                      className="w-40 bg-background font-mono text-sm font-bold text-emerald-500"
+                      className="w-40 bg-background font-mono text-sm font-bold text-emerald-700 dark:text-emerald-500"
                     />
                     <Button
+                      type="submit"
                       size="sm"
-                      onClick={handleSaveGeneral}
                       disabled={saveGeneralMutation.isPending}
                       className="h-9 gap-1.5 text-xs font-semibold"
                     >
@@ -738,12 +925,12 @@ export function SettingsPage() {
                           : 'Сохранить план'}
                       </span>
                     </Button>
-                  </div>
+                  </form>
                 </div>
 
                 {/* Quick plan presets: they fill the PLAN field above, so they sit right under it */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     Быстрые суммы для плана:
                   </span>
                   {[3000000, 5000000, 10000000, 15000000, 20000000].map(
@@ -753,8 +940,11 @@ export function SettingsPage() {
                         variant="outline"
                         size="sm"
                         type="button"
-                        className="h-6 px-2.5 text-[11px] font-medium"
-                        onClick={() => setEditTarget(String(preset))}
+                        className="h-6 px-2.5 text-xs font-medium"
+                        onClick={() => {
+                          setEditTarget(String(preset));
+                          setPlanDirty(true);
+                        }}
                       >
                         {(preset / 1000000).toFixed(0)} млн ₽
                       </Button>
@@ -774,24 +964,33 @@ export function SettingsPage() {
                     >
                       СРЕДНИЙ ЧЕК СДЕЛКИ (₽):
                     </label>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Нужен для оценки потерь и сценариев. Пусто — значение не задано, ничего не предполагается.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <form
+                    className="flex items-center gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveAvgCheck();
+                    }}
+                  >
                     <Input
                       id="inputAvgDealCheck"
-                      type="number"
-                      step="10000"
-                      min="0"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
                       value={editAvgCheck}
-                      onChange={(e) => setEditAvgCheck(e.target.value)}
+                      onChange={(e) => {
+                        setEditAvgCheck(e.target.value);
+                        setCheckDirty(true);
+                      }}
                       placeholder="не задан"
                       className="w-40 bg-background font-mono text-sm font-bold"
                     />
                     <Button
+                      type="submit"
                       size="sm"
-                      onClick={handleSaveAvgCheck}
                       disabled={saveGeneralMutation.isPending}
                       className="h-9 gap-1.5 text-xs font-semibold"
                       data-testid="btn-save-avg-check"
@@ -799,21 +998,30 @@ export function SettingsPage() {
                       <Save className="h-3.5 w-3.5" />
                       <span>Сохранить чек</span>
                     </Button>
-                  </div>
+                  </form>
                 </div>
 
               </div>
 
-              {/* General Business Form */}
-              <div className="space-y-3 pt-1">
+              {/* Requisites. Currency, the period and the project start are not read by any calculation, so a client
+                  does not see them (they stay behind the same flag as the unfinished tabs). */}
+              <form
+                className="space-y-3 pt-1"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSaveRequisites();
+                }}
+              >
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                    Реквизиты организации и расчетный период
+                    {showUnfinished
+                      ? 'Реквизиты организации и расчётный период'
+                      : 'Реквизиты организации'}
                   </h3>
                   <Button
+                    type="submit"
                     size="sm"
                     variant="outline"
-                    onClick={handleSaveGeneral}
                     disabled={saveGeneralMutation.isPending}
                     className="border-primary/30 h-7 gap-1 text-xs text-primary"
                   >
@@ -824,72 +1032,83 @@ export function SettingsPage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                   <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
-                    <Label className="text-xs text-muted-foreground">
+                    <Label htmlFor="inputCompanyName" className="text-xs text-muted-foreground">
                       Название компании
                     </Label>
                     <Input
+                      id="inputCompanyName"
                       value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="RevOps Демо"
+                      onChange={(e) => {
+                        setCompanyName(e.target.value);
+                        setReqDirty(true);
+                      }}
+                      placeholder="Название вашей компании"
                       className="text-xs font-medium"
                     />
                   </div>
 
-                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
-                    <Label className="text-xs text-muted-foreground">
-                      Валюта отчетов
-                    </Label>
-                    <Input
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
-                      placeholder="RUB (₽)"
-                      className="text-xs font-medium"
-                    />
-                  </div>
+                  {showUnfinished && (
+                    <>
+                      <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                        <Label htmlFor="inputCurrency" className="text-xs text-muted-foreground">
+                          Валюта отчетов
+                        </Label>
+                        <Input
+                          id="inputCurrency"
+                          value={currency}
+                          onChange={(e) => {
+                            setCurrency(e.target.value);
+                            setReqDirty(true);
+                          }}
+                          placeholder="RUB (₽)"
+                          className="text-xs font-medium"
+                        />
+                      </div>
 
-                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
-                    <Label className="text-xs text-muted-foreground">
-                      Месячный план (активный)
-                    </Label>
-                    <div className="bg-muted/30 flex h-9 items-center rounded-md border border-subtle px-3 font-mono text-xs font-bold text-emerald-500">
-                      {formattedPlan}
-                    </div>
-                  </div>
+                      <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                        <Label htmlFor="inputPeriodStart" className="text-xs text-muted-foreground">
+                          Начало расчетного периода
+                        </Label>
+                        <Input
+                          id="inputPeriodStart"
+                          type="date"
+                          value={periodStart}
+                          onChange={(e) => {
+                            setPeriodStart(e.target.value);
+                            setReqDirty(true);
+                          }}
+                          className="font-mono text-xs"
+                        />
+                      </div>
 
-                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
-                    <Label className="text-xs text-muted-foreground">
-                      Начало расчетного периода
-                    </Label>
-                    <Input
-                      type="date"
-                      value={periodStart}
-                      onChange={(e) => setPeriodStart(e.target.value)}
-                      className="font-mono text-xs"
-                    />
-                  </div>
+                      <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                        <Label htmlFor="inputPeriodEnd" className="text-xs text-muted-foreground">
+                          Окончание расчетного периода
+                        </Label>
+                        <Input
+                          id="inputPeriodEnd"
+                          type="date"
+                          value={periodEnd}
+                          onChange={(e) => {
+                            setPeriodEnd(e.target.value);
+                            setReqDirty(true);
+                          }}
+                          className="font-mono text-xs"
+                        />
+                      </div>
 
-                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
-                    <Label className="text-xs text-muted-foreground">
-                      Окончание расчетного периода
-                    </Label>
-                    <Input
-                      type="date"
-                      value={periodEnd}
-                      onChange={(e) => setPeriodEnd(e.target.value)}
-                      className="font-mono text-xs"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
-                    <Label className="text-xs text-muted-foreground">
-                      Дата запуска проекта
-                    </Label>
-                    <div className="bg-muted/30 flex h-9 items-center rounded-md border border-subtle px-3 font-mono text-xs text-foreground">
-                      {general?.project_start_date || '—'}
-                    </div>
-                  </div>
+                      <div className="space-y-1.5 rounded-md border border-subtle bg-surface p-3">
+                        <Label className="text-xs text-muted-foreground">
+                          Дата запуска проекта
+                        </Label>
+                        <div className="bg-muted/30 flex h-9 items-center rounded-md border border-subtle px-3 font-mono text-xs text-foreground">
+                          {general?.project_start_date || '—'}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
@@ -904,17 +1123,18 @@ export function SettingsPage() {
                 <div>
                   <CardTitle className="flex items-center gap-2 text-base">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <span>Автономия ИИ & Режим вмешательства в CRM</span>
+                    <span>Автономия ИИ и режим вмешательства в CRM</span>
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Что ИИ-ревизор может делать в вашей CRM сам. По умолчанию включён пассивный режим.
+                    Что ИИ может делать в вашей CRM сам. По умолчанию включён пассивный режим.
                   </CardDescription>
                 </div>
+                {/* the badge shows what is SAVED, not the unsaved tick of the switch */}
                 <Badge
-                  variant={allowCrmMutations ? "default" : "outline"}
+                  variant={savedCrm ? "default" : "outline"}
                   className="w-fit text-xs"
                 >
-                  {allowCrmMutations ? "🟢 Автономный режим" : "🔒 Безопасный пассивный режим"}
+                  {savedCrm ? "🟢 Автономный режим" : "🔒 Безопасный пассивный режим"}
                 </Badge>
               </div>
             </CardHeader>
@@ -936,10 +1156,25 @@ export function SettingsPage() {
                     data-testid="crm-mutations-toggle"
                     type="checkbox"
                     checked={allowCrmMutations}
-                    onChange={(e) => setAllowCrmMutations(e.target.checked)}
+                    onChange={(e) => {
+                      setAllowCrmMutations(e.target.checked);
+                      setAutonomyDirty(true);
+                      setConfirmEnable(false);
+                    }}
                     className="h-5 w-5 rounded border-subtle text-primary cursor-pointer accent-primary"
                   />
                 </div>
+
+                {allowCrmMutations !== savedCrm && (
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400" data-testid="autonomy-unsaved-note">
+                    Изменение вступит в силу только после сохранения.
+                  </p>
+                )}
+                {confirmEnable && (
+                  <p className="text-xs font-semibold text-rose-700 dark:text-rose-400" data-testid="autonomy-confirm-note">
+                    Подтвердите: ИИ начнёт создавать задачи менеджерам и заполнять поля сделок в вашей CRM.
+                  </p>
+                )}
 
                 {/* Telegram approvals and client messaging belong to the agent engine that no production flow calls yet */}
                 {showUnfinished && (
@@ -959,7 +1194,10 @@ export function SettingsPage() {
                     data-testid="telegram-notifications-toggle"
                     type="checkbox"
                     checked={enableTelegramNotifications}
-                    onChange={(e) => setEnableTelegramNotifications(e.target.checked)}
+                    onChange={(e) => {
+                      setEnableTelegramNotifications(e.target.checked);
+                      setAutonomyDirty(true);
+                    }}
                     className="h-5 w-5 rounded border-subtle text-primary cursor-pointer accent-primary"
                   />
                 </div>
@@ -982,7 +1220,10 @@ export function SettingsPage() {
                     data-testid="client-communication-toggle"
                     type="checkbox"
                     checked={allowClientCommunication}
-                    onChange={(e) => setAllowClientCommunication(e.target.checked)}
+                    onChange={(e) => {
+                      setAllowClientCommunication(e.target.checked);
+                      setAutonomyDirty(true);
+                    }}
                     className="h-5 w-5 rounded border-subtle text-primary cursor-pointer accent-primary"
                   />
                 </div>
@@ -994,17 +1235,11 @@ export function SettingsPage() {
                   data-testid="save-autonomy-btn"
                   size="sm"
                   disabled={saveAutonomyMutation.isPending}
-                  onClick={() =>
-                    saveAutonomyMutation.mutate({
-                      allow_crm_mutations: allowCrmMutations,
-                      enable_telegram_notifications: enableTelegramNotifications,
-                      allow_client_communication: allowClientCommunication,
-                    })
-                  }
+                  onClick={handleSaveAutonomy}
                   className="gap-2"
                 >
                   <Save className="h-4 w-4" />
-                  <span>Сохранить параметры автономии</span>
+                  <span>{confirmEnable ? 'Подтвердить включение' : 'Сохранить параметры автономии'}</span>
                 </Button>
               </div>
             </CardContent>
@@ -1089,7 +1324,7 @@ export function SettingsPage() {
                         </td>
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
-                            <span className="w-12 font-mono text-xs font-semibold text-emerald-500">
+                            <span className="w-12 font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-500">
                               {st.win_pct}%
                             </span>
                             <Input
@@ -1104,7 +1339,7 @@ export function SettingsPage() {
                                   parseInt(e.target.value) || 0
                                 )
                               }
-                              className="h-7 w-20 font-mono text-xs font-semibold text-emerald-500"
+                              className="h-7 w-20 font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-500"
                             />
                           </div>
                         </td>
@@ -1126,7 +1361,7 @@ export function SettingsPage() {
               <div>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Users className="h-4 w-4 text-primary" />
-                  <span>Реестр менеджеров и нормативы KPI</span>
+                  <span>Команда и нормативы</span>
                 </CardTitle>
                 <CardDescription>
                   Персональные планы выручки, нормативы звонков и встреч,
@@ -1141,7 +1376,7 @@ export function SettingsPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => syncCrmManagersMutation.mutate(false)}
+                  onClick={runImport}
                   disabled={syncCrmManagersMutation.isPending}
                   className="h-8 gap-1.5 text-xs font-semibold"
                   data-testid="btn-sync-crm-managers"
@@ -1155,7 +1390,7 @@ export function SettingsPage() {
                   <span>
                     {syncCrmManagersMutation.isPending
                       ? 'Синхронизация...'
-                      : `🔄 ${crmLabel}`}
+                      : crmLabel}
                   </span>
                 </Button>
                 <Button
@@ -1173,7 +1408,7 @@ export function SettingsPage() {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => saveManagersMutation.mutate(managers)}
+                  onClick={handleSaveManagers}
                   disabled={saveManagersMutation.isPending}
                   className="h-8 gap-1.5 text-xs font-semibold"
                   data-testid="btn-save-managers"
@@ -1212,12 +1447,12 @@ export function SettingsPage() {
                         variant="outline"
                         className={`font-mono text-xs font-semibold ${
                           distributionPct >= 95 && distributionPct <= 105
-                            ? 'border-emerald-500 text-emerald-400'
+                            ? 'border-emerald-500 text-emerald-700 dark:text-emerald-400'
                             : (distributionPct >= 70 && distributionPct < 95) ||
                                 (distributionPct > 105 &&
                                   distributionPct <= 120)
-                              ? 'border-amber-500 text-amber-400'
-                              : 'border-rose-500 text-rose-400'
+                              ? 'border-amber-500 text-amber-700 dark:text-amber-400'
+                              : 'border-rose-500 text-rose-700 dark:text-rose-400'
                         }`}
                         data-testid="distribution-status-badge"
                       >
@@ -1248,13 +1483,13 @@ export function SettingsPage() {
                         <strong
                           className={`font-mono font-bold ${
                             distributionPct >= 95 && distributionPct <= 105
-                              ? 'text-emerald-400'
+                              ? 'text-emerald-700 dark:text-emerald-400'
                               : (distributionPct >= 70 &&
                                     distributionPct < 95) ||
                                   (distributionPct > 105 &&
                                     distributionPct <= 120)
-                                ? 'text-amber-400'
-                                : 'text-rose-400'
+                                ? 'text-amber-700 dark:text-amber-400'
+                                : 'text-rose-700 dark:text-rose-400'
                           }`}
                         >
                           {distributionPct}%
@@ -1287,7 +1522,7 @@ export function SettingsPage() {
                         style={{ width: `${Math.min(100, distributionPct)}%` }}
                       />
                     </div>
-                    <div className="text-right font-mono text-[10px] text-tertiary">
+                    <div className="text-right font-mono text-xs text-tertiary">
                       {totalPersonalPlans.toLocaleString('ru-RU')} /{' '}
                       {companyPlan.toLocaleString('ru-RU')} ₽
                     </div>
@@ -1323,7 +1558,7 @@ export function SettingsPage() {
 
                   {addManagerError && (
                     <div
-                      className="text-xs font-medium text-rose-500"
+                      className="text-xs font-medium text-rose-700 dark:text-rose-500"
                       data-testid="add-manager-error"
                     >
                       {addManagerError}
@@ -1333,12 +1568,13 @@ export function SettingsPage() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
                     <div>
                       <Label className="text-xs text-muted-foreground">
-                        ID (CRM или код)
+                        Код сотрудника
                       </Label>
                       <Input
-                        placeholder="например: 104 или m5"
+                        placeholder="например: m5"
                         value={newManagerId}
                         onChange={(e) => setNewManagerId(e.target.value)}
+                        aria-label="Код сотрудника"
                         className="mt-1 h-8 font-mono text-xs"
                         data-testid="input-new-manager-id"
                       />
@@ -1419,7 +1655,7 @@ export function SettingsPage() {
                         <Label className="text-xs text-muted-foreground">
                           Встречи / мес
                         </Label>
-                        <label className="flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground">
+                        <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground">
                           <input
                             type="checkbox"
                             checked={newManagerMeetingsEnabled}
@@ -1524,7 +1760,7 @@ export function SettingsPage() {
                       <th className="w-40 px-3 py-2.5 text-left font-medium">
                         <div className="leading-tight">
                           <span>Звонки / день</span>
-                          <div className="text-[10px] font-normal text-muted-foreground">
+                          <div className="text-xs font-normal text-muted-foreground">
                             ≥60с / наборы
                           </div>
                         </div>
@@ -1532,7 +1768,7 @@ export function SettingsPage() {
                       <th className="w-32 px-3 py-2.5 text-left font-medium">
                         <div className="leading-tight">
                           <span>Встречи / мес</span>
-                          <div className="text-[10px] font-normal text-muted-foreground">
+                          <div className="text-xs font-normal text-muted-foreground">
                             учитывать в KPI
                           </div>
                         </div>
@@ -1559,12 +1795,10 @@ export function SettingsPage() {
                           В команде пока нет добавленных сотрудников. Нажмите{' '}
                           <button
                             type="button"
-                            onClick={() =>
-                              syncCrmManagersMutation.mutate(false)
-                            }
+                            onClick={runImport}
                             className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
                           >
-                            «🔄 {crmLabel}»
+                            «{crmLabel}»
                           </button>{' '}
                           для автоматического импорта из CRM или добавьте
                           вручную через «+ Добавить менеджера».
@@ -1591,10 +1825,13 @@ export function SettingsPage() {
                                 )
                               }
                               className="h-7 text-xs font-medium"
+                              readOnly={isCrmId(m.id)}
+                              title={isCrmId(m.id) ? 'Имя берётся из CRM и обновляется при импорте' : undefined}
+                              aria-label={`Имя сотрудника ${m.id}`}
                               data-testid={`input-manager-name-${m.id}`}
                             />
-                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                              <span className="font-mono text-[10px]">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <span className="font-mono text-xs">
                                 ID: {m.id}
                               </span>
                               <span>&bull;</span>
@@ -1608,7 +1845,8 @@ export function SettingsPage() {
                                     e.target.value
                                   )
                                 }
-                                className="h-5 w-32 border-transparent bg-transparent px-1 text-[11px] text-muted-foreground hover:border-subtle focus:border-primary"
+                                className="h-5 w-32 border-transparent bg-transparent px-1 text-xs text-muted-foreground hover:border-subtle focus:border-primary"
+                                aria-label={`Должность сотрудника ${m.id}`}
                                 data-testid={`input-manager-role-${m.id}`}
                               />
                             </div>
@@ -1639,6 +1877,7 @@ export function SettingsPage() {
                                 );
                               }}
                               className="h-7 w-28 pr-6 font-mono text-xs"
+                              aria-label={`План выручки сотрудника ${m.id}, рублей в месяц`}
                               data-testid={`input-manager-revenue-${m.id}`}
                             />
                             <span className="pointer-events-none absolute right-2 text-xs text-muted-foreground">
@@ -1674,6 +1913,7 @@ export function SettingsPage() {
                                 );
                               }}
                               className="h-7 w-14 font-mono text-xs"
+                              aria-label={`Звонков в день, сотрудник ${m.id}`}
                               data-testid={`input-manager-calls-${m.id}`}
                             />
                             <span className="font-mono text-xs text-muted-foreground">
@@ -1703,6 +1943,7 @@ export function SettingsPage() {
                                 );
                               }}
                               className="h-7 w-14 font-mono text-xs"
+                              aria-label={`Наборов в день, сотрудник ${m.id}`}
                               data-testid={`input-manager-dials-${m.id}`}
                             />
                           </div>
@@ -1727,6 +1968,7 @@ export function SettingsPage() {
                                   ? 'Встречи учитываются в KPI и РНП'
                                   : 'Встречи отключены (не учитываются)'
                               }
+                              aria-label={`Учитывать встречи, сотрудник ${m.id}`}
                               data-testid={`checkbox-manager-meetings-enabled-${m.id}`}
                             />
                             {m.meetings_enabled !== false ? (
@@ -1753,6 +1995,7 @@ export function SettingsPage() {
                                   );
                                 }}
                                 className="h-7 w-16 font-mono text-xs"
+                                aria-label={`Встреч в месяц, сотрудник ${m.id}`}
                                 data-testid={`input-manager-meetings-${m.id}`}
                               />
                             ) : (
@@ -1778,9 +2021,10 @@ export function SettingsPage() {
                                 )
                               }
                               className="h-7 w-16 font-mono text-xs"
+                              aria-label={`Вместимость в сделках, сотрудник ${m.id}`}
                               data-testid={`input-manager-capacity-${m.id}`}
                             />
-                            <span className="text-[11px] text-muted-foreground">
+                            <span className="text-xs text-muted-foreground">
                               сделок
                             </span>
                           </div>
@@ -1812,6 +2056,7 @@ export function SettingsPage() {
                                 );
                               }}
                               className="h-7 w-16 pr-5 font-mono text-xs"
+                              aria-label={`Next Step в процентах, сотрудник ${m.id}`}
                               data-testid={`input-manager-next-step-${m.id}`}
                             />
                             <span className="pointer-events-none absolute right-2 text-xs text-muted-foreground">
@@ -1826,26 +2071,28 @@ export function SettingsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteManager(m.id)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500"
-                            title="Удалить сотрудника из реестра"
+                            className={`h-7 p-0 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 ${
+                              confirmDeleteId === m.id
+                                ? 'w-auto px-2 text-xs font-semibold text-rose-700 dark:text-rose-400'
+                                : 'w-7'
+                            }`}
+                            title="Удалить сотрудника из команды"
+                            aria-label={
+                              confirmDeleteId === m.id
+                                ? `Подтвердить удаление сотрудника ${m.id}`
+                                : `Удалить сотрудника ${m.id}`
+                            }
                             data-testid={`btn-delete-manager-${m.id}`}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            {confirmDeleteId === m.id ? (
+                              <span>Удалить?</span>
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
                           </Button>
                         </td>
                       </tr>
                     ))}
-                    {managers.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="py-8 text-center text-xs text-muted-foreground"
-                        >
-                          В реестре пока нет сотрудников. Нажмите «+ Добавить
-                          менеджера», чтобы подключить сотрудника.
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
@@ -2066,10 +2313,10 @@ export function SettingsPage() {
                         <span className="text-sm font-semibold text-foreground">
                           {mod.name}
                         </span>
-                        <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                        <span className="font-mono text-xs uppercase text-muted-foreground">
                           [{mod.code}]
                         </span>
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-xs">
                           {mod.category}
                         </Badge>
                       </div>
@@ -2082,7 +2329,7 @@ export function SettingsPage() {
                       {mod.status ? (
                         <Badge
                           variant="secondary"
-                          className="flex items-center space-x-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+                          className="flex items-center space-x-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-500"
                           data-testid={`module-status-${mod.code}`}
                         >
                           <CheckCircle2 className="h-3 w-3" />
