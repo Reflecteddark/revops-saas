@@ -182,6 +182,18 @@ export function DataTable<TData>({
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
                   onClick={() => onRowClick?.(row.original)}
+                  // a clickable row is reachable with Tab and opens with Enter or Space, like a button
+                  tabIndex={onRowClick ? 0 : undefined}
+                  onKeyDown={
+                    onRowClick
+                      ? (e) => {
+                          if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+                            e.preventDefault();
+                            onRowClick(row.original);
+                          }
+                        }
+                      : undefined
+                  }
                   className={cn(
                     'h-11 border-b border-subtle transition-colors duration-150',
                     onRowClick &&
