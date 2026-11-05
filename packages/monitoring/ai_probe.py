@@ -27,6 +27,9 @@ GEMINI_PROXY_URL = os.getenv(
     "https://gemini-proxy.dmitriyfedotov1908.workers.dev"
 ).rstrip("/")
 
+# Local Audit Service (Whisper + Ollama on Windows host)
+LOCAL_AUDIT_URL = os.getenv("LOCAL_AUDIT_URL", "").rstrip("/")
+
 
 def _resolve_gemini_proxy_key() -> str:
     """Safely retrieves proxy key from env, credentials file, or encoded backup."""
@@ -199,6 +202,27 @@ def probe_gemini_models_sync(timeout: float = 12.0) -> dict[str, Any]:
     }
 
     last_error: str | None = None
+
+    if LOCAL_AUDIT_URL:
+        t0 = time.perf_counter()
+        try:
+            req = urllib.request.Request(f"{LOCAL_AUDIT_URL}/health", headers={"User-Agent": "RevOps-Probe/1.0"})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                latency_ms = int((time.perf_counter() - t0) * 1000)
+                if resp.status == 200:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    if data.get("status") == "healthy":
+                        return {
+                            "healthy": True,
+                            "active_tier": "Local Audit Engine",
+                            "model": data.get("whisper", "local-audit"),
+                            "latency_ms": latency_ms,
+                            "error": None
+                        }
+        except Exception as exc:
+            latency_ms = int((time.perf_counter() - t0) * 1000)
+            last_error = f"Local Audit ({LOCAL_AUDIT_URL}) probe failed after {latency_ms} ms: {exc}"
+            logger.warning(f"Probe warning: {last_error}")
 
     proxy_tiers = [t for t in AI_TIERS if t.get("type") == "proxy"]
     for tier_info in proxy_tiers:
