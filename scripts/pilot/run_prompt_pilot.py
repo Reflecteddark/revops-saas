@@ -94,7 +94,7 @@ def call_gemini(variant, prompt, audio_b64, model=MODEL, retries=4):
         "contents": [{"parts": [{"inline_data": {"mime_type": "audio/mpeg", "data": audio_b64}}, {"text": prompt}]}],
         "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"},
     }
-    if variant == "B":  # contract v2 also fixes the answer's shape; A stays exactly as production runs it
+    if variant.startswith("B"):  # contract v2 also fixes the answer's shape; A stays exactly as production runs it
         # No maxOutputTokens: the "thinking" tokens count against it (a probe call spent 15 360 of 16 000 on thinking and
         # its answer was cut off), and A runs without one in production.
         body["generationConfig"]["responseSchema"] = SCHEMA_B
