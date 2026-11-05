@@ -25,7 +25,7 @@ services:
       - "6379:6379"
 
   revops-api:
-    image: ghcr.io/reflecteddark/revops-saas:8c446c7d8345865bb3f59a58e694b27940f5dd96
+    image: ghcr.io/reflecteddark/revops-saas:f76a0b6637ebcea0397f2d4ae730ad2416b49bf0
     container_name: revops-api
     restart: unless-stopped
     ports:
@@ -34,7 +34,7 @@ services:
       - ./secrets/.env
     environment:
       - PYTHONPATH=/app
-      - DATABASE_URL=sqlite:////app/data/revops_saas.db
+      - DATABASE_URL=postgresql+psycopg2://revops_user:SecurePass2026!@postgres_db:5432/revops_db
       - REDIS_URL=redis://redis:6379/0
       - REDIS_ENABLED=true
       - TENANTS_REGISTRY_PATH=/app/tenants_registry.json
