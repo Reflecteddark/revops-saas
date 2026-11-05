@@ -15,6 +15,9 @@ import httpx
 
 logger = logging.getLogger("crm_users_sync")
 
+_AMO_PAGE_LIMIT = 250  # the largest page amoCRM allows
+_MAX_PAGES = 20
+
 
 def clean_domain(domain_raw: str | None) -> str:
     """Normalizes domain by removing protocol and trailing slashes."""
@@ -51,13 +54,24 @@ async def fetch_amocrm_users(domain: str, token: str, timeout: float = 8.0) -> l
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.get(url, headers=headers)
-            if resp.status_code != 200:
-                logger.warning(f"amoCRM /api/v4/users returned HTTP {resp.status_code}: {resp.text[:160]}")
+            # amoCRM answers with one page (50 users by default). The sync DELETES every manager that is not in the
+            # answer, so a first page alone would delete the rest of a bigger team: read all pages, and treat a list
+            # that could not be read to the end as no answer at all.
+            raw_users: list[dict[str, Any]] = []
+            for page in range(1, _MAX_PAGES + 1):
+                resp = await client.get(url, headers=headers, params={"limit": _AMO_PAGE_LIMIT, "page": page})
+                if resp.status_code == 204 and page > 1:  # amoCRM: the page after the last one is empty
+                    break
+                if resp.status_code != 200:
+                    logger.warning(f"amoCRM /api/v4/users page {page} returned HTTP {resp.status_code}: {resp.text[:160]}")
+                    return []
+                data = resp.json()
+                raw_users.extend(data.get("_embedded", {}).get("users", []))
+                if not (data.get("_links") or {}).get("next"):
+                    break
+            else:
+                logger.warning(f"amoCRM /api/v4/users has more than {_MAX_PAGES} pages, the list is not trusted")
                 return []
-
-            data = resp.json()
-            raw_users = data.get("_embedded", {}).get("users", [])
             active_users: list[dict[str, Any]] = []
 
             for u in raw_users:
@@ -107,13 +121,21 @@ async def fetch_bitrix24_users(webhook_url: str, timeout: float = 8.0) -> list[d
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.post(url, json=params)
-            if resp.status_code != 200:
-                logger.warning(f"Bitrix24 user.get returned HTTP {resp.status_code}: {resp.text[:160]}")
+            # Bitrix24 answers with 50 users and a "next" offset: read them all (see fetch_amocrm_users for why).
+            raw_users: list[dict[str, Any]] = []
+            for _ in range(_MAX_PAGES):
+                resp = await client.post(url, json=params)
+                if resp.status_code != 200:
+                    logger.warning(f"Bitrix24 user.get returned HTTP {resp.status_code}: {resp.text[:160]}")
+                    return []
+                data = resp.json()
+                raw_users.extend(data.get("result", []))
+                if data.get("next") is None:
+                    break
+                params = {**params, "start": data["next"]}
+            else:
+                logger.warning(f"Bitrix24 user.get has more than {_MAX_PAGES} pages, the list is not trusted")
                 return []
-
-            data = resp.json()
-            raw_users = data.get("result", [])
             active_users: list[dict[str, Any]] = []
 
             for u in raw_users:
