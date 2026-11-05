@@ -12,12 +12,13 @@ import requests
 from datetime import datetime, timedelta, timezone
 from ipaddress import ip_address, ip_network
 from pathlib import Path
+from collections.abc import Sequence
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import DateTime, bindparam, text
 from sqlalchemy.orm import Session
 
@@ -32,9 +33,11 @@ from ..cache_client import (
     set_cached_json_sync,
 )
 from ..schemas import SpeechEvaluationRequest
+from ..services import call_audio
 from ..services.audio_duration import mp3_duration_seconds
+from ..services.call_audit_extras import audit_extras, clean_audio_url, has_audio, pick_extras
 from ..services.call_manager import in_crm_team, resolve_call_manager
-from ..services.call_scorecard import call_texts, read_scorecard
+from ..services.call_scorecard import MAY_NOT_APPLY, call_texts, read_scorecard, scaled_score
 from ..services.raw_calls_row import build_raw_calls_row
 from ..services.tz import local_str, tenant_tz, to_local
 from ..services.crm_deal_normalizer import parse_numeric_price
@@ -155,13 +158,29 @@ class CallIngestPayload(BaseModel):
     audit_failed: int | None = None  # the AI could not read the call
     is_unanswered: int | None = None  # nobody talked: IVR, voicemail, a drop
     zoom_scheduled: int | None = None
-    cr: list[int] | None = None
+    cr: Sequence[int | None] | None = None  # None = the criterion did not apply to this call (CR5, CR6, CR13 only)
     error_summary: str | None = None
     recommendation: str | None = None
     transcript: str | None = None
+    # Audit contract v2 (docs/audit/spec_contract_v2.md). Passed/applicable are derived from `cr`, not taken from n8n.
+    audio_url: str | None = None  # stays on the server: the cabinet plays it through /calls/{id}/audio
+    call_type: str | None = None
+    summary: str | None = None
+    evidence: dict[str, Any] | None = None  # {"cr1": {"why": "...", "quote": "..."}, ...}
+    ended_by: str | None = None
+    reached_decision_maker: bool | None = None
+    audit_model: str | None = None
+    audit_version: int | None = None
     sync_to_sheets: bool = True
     # Required: a call without a tenant must never silently land in another client's data.
     tenant_id: str
+
+    @field_validator("cr")
+    @classmethod
+    def only_cr5_cr6_cr13_may_be_null(cls, value: Sequence[int | None] | None) -> Sequence[int | None] | None:
+        if value is not None and len(value) == 13 and any(v is None and i not in MAY_NOT_APPLY for i, v in enumerate(value)):
+            raise ValueError("only CR5, CR6 and CR13 may be null")
+        return value
 
 
 def parse_call_time(value: Any) -> datetime | None:
@@ -177,7 +196,7 @@ def call_view(payload: CallIngestPayload) -> dict[str, Any]:
     has_cr = bool(payload.cr and len(payload.cr) == 13)
     if has_cr:
         cr: list[int | None] = [int(x) if x is not None else None for x in payload.cr]  # type: ignore[union-attr]
-        score = payload.score if payload.score is not None else sum(c for c in cr if c is not None)
+        score = payload.score if payload.score is not None else scaled_score(cr)
         next_step = payload.next_step if payload.next_step is not None else cr[0]
     else:
         cr, score, next_step = [None] * 13, None, None
@@ -655,10 +674,15 @@ def _format_db_call(c: CallRecording, tenant_cfg: dict[str, Any] | None, call_tz
             parse_call_time(sc.get("call_started_at")) or cast("datetime | None", c.created_at), call_tz
         ),
         "cr": card["cr"],
+        "passed": card["passed"],
+        "applicable": card["applicable"],
         "zoom_scheduled": card["zoom_scheduled"],
         "error_summary": error_summary,
         "recommendation": recommendation,
-        "transcript": c.transcript_text or ""
+        "transcript": c.transcript_text or "",
+        **pick_extras(sc),
+        # The link itself never leaves the server (it may be signed): the player asks /calls/{id}/audio.
+        "has_audio": has_audio(sc, c.audio_s3_url),
     }
 
 
@@ -789,6 +813,7 @@ async def ingest_call_from_n8n(
 
     card = call_view(payload)
     cr_list, score, next_step = card["cr"], card["score"], card["next_step"]
+    audio_url = clean_audio_url(payload.audio_url)
     status, status_label, risk_amt = card["status"], card["status_label"], card["risk_amount"]
 
     formatted_call = {
@@ -811,10 +836,14 @@ async def ingest_call_from_n8n(
         "audit_failed": 1 if card["kind"] == "audit_failed" else 0,
         "is_unanswered": 1 if card["kind"] == "unanswered" else 0,
         "cr": cr_list,
+        "passed": card["passed"],
+        "applicable": card["applicable"],
         "zoom_scheduled": payload.zoom_scheduled,
         "error_summary": payload.error_summary or "",
         "recommendation": payload.recommendation or "",
-        "transcript": payload.transcript or ""
+        "transcript": payload.transcript or "",
+        **audit_extras(payload),
+        "has_audio": has_audio(None, audio_url),
     }
 
     sheets_synced = False
@@ -828,12 +857,18 @@ async def ingest_call_from_n8n(
             (CallRecording.id == call_id) | (CallRecording.external_call_id == call_id)
         ).first()
         if db_call:
+            if not audio_url:  # a re-audit without a link keeps the recording it already had
+                kept: dict[str, Any] = db_call.scorecard_criteria if isinstance(db_call.scorecard_criteria, dict) else {}
+                audio_url = clean_audio_url(kept.get("audio_url")) or cast("str | None", db_call.audio_s3_url)
+                formatted_call["has_audio"] = has_audio(None, audio_url)
             setattr(db_call, "transcript_text", payload.transcript or getattr(db_call, "transcript_text", ""))
             setattr(db_call, "ai_summary", payload.error_summary or getattr(db_call, "ai_summary", ""))
             setattr(db_call, "next_action_extracted", payload.recommendation or getattr(db_call, "next_action_extracted", ""))
             if score is not None:
                 setattr(db_call, "overall_score", float(score))
-            setattr(db_call, "scorecard_criteria", formatted_call)
+            setattr(db_call, "scorecard_criteria", {**formatted_call, **({"audio_url": audio_url} if audio_url else {})})
+            if audio_url and len(audio_url) <= 512:  # the column is VARCHAR(512); the full link is in the scorecard
+                setattr(db_call, "audio_s3_url", audio_url)
             setattr(db_call, "duration_seconds", dur_sec)
             db.commit()
         else:
@@ -916,7 +951,8 @@ async def ingest_call_from_n8n(
                 ai_summary=payload.error_summary or "",
                 next_action_extracted=payload.recommendation or "",
                 overall_score=float(score) if score is not None else 0.0,
-                scorecard_criteria=formatted_call,
+                scorecard_criteria={**formatted_call, **({"audio_url": audio_url} if audio_url else {})},
+                audio_s3_url=audio_url if audio_url and len(audio_url) <= 512 else None,
                 reverse_etl_synced=True,
             )
             db.add(db_call)
@@ -1069,6 +1105,11 @@ def new_audio_filename(tenant_id: str, file_ext: str) -> str:
     return f"{tenant_id.strip().lower()}_{uuid.uuid4().hex}{file_ext}"
 
 
+def _audio_media_type(name: str) -> str:
+    ext = name.lower().rsplit(".", 1)[-1]
+    return {"wav": "audio/wav", "ogg": "audio/ogg", "m4a": "audio/mp4"}.get(ext, "audio/mpeg")
+
+
 @router.get("/audio/{filename}", include_in_schema=False)
 def serve_audio_file(filename: str):
     """Public audio file serving for n8n and telephony players."""
@@ -1076,14 +1117,44 @@ def serve_audio_file(filename: str):
     audio_path = AUDIO_STORAGE_DIR / safe_name
     if not audio_path.exists() or not audio_path.is_file():
         raise HTTPException(status_code=404, detail="Audio file not found")
-    media_type = "audio/mpeg"
-    if safe_name.lower().endswith(".wav"):
-        media_type = "audio/wav"
-    elif safe_name.lower().endswith(".ogg"):
-        media_type = "audio/ogg"
-    elif safe_name.lower().endswith(".m4a"):
-        media_type = "audio/mp4"
-    return FileResponse(audio_path, media_type=media_type)
+    return FileResponse(audio_path, media_type=_audio_media_type(safe_name))
+
+
+@router.get("/{call_id}/audio", include_in_schema=False)
+async def play_call_audio(
+    call_id: str,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    The recording of one call for the cabinet player. Only the client's own calls (an admin sees all); a call of
+    another client answers 404, the same as a call without a recording. See services/call_audio.py for the proxy rules.
+    """
+    row = db.query(CallRecording).filter(CallRecording.id == call_id).first()
+    is_admin = current_user.tenant_id == "*" or current_user.role == UserRole.ADMIN
+    if row is None or (not is_admin and str(row.tenant_id).upper() != str(current_user.tenant_id).upper()):
+        raise HTTPException(status_code=404, detail="Запись недоступна")
+    sc: dict[str, Any] = row.scorecard_criteria if isinstance(row.scorecard_criteria, dict) else {}
+    url = clean_audio_url(sc.get("audio_url")) or cast("str | None", row.audio_s3_url)
+    if not url:
+        raise HTTPException(status_code=404, detail="Запись недоступна")
+    db.close()  # the stream can last minutes on slow telephony storage: it must not hold a pooled connection
+
+    local = call_audio.local_file(url, AUDIO_STORAGE_DIR)
+    if local:
+        return FileResponse(local, media_type=_audio_media_type(local.name))
+    try:
+        resp, client = await call_audio.open_remote(url, request.headers.get("range"))
+    except call_audio.AudioUnavailable as err:
+        logger.info(f"Recording of call {call_id} is not playable: {err}")  # never the link: it may be signed
+        raise HTTPException(status_code=404, detail="Запись недоступна")
+    return StreamingResponse(
+        call_audio.stream_body(resp, client),
+        status_code=resp.status_code,
+        media_type=call_audio.media_type(resp),
+        headers=call_audio.response_headers(resp),
+    )
 
 
 @router.post("/inject-amocrm")

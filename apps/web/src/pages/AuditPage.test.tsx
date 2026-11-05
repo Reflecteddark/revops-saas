@@ -18,6 +18,7 @@ import type { Call } from '@/types/api';
 vi.mock('@/lib/api', () => ({
   callsApi: {
     list: vi.fn(),
+    audio: vi.fn(),
   },
 }));
 
@@ -50,7 +51,7 @@ const mockCalls: Call[] = [
     error_summary: 'Не уточнил дедлайн',
     recommendation: 'Зафиксировать сроки',
     transcript: 'Транскрипт тестового звонка ООО АгроХим',
-    audio_url: 'https://storage.example.com/audio1.mp3',
+    has_audio: true,
   },
   {
     id: 'call-2',
@@ -138,6 +139,107 @@ describe('AuditPage', () => {
 
     expect(screen.getByTestId('audit-call-transcript')).toHaveTextContent('Транскрипт тестового звонка ООО АгроХим');
     expect(screen.getByTestId('audit-call-audio-player')).toBeInTheDocument();
+  });
+
+  it('plays the recording through the server, and the page never holds the stored link', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    vi.mocked(callsApi.audio).mockResolvedValue(new Blob(['mp3'], { type: 'audio/mpeg' }));
+    URL.createObjectURL = vi.fn(() => 'blob:fake-audio');
+    URL.revokeObjectURL = vi.fn();
+
+    renderWithClient(<AuditPage />);
+    fireEvent.click(await screen.findByText('ООО АгроХим'));
+    fireEvent.click(await screen.findByTestId('audit-call-audio-player-play'));
+
+    const audio = await screen.findByTestId('audit-call-audio-player-audio');
+    expect(callsApi.audio).toHaveBeenCalledWith('call-1');
+    expect(audio).toHaveAttribute('src', 'blob:fake-audio');
+  });
+
+  it('says so when the recording cannot be played, and offers to try again', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+    vi.mocked(callsApi.audio).mockRejectedValue(new Error('404'));
+
+    renderWithClient(<AuditPage />);
+    fireEvent.click(await screen.findByText('ООО АгроХим'));
+    fireEvent.click(await screen.findByTestId('audit-call-audio-player-play'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Запись недоступна');
+    expect(screen.getByTestId('audit-call-audio-player-play')).toHaveTextContent('Повторить');
+  });
+
+  it('shows no player for a call without a recording', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue(mockCalls);
+
+    renderWithClient(<AuditPage />);
+    fireEvent.click(await screen.findByText('АО СтройМаш'));
+
+    await screen.findByTestId('audit-dialog');
+    expect(screen.queryByTestId('audit-call-audio-player')).not.toBeInTheDocument();
+  });
+
+  it('shows what the call was about, the basis of the score, and "н/п" for a criterion that did not apply', async () => {
+    const cr = [1, 1, 0, 1, null, 0, 1, 1, 1, 0, 1, 1, null] as Call['cr'];
+    vi.mocked(callsApi.list).mockResolvedValue([
+      { ...mockCalls[0], cr, score: 9, passed: 8, applicable: 11, summary: 'Клиент просит КП до пятницы' },
+    ]);
+
+    renderWithClient(<AuditPage />);
+    fireEvent.click(await screen.findByText('ООО АгроХим'));
+
+    expect(await screen.findByTestId('audit-call-summary')).toHaveTextContent('Клиент просит КП до пятницы');
+    expect(screen.getByTestId('cr-basis')).toHaveTextContent('Пройдено 8 из 11 применимых');
+    expect(screen.getByTestId('cr-item-5')).toHaveTextContent('н/п');
+    expect(screen.getByTestId('cr-item-13')).toHaveTextContent('н/п');
+    expect(screen.getByTestId('cr-item-5')).toHaveClass('text-muted-foreground');
+    // CR3 has no "did not apply": null there is only missing data
+    expect(screen.getByTestId('cr-item-3')).toHaveTextContent('0');
+  });
+
+  it('opens the reason and the quote of a criterion on click', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue([
+      {
+        ...mockCalls[0],
+        evidence: { cr1: { why: 'Назвал день и время', quote: 'созвонимся в четверг в 15:00' } },
+      },
+    ]);
+
+    renderWithClient(<AuditPage />);
+    fireEvent.click(await screen.findByText('ООО АгроХим'));
+    await screen.findByTestId('cr-criteria-grid');
+
+    expect(screen.queryByTestId('cr-detail-1')).not.toBeInTheDocument();
+    fireEvent.click(within(screen.getByTestId('cr-item-1')).getByRole('button'));
+    expect(screen.getByTestId('cr-detail-1')).toHaveTextContent('Назвал день и время');
+    expect(screen.getByTestId('cr-detail-1')).toHaveTextContent('«созвонимся в четверг в 15:00»');
+
+    // a criterion without a recorded reason does not pretend to open
+    expect(within(screen.getByTestId('cr-item-2')).getByRole('button')).toBeDisabled();
+  });
+
+  it('explains "н/п" when the AI gave no reason', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue([
+      { ...mockCalls[0], cr: [1, 1, 1, 1, null, 1, 1, 1, 1, 1, 1, 1, 1] as Call['cr'], passed: 12, applicable: 12 },
+    ]);
+
+    renderWithClient(<AuditPage />);
+    fireEvent.click(await screen.findByText('ООО АгроХим'));
+    await screen.findByTestId('cr-criteria-grid');
+
+    fireEvent.click(within(screen.getByTestId('cr-item-5')).getByRole('button'));
+    expect(screen.getByTestId('cr-detail-5')).toHaveTextContent('клиент не говорил, что дорого');
+  });
+
+  it('does not call a criterion of an unanswered call "н/п"', async () => {
+    vi.mocked(callsApi.list).mockResolvedValue([missedCall({ id: 'm-1', manager: 'Иван Петров', client: 'Автоответчик', cr: Array(13).fill(null) as Call['cr'] })]);
+
+    renderWithClient(<AuditPage />);
+    fireEvent.click(await screen.findByText('Автоответчик'));
+    await screen.findByTestId('cr-criteria-grid');
+
+    expect(screen.getByTestId('cr-item-5')).toHaveTextContent('—');
+    expect(screen.getByTestId('cr-item-5')).not.toHaveTextContent('н/п');
+    expect(screen.queryByTestId('cr-basis')).not.toBeInTheDocument();
   });
 
   it('visualizes 13 CR criteria correctly: 1 as green, 0 as red, null as gray', async () => {

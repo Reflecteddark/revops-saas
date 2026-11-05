@@ -15,7 +15,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  Volume2,
   ChevronDown,
   ChevronUp,
   Sparkles,
@@ -25,6 +24,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { CallAudioPlayer } from '@/components/CallAudioPlayer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { dealsApi } from '@/lib/api';
 import {
@@ -408,19 +408,7 @@ export function DealDetailsDrawer({
                       {isExpanded && (
                         <div className="bg-background/50 space-y-4 border-t border-subtle p-4">
                           {/* Audio Player if URL exists */}
-                          {c.audio_s3_url && (
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-1.5 text-xs text-tertiary">
-                                <Volume2 className="h-3.5 w-3.5 text-primary" />
-                                <span>Запись звонка:</span>
-                              </div>
-                              <audio
-                                controls
-                                className="h-8 w-full"
-                                src={c.audio_s3_url}
-                              />
-                            </div>
-                          )}
+                          <CallAudioPlayer callId={c.id} hasAudio={c.has_audio} testId={`deal-call-audio-${c.id}`} />
 
                           {/* 13 B2B Audit Criteria Scorecard Grid */}
                           {criteriaList.length > 0 && (
@@ -435,7 +423,7 @@ export function DealDetailsDrawer({
                                     criteriaList.filter((cr) => cr.passed)
                                       .length
                                   }{' '}
-                                  / 13 пройдено
+                                  / {criteriaList.filter((cr) => !cr.notApplicable).length} пройдено
                                 </span>
                               </div>
                               <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
@@ -444,15 +432,19 @@ export function DealDetailsDrawer({
                                     key={crit.id}
                                     className={cn(
                                       'flex items-center justify-between rounded border px-2.5 py-1.5 text-[11px]',
-                                      crit.passed
-                                        ? 'border-emerald-500/25 bg-emerald-500/5 text-emerald-300'
-                                        : 'border-rose-500/25 bg-rose-500/5 text-rose-300'
+                                      crit.notApplicable
+                                        ? 'border-subtle bg-hover/40 text-tertiary'
+                                        : crit.passed
+                                          ? 'border-emerald-500/25 bg-emerald-500/5 text-emerald-300'
+                                          : 'border-rose-500/25 bg-rose-500/5 text-rose-300'
                                     )}
                                   >
                                     <span className="truncate pr-1.5 font-medium">
                                       {crit.name}
                                     </span>
-                                    {crit.passed ? (
+                                    {crit.notApplicable ? (
+                                      <span className="shrink-0 font-mono">н/п</span>
+                                    ) : crit.passed ? (
                                       <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
                                     ) : (
                                       <XCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />

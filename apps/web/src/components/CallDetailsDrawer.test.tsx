@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { CallDetailsDrawer } from './CallDetailsDrawer';
 import type { Call } from '@/types/api';
@@ -48,6 +48,32 @@ describe('CallDetailsDrawer', () => {
     expect(transcript).toHaveTextContent('счет оплатим завтра утром');
 
     expect(screen.getByTestId('cr-criteria-grid')).toBeInTheDocument();
+  });
+
+  it('shows "н/п", the basis of the score, the summary and the reason of a criterion', () => {
+    const call: Call = {
+      ...mockCall,
+      cr: [1, 1, 1, 1, null, 1, 1, 1, 1, 1, 1, 1, null],
+      passed: 11,
+      applicable: 11,
+      summary: 'Клиент готов платить, ждёт счёт',
+      evidence: { cr1: { why: 'Назначил созвон', quote: 'в четверг в три' } },
+    };
+    render(<CallDetailsDrawer call={call} open={true} onOpenChange={vi.fn()} />);
+
+    expect(screen.getByTestId('drawer-call-summary')).toHaveTextContent('Клиент готов платить, ждёт счёт');
+    expect(screen.getByTestId('cr-basis')).toHaveTextContent('Пройдено 11 из 11 применимых');
+    expect(screen.getByTestId('cr-item-5')).toHaveTextContent('н/п');
+    fireEvent.click(within(screen.getByTestId('cr-item-1')).getByRole('button'));
+    expect(screen.getByTestId('cr-detail-1')).toHaveTextContent('«в четверг в три»');
+  });
+
+  it('has a player only for a call that has a recording', () => {
+    const { rerender } = render(<CallDetailsDrawer call={{ ...mockCall, has_audio: true }} open={true} onOpenChange={vi.fn()} />);
+    expect(screen.getByTestId('drawer-call-audio-player-play')).toBeInTheDocument();
+
+    rerender(<CallDetailsDrawer call={{ ...mockCall, has_audio: false }} open={true} onOpenChange={vi.fn()} />);
+    expect(screen.queryByTestId('drawer-call-audio-player')).not.toBeInTheDocument();
   });
 
   it('does not render content when open is false', () => {

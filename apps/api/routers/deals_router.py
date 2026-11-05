@@ -28,6 +28,7 @@ from ..cache_client import (
     get_cached_json_sync,
     set_cached_json_sync,
 )
+from ..services.call_audit_extras import has_audio, without_audio_link
 from ..services.crm_deal_normalizer import parse_numeric_price
 from ..services.deal_keys import dedupe_same_crm_deals, deal_pk_for, find_tenant_deal
 from ..services.deal_sla import deal_sla_state, end_of_local_day_utc
@@ -1043,11 +1044,11 @@ async def get_deal_details(
                 "duration_str": f"{c.duration_seconds // 60}:{c.duration_seconds % 60:02d}",
                 "status": c.status,
                 "overall_score": float(c.overall_score or 0.0),
-                "scorecard_criteria": c.scorecard_criteria or {},
+                "scorecard_criteria": without_audio_link(c.scorecard_criteria),
                 "transcript_text": c.transcript_text or "",
                 "ai_summary": c.ai_summary or "",
                 "next_action_extracted": c.next_action_extracted or "",
-                "audio_s3_url": c.audio_s3_url,
+                "has_audio": has_audio(c.scorecard_criteria, c.audio_s3_url),  # played through /calls/{id}/audio
                 "created_at": c.created_at.isoformat() if c.created_at else "",
             }
             for c in calls

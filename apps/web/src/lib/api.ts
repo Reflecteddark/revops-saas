@@ -292,6 +292,12 @@ export const callsApi = {
     }
     return [];
   },
+
+  /** The recording of a call (the server fetches it; the browser gets only the audio). */
+  audio: async (callId: string): Promise<Blob> => {
+    const res = await api.get<Blob>(`/calls/${encodeURIComponent(callId)}/audio`, { responseType: 'blob' });
+    return res.data;
+  },
 };
 
 export const settingsApi = {

@@ -17,6 +17,7 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 
+from ..services.call_scorecard import valid_cr
 from ..services.crm_deal_normalizer import (
     normalize_amocrm_deal,
     normalize_bitrix24_deal,
@@ -298,7 +299,7 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
         dur_sec = int(body.get("duration_sec") or 0)
 
         cr_arg = body.get("cr")
-        safe_cr_payload = None if (cr_arg is None or any(c is None for c in cr_arg)) else cr_arg
+        safe_cr_payload = cr_arg if valid_cr(cr_arg) else None
 
         call_payload = CallIngestPayload(
             id=call_id,
@@ -737,7 +738,7 @@ async def _process_telephony_call(
     score = int(body.get("score")) if body.get("score") is not None else None
     next_step = int(body.get("next_step")) if body.get("next_step") is not None else None
     cr = body.get("cr") if body.get("cr") and len(body.get("cr")) == 13 else None
-    safe_cr_payload = None if (cr is None or any(c is None for c in cr)) else cr
+    safe_cr_payload = cr if valid_cr(cr) else None
 
     call_payload = CallIngestPayload(
         id=call_id,
@@ -945,7 +946,7 @@ async def replay_webhook(
     next_step = int(raw_next_step) if raw_next_step is not None else None
     raw_cr = replay_payload.get("cr")
     cr = raw_cr if isinstance(raw_cr, list) and len(raw_cr) == 13 else None
-    safe_cr_payload = None if (cr is None or any(c is None for c in cr)) else cr
+    safe_cr_payload = cr if valid_cr(cr) else None
 
     call_payload = CallIngestPayload(
         id=call_id,

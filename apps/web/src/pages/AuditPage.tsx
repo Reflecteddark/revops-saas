@@ -14,6 +14,8 @@ import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ClipboardCheck, Filter, Download, PhoneOff, TriangleAlert } from 'lucide-react';
+import { CallAudioPlayer } from '@/components/CallAudioPlayer';
+import { CallCriteriaChecklist } from '@/components/CallCriteriaChecklist';
 import { DataTable } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -533,14 +535,9 @@ export function AuditPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {(selectedCall?.audio_url || selectedCall?.audio_s3_url) && (
-            <div className="mt-3 rounded-lg border border-subtle bg-hover p-3">
-              <audio
-                controls
-                className="h-8 w-full"
-                src={selectedCall?.audio_url || selectedCall?.audio_s3_url}
-                data-testid="audit-call-audio-player"
-              />
+          {selectedCall && (
+            <div className="mt-3">
+              <CallAudioPlayer callId={selectedCall.id} hasAudio={selectedCall.has_audio} testId="audit-call-audio-player" />
             </div>
           )}
 
@@ -569,34 +566,17 @@ export function AuditPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" data-testid="cr-criteria-grid">
-                {Array.from({ length: 13 }).map((_, idx) => {
-                  const val = selectedCall?.cr?.[idx];
-                  const label = CR_LABELS[idx] || `Критерий ${idx + 1}`;
-                  const colorClass =
-                    val === 1
-                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                      : val === 0
-                        ? 'bg-red-500/10 border-red-500/20 text-red-500'
-                        : 'bg-hover border-subtle text-muted-foreground';
-
-                  return (
-                    <div
-                      key={idx}
-                      data-testid={`cr-item-${idx + 1}`}
-                      title={CR_DEFINITIONS[idx]?.description}
-                      className={`flex cursor-help items-center justify-between rounded-md border p-2 text-xs transition-colors ${colorClass}`}
-                    >
-                      <div className="flex items-center space-x-2 truncate">
-                        <span className="shrink-0 font-mono font-bold">CR{idx + 1}</span>
-                        <span className="truncate text-foreground/90">{label}</span>
-                      </div>
-                      <span className="ml-2 shrink-0 font-mono font-bold">{val === 1 ? '1' : val === 0 ? '0' : '—'}</span>
-                    </div>
-                  );
-                })}
-              </div>
+              {selectedCall && <CallCriteriaChecklist call={selectedCall} />}
             </div>
+
+            {selectedCall?.summary && kind === 'assessed' && (
+              <div>
+                <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Суть звонка</h4>
+                <p className="rounded-md border border-subtle bg-hover p-3 text-xs text-foreground" data-testid="audit-call-summary">
+                  {selectedCall.summary}
+                </p>
+              </div>
+            )}
 
             {selectedCall?.error_summary && (
               <div>

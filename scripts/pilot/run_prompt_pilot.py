@@ -89,16 +89,16 @@ def load_calls(max_calls):
 RETRY_HTTP = (429, 500, 502, 503, 504, 520, 521, 522, 523, 524)  # 52x = the Cloudflare proxy timed out; 503 = model overloaded
 
 
-def call_gemini(variant, prompt, audio_b64, retries=4):
+def call_gemini(variant, prompt, audio_b64, model=MODEL, retries=4):
     body = {
         "contents": [{"parts": [{"inline_data": {"mime_type": "audio/mpeg", "data": audio_b64}}, {"text": prompt}]}],
         "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"},
     }
-    if variant == "B":  # contract v2 also fixes the answer's shape; A stays exactly as production runs it
+    if variant.startswith("B"):  # contract v2 also fixes the answer's shape; A stays exactly as production runs it
         # No maxOutputTokens: the "thinking" tokens count against it (a probe call spent 15 360 of 16 000 on thinking and
         # its answer was cut off), and A runs without one in production.
         body["generationConfig"]["responseSchema"] = SCHEMA_B
-    url = f"{GEMINI_PROXY_URL}/v1beta/models/{MODEL}:generateContent?key={GEMINI_PROXY_KEY}"
+    url = f"{GEMINI_PROXY_URL}/v1beta/models/{model}:generateContent?key={GEMINI_PROXY_KEY}"
     last = None
     for attempt in range(retries):
         t0 = time.time()
@@ -132,6 +132,7 @@ def main():
     ap.add_argument("--runs", type=int, default=2)
     ap.add_argument("--max-calls", type=int, default=0)
     ap.add_argument("--sleep", type=float, default=3.0)
+    ap.add_argument("--model", default=MODEL, help="Gemini model; the default is the first model of node 17")
     ap.add_argument("--plan", action="store_true", help="list the plan, call nothing")
     args = ap.parse_args()
 
@@ -149,10 +150,21 @@ def main():
     print(f"calls with a recording: {len(calls)} | variants {list(prompts)} | runs {args.runs} | to do {len(plan)} | done {len(done)}", flush=True)
     if args.plan:
         return
+    quota_hits = 0
     for n, (run, c, v) in enumerate(plan, 1):
         audio_b64 = base64.b64encode(c["path"].read_bytes()).decode()
-        res = call_gemini(v, prompts[v].replace("{CALL_DATE}", c["date"]), audio_b64)
-        rec = {"call_id": c["id"], "variant": v, "run": run, "model_requested": MODEL, "audio_bytes": c["path"].stat().st_size, **res}
+        res = call_gemini(v, prompts[v].replace("{CALL_DATE}", c["date"]), audio_b64, args.model)
+        if res.get("http") != 200:
+            # A failure is not a result: it is not written, so the next start repeats it. Three quota answers in a row
+            # mean the quota is gone: stop instead of burning the retries.
+            quota_hits = quota_hits + 1 if res.get("http") == 429 else 0
+            print(f"[{n}/{len(plan)}] {v} run{run} http={res.get('http')} NOT SAVED", flush=True)
+            if quota_hits >= 3:
+                print("quota exhausted: stopping (run again later, finished calls are kept)", flush=True)
+                return
+            continue
+        quota_hits = 0
+        rec = {"call_id": c["id"], "variant": v, "run": run, "model_requested": args.model, "audio_bytes": c["path"].stat().st_size, **res}
         with results.open("a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
         u = res.get("usage") or {}
