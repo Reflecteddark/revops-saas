@@ -393,6 +393,8 @@ export interface Settings {
   telegram: TelegramConfig;
   modules: ModuleFlag[];
   autonomy?: AutonomyConfig;
+  // set only on the answer of a save: 'partial_ok' = saved in the cabinet, the Google Sheet write failed
+  save_status?: 'ok' | 'partial_ok';
 }
 
 export interface CrmSyncManagersResponse {
@@ -401,7 +403,7 @@ export interface CrmSyncManagersResponse {
   crm_type: string;
   added_count: number;
   total_count: number;
-  managers: ManagerConfig[];
+  managers?: ManagerConfig[]; // absent when status is 'skipped' (the page-load sync ran recently)
 }
 
 export type SettingsResponse = Settings;

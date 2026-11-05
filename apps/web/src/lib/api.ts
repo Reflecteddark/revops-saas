@@ -317,7 +317,10 @@ export const settingsApi = {
     >('/settings', payload);
     const data = res.data;
     if ('settings' in data && data.settings) {
-      return data.settings as Settings;
+      return {
+        ...(data.settings as Settings),
+        save_status: data.status === 'partial_ok' ? 'partial_ok' : 'ok',
+      };
     }
     return data as Settings;
   },
@@ -401,13 +404,15 @@ export const settingsApi = {
     return res.data;
   },
 
+  // auto = the page-load call: the server runs it at most once per 10 minutes, the button always runs
   syncCrmManagers: async (
-    tenantId: string
+    tenantId: string,
+    auto: boolean = false
   ): Promise<CrmSyncManagersResponse> => {
     const res = await api.post<CrmSyncManagersResponse>(
       '/settings/managers/sync',
       null,
-      { params: { tenant_id: tenantId } }
+      { params: auto ? { tenant_id: tenantId, auto: true } : { tenant_id: tenantId } }
     );
     return res.data;
   },

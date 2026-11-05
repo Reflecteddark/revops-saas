@@ -22,6 +22,7 @@ vi.mock('@/lib/api', () => ({
     updateManagers: vi.fn(),
     updateTelegram: vi.fn(),
     updateModules: vi.fn(),
+    syncCrmManagers: vi.fn(),
   },
 }));
 
@@ -688,6 +689,62 @@ describe('SettingsPage', () => {
         ])
       );
     });
+  });
+
+  it('says "saved" plainly when the sheet write worked', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue({
+      ...mockSettings,
+      save_status: 'ok',
+    });
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+
+    expect(
+      await screen.findByText(/Общие параметры и план продаж сохранены!/)
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/не удалось/)).not.toBeInTheDocument();
+  });
+
+  it('warns that the Google Sheet was not written instead of claiming a sync', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.updateGeneral).mockResolvedValue({
+      ...mockSettings,
+      save_status: 'partial_ok',
+    });
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Сохранить план/i }));
+
+    expect(
+      await screen.findByText(/записать в Google Таблицу не удалось/)
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/синхронизированы/)).not.toBeInTheDocument();
+  });
+
+  it('asks for the page-load sync as automatic and keeps the managers table when the server skips it', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
+    vi.mocked(settingsApi.syncCrmManagers).mockResolvedValue({
+      status: 'skipped',
+      message: 'Команда уже синхронизирована с CRM недавно',
+      crm_type: '',
+      added_count: 0,
+      total_count: 0,
+      managers: [],
+    });
+
+    renderWithClient(<SettingsPage />);
+    expect(await screen.findByText('RevOps Демо')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(settingsApi.syncCrmManagers).toHaveBeenCalledWith('TNT-001', true);
+    });
+
+    fireEvent.keyDown(screen.getByTestId('tab-managers'), { key: 'Enter' });
+    const name = (await screen.findByTestId('input-manager-name-m1')) as HTMLInputElement;
+    expect(name.value).toBe('Сергей Иванов');
   });
 });
 
