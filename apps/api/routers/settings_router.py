@@ -55,6 +55,23 @@ def _clean_currency(raw: str, default: str) -> str:
     return default
 
 
+def _autonomy_for(tenant_id: str) -> dict[str, bool]:
+    """The autonomy flags the AI engine really obeys (the policy registry behind PATCH /settings/autonomy).
+    The registry JSON never held them, so /settings used to show a passive mode for an autonomous tenant."""
+    try:
+        from packages.antidrift.contracts.policy_config import TenantPolicyRegistry
+
+        cfg = TenantPolicyRegistry.get_config(tenant_id)
+        return {
+            "allow_crm_mutations": bool(cfg.allow_crm_mutations),
+            "enable_telegram_notifications": bool(cfg.enable_telegram_notifications),
+            "allow_client_communication": bool(cfg.allow_client_communication),
+        }
+    except Exception as e:
+        logger.warning(f"Could not read the autonomy policy of {tenant_id}: {e}")
+        return {"allow_crm_mutations": False, "enable_telegram_notifications": False, "allow_client_communication": False}
+
+
 class GeneralSettings(BaseModel):
     # No invented defaults: a field the caller did not send must never be written anywhere
     # (a partial save used to overwrite the company name, currency, period and plan in the client's sheet).
@@ -338,7 +355,8 @@ def fetch_settings_from_sheets(tenant_id: str = "TNT-001", force_refresh: bool =
             "managers": managers if (managers or not is_master_or_template) else fallback_data["managers"],
             "loss_reasons": loss_reasons or fallback_data["loss_reasons"],
             "telegram": telegram,
-            "modules": modules or fallback_data["modules"]
+            "modules": modules or fallback_data["modules"],
+            "autonomy": _autonomy_for(clean_tenant),
         }
 
         _SETTINGS_CACHE[clean_tenant] = {
@@ -486,11 +504,7 @@ def get_tenant_settings_or_fallback(tenant_id: str = "TNT-001") -> dict[str, Any
         "loss_reasons": loss_reasons,
         "telegram": telegram,
         "modules": modules,
-        "autonomy": {
-            "allow_crm_mutations": bool((cfg.get("autonomy") or {}).get("allow_crm_mutations", cfg.get("allow_crm_mutations", False))),
-            "enable_telegram_notifications": bool((cfg.get("autonomy") or {}).get("enable_telegram_notifications", cfg.get("enable_telegram_notifications", False))),
-            "allow_client_communication": bool((cfg.get("autonomy") or {}).get("allow_client_communication", cfg.get("allow_client_communication", False)))
-        }
+        "autonomy": _autonomy_for(clean_tenant),
     }
 
 
@@ -968,6 +982,9 @@ def patch_autonomy_settings(
     st["autonomy"] = auto_block
     setattr(tenant_obj, 'settings', st)
     db.commit()
+    # /settings carries the autonomy flags and is cached for 15 s: the cabinet reloads it right after this call
+    for cache_key in {clean_tenant.upper(), str(tenant_obj.id).upper()}:
+        _SETTINGS_CACHE.pop(cache_key, None)
 
     t_id_str = str(tenant_obj.id)
     cfg = TenantPolicyRegistry.get_config(t_id_str, db=db)
