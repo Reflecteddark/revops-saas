@@ -499,6 +499,7 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
     now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
     # 1. UNCONDITIONAL LOCAL PERSISTENCE FIRST (registry + DB)
+    persist_failed = False
     try:
         from ..tenant_registry import load_tenants_registry, save_tenants_registry
         reg = load_tenants_registry()
@@ -547,24 +548,36 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                 if payload.modules is not None:
                     t["modules"] = [mod.model_dump() for mod in payload.modules]
 
-                save_tenants_registry(reg)
+                persist_failed = save_tenants_registry(reg) is False
                 break
     except Exception as e:
-        logger.warning(f"Failed to persist settings in local registry: {e}")
+        logger.error(f"Failed to persist settings in local registry: {e}")
+        persist_failed = True
 
-    # Immediately refresh cache for this tenant
+    if persist_failed:
+        # The cabinet's own copy is the one that counts: never answer "saved" when it was not.
+        raise HTTPException(status_code=500, detail="Не удалось сохранить настройки. Попробуйте ещё раз.")
+
+    mirrored = _mirror_to_google_sheet(payload, clean_tenant)
+
+    # Refresh the cache AFTER the sheet write: reading before it kept the old sheet values for the next 15 seconds.
     fresh_data = fetch_settings_from_sheets(tenant_id=clean_tenant, force_refresh=True)
     _SETTINGS_CACHE[clean_tenant] = {
         "data": fresh_data,
         "timestamp": time.time()
     }
+    return mirrored
 
-    # 2. GOOGLE SHEETS MIRROR (SAFE NON-BLOCKING)
+
+def _mirror_to_google_sheet(payload: SettingsPayload, clean_tenant: str) -> bool:
+    """Copies the saved settings into the client's Google Sheet (a safe, non-blocking mirror).
+    True: copied, or there is no sheet to copy to. False: the copy failed (the settings are saved in the cabinet)."""
     sa_path = get_service_account_path()
     if not sa_path:
         logger.info(f"service_account.json not found for settings save (tenant: {clean_tenant}); saved locally")
         return True
 
+    modules_failed = False
     try:
         import gspread
         gc = gspread.service_account(str(sa_path))
@@ -646,12 +659,13 @@ def save_settings_to_sheets(payload: SettingsPayload) -> bool:
                     ws_modules.batch_update(updates)
             except Exception as e:
                 logger.error(f"Failed to batch update modules: {e}")
+                modules_failed = True
 
-        return True
+        return not modules_failed
 
     except Exception as e:
         logger.warning(f"Google Sheets sync failed for {clean_tenant}, but local settings saved: {e}")
-        return True
+        return False
 
 
 # ============================================================================
@@ -743,7 +757,11 @@ async def save_settings(
 
     return {
         "status": "ok" if success else "partial_ok",
-        "message": "Настройки успешно сохранены в Google Таблицу и транслированы в систему",
+        "message": (
+            "Настройки сохранены в личном кабинете и в Google Таблице"
+            if success
+            else "Настройки сохранены в личном кабинете, но в Google Таблицу записать не удалось"
+        ),
         "settings": fresh_settings
     }
 
