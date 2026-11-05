@@ -18,8 +18,8 @@ from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from packages.database.models import CallRecording, Deal, DealStage, SubscriptionTier, Tenant, Workspace
-from packages.database.session import get_db
+from packages.database.models import CallRecording, Deal, DealStage, RevokedToken, SubscriptionTier, Tenant, Workspace
+from packages.database.session import SessionLocal, get_db
 
 import jwt
 from ..auth import ALGORITHM, SECRET_KEY
@@ -272,6 +272,21 @@ def get_deals_lookup(tenant_id: str = "TNT-001") -> dict[str, dict[str, Any]]:
     return _DEALS_CACHE.get(clean_tenant, {}).get("lookup", {})
 
 
+def _is_token_revoked(jti: Any) -> bool:
+    """A logged-out token (its jti is in revoked_tokens) must stop working here as well as in get_current_user."""
+    if not jti:
+        return False
+    try:
+        db = SessionLocal()
+        try:
+            return db.query(RevokedToken.id).filter(RevokedToken.jti == str(jti)).first() is not None
+        finally:
+            db.close()
+    except Exception as e:  # the blacklist lookup must not take the whole cabinet down with the database
+        logger.warning(f"Could not check token revocation: {e}")
+        return False
+
+
 def get_authenticated_tenant_or_verify_admin(request: Request, requested_tenant: str | None = None) -> str:
     """
     Extracts tenant_id strictly from auth-context (JWT token or admin context).
@@ -288,6 +303,8 @@ def get_authenticated_tenant_or_verify_admin(request: Request, requested_tenant:
     if token:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            if _is_token_revoked(payload.get("jti")):
+                raise HTTPException(status_code=401, detail="Токен отозван")
             user_tenant = str(payload.get("tenant_id") or "").strip().upper()
             role_val = str(payload.get("role") or "").lower()
             sub_val = str(payload.get("sub") or "").lower()

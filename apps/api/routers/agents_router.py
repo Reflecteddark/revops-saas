@@ -822,7 +822,7 @@ def list_pending_approvals(
     db: Session = Depends(get_db),
 ):
     clean_tenant = tenant_id.strip()
-    if current_user.role not in (UserRole.ADMIN, UserRole.CEO):
+    if current_user.role != UserRole.ADMIN:  # CEO owns one company, only the platform ADMIN crosses tenants
         if current_user.tenant_id not in ("*", clean_tenant):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cross-tenant access forbidden")
     """Lists pending Human-in-the-Loop approvals for a specific tenant."""
@@ -939,7 +939,7 @@ def decide_hitl_approval(
                 detail="Authentication required to decide HITL approval (Bearer token or valid HMAC signature)",
             )
 
-        if caller_user.role in (UserRole.ADMIN, UserRole.CEO):
+        if caller_user.role == UserRole.ADMIN:  # CEO goes through the same-tenant check below
             approver_id = str(payload.approver_id or caller_user.id)
             approver_role = str(payload.approver_role or caller_user.role.value)
         else:
