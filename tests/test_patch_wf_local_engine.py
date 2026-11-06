@@ -1,12 +1,22 @@
 import json
+import os
 from pathlib import Path
+
+import pytest
+
 from scripts.n8n.patch_wf_local_engine import patch_workflow
 
-FIXTURE_PATH = Path("C:/revops/n8n_data/workflows_live.json")
+# A dump of the live n8n workflows holds tokens, so it is never committed: the test runs only where the
+# owner points REVOPS_WORKFLOWS_LIVE at such a dump (the home PC), and is skipped in CI.
+_DUMP = os.getenv("REVOPS_WORKFLOWS_LIVE", "")
+FIXTURE_PATH = Path(_DUMP) if _DUMP else None
 
 
+@pytest.mark.skipif(
+    FIXTURE_PATH is None or not FIXTURE_PATH.exists(),
+    reason="set REVOPS_WORKFLOWS_LIVE to a dump of the live n8n workflows to run this test",
+)
 def test_patch_workflow_transforms_gemini_nodes_to_local_audit():
-    assert FIXTURE_PATH.exists(), f"Missing live workflows fixture at {FIXTURE_PATH}"
     wfs = json.load(open(FIXTURE_PATH, encoding="utf-8"))
     orig_wf = [w for w in wfs if w.get("id") == "Sh4JkQtMKVdeRJn5"][0]
 
