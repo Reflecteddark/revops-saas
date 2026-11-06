@@ -183,15 +183,17 @@ def _is_admin_request(request: Request, x_admin_key: str | None = None) -> bool:
 def list_tenants(
     request: Request,
     x_admin_key: str | None = Header(None, alias="X-Admin-Key"),
+    current_user: Any = Depends(get_current_tenant_user_or_admin),
 ):
-    """List all available client tenants for dynamic switcher.
-    Admins (with X-Admin-Key or admin cookie) receive full objects including spreadsheet_id.
-    Public callers receive only sanitized fields (tenant_id, tenant_name, status, crm_type).
+    """List available client tenants for dynamic switcher.
+    Admins receive full objects including spreadsheet_id.
+    Authenticated tenant users receive only their own company (without template or foreign tenants).
     """
     all_tenants = get_all_tenants_summary()
-    if _is_admin_request(request, x_admin_key):
+    if getattr(current_user, "is_admin", False) or _is_admin_request(request, x_admin_key):
         return all_tenants
 
+    user_tenant = (getattr(current_user, "tenant_id", "") or "").strip().upper()
     return [
         {
             "crm_type": t.get("crm_type"),
@@ -200,12 +202,18 @@ def list_tenants(
             "tenant_name": t.get("tenant_name"),
         }
         for t in all_tenants
+        if str(t.get("tenant_id", "")).strip().upper() == user_tenant
+        and not t.get("is_template")
+        and str(t.get("tenant_id", "")).strip().upper() != "TNT-CLEAN-001"
     ]
 
 
 @router.get("/summary")
-def get_tenants_summary():
-    """Summary of all tenants for n8n dispatcher and sync engines."""
+def get_tenants_summary(request: Request):
+    """Summary of all tenants for internal n8n dispatcher and admin callers."""
+    from .calls_router import verify_internal_or_admin
+    if not _is_admin_request(request):
+        verify_internal_or_admin(request)
     tenants = get_all_tenants_summary()
     return {"status": "ok", "tenants": tenants}
 
