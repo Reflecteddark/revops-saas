@@ -1632,7 +1632,8 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         or (f"https://docs.google.com/spreadsheets/d/{sh_id}/edit" if sh_id else None)
     )
     b24_wh_url = f"{N8N_WEBHOOK_BASE}/webhook/bitrix24-call?tenant={tenant_id}&secret={secret}"
-    wh_url = b24_wh_url
+    amo_wh_url = f"https://report.ai-rop.ru/api/v1/webhooks/{tenant_id}/amo-crm?secret={secret}"
+    wh_url = b24_wh_url if crm_type == "bitrix24" else amo_wh_url
 
     brief_lines = [
         f"Здравствуйте, {company_name}!",
@@ -1668,6 +1669,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         brief_lines.extend([
             "🔌 ПОДКЛЮЧЕНИЕ AMOCRM:",
             f"• Домен: {req.amo_domain or 'Укажите домен amoCRM в настройках'}",
+            f"• Входящий Webhook: {amo_wh_url}",
             "• Инструкция: amoCRM → Настройки → Интеграции → Создать интеграцию → Ключи и доступы → Долгосрочный токен; передайте токен и домен администратору",
             "• Интеграция: Прямой API v4 (Polling & Events) активен",
             "• Звонки и сделки синхронизируются автоматически!",

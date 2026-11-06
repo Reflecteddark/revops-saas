@@ -273,10 +273,12 @@ def get_tenant_passport(
 
     sa_email = "n8n-bot@n8n-sheets-508111.iam.gserviceaccount.com"
     base_domain = "https://report.ai-rop.ru"
+    secret = str(cfg.get("secret") or "").strip()
+    secret_suffix = f"?secret={secret}" if secret else ""
 
     telephony_webhook = f"{base_domain}/api/v1/webhooks/{clean_id}/call"
-    amocrm_webhook = f"{base_domain}/api/v1/webhooks/{clean_id}/amo-crm"
-    bitrix24_webhook = f"{base_domain}/api/v1/webhooks/{clean_id}/bitrix24"
+    amocrm_webhook = f"{base_domain}/api/v1/webhooks/{clean_id}/amo-crm{secret_suffix}"
+    bitrix24_webhook = f"{base_domain}/api/v1/webhooks/{clean_id}/bitrix24{secret_suffix}"
 
     return {
         "tenant_id": clean_id,
