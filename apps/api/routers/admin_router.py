@@ -1890,6 +1890,24 @@ def delete_tenant_endpoint(tenant_id: str):
     if len(new_clients) != len(clients):
         save_registered_clients(new_clients)
 
+    # 6. Evict in-memory and Redis deals & calls caches scoped to deleted tenant
+    try:
+        from .deals_router import _DEALS_CACHE
+        from ..cache_client import delete_cached_json_sync
+        _DEALS_CACHE.pop(clean_id, None)
+        delete_cached_json_sync(f"deals:{clean_id}")
+    except Exception as e:
+        logger.warning(f"Could not evict deals cache for deleted tenant {clean_id}: {e}")
+
+    try:
+        from .calls_router import _CALLS_CACHE
+        from ..cache_client import delete_cached_json_sync
+        _CALLS_CACHE.pop(clean_id, None)
+        _CALLS_CACHE.pop(f"calls:{clean_id}", None)
+        delete_cached_json_sync(f"calls:{clean_id}")
+    except Exception as e:
+        logger.warning(f"Could not evict calls cache for deleted tenant {clean_id}: {e}")
+
     append_console_log(f"🗑️ Контур {clean_id} полностью удалён из системы", "warning")
     return {"success": True, "message": f"Организация {clean_id} полностью удалена"}
 
