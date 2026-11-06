@@ -1902,7 +1902,7 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
     - 'unfreeze': Restores client login & active operations
     - 'offboard': Revokes client access and archives tenant into tenants_archive.json
     """
-    from ..tenant_registry import load_tenants_registry
+    from ..tenant_registry import load_tenants_registry, set_tenant_db_lifecycle_status
     clean_id = tenant_id.strip().upper()
     action = req.action.lower().strip()
     registry = load_tenants_registry()
@@ -1933,6 +1933,7 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         if restored:
             registry.setdefault("tenants", []).append(restored)
             sync_save_registry(registry)
+            set_tenant_db_lifecycle_status(clean_id, is_active=True, status="active")
             with _CLIENTS_LOCK:
                 clients = load_registered_clients()
                 for c in clients:
@@ -1971,6 +1972,7 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         target_tenant.pop("frozen_at", None)
         target_tenant.pop("freeze_reason", None)
         sync_save_registry(registry)
+        set_tenant_db_lifecycle_status(clean_id, is_active=True, status="active")
         
         # Restore client accounts
         with _CLIENTS_LOCK:
@@ -1992,6 +1994,7 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         removed["archived_at"] = datetime.now().isoformat()
         removed["offboard_reason"] = req.reason or "Отказ от сотрудничества / завершение проекта"
         sync_save_registry(registry)
+        set_tenant_db_lifecycle_status(clean_id, is_active=False, status="archived")
 
         with _ARCHIVE_LOCK:
             archived = load_archived_tenants()

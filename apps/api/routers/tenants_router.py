@@ -42,6 +42,7 @@ from ..tenant_registry import (
     get_tenants_registry_path,
     load_tenants_registry,
     save_tenants_registry,
+    set_tenant_db_lifecycle_status,
 )
 from .admin_router import (
     ALLOWED_ADMIN_KEYS,
@@ -609,6 +610,7 @@ def offboard_tenant(
     target["status"] = "archived"
     target["offboarded_at"] = datetime.now().isoformat()
     save_tenants_registry(registry)
+    set_tenant_db_lifecycle_status(clean_id, is_active=False, status="archived")
     logger.info(f"Tenant {clean_id} successfully offboarded and archived.")
     return {
         "status": "offboarded",
