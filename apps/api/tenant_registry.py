@@ -244,6 +244,31 @@ def get_tenants_registry_path() -> Path | None:
     return None
 
 
+def set_tenant_db_lifecycle_status(tenant_id: str, is_active: bool, status: str) -> None:
+    """Updates Tenant.is_active and Tenant.settings['status'] in the database and invalidates cache."""
+    clean_id = (tenant_id or "").strip().upper()
+    if not clean_id:
+        return
+    try:
+        from packages.database.models import Tenant
+        from packages.database.session import SessionLocal
+        db = SessionLocal()
+        try:
+            db_t = db.query(Tenant).filter((Tenant.id == clean_id) | (Tenant.id == tenant_id)).first()
+            if db_t:
+                setattr(db_t, "is_active", is_active)
+                st = dict(db_t.settings or {}) if isinstance(db_t.settings, dict) else {}
+                st["status"] = status
+                setattr(db_t, "settings", st)
+                db.commit()
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning(f"Could not update DB lifecycle status for {clean_id}: {e}")
+    _REGISTRY_CACHE["data"] = None
+    _REGISTRY_CACHE["timestamp"] = 0
+
+
 def load_tenants_registry() -> dict[str, Any]:
     now = time.time()
     if _REGISTRY_CACHE["data"] and (now - _REGISTRY_CACHE["timestamp"] < 10):
@@ -272,6 +297,8 @@ def load_tenants_registry() -> dict[str, Any]:
                 t_dict = tenant_obj.to_registry_dict()
                 if tenant_obj.id == "TNT-CLEAN-001" or t_dict.get("is_template"):
                     master_template = t_dict
+                elif not tenant_obj.is_active and str(t_dict.get("status", "offboarded")).lower() in ("archived", "offboarded"):
+                    continue
                 else:
                     db_tenants.append(t_dict)
         finally:

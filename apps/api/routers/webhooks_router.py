@@ -9,6 +9,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -96,6 +97,23 @@ if WEBHOOKS_HISTORY:
 MAX_WEBHOOKS_HISTORY = 30
 
 
+_REDACTED_HEADER_NAMES = (
+    "authorization",
+    "x-revops-admin-key",
+    "x-admin-key",
+    "cookie",
+    "x-webhook-secret",
+    "x-amo-signature",
+    "x-bitrix-token",
+    "x-bitrix-signature",
+    "x-webhook-signature",
+)
+
+
+def _strip_secret_query(val: str) -> str:
+    return re.sub(r"([?&]secret=)[^&\s]+", r"\1***REDACTED***", val)
+
+
 def record_incoming_webhook(
     provider: str,
     tenant_id: str,
@@ -108,10 +126,18 @@ def record_incoming_webhook(
     clean_headers = {}
     if headers:
         for k, v in headers.items():
-            if str(k).lower() in ("authorization", "x-revops-admin-key", "cookie"):
+            if str(k).lower() in _REDACTED_HEADER_NAMES:
                 clean_headers[k] = "***REDACTED***"
             else:
-                clean_headers[k] = str(v)
+                clean_headers[k] = _strip_secret_query(str(v))
+
+    clean_payload = payload
+    if isinstance(payload, dict) and ("secret" in payload or "url" in payload):
+        clean_payload = dict(payload)
+        if "secret" in clean_payload:
+            clean_payload["secret"] = "***REDACTED***"
+        if isinstance(clean_payload.get("url"), str):
+            clean_payload["url"] = _strip_secret_query(clean_payload["url"])
 
     webhook_id = f"wh_{int(time.time())}_{os.urandom(3).hex()}"
     record = {
@@ -122,7 +148,7 @@ def record_incoming_webhook(
         "event": event,
         "status": status,
         "headers": clean_headers,
-        "payload": payload,
+        "payload": clean_payload,
         "error_msg": None,
         "execution_time_ms": None,
         "sheets_synced": False
@@ -211,11 +237,56 @@ def verify_tenant_active(tenant_id: str):
         )
 
 
+def _verify_webhook_secret_or_signature(
+    request: Request,
+    raw_body: bytes,
+    cfg: dict[str, Any] | None,
+    secret_keys: tuple[str, ...],
+    sig_headers: tuple[str, ...],
+    token_headers: tuple[str, ...] = (),
+) -> None:
+    """Enforces webhook authenticity for external callers via shared secret or HMAC-SHA256 signature."""
+    secrets_list = [
+        str(cfg.get(k)).strip()
+        for k in secret_keys
+        if cfg and cfg.get(k) and str(cfg.get(k)).strip()
+    ]
+    if not secrets_list:
+        raise HTTPException(
+            status_code=403,
+            detail="Секрет вебхука не настроен для клиента (webhook secret not configured)",
+        )
+
+    provided_secret = (
+        request.headers.get("x-webhook-secret")
+        or next((request.headers.get(h) for h in token_headers if request.headers.get(h)), None)
+        or request.query_params.get("secret")
+    )
+    signature = next((request.headers.get(h) for h in sig_headers if request.headers.get(h)), None)
+
+    if provided_secret is not None:
+        if any(hmac.compare_digest(str(provided_secret), s) for s in secrets_list):
+            return
+        if not signature:
+            raise HTTPException(status_code=403, detail="Неверный секрет вебхука (Invalid webhook secret)")
+
+    if signature is not None:
+        sig_clean = signature.strip().lower()
+        for s in secrets_list:
+            expected_sig = hmac.new(s.encode("utf-8"), raw_body, hashlib.sha256).hexdigest().lower()
+            if hmac.compare_digest(expected_sig, sig_clean):
+                return
+        raise HTTPException(status_code=403, detail="Invalid X-Amo-Signature")
+
+    raise HTTPException(status_code=403, detail="Отсутствует подпись или секрет вебхука")
+
+
 # ==========================================================================
 # 1. amoCRM INBOUND WEBHOOK RECEIVER
 # ==========================================================================
 
 async def _process_amocrm_webhook(request: Request, tenant_param: str | None = None):
+    raw_body = await request.body()
     body = {}
     content_type = request.headers.get("content-type", "")
     try:
@@ -225,8 +296,7 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
             form = await request.form()
             body = dict(form)
         else:
-            raw = await request.body()
-            body = json.loads(raw.decode("utf-8")) if raw else {}
+            body = json.loads(raw_body.decode("utf-8")) if raw_body else {}
     except Exception as e:
         logger.warning(f"Could not parse amoCRM webhook payload: {e}")
         body = {}
@@ -234,7 +304,7 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
 
-    # Validate security: internal IP / admin key OR amoCRM HMAC-SHA256 signature
+    # Validate security: internal IP / admin key OR amoCRM HMAC-SHA256 signature / tenant secret
     is_internal = False
     try:
         is_internal = verify_internal_or_admin(request)
@@ -244,17 +314,13 @@ async def _process_amocrm_webhook(request: Request, tenant_param: str | None = N
     if not is_internal:
         from ..tenant_registry import get_tenant_config
         cfg = get_tenant_config(org_id)
-        secret = (cfg.get("amo_secret") or cfg.get("amo_webhook_secret") or cfg.get("amo_token")) if cfg else None
-        signature = request.headers.get("x-amo-signature")
-        if signature and secret:
-            raw_body = await request.body()
-            expected_sig = hmac.new(str(secret).encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-            if not hmac.compare_digest(expected_sig.lower(), signature.lower()):
-                raise HTTPException(status_code=403, detail="Invalid X-Amo-Signature")
-        elif not tenant_param and not signature:
-            if not secret:
-                raise HTTPException(status_code=403, detail="AmoCRM webhook secret not configured for tenant")
-            raise HTTPException(status_code=403, detail="X-Amo-Signature header missing")
+        _verify_webhook_secret_or_signature(
+            request=request,
+            raw_body=raw_body,
+            cfg=cfg,
+            secret_keys=("secret", "amo_secret", "amo_webhook_secret"),
+            sig_headers=("x-amo-signature", "x-webhook-signature"),
+        )
 
     record_incoming_webhook("amocrm", org_id, body, dict(request.headers), event="amocrm_webhook")
 
@@ -466,6 +532,7 @@ async def receive_amocrm_webhook_tenant(
 # ==========================================================================
 
 async def _process_bitrix24_webhook(request: Request, tenant_param: str | None = None):
+    raw_body = await request.body()
     body = {}
     content_type = request.headers.get("content-type", "")
     try:
@@ -475,8 +542,7 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
             form = await request.form()
             body = dict(form)
         else:
-            raw = await request.body()
-            body = json.loads(raw.decode("utf-8")) if raw else {}
+            body = json.loads(raw_body.decode("utf-8")) if raw_body else {}
     except Exception as e:
         logger.warning(f"Could not parse Bitrix24 webhook payload: {e}")
         body = {}
@@ -484,7 +550,7 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
 
-    # Validate security: internal IP / admin key OR Bitrix24 token
+    # Validate security: internal IP / admin key OR Bitrix24 token / tenant secret / HMAC signature
     is_internal = False
     try:
         is_internal = verify_internal_or_admin(request)
@@ -494,12 +560,14 @@ async def _process_bitrix24_webhook(request: Request, tenant_param: str | None =
     if not is_internal:
         from ..tenant_registry import get_tenant_config
         cfg = get_tenant_config(org_id)
-        expected_token = (cfg.get("bitrix_token") or cfg.get("bitrix_webhook_token") or cfg.get("bitrix_auth_token")) if cfg else None
-        if not expected_token:
-            raise HTTPException(status_code=403, detail="Bitrix24 webhook token not configured for tenant")
-        token_header = request.headers.get("x-bitrix-token")
-        if not token_header or not hmac.compare_digest(token_header, str(expected_token)):
-            raise HTTPException(status_code=403, detail="Invalid X-Bitrix-Token")
+        _verify_webhook_secret_or_signature(
+            request=request,
+            raw_body=raw_body,
+            cfg=cfg,
+            secret_keys=("secret", "bitrix_token", "bitrix_webhook_token", "bitrix_auth_token"),
+            sig_headers=("x-bitrix-signature", "x-amo-signature", "x-webhook-signature"),
+            token_headers=("x-bitrix-token",),
+        )
 
     record_incoming_webhook("bitrix24", org_id, body, dict(request.headers), event="bitrix24_webhook")
 
@@ -718,7 +786,18 @@ async def _process_telephony_call(
     in FastAPI BackgroundTasks to eliminate telephony provider timeouts.
     """
     t_start = time.time()
-    verify_internal_or_admin(request)
+    is_internal = False
+    try:
+        is_internal = verify_internal_or_admin(request)
+    except HTTPException:
+        is_internal = False
+
+    if not is_internal and not tenant_param:
+        raise HTTPException(
+            status_code=403,
+            detail="Доступ запрещён: универсальный шлюз /call доступен только из локальной сети n8n или с ключом администратора",
+        )
+
     try:
         body = await request.json()
     except Exception:
@@ -726,6 +805,16 @@ async def _process_telephony_call(
 
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
+
+    if not is_internal:
+        from ..tenant_registry import get_tenant_config
+        cfg = get_tenant_config(org_id)
+        expected_secret = str(cfg.get("secret") or "").strip() if cfg else ""
+        if not expected_secret:
+            raise HTTPException(status_code=403, detail="Секрет вебхука телефонии не настроен для клиента")
+        provided_secret = request.headers.get("x-webhook-secret") or request.query_params.get("secret")
+        if not provided_secret or not hmac.compare_digest(str(provided_secret), expected_secret):
+            raise HTTPException(status_code=403, detail="Неверный или отсутствующий секрет вебхука телефонии")
 
     provider_name = body.get("provider") or body.get("telephony_provider") or "telephony"
     webhook_id = record_incoming_webhook(provider_name, org_id, body, dict(request.headers), event="telephony_call", status="queued")
@@ -763,17 +852,20 @@ async def _process_telephony_call(
     view = call_view(call_payload)
     call_dict.update({k: view[k] for k in ("cr", "score", "next_step", "kind", "status", "status_label", "risk_amount")})
     task_id = None
-    queue_driver = "celery"
+    queue_driver = "background_tasks"
+    use_celery = os.getenv("REVOPS_USE_CELERY", "false").strip().lower() in ("true", "1", "yes")
 
-    # 1. Attempt asynchronous dispatch to Celery broker (Redis queue)
-    try:
-        from workers.tasks import process_call_audio_task
-        task = process_call_audio_task.delay(call_dict, org_id, webhook_id, t_start)
-        task_id = task.id
-    except Exception as broker_err:
-        # 2. Antifragile fallback to in-process BackgroundTasks if Redis broker is offline
-        queue_driver = "background_tasks"
-        logger.debug(f"Celery dispatch fallback to BackgroundTasks: {broker_err}")
+    # 1. Dispatch to Celery broker only when REVOPS_USE_CELERY=true is explicitly enabled
+    if use_celery:
+        try:
+            from workers.tasks import process_call_audio_task
+            task = process_call_audio_task.delay(call_dict, org_id, webhook_id, t_start)
+            task_id = task.id
+            queue_driver = "celery"
+        except Exception as broker_err:
+            logger.debug(f"Celery dispatch fallback to BackgroundTasks: {broker_err}")
+
+    if queue_driver != "celery":
         if background_tasks:
             background_tasks.add_task(_execute_telephony_background, call_payload, org_id, webhook_id, t_start)
             task_id = f"bg_{int(time.time()*1000)}"
@@ -802,9 +894,9 @@ async def receive_telephony_call(request: Request, background_tasks: BackgroundT
     return await _process_telephony_call(request, None, background_tasks)
 
 
-@router.post("/{tenant_id}/call", dependencies=[Depends(verify_internal_or_admin)])
+@router.post("/{tenant_id}/call")
 async def receive_telephony_call_scoped(tenant_id: str, request: Request, background_tasks: BackgroundTasks):
-    """Universal Telephony receiver scoped to specific tenant in URL."""
+    """Universal Telephony receiver scoped to specific tenant in URL (accepts tenant secret or internal/admin)."""
     return await _process_telephony_call(request, tenant_id, background_tasks)
 
 

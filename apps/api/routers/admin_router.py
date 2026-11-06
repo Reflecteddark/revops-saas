@@ -1632,7 +1632,8 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         or (f"https://docs.google.com/spreadsheets/d/{sh_id}/edit" if sh_id else None)
     )
     b24_wh_url = f"{N8N_WEBHOOK_BASE}/webhook/bitrix24-call?tenant={tenant_id}&secret={secret}"
-    wh_url = b24_wh_url
+    amo_wh_url = f"https://report.ai-rop.ru/api/v1/webhooks/{tenant_id}/amo-crm?secret={secret}"
+    wh_url = b24_wh_url if crm_type == "bitrix24" else amo_wh_url
 
     brief_lines = [
         f"Здравствуйте, {company_name}!",
@@ -1668,6 +1669,7 @@ def provision_tenant_endpoint(req: TenantProvisionRequest):
         brief_lines.extend([
             "🔌 ПОДКЛЮЧЕНИЕ AMOCRM:",
             f"• Домен: {req.amo_domain or 'Укажите домен amoCRM в настройках'}",
+            f"• Входящий Webhook: {amo_wh_url}",
             "• Инструкция: amoCRM → Настройки → Интеграции → Создать интеграцию → Ключи и доступы → Долгосрочный токен; передайте токен и домен администратору",
             "• Интеграция: Прямой API v4 (Polling & Events) активен",
             "• Звонки и сделки синхронизируются автоматически!",
@@ -1888,6 +1890,24 @@ def delete_tenant_endpoint(tenant_id: str):
     if len(new_clients) != len(clients):
         save_registered_clients(new_clients)
 
+    # 6. Evict in-memory and Redis deals & calls caches scoped to deleted tenant
+    try:
+        from .deals_router import _DEALS_CACHE
+        from ..cache_client import delete_cached_json_sync
+        _DEALS_CACHE.pop(clean_id, None)
+        delete_cached_json_sync(f"deals:{clean_id}")
+    except Exception as e:
+        logger.warning(f"Could not evict deals cache for deleted tenant {clean_id}: {e}")
+
+    try:
+        from .calls_router import _CALLS_CACHE
+        from ..cache_client import delete_cached_json_sync
+        _CALLS_CACHE.pop(clean_id, None)
+        _CALLS_CACHE.pop(f"calls:{clean_id}", None)
+        delete_cached_json_sync(f"calls:{clean_id}")
+    except Exception as e:
+        logger.warning(f"Could not evict calls cache for deleted tenant {clean_id}: {e}")
+
     append_console_log(f"🗑️ Контур {clean_id} полностью удалён из системы", "warning")
     return {"success": True, "message": f"Организация {clean_id} полностью удалена"}
 
@@ -1900,7 +1920,7 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
     - 'unfreeze': Restores client login & active operations
     - 'offboard': Revokes client access and archives tenant into tenants_archive.json
     """
-    from ..tenant_registry import load_tenants_registry
+    from ..tenant_registry import load_tenants_registry, set_tenant_db_lifecycle_status
     clean_id = tenant_id.strip().upper()
     action = req.action.lower().strip()
     registry = load_tenants_registry()
@@ -1931,6 +1951,7 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         if restored:
             registry.setdefault("tenants", []).append(restored)
             sync_save_registry(registry)
+            set_tenant_db_lifecycle_status(clean_id, is_active=True, status="active")
             with _CLIENTS_LOCK:
                 clients = load_registered_clients()
                 for c in clients:
@@ -1969,6 +1990,7 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         target_tenant.pop("frozen_at", None)
         target_tenant.pop("freeze_reason", None)
         sync_save_registry(registry)
+        set_tenant_db_lifecycle_status(clean_id, is_active=True, status="active")
         
         # Restore client accounts
         with _CLIENTS_LOCK:
@@ -1990,6 +2012,7 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         removed["archived_at"] = datetime.now().isoformat()
         removed["offboard_reason"] = req.reason or "Отказ от сотрудничества / завершение проекта"
         sync_save_registry(registry)
+        set_tenant_db_lifecycle_status(clean_id, is_active=False, status="archived")
 
         with _ARCHIVE_LOCK:
             archived = load_archived_tenants()

@@ -105,8 +105,10 @@ def test_anonymous_rejected(client, saves, method, path, body):
 
 
 def test_summary_stays_open_for_n8n_but_has_no_credentials(client, saves):
-    """Deliberately public until the n8n dispatcher sends X-Admin-Key (see audit notes)."""
-    res = client.get("/api/v1/tenants/summary")
+    """Restricted to internal Docker-network callers (n8n) and admins; never leaks credentials."""
+    assert client.get("/api/v1/tenants/summary").status_code == 403
+    int_client = TestClient(app, client=("172.16.0.5", 50000))
+    res = int_client.get("/api/v1/tenants/summary")
     assert res.status_code == 200
     assert "amo_token" not in res.text and SECRET not in res.text
 

@@ -28,8 +28,9 @@ def client():
     return TestClient(app, client=("172.16.0.5", 50000), raise_server_exceptions=False)
 
 
-def test_telephony_webhook_celery_dispatch(client):
-    """Verifies that telephony call webhook dispatches to Celery queue when broker is active."""
+def test_telephony_webhook_celery_dispatch(client, monkeypatch):
+    """Verifies that telephony call webhook dispatches to Celery queue when REVOPS_USE_CELERY=true and broker is active."""
+    monkeypatch.setenv("REVOPS_USE_CELERY", "true")
     payload = {
         "call_id": f"test_celery_{int(time.time()*1000)}",
         "deal_id": "D-9988",
@@ -62,8 +63,9 @@ def test_telephony_webhook_celery_dispatch(client):
         assert mock_delay.called
 
 
-def test_telephony_webhook_fallback_background(client):
+def test_telephony_webhook_fallback_background(client, monkeypatch):
     """Verifies telephony call webhook gracefully falls back to BackgroundTasks when broker raises error."""
+    monkeypatch.setenv("REVOPS_USE_CELERY", "true")
     payload = {
         "call_id": f"test_fallback_{int(time.time()*1000)}",
         "deal_id": "D-9989",
@@ -91,8 +93,9 @@ def test_telephony_webhook_fallback_background(client):
         assert mock_bg.called
 
 
-def test_telephony_webhook_scoped_tenant(client):
+def test_telephony_webhook_scoped_tenant(client, monkeypatch):
     """Verifies scoped /api/v1/webhooks/{tenant_id}/call endpoint routes correctly."""
+    monkeypatch.setenv("REVOPS_USE_CELERY", "true")
     payload = {
         "call_id": f"test_scoped_{int(time.time()*1000)}",
         "client_name": "ИП Смирнов",
