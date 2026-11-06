@@ -47,6 +47,7 @@ vi.mock('@/lib/api', () => ({
     getCrmStatus: vi.fn(),
     crmAction: vi.fn(),
     getLastIncomingWebhook: vi.fn(),
+    getAiTelemetry: vi.fn(),
     simulateCall: vi.fn(),
     getQuarantineCalls: vi.fn(),
     resolveQuarantineCall: vi.fn(),
@@ -181,6 +182,7 @@ describe('AdminPage', () => {
     vi.mocked(adminApi.getCrmStatus).mockResolvedValue(mockCrmStatus as any);
     vi.mocked(adminApi.getLogs).mockResolvedValue(mockLogs as any);
     vi.mocked(adminApi.getLastIncomingWebhook).mockResolvedValue({ event: 'call_finished', duration: 145 } as any);
+    vi.mocked(adminApi.getAiTelemetry).mockResolvedValue({ calls_today: 0, audio_minutes_today: 0, avg_audit_latency_sec: null, quarantine_calls_today: 0, estimated_cost_usd: 0 } as any);
     vi.mocked(adminApi.getQuarantineCalls).mockResolvedValue({ total: 0, in_quarantine_count: 0, calls: [] } as any);
   });
 

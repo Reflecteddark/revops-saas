@@ -489,17 +489,18 @@ export function AdminClientsTab() {
                       <td className="px-4 py-3">
                         <div className="space-y-1 font-mono text-[11px]">
                           <div className="text-foreground">
-                            {t.minutes_used ?? 265} / {t.minutes_quota ?? 1000} мин
+                            {t.minutes_used ?? 0} / {t.minutes_quota ?? '—'} мин
                           </div>
-                          <div className="h-1.5 w-24 rounded-full bg-subtle overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full"
-                              style={{ width: `${Math.min(100, Math.round(((t.minutes_used ?? 265) / (t.minutes_quota ?? 1000)) * 100))}%` }}
-                            />
-                          </div>
-                          <div className="text-[10px] text-tertiary">
-                            {(t.spent_rub ?? 1838).toLocaleString('ru-RU')} ₽ (~26%)
-                          </div>
+                          {t.minutes_quota ? (
+                            <div className="h-1.5 w-24 rounded-full bg-subtle overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full"
+                                style={{ width: `${Math.min(100, Math.round(((t.minutes_used ?? 0) / t.minutes_quota) * 100))}%` }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-tertiary">Квота не задана</div>
+                          )}
                         </div>
                       </td>
 

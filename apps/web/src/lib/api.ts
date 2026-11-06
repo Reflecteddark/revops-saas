@@ -15,6 +15,7 @@ import type {
   AdminLogsResponse,
   AdminSystemStatus,
   AdminTenantsListResponse,
+  AiTelemetryResponse,
   AnalystChatPayload,
   AnalystChatResponse,
   ApiError,
@@ -585,6 +586,13 @@ export const adminApi = {
         spreadsheet_id: sheetId,
       }
     );
+    return res.data;
+  },
+
+  getAiTelemetry: async (tenantId?: string): Promise<AiTelemetryResponse> => {
+    const res = await api.get<AiTelemetryResponse>('/admin/metrics/ai-telemetry', {
+      params: tenantId ? { tenant_id: tenantId } : undefined,
+    });
     return res.data;
   },
 

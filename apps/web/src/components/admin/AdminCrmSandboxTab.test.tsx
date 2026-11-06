@@ -22,6 +22,8 @@ vi.mock('@/lib/api', () => ({
     simulateCall: vi.fn(),
     getQuarantineCalls: vi.fn(),
     resolveQuarantineCall: vi.fn(),
+    listTenants: vi.fn(),
+    getAiTelemetry: vi.fn(),
   },
 }));
 
@@ -62,6 +64,22 @@ describe('AdminCrmSandboxTab', () => {
     vi.mocked(adminApi.getCrmStatus).mockResolvedValue(mockCrmStatus as any);
     vi.mocked(adminApi.getLastIncomingWebhook).mockResolvedValue({ event: 'call_finished' } as any);
     vi.mocked(adminApi.getQuarantineCalls).mockResolvedValue({ total: 0, in_quarantine_count: 0, calls: [] } as any);
+    vi.mocked(adminApi.listTenants).mockResolvedValue({
+      tenants: [
+        { tenant_id: 'TNT-001', tenant_name: 'Самозанятый' },
+        { tenant_id: 'TNT-004', tenant_name: 'Тест амо' },
+      ],
+      archived: [],
+    } as any);
+    vi.mocked(adminApi.getAiTelemetry).mockResolvedValue({
+      tenant_id: 'TNT-001',
+      calls_today: 3,
+      audio_minutes_today: 7.5,
+      avg_audit_latency_sec: null,
+      quarantine_calls_today: 0,
+      estimated_cost_usd: 0.009,
+      timestamp: '2026-11-06 12:00:00',
+    } as any);
   });
 
   it('renders CRM cards for Bitrix24 and amoCRM', async () => {
@@ -86,6 +104,18 @@ describe('AdminCrmSandboxTab', () => {
     expect(switchBtn).toBeDisabled();
     fireEvent.click(switchBtn);
     expect(adminApi.crmAction).not.toHaveBeenCalled();
+  });
+
+  it('shows telemetry from the server and the fleet in the selector, not invented numbers', async () => {
+    renderWithClient(<AdminCrmSandboxTab />);
+
+    await waitFor(() => {
+      expect(adminApi.getAiTelemetry).toHaveBeenCalled();
+      expect(screen.getByText('7.5 мин')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('$0.0336')).not.toBeInTheDocument();
+    expect(screen.queryByText('~7.4 сек')).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'TNT-004 (Тест амо)' })).toBeInTheDocument();
   });
 
   it('submits call simulation and shows success feedback', async () => {

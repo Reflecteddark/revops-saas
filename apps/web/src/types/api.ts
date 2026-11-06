@@ -758,6 +758,16 @@ export interface CrmStatusResponse {
   amocrm: CrmProviderStatus;
 }
 
+export interface AiTelemetryResponse {
+  tenant_id: string | null;
+  calls_today: number;
+  audio_minutes_today: number;
+  avg_audit_latency_sec: number | null;
+  quarantine_calls_today: number;
+  estimated_cost_usd: number;
+  timestamp: string;
+}
+
 export interface CrmActionPayload {
   action: 'switch_crm' | 'show_stages' | 'dry_run' | 'sync_deals' | string;
   tenant_id?: string;

@@ -37,7 +37,10 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useRevOpsStore } from '@/store/useRevOpsStore';
 import type {
+  AdminTenantsListResponse,
+  AiTelemetryResponse,
   CrmActionPayload,
   CrmStatusResponse,
   QuarantineCallsResponse,
@@ -46,7 +49,20 @@ import type {
 
 export function AdminCrmSandboxTab() {
   const queryClient = useQueryClient();
-  const [selectedTenantId, setSelectedTenantId] = React.useState('TNT-001');
+  const activeTenantId = useRevOpsStore((s) => s.activeTenantId);
+  const [selectedTenantId, setSelectedTenantId] = React.useState(activeTenantId || 'TNT-001');
+
+  // The tenants of the fleet: the selector must not offer a single hardcoded company.
+  const { data: fleetData } = useQuery<AdminTenantsListResponse>({
+    queryKey: ['admin-tenants-list'],
+    queryFn: adminApi.listTenants,
+  });
+  const tenantOptions = fleetData?.tenants ?? [];
+  React.useEffect(() => {
+    if (tenantOptions.length > 0 && !tenantOptions.some((t) => t.tenant_id === selectedTenantId)) {
+      setSelectedTenantId(tenantOptions[0].tenant_id);
+    }
+  }, [tenantOptions, selectedTenantId]);
   const [actionAlert, setActionAlert] = React.useState<{
     text: string;
     type: 'success' | 'error';
@@ -83,6 +99,13 @@ export function AdminCrmSandboxTab() {
       queryFn: adminApi.getQuarantineCalls,
       refetchInterval: 15000,
     });
+
+  // 4. Calls and audio minutes of today for the selected tenant, counted from the database
+  const { data: telemetry } = useQuery<AiTelemetryResponse>({
+    queryKey: ['admin-ai-telemetry', selectedTenantId],
+    queryFn: () => adminApi.getAiTelemetry(selectedTenantId),
+    refetchInterval: 30000,
+  });
 
   // 4. Mutations
   const crmActionMutation = useMutation({
@@ -197,7 +220,9 @@ export function AdminCrmSandboxTab() {
             </span>
             <PhoneCall className="h-3.5 w-3.5 text-primary" />
           </div>
-          <div className="font-mono text-lg font-bold text-foreground">14</div>
+          <div className="font-mono text-lg font-bold text-foreground">
+            {telemetry ? telemetry.calls_today : '—'}
+          </div>
           <div className="text-[10px] font-medium text-emerald-400">
             Аудит 13 критериев SSOT
           </div>
@@ -211,7 +236,7 @@ export function AdminCrmSandboxTab() {
             <Clock className="h-3.5 w-3.5 text-cyan-400" />
           </div>
           <div className="font-mono text-lg font-bold text-foreground">
-            28 мин
+            {telemetry ? `${telemetry.audio_minutes_today} мин` : '—'}
           </div>
           <div className="text-[10px] text-tertiary">RevOps Speech AI Core</div>
         </div>
@@ -224,9 +249,11 @@ export function AdminCrmSandboxTab() {
             <Zap className="h-3.5 w-3.5 text-amber-400" />
           </div>
           <div className="font-mono text-lg font-bold text-foreground">
-            ~7.4 сек
+            {telemetry?.avg_audit_latency_sec != null ? `~${telemetry.avg_audit_latency_sec} сек` : '—'}
           </div>
-          <div className="text-[10px] text-secondary">Среднее время звонка</div>
+          <div className="text-[10px] text-secondary">
+            {telemetry?.avg_audit_latency_sec != null ? 'Среднее время звонка' : 'Время обработки не измеряется'}
+          </div>
         </div>
 
         <div className="space-y-1 rounded-xl border border-subtle bg-surface p-3">
@@ -237,11 +264,9 @@ export function AdminCrmSandboxTab() {
             <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
           </div>
           <div className="font-mono text-lg font-bold text-foreground">
-            $0.0336
+            {telemetry ? `$${telemetry.estimated_cost_usd}` : '—'}
           </div>
-          <div className="text-[10px] font-medium text-emerald-400">
-            ~3.29 ₽ (Оптимально)
-          </div>
+          <div className="text-[10px] text-tertiary">Оценка по тарифу за минуту аудио</div>
         </div>
       </div>
 
@@ -279,7 +304,12 @@ export function AdminCrmSandboxTab() {
                 onChange={(e) => setSelectedTenantId(e.target.value)}
                 className="bg-subtle/50 h-8 rounded-md border border-subtle px-2.5 font-mono text-xs text-foreground focus:outline-none"
               >
-                <option value="TNT-001">TNT-001 (Самозанятый)</option>
+                {tenantOptions.length === 0 && <option value={selectedTenantId}>{selectedTenantId}</option>}
+                {tenantOptions.map((t) => (
+                  <option key={t.tenant_id} value={t.tenant_id}>
+                    {t.tenant_id} ({t.tenant_name})
+                  </option>
+                ))}
               </select>
 
               <Button

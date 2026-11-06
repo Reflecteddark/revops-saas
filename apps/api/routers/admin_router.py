@@ -1419,6 +1419,30 @@ class ScoringCalibrateRequest(BaseModel):
     tenant_id: str | None = Field(None, description="Tenant ID (или глобально)")
 
 
+def _month_audio_minutes() -> dict[str, float]:
+    """Minutes of audio processed since the 1st of the month (UTC), per tenant, from the database."""
+    from sqlalchemy import func
+
+    from packages.database.models import CallRecording
+    from packages.database.session import SessionLocal
+
+    start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(CallRecording.tenant_id, func.coalesce(func.sum(CallRecording.duration_seconds), 0))
+            .filter(CallRecording.created_at >= start)
+            .group_by(CallRecording.tenant_id)
+            .all()
+        )
+    except Exception as e:
+        logger.warning(f"Could not read audio minutes: {e}")
+        return {}
+    finally:
+        db.close()
+    return {str(t).upper(): round(float(s or 0) / 60, 1) for t, s in rows}
+
+
 @router.get("/tenants")
 def get_admin_tenants():
     """
@@ -1433,6 +1457,7 @@ def get_admin_tenants():
     clients = load_registered_clients()
     archived = load_archived_tenants()
 
+    minutes_by_tenant = _month_audio_minutes()
     tenants_list = []
     for t in registry.get("tenants", []):
         t_id = str(t.get("tenant_id", "")).strip().upper()
@@ -1447,6 +1472,7 @@ def get_admin_tenants():
         
         rec = dict(t)
         rec["effective_status"] = effective_status
+        rec["minutes_used"] = minutes_by_tenant.get(t_id, 0)
         rec["telephony_webhook_url"] = f"https://report.ai-rop.ru/api/v1/webhooks/{t_id}/call"
         rec["amo_webhook_url"] = f"https://report.ai-rop.ru/api/v1/webhooks/{t_id}/amo-crm"
         rec["bitrix_webhook_url"] = f"https://report.ai-rop.ru/api/v1/webhooks/{t_id}/bitrix24"
@@ -2735,22 +2761,22 @@ def get_admin_crm_status(tenant_id: str = Query("TNT-001")):
         "tenant_id": config.get("tenant_id", tenant_id),
         "tenant_name": config.get("tenant_name", "Клиент"),
         "active_crm": active_crm,
-        "spreadsheet_id": config.get("spreadsheet_id", "1KoKhFJR_-ZYvRgeyFZGuHeadGigVJ_V2I3theOE4YRk"),
+        "spreadsheet_id": config.get("spreadsheet_id", ""),
         "bitrix24": {
             "available": b24_script is not None,
             "webhook_url": b24_webhook[:35] + "..." if len(b24_webhook) > 35 else b24_webhook,
             "connected": bool(b24_webhook),
             "label": "Bitrix24 REST API",
-            "rest_status": "subscription_required",
-            "status_text": "Демо-контур (REST 401: подписка Маркет+)"
+            "rest_status": "configured" if b24_webhook else "not_configured",
+            "status_text": "Вебхук задан (связь не проверялась)" if b24_webhook else "Не подключён: нет вебхука"
         },
         "amocrm": {
             "available": amo_script is not None,
             "domain": amo_domain,
             "connected": bool(amo_domain and amo_token),
             "label": "amoCRM API v4",
-            "rest_status": "ready",
-            "status_text": "Готов ✓ (OAuth 2.0)"
+            "rest_status": "configured" if (amo_domain and amo_token) else "not_configured",
+            "status_text": "Домен и токен заданы (связь не проверялась)" if (amo_domain and amo_token) else "Не подключён: нужны домен и токен"
         }
     }
 
@@ -3261,42 +3287,53 @@ def get_tenant_health_doctor(tenant_id: str):
 # 3. AI TELEMETRY & QUEUE MONITOR
 # ============================================================================
 
+# Public list price per minute of audio; only used for an estimate, override it when the tariff changes.
+GEMINI_USD_PER_AUDIO_MINUTE = float(os.getenv("GEMINI_USD_PER_AUDIO_MINUTE", "0.0012"))
+
+
 @router.get("/metrics/ai-telemetry")
-def get_ai_telemetry():
+def get_ai_telemetry(tenant_id: str | None = Query(None)):
     """
-    AI Telemetry & Queue Monitor:
-    Calculates calls processed today, total audio duration, Gemini Flash cost estimate,
-    average audit speed and queue rate limit state.
+    Calls and audio minutes processed today, counted from the database (all tenants, or one).
+    What nothing records is None instead of a guess: the audit latency is not stored per call.
     """
-    from .calls_router import fetch_calls_from_sheets
-    calls = []
+    from sqlalchemy import func
+
+    from packages.database.models import CallRecording
+    from packages.database.session import SessionLocal
+
+    from ..services.tz import tenant_tz
+    from ..tenant_registry import get_tenant_config
+
+    clean = (tenant_id or "").strip().upper() or None
+    tz = tenant_tz(get_tenant_config(clean) if clean else None)
+    local_midnight = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+    since_utc = local_midnight.astimezone(timezone.utc).replace(tzinfo=None)  # the DB stores naive UTC
+
+    db = SessionLocal()
     try:
-        calls = fetch_calls_from_sheets("TNT-001")
-    except Exception:
-        pass
+        query = db.query(func.count(CallRecording.id), func.coalesce(func.sum(CallRecording.duration_seconds), 0)).filter(
+            CallRecording.created_at >= since_utc
+        )
+        if clean:
+            query = query.filter(CallRecording.tenant_id == clean)
+        calls_today, seconds = query.one()
+    finally:
+        db.close()
 
-    total_calls = len(calls)
-    today_str = datetime.now().strftime("%d.%m")
-    today_calls = [c for c in calls if today_str in str(c.get("date", ""))]
-    count_today = len(today_calls) if today_calls else min(total_calls, 14)
-
-    subset = today_calls if today_calls else calls[:14]
-    total_duration_sec = sum(int(c.get("duration_sec", 120)) for c in subset)
-    total_minutes = round(total_duration_sec / 60, 1)
-
-    # Gemini 2.5 Flash audio pricing: ~$0.00002/sec => $0.0012/min
-    cost_usd = round(total_minutes * 0.0012, 4)
-
+    minutes = round(float(seconds or 0) / 60, 1)
+    quarantined = [
+        i for i in load_quarantine_items()
+        if i.get("status") == "in_quarantine" and (not clean or str(i.get("tenant_id", "")).upper() == clean)
+    ]
     return {
-        "calls_today": count_today,
-        "audio_minutes_today": total_minutes,
-        "avg_audit_latency_sec": 7.4,
-        "quarantine_calls_today": 0,
-        "estimated_cost_usd": cost_usd,
-        "estimated_cost_rub": round(cost_usd * 98, 2),
-        "rate_limit_status": "🟢 ОПТИМАЛЬНО (<5% RPM)",
-        "model": "Google Gemini 3.5 / Flash Speech AI",
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "tenant_id": clean,
+        "calls_today": int(calls_today or 0),
+        "audio_minutes_today": minutes,
+        "avg_audit_latency_sec": None,
+        "quarantine_calls_today": len(quarantined),
+        "estimated_cost_usd": round(minutes * GEMINI_USD_PER_AUDIO_MINUTE, 4),
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
 
