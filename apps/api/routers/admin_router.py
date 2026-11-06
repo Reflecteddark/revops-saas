@@ -1429,9 +1429,9 @@ def _month_audio_minutes() -> dict[str, float]:
     start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
     db = SessionLocal()
     try:
-        rows = (
+        rows: list[Any] = (
             db.query(CallRecording.tenant_id, func.coalesce(func.sum(CallRecording.duration_seconds), 0))
-            .filter(CallRecording.created_at >= start)
+            .filter(CallRecording.created_at >= start)  # type: ignore[arg-type]
             .group_by(CallRecording.tenant_id)
             .all()
         )
@@ -3312,8 +3312,8 @@ def get_ai_telemetry(tenant_id: str | None = Query(None)):
 
     db = SessionLocal()
     try:
-        query = db.query(func.count(CallRecording.id), func.coalesce(func.sum(CallRecording.duration_seconds), 0)).filter(
-            CallRecording.created_at >= since_utc
+        query: Any = db.query(func.count(CallRecording.id), func.coalesce(func.sum(CallRecording.duration_seconds), 0)).filter(
+            CallRecording.created_at >= since_utc  # type: ignore[arg-type]
         )
         if clean:
             query = query.filter(CallRecording.tenant_id == clean)
