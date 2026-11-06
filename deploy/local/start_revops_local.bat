@@ -40,7 +40,7 @@ if "%ERRORLEVEL%"=="0" (
     echo [OK] Cloudflare Tunnel is already running.
 ) else (
     echo [*] Launching Cloudflare Tunnel...
-    start "Cloudflare Tunnel (ai-rop.ru)" /min "C:\Program Files (x86)\cloudflared\cloudflared.exe" tunnel --config C:\Users\strel\.cloudflared\config.yml run
+    start "Cloudflare Tunnel (ai-rop.ru)" /min "C:\Program Files (x86)\cloudflared\cloudflared.exe" tunnel --config C:\Users\strel\.cloudflared\config.yml --protocol http2 run
 )
 
 echo [5/5] Starting Telegram Bot Runner...
