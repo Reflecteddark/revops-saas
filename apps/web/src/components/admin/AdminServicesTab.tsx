@@ -52,7 +52,10 @@ export function AdminServicesTab({
   const fleetActionMutation = useMutation({
     mutationFn: (req: FleetActionRequest) => adminApi.fleetAction(req),
     onSuccess: (res) => {
-      setActionAlert({ text: res.message || `Команда ${res.action} выполнена`, type: 'success' });
+      setActionAlert({
+        text: res.message || `Команда ${res.action} выполнена`,
+        type: res.success === false ? 'error' : 'success',
+      });
       queryClient.invalidateQueries({ queryKey: ['admin-system-status'] });
       queryClient.invalidateQueries({ queryKey: ['admin-logs'] });
     },
@@ -64,9 +67,13 @@ export function AdminServicesTab({
   const testGeminiMutation = useMutation({
     mutationFn: () => adminApi.testGemini(),
     onSuccess: (res) => {
+      if (!res.success) {
+        setActionAlert({ text: `Ошибка теста Gemini: ${res.error || 'нет ответа'}`, type: 'error' });
+        return;
+      }
       setGeminiResult({ latency_ms: res.latency_ms });
       setActionAlert({
-        text: `Gemini API активен. Задержка: ${res.latency_ms ?? 140} мс`,
+        text: `Gemini API активен. Задержка: ${res.latency_ms} мс`,
         type: 'success',
       });
       queryClient.invalidateQueries({ queryKey: ['admin-logs'] });
@@ -78,8 +85,13 @@ export function AdminServicesTab({
 
   const sheetsActionMutation = useMutation({
     mutationFn: (action: string) => adminApi.sheetsAction(action),
-    onSuccess: () => {
-      setActionAlert({ text: 'Синхронизация Google Таблиц запущена', type: 'success' });
+    onSuccess: (res) => {
+      setActionAlert({
+        text: res.success
+          ? 'Синхронизация Google Таблиц выполнена'
+          : `Ошибка синхронизации: ${res.error || res.output || 'скрипт не выполнен'}`,
+        type: res.success ? 'success' : 'error',
+      });
       queryClient.invalidateQueries({ queryKey: ['admin-logs'] });
     },
   });
@@ -87,31 +99,21 @@ export function AdminServicesTab({
   const handleSelfHealingAudit = async () => {
     if (isSelfHealing) return;
     setIsSelfHealing(true);
-    setSelfHealingLogs([
-      `[${new Date().toLocaleTimeString('ru-RU')}] L1/L2 DevOps Healer: Запуск проверки портов и сервисов...`,
-      '├─ Опрос FastAPI (порт 8000), Google Sheets API, n8n...',
-    ]);
+    const stamp = () => new Date().toLocaleTimeString('ru-RU');
+    setSelfHealingLogs([`[${stamp()}] Запрос статуса QA Healer...`]);
 
     try {
-      await adminApi.triggerHealer('status');
-      setTimeout(() => {
-        setSelfHealingLogs((prev) => [
-          ...prev,
-          `[${new Date().toLocaleTimeString('ru-RU')}] Agent 2 CCO Repairman: Валидация воронки и CR-критериев завершена`,
-          `[${new Date().toLocaleTimeString('ru-RU')}] ВЕРДИКТ: Все сервисы функционируют штатно • SSOT 100%`,
-        ]);
-        setIsSelfHealing(false);
-        queryClient.invalidateQueries({ queryKey: ['admin-system-status'] });
-      }, 1000);
-    } catch {
-      setTimeout(() => {
-        setSelfHealingLogs((prev) => [
-          ...prev,
-          `[${new Date().toLocaleTimeString('ru-RU')}] L1/L2 DevOps Healer: OK (локальный режим)`,
-          `[${new Date().toLocaleTimeString('ru-RU')}] ВЕРДИКТ: Все сервисы функционируют штатно.`,
-        ]);
-        setIsSelfHealing(false);
-      }, 800);
+      const res = await adminApi.triggerHealer('status');
+      setSelfHealingLogs((prev) => [
+        ...prev,
+        `[${stamp()}] ${res.success ? 'Healer' : 'Healer недоступен'}: ${res.output || 'нет ответа'}`,
+      ]);
+      queryClient.invalidateQueries({ queryKey: ['admin-system-status'] });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : 'нет ответа';
+      setSelfHealingLogs((prev) => [...prev, `[${stamp()}] Ошибка проверки: ${reason}`]);
+    } finally {
+      setIsSelfHealing(false);
     }
   };
 
@@ -386,7 +388,7 @@ export function AdminServicesTab({
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
               <span className="text-secondary">Подключение:</span>
               <span className="font-medium text-emerald-400">
-                {statusData?.gemini_ai?.status_label || '🟢 ПОДКЛЮЧЕНО (Direct API)'}
+                {statusData?.gemini_ai?.status_label || '—'}
               </span>
             </div>
             <div className="flex items-center justify-between pt-1">

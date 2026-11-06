@@ -24,7 +24,7 @@ def client():
 def test_deals_list_shape(client):
     # The list/fix-next-step round trip on a real deal lives in tests/test_deal_sla.py. This test used to
     # depend on seeded demo deals that the API invented for any tenant without data.
-    res = client.get("/api/v1/deals?sla_risk_only=true")
+    res = client.get("/api/v1/deals?sla_risk_only=true", headers={"X-Admin-Key": os.environ["REVOPS_ADMIN_KEY"]})
     assert res.status_code == 200
     data = res.json()
     assert "deals" in data and data["total"] == len(data["deals"])
@@ -32,7 +32,7 @@ def test_deals_list_shape(client):
 
 
 def test_metrics_revenue_history(client):
-    res = client.get("/api/v1/metrics/revenue-history?org_id=org_demo")
+    res = client.get("/api/v1/metrics/revenue-history?org_id=org_demo", headers={"X-Admin-Key": os.environ["REVOPS_ADMIN_KEY"]})
     assert res.status_code == 200
     data = res.json()
     assert "history" in data

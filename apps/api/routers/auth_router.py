@@ -19,7 +19,14 @@ from sqlalchemy.orm import Session
 from packages.database.models import RevokedToken, SubscriptionTier, Tenant, User, UserRole, Workspace
 from packages.database.session import get_db
 
-from ..auth import create_access_token, get_current_user, hash_password, verify_password
+from ..auth import (
+    SUSPENDED_TENANT_STATUSES,
+    create_access_token,
+    get_current_user,
+    hash_password,
+    is_admin_role,
+    verify_password,
+)
 from ..schemas import LoginRequest, TenantRegisterRequest, TokenResponse, UserResponse
 from ..tenant_provisioner import generate_tenant_id
 
@@ -246,8 +253,7 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
     role_str = str(matched_client.get("role", "")).lower()
     is_admin = (
         matched_client.get("role") == UserRole.ADMIN
-        or "admin" in role_str
-        or "супервайзер" in role_str
+        or is_admin_role(role_str)
         or login_clean in ("admin", "dmitriyfedotov1908@gmail.com")
         or matched_client.get("is_system") is True
     )
@@ -274,6 +280,11 @@ def client_login(req: ClientLoginRequest, response: Response, request: Request):
             status_code=403,
             detail="Для учётной записи не назначена компания. Обратитесь к администратору.",
         )
+    if t_match and not is_admin:
+        from ..tenant_registry import get_tenant_config
+
+        if str((get_tenant_config(t_match.group(0)) or {}).get("status") or "").lower() in SUSPENDED_TENANT_STATUSES:
+            raise HTTPException(status_code=403, detail="Доступ компании приостановлен администратором")
     effective_tenant = t_match.group(0).upper() if t_match else "TNT-001"  # platform admin only
 
     from ..auth import create_access_token

@@ -473,8 +473,8 @@ export const adminApi = {
   sheetsAction: async (
     action: string,
     target?: string
-  ): Promise<{ success: boolean; output?: string }> => {
-    const res = await api.post<{ success: boolean; output?: string }>(
+  ): Promise<{ success: boolean; output?: string; error?: string }> => {
+    const res = await api.post<{ success: boolean; output?: string; error?: string }>(
       '/admin/sheets/action',
       {
         action,
@@ -598,11 +598,12 @@ export const adminApi = {
 
   crmAction: async (
     payload: CrmActionPayload
-  ): Promise<{ success: boolean; output?: string; message?: string }> => {
+  ): Promise<{ success: boolean; output?: string; message?: string; error?: string }> => {
     const res = await api.post<{
       success: boolean;
       output?: string;
       message?: string;
+      error?: string;
     }>('/admin/crm/action', payload);
     return res.data;
   },

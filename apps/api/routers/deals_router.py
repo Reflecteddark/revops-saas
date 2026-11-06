@@ -334,7 +334,7 @@ def get_authenticated_tenant_or_verify_admin(request: Request, requested_tenant:
             raise HTTPException(status_code=401, detail="Токен истек или недействителен")
 
     # NOTE: the `revops_client_auth` cookie is an opaque, unvalidated string and must never grant tenant access.
-    # 2. Check Admin Access (Admin cookie, X-Admin-Key, session, or internal docker network)
+    # 2. Check Admin Access (Admin cookie, X-Admin-Key or admin JWT)
     verify_admin_access(request)
     return (requested_tenant or "TNT-001").strip().upper()
 

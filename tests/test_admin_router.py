@@ -178,8 +178,8 @@ def test_healer_status_action():
     assert "output" in resp.json()
 
 
-def test_admin_status_with_query_param_admin_key():
-    """Verifies that remote requests with query parameter admin_key succeed."""
+def test_admin_status_rejects_query_param_admin_key():
+    """The key in a URL ends up in history and logs: only the header (or a cookie/JWT) authenticates API calls."""
     import os
     admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
     resp = client.get(
@@ -189,8 +189,7 @@ def test_admin_status_with_query_param_admin_key():
             "cf-connecting-ip": "194.87.12.34"
         }
     )
-    assert resp.status_code == 200
-    assert "fleet_status" in resp.json()
+    assert resp.status_code == 403
 
 
 def test_admin_status_with_jwt_cookie_for_dmitry():
@@ -222,14 +221,19 @@ def test_client_login_dmitry_sets_admin_cookie():
 
 
 def test_serve_admin_with_query_param_admin_key():
-    """Verifies that /admin?admin_key=... sets revops_admin_token cookie and injects initial tab."""
+    """/admin?admin_key=... swaps the key for the HttpOnly cookie and redirects without the key in the URL."""
     import os
     admin_key = os.getenv("REVOPS_ADMIN_KEY", "ci-test-admin-key-min-32-chars-long-abc-xyz")
-    resp = client.get(f"/admin?admin_key={admin_key}")
-    assert resp.status_code == 200
+    resp = client.get(f"/admin?admin_key={admin_key}&x=1", follow_redirects=False)
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/admin?x=1"
     assert "revops_admin_token" in resp.cookies
-    assert '__INITIAL_TAB__="admin"' in resp.text
-    assert admin_key in resp.text
+    assert admin_key not in resp.text
+
+    page = client.get("/admin")
+    assert page.status_code == 200
+    assert '__INITIAL_TAB__="admin"' in page.text
+    assert admin_key not in page.text
 
 
 def test_admin_update_tenant_and_get_webhooks():

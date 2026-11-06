@@ -91,10 +91,11 @@ export function AdminCrmSandboxTab() {
       setActionAlert({
         text:
           res.message ||
+          res.error ||
           (res.output
             ? `Команда выполнена: ${res.output.slice(0, 80)}...`
             : 'Действие выполнено'),
-        type: 'success',
+        type: res.success === false ? 'error' : 'success',
       });
       queryClient.invalidateQueries({ queryKey: ['admin-crm-status'] });
       queryClient.invalidateQueries({ queryKey: ['admin-logs'] });
@@ -284,14 +285,8 @@ export function AdminCrmSandboxTab() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  crmActionMutation.mutate({
-                    action: 'switch_crm',
-                    tenant_id: selectedTenantId,
-                    crm_type: activeCrm === 'bitrix24' ? 'amocrm' : 'bitrix24',
-                  })
-                }
-                disabled={crmActionMutation.isPending}
+                disabled
+                title="Отключено: переключение очищает raw_deals и raw_calls в Таблице клиента"
                 className="h-8 gap-1.5 border-subtle bg-surface text-xs hover:bg-hover"
                 data-testid="btn-switch-crm"
               >
