@@ -10,6 +10,7 @@ Validates:
 7. Soft-delete handling and SLA risk suppression.
 """
 
+import os
 import json
 import uuid
 from unittest.mock import AsyncMock, patch
@@ -33,6 +34,8 @@ from apps.api.services.crm_deal_normalizer import (
 )
 
 client = TestClient(app, client=("172.16.0.5", 50000))
+# A private source IP is no longer a credential: requests that must reach the handler carry the admin key.
+_ADMIN_HEADERS = {"X-Admin-Key": os.environ["REVOPS_ADMIN_KEY"]}
 
 
 # ==============================================================================
@@ -684,11 +687,11 @@ def test_tenant_isolation_deals_and_url_tamper():
         assert "Cross-tenant access forbidden" in res_tamper.json()["detail"]
 
         # Test A3: Public endpoint is completely disabled/removed for security (returns 404)
-        res_pub1 = client.get(f"/api/v1/deals/public?tenant_id={t1_id}")
+        res_pub1 = client.get(f"/api/v1/deals/public?tenant_id={t1_id}", headers=_ADMIN_HEADERS)
         assert res_pub1.status_code == 404
 
         # Test A4: Public endpoint without query param is also 404 Not Found
-        res_pub_missing = client.get("/api/v1/deals/public")
+        res_pub_missing = client.get("/api/v1/deals/public", headers=_ADMIN_HEADERS)
         assert res_pub_missing.status_code == 404
 
     finally:

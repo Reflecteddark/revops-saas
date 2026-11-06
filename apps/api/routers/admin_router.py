@@ -22,7 +22,6 @@ import sys
 import time
 import urllib.request
 from datetime import datetime, timezone
-from ipaddress import ip_address, ip_network
 from pathlib import Path
 from threading import Lock
 from typing import Any
@@ -81,30 +80,15 @@ def verify_admin_cookie_token(token: str, max_age_sec: int = 7 * 86400) -> bool:
         return False
 
 
-INTERNAL_NETS = [
-    ip_network("10.0.0.0/8"),
-    ip_network("172.16.0.0/12"),
-    ip_network("192.168.0.0/16"),
-    ip_network("127.0.0.0/8"),
-    ip_network("::1/128"),
-]
-
-
-def _is_internal_ip(ip_str: str) -> bool:
-    try:
-        ip = ip_address(ip_str)
-        return any(ip in net for net in INTERNAL_NETS)
-    except Exception:
-        return False
-
-
 def verify_admin_access(request: Request):
     """
     Guarantees zero unauthorized access to admin fleet actions.
-    Public requests via Cloudflare Tunnel / Vercel are allowed if:
-    1. Localhost direct request without public proxy headers, OR
-    2. Valid HttpOnly signed cookie (revops_admin_token), OR
-    3. Valid X-Admin-Key or X-RevOps-Admin-Key header.
+    A source address is never proof of identity: published Docker ports reach the API from the
+    gateway's private IP, whoever the caller is. Every caller must present one of:
+    1. Valid HttpOnly signed cookie (revops_admin_token), OR
+    2. Valid X-Admin-Key or X-RevOps-Admin-Key header, OR
+    3. Valid admin JWT.
+    The only exception is a loopback request with REVOPS_ENV=dev (and the pytest client).
     Otherwise returns 403 Forbidden.
     """
     client_ip = request.client.host if request.client else ""
@@ -121,10 +105,6 @@ def verify_admin_access(request: Request):
         or "127.0.0.1" in host_header
         or host_header == "testserver"
     ):
-        return True
-
-    # Allow internal docker network (e.g. 172.16.0.0/12, 10.0.0.0/8)
-    if client_ip and _is_internal_ip(client_ip) and not is_tunnel:
         return True
 
     # 1. HttpOnly signed cookie check
