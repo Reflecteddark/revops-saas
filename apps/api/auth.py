@@ -26,6 +26,26 @@ _ROP_WORD = re.compile(r"(?<!\w)(rop|роп)(?!\w)")  # a whole word, so "Евр
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days (matches session cookie duration)
 
+# Platform admin is an exact role label, never a substring: a client's job title such as "Супервайзер продаж"
+# or "Admin assistant" is free text typed in the panel and must not open every tenant and every /admin route.
+ADMIN_ROLE_LABELS = frozenset({"admin", UserRole.ADMIN.value.lower(), "admin / супервайзер"})
+SUSPENDED_TENANT_STATUSES = ("frozen", "archived", "offboarded", "blocked")
+
+
+def is_admin_role(role: object) -> bool:
+    return str(getattr(role, "value", role) or "").strip().lower() in ADMIN_ROLE_LABELS
+
+
+def _reject_if_tenant_suspended(user: object) -> None:
+    """A frozen or offboarded company loses the sessions it already holds, not only the login form."""
+    if is_admin_role(getattr(user, "role", "")):
+        return
+    from .tenant_registry import get_tenant_config
+
+    cfg = get_tenant_config(str(getattr(user, "tenant_id", "") or "")) or {}
+    if str(cfg.get("status") or "").lower() in SUSPENDED_TENANT_STATUSES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ компании приостановлен администратором")
+
 security = HTTPBearer(auto_error=False)
 
 
@@ -92,11 +112,12 @@ def get_current_user(
     if db_user:
         if not db_user.is_active:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
+        _reject_if_tenant_suspended(db_user)
         return db_user
 
     # 3. Fallback for valid JWT belonging to registered/system client (not present in users DB)
     role_raw = str(payload.get("role") or "").lower()
-    if "admin" in role_raw or "супервайзер" in role_raw:
+    if is_admin_role(role_raw):
         assigned_role = UserRole.ADMIN
     elif _ROP_WORD.search(role_raw):
         # checked BEFORE the CEO words: the client label "РОП • Руководитель ОП" is a head of sales, not an owner
@@ -106,7 +127,7 @@ def get_current_user(
     else:
         assigned_role = UserRole.KAM
 
-    return User(
+    user = User(
         id=user_id,
         tenant_id=tenant_id or "TNT-001",
         email=str(payload.get("email") or user_id),
@@ -114,6 +135,8 @@ def get_current_user(
         role=assigned_role,
         is_active=True,
     )
+    _reject_if_tenant_suspended(user)
+    return user
 
 
 def require_roles(*allowed_roles: UserRole):

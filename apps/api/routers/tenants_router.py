@@ -580,6 +580,8 @@ def offboard_tenant(
     - Prepares final audit entry
     """
     clean_id = tenant_id.strip().upper()
+    if clean_id == "TNT-001":
+        raise HTTPException(status_code=400, detail="Вывод из эксплуатации мастер-тенанта TNT-001 запрещён")
     reg_path = get_tenants_registry_path()
     if not reg_path:
         raise HTTPException(status_code=500, detail="tenants_registry.json not found")

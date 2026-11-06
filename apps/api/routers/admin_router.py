@@ -112,12 +112,9 @@ def verify_admin_access(request: Request):
     if cookie_token and verify_admin_cookie_token(cookie_token):
         return True
 
-    # 2. Direct secret admin key check (X-Admin-Key, X-RevOps-Admin-Key header, or query param)
-    admin_key = (
-        request.headers.get("x-admin-key")
-        or request.headers.get("x-revops-admin-key")
-        or request.query_params.get("admin_key")
-    )
+    # 2. Direct secret admin key check (X-Admin-Key or X-RevOps-Admin-Key header). Not a query parameter:
+    # URLs end up in browser history, proxy and access logs.
+    admin_key = request.headers.get("x-admin-key") or request.headers.get("x-revops-admin-key")
     if admin_key and any(hmac.compare_digest(admin_key, k) for k in ALLOWED_ADMIN_KEYS):
         return True
 
@@ -129,11 +126,11 @@ def verify_admin_access(request: Request):
     if jwt_token:
         try:
             import jwt
-            from ..auth import ALGORITHM, SECRET_KEY
+            from ..auth import ALGORITHM, SECRET_KEY, is_admin_role
             payload = jwt.decode(jwt_token, SECRET_KEY, algorithms=[ALGORITHM])
             sub = str(payload.get("sub") or "").lower().strip()
             role = str(payload.get("role") or "").lower().strip()
-            if sub in ("admin", "dmitriyfedotov1908@gmail.com") or "admin" in role or "супервайзер" in role:
+            if sub in ("admin", "dmitriyfedotov1908@gmail.com") or payload.get("is_admin") is True or is_admin_role(role):
                 return True
         except Exception:
             pass
@@ -249,11 +246,12 @@ def _cached_status(key: str, fn):
 def get_n8n_status() -> dict[str, Any]:
     def _compute():
         port = 5678
-        listening = is_port_listening(port)
+        host = os.getenv("N8N_INTERNAL_HOST", "127.0.0.1")  # n8n is another container: its docker-network name
+        listening = is_port_listening(port, host)
         health_ok = False
         if listening:
             try:
-                req = urllib.request.Request(f"http://127.0.0.1:{port}/healthz", headers={"User-Agent": "RevOps-Admin/1.0"})
+                req = urllib.request.Request(f"http://{host}:{port}/healthz", headers={"User-Agent": "RevOps-Admin/1.0"})
                 with urllib.request.urlopen(req, timeout=1.5) as resp:
                     health_ok = (resp.status == 200)
             except Exception:
@@ -262,10 +260,19 @@ def get_n8n_status() -> dict[str, Any]:
             "port": port,
             "listening": listening,
             "healthy": health_ok,
-            "url": f"http://127.0.0.1:{port}",
+            "url": f"http://{host}:{port}",
             "status_label": "🟢 АКТИВЕН" if health_ok else ("🟡 СЛУШАЕТ" if listening else "🔴 ОСТАНОВЛЕН")
         }
     return _cached_status("n8n_status", _compute)
+
+
+def _public_url_alive(url: str) -> bool:
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 RevOps-Admin"})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
 
 
 def get_tunnel_status() -> dict[str, Any]:
@@ -295,6 +302,10 @@ def get_tunnel_status() -> dict[str, Any]:
         except Exception:
             pass
 
+        if not is_running:
+            # A container sees neither systemd nor tasklist: the public hostname answering is the real proof.
+            is_running = _public_url_alive(f"{url}/healthz")
+
         candidates = [
             ENTERPRISE_OS_DIR / "active_tunnel_url.txt",
             BASE_DIR / "active_tunnel_url.txt",
@@ -322,6 +333,14 @@ def get_task_scheduler_status(task_name: str) -> dict[str, Any]:
     def _compute():
         try:
             if sys.platform.startswith("linux"):
+                if not shutil.which("systemctl") and not shutil.which("docker"):
+                    return {
+                        "name": task_name,
+                        "installed": False,
+                        "state": "Недоступно из контейнера",
+                        "next_run": "—",
+                        "status_label": "⚪ Недоступно из контейнера (Планировщик хоста)",
+                    }
                 service_map = {
                     "RevOps_FastAPI_Backend": "revops-api.service",
                     "RevOps_Daily_Sheets_AutoSync": "cron",
@@ -1938,6 +1957,8 @@ def change_tenant_status_endpoint(tenant_id: str, req: TenantStatusRequest):
         return {"success": True, "action": "unfreeze", "status": "active", "message": msg}
 
     elif action == "offboard":
+        if clean_id == "TNT-001":
+            raise HTTPException(status_code=400, detail="Вывод из эксплуатации мастер-тенанта TNT-001 запрещён")
         removed = registry["tenants"].pop(target_idx)
         removed["status"] = "archived"
         removed["archived_at"] = datetime.now().isoformat()
@@ -3462,48 +3483,8 @@ QUARANTINE_FILE = BASE_DIR / "logs" / "quarantine_registry.json"
 
 
 def _get_initial_quarantine_data() -> list[dict[str, Any]]:
-    return [
-        {
-            "id": "quar_call_101",
-            "deal_id": "D-7491",
-            "deal_title": "ООО ПрофМет • Поставка металлопроката",
-            "tenant_id": "TNT-001",
-            "tenant_name": "Самозанятый (Master)",
-            "manager": "Дмитрий Федотов",
-            "client": "Сергей Викторович (Генеральный директор)",
-            "duration": "3:24",
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "z_score": 2.84,
-            "grounding_recall": "78.4%",
-            "flagged_criterion": "cr12 (Фиксация встречи/Zoom)",
-            "reason": "Модель выставила cr12=1, однако в стенограмме отсутствует точное подтверждение времени встречи клиентом (Z-Score 2.84 > 2.5). Риск галлюцинации.",
-            "status": "in_quarantine",
-            "score": 9,
-            "cr": [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0],
-            "audio_url": "https://actions.google.com/sounds/v1/office/typing_at_computer.ogg",
-            "transcript": "Менеджер: 'Сергей Викторович, направляю КП на почту, созвонимся для обсуждения во вторник?' Клиент: 'Да, хорошо, присылайте, посмотрим.'"
-        },
-        {
-            "id": "quar_call_102",
-            "deal_id": "D-8820",
-            "deal_title": "ГК Альянс • Внедрение RevOps ERP",
-            "tenant_id": "TNT-001",
-            "tenant_name": "Самозанятый (Master)",
-            "manager": "Алексей Смирнов",
-            "client": "Елена (Финдир)",
-            "duration": "2:15",
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "z_score": 2.62,
-            "grounding_recall": "81.2%",
-            "flagged_criterion": "cr4 (BANT: Бюджет)",
-            "reason": "Менеджер озвучил диапазон цен без явного согласования платежеспособности заказчика. Аномальное расхождение критерия квалификации.",
-            "status": "in_quarantine",
-            "score": 8,
-            "cr": [1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
-            "audio_url": "https://actions.google.com/sounds/v1/office/typing_at_computer.ogg",
-            "transcript": "Менеджер: 'Базовый тариф у нас 350 тысяч, расширенный 600 тысяч.' Клиент: 'Понятно, нам нужно согласовать с учредителями.'"
-        }
-    ]
+    # No demo rows: "approve" writes the call into the tenant's real Google Sheet and broadcasts it to the dashboard.
+    return []
 
 
 def load_quarantine_items() -> list[dict[str, Any]]:

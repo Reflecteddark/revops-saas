@@ -169,11 +169,12 @@ export function AdminClientsTab() {
   // Helper actions
   const generatePassword = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    const pick = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
     let pass = 'RevOps-';
-    for (let i = 0; i < 4; i++) {
-      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    for (let i = 0; i < 10; i++) {
+      pass += chars.charAt(pick(chars.length));
     }
-    pass += Math.floor(10 + Math.random() * 90) + '!';
+    pass += (10 + pick(90)) + '!';
     setClientPassword(pass);
   };
 

@@ -105,9 +105,10 @@ export function TenantEditModal({ tenant, isOpen, onClose, onSuccess }: TenantEd
 
   const handleGeneratePassword = () => {
     const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%';
+    const pick = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
     let res = '';
-    for (let i = 0; i < 12; i++) {
-      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    for (let i = 0; i < 16; i++) {
+      res += chars.charAt(pick(chars.length));
     }
     setNewPassword(res);
   };

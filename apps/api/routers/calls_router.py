@@ -26,7 +26,7 @@ from packages.analytics_engine.speech_scoring import evaluate_speech_scorecard
 from packages.database.models import CallRecording, Deal, DealStage, User, UserRole
 from packages.database.session import get_db
 
-from ..auth import get_current_user, security
+from ..auth import get_current_user, is_admin_role, security
 from ..cache_client import (
     delete_cached_json_sync,
     get_cached_json_sync,
@@ -124,7 +124,7 @@ def get_calls_data_user(
                 u = db.query(User).filter(User.id == user_id).first()
                 if u:
                     return u
-                is_admin_token = "admin" in str(payload.get("role", "")).lower()
+                is_admin_token = is_admin_role(payload.get("role", ""))
                 if not tenant_id and not is_admin_token:
                     # same rule as auth.get_current_user: a client token without a company must not become TNT-001
                     raise HTTPException(status_code=401, detail="Токен не содержит компанию (tenant)")
@@ -133,7 +133,7 @@ def get_calls_data_user(
                     tenant_id=tenant_id or "TNT-001",
                     email=user_id,
                     full_name=str(payload.get("name") or "User"),
-                    role=UserRole.ADMIN if "admin" in str(payload.get("role", "")).lower() else UserRole.KAM,
+                    role=UserRole.ADMIN if is_admin_role(payload.get("role", "")) else UserRole.KAM,
                     is_active=True
                 )
         except Exception:
@@ -758,8 +758,7 @@ def get_dashboard_calls_data(
         is_admin = bool(
             getattr(current_user, "is_admin", False)
             or getattr(current_user, "role", None) == UserRole.ADMIN
-            or "admin" in str(getattr(current_user, "role", "")).lower()
-            or "супервайзер" in str(getattr(current_user, "role", "")).lower()
+            or is_admin_role(getattr(current_user, "role", ""))
             or str(getattr(current_user, "email", "")).lower() in ("admin", "dmitriyfedotov1908@gmail.com")
             or str(getattr(current_user, "id", "")).lower() in ("admin", "dmitriyfedotov1908@gmail.com")
             or current_user.tenant_id == "*"
