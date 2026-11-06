@@ -285,7 +285,7 @@ def get_tenant_passport(
     secret = str(cfg.get("secret") or "").strip()
     secret_suffix = f"?secret={secret}" if secret else ""
 
-    telephony_webhook = f"{base_domain}/api/v1/webhooks/{clean_id}/call"
+    telephony_webhook = f"{base_domain}/api/v1/webhooks/{clean_id}/call{secret_suffix}"
     amocrm_webhook = f"{base_domain}/api/v1/webhooks/{clean_id}/amo-crm{secret_suffix}"
     bitrix24_webhook = f"{base_domain}/api/v1/webhooks/{clean_id}/bitrix24{secret_suffix}"
 

@@ -786,7 +786,18 @@ async def _process_telephony_call(
     in FastAPI BackgroundTasks to eliminate telephony provider timeouts.
     """
     t_start = time.time()
-    verify_internal_or_admin(request)
+    is_internal = False
+    try:
+        is_internal = verify_internal_or_admin(request)
+    except HTTPException:
+        is_internal = False
+
+    if not is_internal and not tenant_param:
+        raise HTTPException(
+            status_code=403,
+            detail="Доступ запрещён: универсальный шлюз /call доступен только из локальной сети n8n или с ключом администратора",
+        )
+
     try:
         body = await request.json()
     except Exception:
@@ -794,6 +805,16 @@ async def _process_telephony_call(
 
     org_id = resolve_webhook_tenant(request, tenant_param, body)
     verify_tenant_active(org_id)
+
+    if not is_internal:
+        from ..tenant_registry import get_tenant_config
+        cfg = get_tenant_config(org_id)
+        expected_secret = str(cfg.get("secret") or "").strip() if cfg else ""
+        if not expected_secret:
+            raise HTTPException(status_code=403, detail="Секрет вебхука телефонии не настроен для клиента")
+        provided_secret = request.headers.get("x-webhook-secret") or request.query_params.get("secret")
+        if not provided_secret or not hmac.compare_digest(str(provided_secret), expected_secret):
+            raise HTTPException(status_code=403, detail="Неверный или отсутствующий секрет вебхука телефонии")
 
     provider_name = body.get("provider") or body.get("telephony_provider") or "telephony"
     webhook_id = record_incoming_webhook(provider_name, org_id, body, dict(request.headers), event="telephony_call", status="queued")
@@ -831,17 +852,20 @@ async def _process_telephony_call(
     view = call_view(call_payload)
     call_dict.update({k: view[k] for k in ("cr", "score", "next_step", "kind", "status", "status_label", "risk_amount")})
     task_id = None
-    queue_driver = "celery"
+    queue_driver = "background_tasks"
+    use_celery = os.getenv("REVOPS_USE_CELERY", "false").strip().lower() in ("true", "1", "yes")
 
-    # 1. Attempt asynchronous dispatch to Celery broker (Redis queue)
-    try:
-        from workers.tasks import process_call_audio_task
-        task = process_call_audio_task.delay(call_dict, org_id, webhook_id, t_start)
-        task_id = task.id
-    except Exception as broker_err:
-        # 2. Antifragile fallback to in-process BackgroundTasks if Redis broker is offline
-        queue_driver = "background_tasks"
-        logger.debug(f"Celery dispatch fallback to BackgroundTasks: {broker_err}")
+    # 1. Dispatch to Celery broker only when REVOPS_USE_CELERY=true is explicitly enabled
+    if use_celery:
+        try:
+            from workers.tasks import process_call_audio_task
+            task = process_call_audio_task.delay(call_dict, org_id, webhook_id, t_start)
+            task_id = task.id
+            queue_driver = "celery"
+        except Exception as broker_err:
+            logger.debug(f"Celery dispatch fallback to BackgroundTasks: {broker_err}")
+
+    if queue_driver != "celery":
         if background_tasks:
             background_tasks.add_task(_execute_telephony_background, call_payload, org_id, webhook_id, t_start)
             task_id = f"bg_{int(time.time()*1000)}"
@@ -870,9 +894,9 @@ async def receive_telephony_call(request: Request, background_tasks: BackgroundT
     return await _process_telephony_call(request, None, background_tasks)
 
 
-@router.post("/{tenant_id}/call", dependencies=[Depends(verify_internal_or_admin)])
+@router.post("/{tenant_id}/call")
 async def receive_telephony_call_scoped(tenant_id: str, request: Request, background_tasks: BackgroundTasks):
-    """Universal Telephony receiver scoped to specific tenant in URL."""
+    """Universal Telephony receiver scoped to specific tenant in URL (accepts tenant secret or internal/admin)."""
     return await _process_telephony_call(request, tenant_id, background_tasks)
 
 
