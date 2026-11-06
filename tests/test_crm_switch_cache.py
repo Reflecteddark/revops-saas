@@ -14,15 +14,17 @@ client = TestClient(app)
 admin_key = next(iter(ALLOWED_ADMIN_KEYS))
 
 
-def test_admin_crm_switch_scoped_cache():
+def test_admin_crm_switch_scoped_cache(tmp_path):
     """Validates that execute_crm_action(switch_crm) for tenant A preserves tenant B cache."""
+    registry = tmp_path / "tenants_registry.json"
+    registry.write_text('{"tenants": [{"tenant_id": "TNT-A", "crm_type": "bitrix24"}]}', encoding="utf-8")
     # Pre-populate cache for Tenant A and Tenant B
     _CALLS_CACHE["TNT-A"] = {"timestamp": 12345.0, "calls": [{"id": "call_a"}]}
     _CALLS_CACHE["TNT-B"] = {"timestamp": 12345.0, "calls": [{"id": "call_b"}]}
     _DEALS_CACHE["TNT-A"] = {"timestamp": 12345.0, "deals": [{"id": "deal_a"}]}
     _DEALS_CACHE["TNT-B"] = {"timestamp": 12345.0, "deals": [{"id": "deal_b"}]}
 
-    with patch("subprocess.run") as mock_sub:
+    with patch("subprocess.run") as mock_sub,          patch("apps.api.tenant_registry.get_tenants_registry_path", return_value=registry),          patch("apps.api.tenant_registry.get_all_candidate_registry_paths", return_value=[]):
         mock_sub.return_value.returncode = 0
         mock_sub.return_value.stdout = ""
         mock_sub.return_value.stderr = ""

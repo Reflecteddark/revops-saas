@@ -538,7 +538,7 @@ def get_admin_system_status():
             "model": "Google Gemini 3.5 Flash",
             "proxy_worker": os.getenv("GEMINI_WORKER_URL", "https://gemini-proxy.revops.workers.dev"),
             "criteria_count": 13,
-            "status_label": "🟢 ПОДКЛЮЧЕНО (Direct API)"
+            "status_label": "⚪ НЕ ПРОВЕРЯЛОСЬ (кнопка «Тест Gemini API»)"
         },
         "health_guard": {
             "disk": disk_info,
@@ -615,9 +615,10 @@ def execute_fleet_action(req: FleetActionRequest):
         else:
             output_lines.append(f"[✓] Защищённый HTTPS-туннель уже активен: {tunnel_status['url']}")
 
-        msg = "Службы запущены: " + "; ".join(output_lines)
-        append_console_log(msg, "success")
-        return {"success": True, "action": action, "output": output_lines, "message": msg}
+        ok = not any(line.startswith("[!]") for line in output_lines)
+        msg = ("Службы запущены: " if ok else "Не все службы запущены: ") + "; ".join(output_lines)
+        append_console_log(msg, "success" if ok else "error")
+        return {"success": ok, "action": action, "output": output_lines, "message": msg}
 
     elif action == "stop_all":
         if sys.platform.startswith("linux"):
@@ -643,9 +644,10 @@ def execute_fleet_action(req: FleetActionRequest):
             except Exception as e:
                 output_lines.append(f"[!] Tunnel: {e}")
 
-        msg = "Все внешние фоновые службы остановлены."
-        append_console_log(msg, "warning")
-        return {"success": True, "action": action, "output": output_lines, "message": msg}
+        ok = not any(line.startswith("[!]") for line in output_lines)
+        msg = "Все внешние фоновые службы остановлены." if ok else "Не все службы остановлены: " + "; ".join(output_lines)
+        append_console_log(msg, "warning" if ok else "error")
+        return {"success": ok, "action": action, "output": output_lines, "message": msg}
 
     elif action in ("restart_services", "restart_all"):
         if sys.platform.startswith("linux"):
@@ -660,8 +662,8 @@ def execute_fleet_action(req: FleetActionRequest):
             except Exception as e:
                 return {"success": False, "error": str(e)}
         else:
-            msg = "Команда перезапуска отправлена"
-            return {"success": True, "action": action, "output": [msg], "message": msg}
+            msg = "Общий перезапуск на этой платформе не реализован: используйте restart_n8n и restart_tunnel"
+            return {"success": False, "action": action, "output": [msg], "message": msg}
 
     elif action in ("start_n8n", "restart_n8n"):
         if sys.platform.startswith("linux"):
@@ -872,9 +874,9 @@ def execute_task_action(req: TaskActionRequest):
         append_console_log(f"Установка автозадачи на {time_str} ежедневно...", "info")
 
         if sys.platform.startswith("linux"):
-            msg = f"Автозадача на VPS сконфигурирована на {time_str} ежедневно"
-            append_console_log(msg, "success")
-            return {"success": True, "message": msg}
+            msg = f"Автозадачу на {time_str} нельзя настроить отсюда: API работает в контейнере без доступа к Планировщику хоста"
+            append_console_log(msg, "error")
+            return {"success": False, "message": msg}
 
         # Find run_daily_sync.cmd or python fallback
         sync_script = find_python_script("daily_sheets_autosync.py")
@@ -928,9 +930,9 @@ def execute_task_action(req: TaskActionRequest):
     elif action == "uninstall_daily":
         append_console_log("Отключение и удаление автозадачи...", "warning")
         if sys.platform.startswith("linux"):
-            msg = "Автозадача на VPS деактивирована"
-            append_console_log(msg, "info")
-            return {"success": True, "message": msg}
+            msg = "Автозадачу нельзя отключить отсюда: API работает в контейнере без доступа к Планировщику хоста"
+            append_console_log(msg, "error")
+            return {"success": False, "message": msg}
         else:
             res = subprocess.run(["schtasks.exe", "/Delete", "/TN", task_name, "/F"], capture_output=True, text=True, encoding="utf-8")
             ok = (res.returncode == 0)
@@ -2162,7 +2164,7 @@ def execute_healer_action(req: HealerActionRequest):
     if action == "run_now":
         append_console_log("Запуск внеочередного аудита и самоисцеления флота (QA Healer)...", "info")
         if not healer_engine.exists():
-            return {"success": True, "output": "QA Healer simulated pass: all tenant invariant checks succeeded."}
+            return {"success": False, "output": "QA Healer не установлен: проверка не выполнена"}
         cmd = [str(MY_AI_CREW_PYTHON), str(healer_engine), "--all-tenants", "--duty"]
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
@@ -2178,7 +2180,7 @@ def execute_healer_action(req: HealerActionRequest):
     elif action == "status":
         ps_bin = shutil.which("powershell") or shutil.which("pwsh")
         if not ps_bin or not setup_script.exists():
-            return {"success": True, "output": "RevOps DevOps QA Healer daemon is active (service status: OK)"}
+            return {"success": False, "output": "QA Healer не установлен: статус неизвестен"}
         try:
             cmd = [ps_bin, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(setup_script), "-Action", "Status"]
             res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
@@ -2190,7 +2192,7 @@ def execute_healer_action(req: HealerActionRequest):
         append_console_log("Регистрация задачи 'RevOps_DevOps_QA_Healer' в планировщике (каждые 15 мин)...", "info")
         ps_bin = shutil.which("powershell") or shutil.which("pwsh")
         if not ps_bin or not setup_script.exists():
-            return {"success": True, "output": "Healer task registered in system scheduler."}
+            return {"success": False, "output": "QA Healer не установлен: задача не создана"}
         try:
             cmd = [ps_bin, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(setup_script), "-Action", "Install"]
             res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
@@ -2204,7 +2206,7 @@ def execute_healer_action(req: HealerActionRequest):
         append_console_log("Удаление задачи дежурного ревизора из планировщика...", "warning")
         ps_bin = shutil.which("powershell") or shutil.which("pwsh")
         if not ps_bin or not setup_script.exists():
-            return {"success": True, "output": "Healer task removed from system scheduler."}
+            return {"success": False, "output": "QA Healer не установлен: задача не удалена"}
         try:
             cmd = [ps_bin, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(setup_script), "-Action", "Uninstall"]
             res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
@@ -2754,20 +2756,30 @@ async def execute_crm_action(req: CRMActionRequest):
         # Same mirror set as save_tenants_registry (single source of registry locations).
         candidate_reg_paths = [get_tenants_registry_path(), *tenant_registry.get_all_candidate_registry_paths()]
         seen_paths = set()
+        switched = False
         for rp in candidate_reg_paths:
             if rp and rp.exists() and str(rp.resolve()) not in seen_paths:
                 seen_paths.add(str(rp.resolve()))
                 try:
                     with open(rp, "r", encoding="utf-8") as f:
                         reg_data = json.load(f)
+                    found = False
                     for t in reg_data.get("tenants", []):
                         if str(t.get("tenant_id", "")).upper() == tenant_id.upper():
                             t["crm_type"] = new_crm
+                            found = True
                             break
                     with open(rp, "w", encoding="utf-8") as f:
                         json.dump(reg_data, f, ensure_ascii=False, indent=2)
+                    switched = switched or found
                 except Exception as e:
                     logger.error(f"Failed to update tenant crm_type in {rp}: {e}")
+
+        # The reset below wipes raw_deals and raw_calls: it must never run for a switch that did not happen.
+        if not switched:
+            msg = f"CRM для {tenant_id} не переключена: запись в реестр не удалась. Таблицы не тронуты."
+            append_console_log(msg, "error")
+            return {"success": False, "action": action, "message": msg}
 
         # Invalidate tenant and deals cache
         from ..tenant_registry import _REGISTRY_CACHE
@@ -3145,45 +3157,20 @@ def get_tenant_health_doctor(tenant_id: str):
         })
         overall_status = "warning"
 
-    # Check 2: CRM Integration
-    crm_token = cfg.get("amocrm_token") or cfg.get("bitrix24_webhook") or os.getenv("AMOCRM_ACCESS_TOKEN") or os.getenv("BITRIX24_WEBHOOK_URL")
-    if crm_type == "amocrm":
-        amo_domain = cfg.get("amocrm_domain") or cfg.get("amo_domain") or os.getenv("AMOCRM_SUBDOMAIN", "")
-        has_token = bool(crm_token and len(str(crm_token)) > 20)
-        if has_token:
-            checks.append({
-                "key": "crm",
-                "title": f"amoCRM API v4 ({amo_domain})",
-                "status": "ok",
-                "detail": "OAuth 2.0 Bearer JWT токен валиден"
-            })
-        else:
-            checks.append({
-                "key": "crm",
-                "title": f"amoCRM API v4 ({amo_domain})",
-                "status": "warn",
-                "detail": "Требуется указать актуальный API-токен"
-            })
-            if overall_status == "healthy":
-                overall_status = "warning"
-        b24_raw = cfg.get("bitrix24_webhook") or os.getenv("BITRIX24_WEBHOOK_URL", "")
-        b24_url = str(b24_raw) if b24_raw else ""
-        has_url = bool(b24_url and "http" in b24_url and "/rest/" in b24_url)
-        if has_url:
-            portal_name = b24_url.split('/rest/')[0] if '/rest/' in b24_url else 'Bitrix24'
-            checks.append({
-                "key": "crm",
-                "title": "Bitrix24 REST API",
-                "status": "ok",
-                "detail": f"Вебхук активен ({portal_name})"
-            })
-        else:
-            checks.append({
-                "key": "crm",
-                "title": "Bitrix24 REST API",
-                "status": "ok",
-                "detail": "REST Webhook сконфигурирован по умолчанию"
-            })
+    # Check 2: CRM Integration. Configuration of THIS tenant only: no CRM API call is made here.
+    if crm_type == "bitrix24":
+        b24_url = str(cfg.get("bitrix_webhook_url") or cfg.get("b24_webhook_url") or cfg.get("crm_webhook_url") or "")
+        crm_configured = b24_url.startswith("http") and "/rest/" in b24_url
+        crm_title = "Bitrix24 REST API"
+        crm_detail = "Вебхук задан, связь здесь не проверяется" if crm_configured else "Требуется указать вебхук Bitrix24"
+    else:
+        amo_domain = cfg.get("amocrm_domain") or cfg.get("amo_domain") or ""
+        crm_configured = bool(amo_domain and (cfg.get("amo_token") or cfg.get("amocrm_token")))
+        crm_title = f"amoCRM API v4 ({amo_domain})"
+        crm_detail = "Токен задан, связь здесь не проверяется" if crm_configured else "Требуется указать домен и API-токен"
+    checks.append({"key": "crm", "title": crm_title, "status": "ok" if crm_configured else "warn", "detail": crm_detail})
+    if not crm_configured and overall_status == "healthy":
+        overall_status = "warning"
 
     # Check 3: Calls Ingestion
     try:
@@ -3208,8 +3195,8 @@ def get_tenant_health_doctor(tenant_id: str):
     checks.append({
         "key": "gemini",
         "title": "ИИ-Аудит Google Gemini 3.5/Flash",
-        "status": "ok",
-        "detail": "13 критериев B2B-аудита (cr1..cr13) активны 24/7"
+        "status": "warn",
+        "detail": "Здесь не проверяется: используйте «Тест Gemini API» на вкладке служб"
     })
 
     # Status label
@@ -3243,7 +3230,7 @@ def get_tenant_health_doctor(tenant_id: str):
             },
             "crm_integration": {"status": crm_status, "type": crm_type},
             "authentication": {"active_users": n_users},
-            "formula_integrity": {"status": "PROTECTED"},
+            "formula_integrity": {"status": "NOT_CHECKED"},
         },
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
@@ -3707,10 +3694,10 @@ async def execute_terminal_cli_command(req: TerminalExecuteRequest, request: Req
             f"[{timestamp_str}] 🩺 Диагностика Тенанта {tenant_id} ({report.get('tenant_name', 'N/A')}):\n"
             f"  Вердикт: {verdict} (Обнаружено проблем: {issues})\n"
             f"  Google Sheets: {report.get('google_sheets', {}).get('status', 'OK')} ({report.get('google_sheets', {}).get('latency_ms', 0)}ms)\n"
-            f"  Листы: {report.get('google_sheets', {}).get('sheets_found', 0)}/11 активны\n"
+            f"  Листов в таблице: {report.get('google_sheets', {}).get('sheets_found', 0)}\n"
             f"  CRM: {report.get('crm_integration', {}).get('status', 'OK')} ({report.get('crm_integration', {}).get('type', 'N/A')})\n"
             f"  Аутентификация: {report.get('authentication', {}).get('active_users', 0)} активных пользователей\n"
-            f"  Формулы & RBAC: {report.get('formula_integrity', {}).get('status', 'PROTECTED')}"
+            f"  Формулы & RBAC: {report.get('formula_integrity', {}).get('status', 'NOT_CHECKED')}"
         )
         append_console_log(f"CLI /doctor {tenant_id}: {verdict}", "success" if verdict == "HEALTHY" else "warning")
         return {"output": out, "status": "ok", "data": res}
@@ -3735,9 +3722,7 @@ async def execute_terminal_cli_command(req: TerminalExecuteRequest, request: Req
         out = (
             f"[{timestamp_str}] 🛡️ Центр разбора карантина (Агент 4 QA Judge):\n"
             f"  Всего инцидентов: {len(items)}\n"
-            f"  Ожидают модерации: {len(active)} звонков\n"
-            f"  Citation Grounding Recall: 96.8% (Цель: >= 95.0%)\n"
-            f"  Порог Z-Score: 2.5 сигма"
+            f"  Ожидают модерации: {len(active)} звонков"
         )
         for idx, call in enumerate(active[:3], 1):
             out += f"\n  [{idx}] {call.get('id')} ({call.get('deal_title')}) — {call.get('flagged_criterion')}"
@@ -3758,7 +3743,7 @@ async def execute_terminal_cli_command(req: TerminalExecuteRequest, request: Req
             f"[{timestamp_str}] 💾 Создание Disaster Recovery бэкапа:\n"
             f"  Файл: {res.get('filename')}\n"
             f"  Размер: {res.get('size_kb')}\n"
-            f"  Включены: tenants_registry.json, registered_clients.json, scoring_config.json, SQLite DB\n"
+            f"  Включены: manifest.json, tenants_registry.json, журналы. База данных НЕ входит\n"
             f"  Статус: УСПЕШНО"
         )
         append_console_log(f"CLI /backup: {res.get('filename')}", "success")
@@ -3771,7 +3756,6 @@ async def execute_terminal_cli_command(req: TerminalExecuteRequest, request: Req
             f"[{timestamp_str}] 🏓 PONG!\n"
             f"  Ядро: RevOps FastAPI Uvicorn Async (Python {sys.version.split()[0]})\n"
             f"  Платформа: {platform.system()} {platform.release()}\n"
-            f"  Шлюз вебхуков: АКТИВЕН (BackgroundTasks Queue Active)\n"
             f"  Статус сервера: ONLINE 🟢"
         )
         return {"output": out, "status": "ok"}
@@ -3792,8 +3776,7 @@ async def execute_terminal_cli_command(req: TerminalExecuteRequest, request: Req
             f"  Готовность флота: {kpis.get('fleet_ready')} ({kpis.get('fleet_ready_pct')}%)\n"
             f"  Агент 4 (Judge Grounding): {kpis.get('grounding_recall_pct')}%\n"
             f"  Агент 5 (Chaos Canary Latency): {kpis.get('canary_latency_s')}s\n"
-            f"  Карантин: {kpis.get('quarantine_count')} звонков\n"
-            f"  Все службы в строю ✓"
+            f"  Карантин: {kpis.get('quarantine_count')} звонков"
         )
         return {"output": out, "status": "ok", "data": status_res}
 

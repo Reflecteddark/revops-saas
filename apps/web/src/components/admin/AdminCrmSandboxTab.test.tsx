@@ -83,17 +83,9 @@ describe('AdminCrmSandboxTab', () => {
     renderWithClient(<AdminCrmSandboxTab />);
 
     const switchBtn = screen.getByTestId('btn-switch-crm');
+    expect(switchBtn).toBeDisabled();
     fireEvent.click(switchBtn);
-
-    await waitFor(() => {
-      expect(adminApi.crmAction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          action: 'switch_crm',
-          crm_type: 'amocrm',
-        })
-      );
-      expect(screen.getByText('CRM переключена на amocrm')).toBeInTheDocument();
-    });
+    expect(adminApi.crmAction).not.toHaveBeenCalled();
   });
 
   it('submits call simulation and shows success feedback', async () => {
