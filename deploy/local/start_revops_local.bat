@@ -39,8 +39,8 @@ tasklist /FI "IMAGENAME eq cloudflared.exe" 2>NUL | find /I /N "cloudflared.exe"
 if "%ERRORLEVEL%"=="0" (
     echo [OK] Cloudflare Tunnel is already running.
 ) else (
-    echo [*] Launching Cloudflare Tunnel...
-    start "Cloudflare Tunnel (ai-rop.ru)" /min "C:\Program Files (x86)\cloudflared\cloudflared.exe" tunnel --config C:\Users\strel\.cloudflared\config.yml --protocol http2 run
+    echo [*] Launching Cloudflare Tunnel with auto-reconnect watchdog...
+    start "Cloudflare Tunnel Watchdog (ai-rop.ru)" /min cmd /c "C:\revops\run_cloudflared_loop.bat"
 )
 
 echo [5/5] Starting Telegram Bot Runner...
