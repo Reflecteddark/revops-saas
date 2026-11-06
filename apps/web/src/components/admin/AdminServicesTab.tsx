@@ -38,6 +38,15 @@ interface AdminServicesTabProps {
   onRefreshStatus: () => void;
 }
 
+/** The colour follows what the server reported, not a fixed green. */
+function toneClass(label?: string): string {
+  if (!label) return 'text-tertiary';
+  if (label.startsWith('🟢')) return 'text-emerald-400';
+  if (label.startsWith('🟡')) return 'text-amber-400';
+  if (label.startsWith('🔴')) return 'text-rose-400';
+  return 'text-tertiary';
+}
+
 export function AdminServicesTab({
   statusData,
   isStatusLoading,
@@ -242,8 +251,8 @@ export function AdminServicesTab({
           <CardContent className="space-y-3 pt-0 text-xs">
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
               <span className="text-secondary">Статус:</span>
-              <span className="font-medium text-emerald-400">
-                {statusData?.fastapi?.status_label || (isStatusLoading ? 'Загрузка...' : '🟢 АКТИВЕН (Port 8000)')}
+              <span className={`font-medium ${toneClass(statusData?.fastapi?.status_label)}`}>
+                {statusData?.fastapi?.status_label || (isStatusLoading ? 'Загрузка...' : '—')}
               </span>
             </div>
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
@@ -293,8 +302,8 @@ export function AdminServicesTab({
           <CardContent className="space-y-3 pt-0 text-xs">
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
               <span className="text-secondary">Статус:</span>
-              <span className="font-medium text-emerald-400">
-                {statusData?.n8n?.status_label || '🟢 АКТИВЕН (Port 5678)'}
+              <span className={`font-medium ${toneClass(statusData?.n8n?.status_label)}`}>
+                {statusData?.n8n?.status_label || '—'}
               </span>
             </div>
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
@@ -337,8 +346,8 @@ export function AdminServicesTab({
           <CardContent className="space-y-3 pt-0 text-xs">
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
               <span className="text-secondary">Статус:</span>
-              <span className="font-medium text-emerald-400">
-                {statusData?.cloudflare_tunnel?.status_label || '🟢 ТУННЕЛЬ ПОДКЛЮЧЕН'}
+              <span className={`font-medium ${toneClass(statusData?.cloudflare_tunnel?.status_label)}`}>
+                {statusData?.cloudflare_tunnel?.status_label || '—'}
               </span>
             </div>
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
@@ -387,7 +396,7 @@ export function AdminServicesTab({
             </div>
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
               <span className="text-secondary">Подключение:</span>
-              <span className="font-medium text-emerald-400">
+              <span className={`font-medium ${toneClass(statusData?.gemini_ai?.status_label)}`}>
                 {statusData?.gemini_ai?.status_label || '—'}
               </span>
             </div>
@@ -429,8 +438,8 @@ export function AdminServicesTab({
           <CardContent className="space-y-3 pt-0 text-xs">
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
               <span className="text-secondary">Сервисный аккаунт:</span>
-              <span className="font-medium text-emerald-400">
-                {statusData?.google_sheets?.status_label || '🟢 КЛЮЧ ВАЛИДЕН (revops-sa)'}
+              <span className={`font-medium ${toneClass(statusData?.google_sheets?.status_label)}`}>
+                {statusData?.google_sheets?.status_label || '—'}
               </span>
             </div>
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
@@ -473,14 +482,14 @@ export function AdminServicesTab({
           <CardContent className="space-y-3 pt-0 text-xs">
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
               <span className="text-secondary">Daily AutoSync:</span>
-              <span className="font-medium text-emerald-400">
-                {statusData?.tasks?.daily_sync?.status_label || '🟢 АКТИВНА (03:00)'}
+              <span className={`font-medium ${toneClass(statusData?.tasks?.daily_sync?.status_label)}`}>
+                {statusData?.tasks?.daily_sync?.status_label || '—'}
               </span>
             </div>
             <div className="flex items-center justify-between border-b border-subtle py-1.5">
               <span className="text-secondary">QA Healer:</span>
-              <span className="font-medium text-emerald-400">
-                {statusData?.tasks?.devops_healer?.status_label || '🟢 АКТИВНА (15 мин)'}
+              <span className={`font-medium ${toneClass(statusData?.tasks?.devops_healer?.status_label)}`}>
+                {statusData?.tasks?.devops_healer?.status_label || '—'}
               </span>
             </div>
             <div className="flex items-center justify-between pt-1">
